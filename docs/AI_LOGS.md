@@ -144,6 +144,7 @@ The contributing guide and README now match the current repository instead of th
 ## Changes made
 
 - Updated `REQUIREMENTS.md` to remove contact-submission requirements, use cases, validation/data rules, APIs, and related acceptance criteria. Preserved surviving identifiers rather than renumbering them.
+- Updated `REQUIREMENTS.md` to remove contact-submission requirements, use cases, validation/data rules, APIs, and related acceptance criteria. Preserved surviving identifiers rather than renumbering them.
 - Restricted the customer-facing contact requirement to the phone number and Facebook/Instagram links already present in the source materials. The official phone number and social URLs remain `[CONFIRMATION REQUIRED]`; no values or additional contact channels were invented.
 - Updated `ARCHITECTURE.md` to remove the contact-submission module, request flow, data entity, endpoints, administration workflow, security/privacy design, repository folders, and implementation phase.
 - Updated `README.md` to describe direct contact through the existing phone and social-link channels, with no contact form or submission flow.
