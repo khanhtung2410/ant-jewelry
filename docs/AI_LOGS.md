@@ -1,5 +1,33 @@
 # AI Change Log
 
+## 2026-11-08 10:16:25 +07:00 — Update sitemap in docs/REQUIREMENTS.md
+
+### User prompt
+
+> Sitemap in docs/REQUIREMENTS.md need modification
+> - Bảng: Route | Màn Figma | Các khối chính | Quyền truy cập
+> - Storefront: /, /c/[slug], /p/[slug], /blog, /blog/[slug], 4 trang footer (Terms and Conditions, Privacy Policy, Shipping & Return, Jewelry Care).
+> - Contact popover (ORDER NOW): overlay, không phải route riêng; chỉ hiển thị số điện thoại + link Facebook/Instagram, không có form.
+> - Admin: /admin/* (login, products, categories, blog, hero slides, settings, users), ghi role được truy cập (ADMIN / EDITOR).
+> - AC: đủ 6 màn Figma (Home, Category, Product, Product + Contact popover, Blog list, Blog detail).
+>
+> if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Replaced the UI page list in `docs/REQUIREMENTS.md` §9.1 with a sitemap table using exactly four columns: `Route`, `Màn Figma`, `Các khối chính`, `Quyền truy cập`.
+- Storefront routes: `/`, `/c/[slug]`, `/p/[slug]`, `/blog`, `/blog/[slug]`, plus the four footer pages `/terms-and-conditions`, `/privacy-policy`, `/shipping-and-return`, `/jewelry-care`.
+- Added the Contact popover as an overlay row on `/p/[slug]` (explicitly not a separate route): phone number and Facebook/Instagram links only, no form.
+- Added admin routes for login, products, categories, blog, hero slides, settings and users, with `ADMIN` / `EDITOR` access recorded per route; `EDITOR` is limited to content modules and `ADMIN` also manages settings/users.
+- Added an explicit Figma coverage line proving all 6 screens are present (Home, Category, Product, Product + Contact popover, Blog list, Blog detail).
+- Updated FR-005 and FR-007 flow references from the old observed paths (`/public/...`) to the sitemap routes (`/c/[slug]`, `/p/[slug]`) while keeping the old paths noted as historical observations.
+
+### Output summary
+
+`docs/REQUIREMENTS.md` §9.1 is now a route-level sitemap with the requested columns and access roles. Storefront, footer, contact overlay and admin routes are all covered, and the table explicitly maps to the six Figma screens. The detailed permission matrix remains tied to OI-004, so the new `EDITOR` role mapping to the SAD Staff actor is flagged rather than silently assumed.
+
+---
+
 ## 2026-11-08 09:22:23 +07:00 — Fix docs/README.md for GitHub
 
 ### User prompt
