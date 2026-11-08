@@ -2,8 +2,8 @@
 
 > **Trạng thái tài liệu:** Kiến trúc đề xuất, đã đối chiếu với work tree hiện tại  
 > **Tài liệu nguồn:** `AN_JEWELRY_SAD_v1.1.docx`  
-> **Cập nhật theo work tree:** 2026-11-06  
-> **Trạng thái work tree:** Có bộ khung Next.js 16.4.5 (App Router) tại thư mục gốc với React 19.3.0, Tailwind CSS v4, TypeScript strict và ESLint 9. `src/types/domain.ts` bổ sung hợp đồng TypeScript cho `Product`, `Category`, `BlogPost`; chưa có Backend, Database, ORM, API nghiệp vụ hoặc workflow nghiệp vụ.
+> **Cập nhật theo work tree:** 2026-11-08  
+> **Trạng thái work tree:** Có một Next.js application duy nhất (16.4.5, App Router) với React 19.3.0, Tailwind CSS v4, TypeScript strict và ESLint 9. `src/types/domain.ts` bổ sung hợp đồng TypeScript cho `Product`, `Category`, `BlogPost`; chưa có Database, ORM, Server Action, Route Handler nghiệp vụ hoặc workflow nghiệp vụ.
 > **Ngôn ngữ:** Nội dung diễn giải bằng tiếng Việt; giữ nguyên các technical terms, tên công nghệ, tên module, tên bảng, tên API, identifier và code terms bằng tiếng Anh.
 
 ---
@@ -14,9 +14,9 @@ Tài liệu này chuyển các nội dung phân tích và thiết kế trong `AN
 
 - Thống nhất cách nhìn tổng thể về hệ thống trước khi bắt đầu lập trình.
 - Xác định các thành phần chính, trách nhiệm của từng thành phần và cách chúng tương tác.
-- Định hướng phân chia module ở Frontend và Backend.
+- Định hướng phân chia module trong một Next.js application duy nhất.
 - Mô tả mô hình dữ liệu logic ở mức hiện có trong SAD.
-- Định hướng API, Authentication, Authorization và lưu trữ hình ảnh.
+- Định hướng Server Components cho read, Server Actions / Route Handlers cho mutation, Authentication, Authorization và lưu trữ hình ảnh.
 - Ghi nhận các quyết định kỹ thuật còn cần xác nhận để tránh tự ý biến giả định thành yêu cầu chính thức.
 - Làm cơ sở cập nhật kiến trúc khi codebase được mở rộng và các quyết định thiết kế được phê duyệt.
 
@@ -34,12 +34,12 @@ Các trạng thái được sử dụng:
 
 ### 1.2. Giới hạn của tài liệu
 
-Work tree hiện tại mới có bộ khung Frontend Next.js ở thư mục gốc và trang mặc định của `create-next-app`; Backend và Database chưa tồn tại. Vì vậy, tài liệu không khẳng định:
+Work tree hiện tại mới có bộ khung Next.js ở thư mục gốc và trang mặc định của `create-next-app`; Database chưa tồn tại. Vì vậy, tài liệu không khẳng định:
 
-- Cấu trúc Frontend hoặc Backend đã hoàn chỉnh; các thư mục `frontend/`, `backend/`, `components/`, `lib/` và `features/` vẫn là đề xuất.
+- Cấu trúc module đã hoàn chỉnh; các thư mục `src/components/`, `src/features/`, `src/lib/` và `src/server/` vẫn là đề xuất.
 - Phiên bản framework hoặc package ngoài các dependency đang có trong `package.json`.
 - Database schema vật lý, migrations, indexes hoặc constraints đã tồn tại.
-- Các API endpoint đã được triển khai.
+- Các Server Component, Server Action hoặc Route Handler nghiệp vụ đã được triển khai.
 - Cấu hình Authentication, Authorization hoặc bảo mật đã hoạt động.
 - Hạ tầng Hosting, Deployment, CI/CD, Logging hoặc Monitoring thực tế.
 
@@ -85,7 +85,7 @@ Trạng thái trong bảng phản ánh mức độ xác định của yêu cầu
 
 | Nhóm chức năng | Nội dung | Actor chính | Trạng thái yêu cầu |
 |---|---|---|---|
-| Trang chủ | Hiển thị nội dung giới thiệu và điều hướng website | Customer | Nội dung tĩnh hay lấy từ API cần xác nhận |
+| Trang chủ | Hiển thị nội dung giới thiệu và điều hướng website | Customer | Nội dung tĩnh hay lấy từ dữ liệu server cần xác nhận |
 | Sản phẩm | Xem danh sách sản phẩm | Customer | Đã xác định |
 | Lọc sản phẩm | Lọc theo danh mục hoặc Product Type | Customer | Một phần cần xác nhận do Category chưa có mô hình dữ liệu |
 | Sắp xếp sản phẩm | Sắp xếp theo giá hoặc tên | Customer | Đã khảo sát; quy tắc mặc định cần xác nhận |
@@ -156,44 +156,37 @@ Quyền cụ thể của Staff và mối quan hệ giữa Staff với User/Role 
 
 ### 4.1. Technology Stack
 
-SAD v1.1 nêu định hướng sử dụng Next.js. Work tree hiện đã có bộ khung Frontend; các thành phần Backend, Database, ORM, Authentication và Image Storage vẫn là phương án đề xuất, chưa được xác nhận hoặc cấu hình.
+SAD v1.1 nêu định hướng sử dụng Next.js. Kiến trúc đã chốt dùng **một Next.js application duy nhất**; Database, ORM, Authentication và Image Storage vẫn là phương án đề xuất, chưa được cấu hình.
 
 | Thành phần | Công nghệ | Vai trò | Trạng thái trong work tree |
 |---|---|---|---|
-| Frontend | Next.js 16.4.5 (App Router) | Xây dựng giao diện website | Đã cài đặt |
+| Application | Next.js 16.4.5 (App Router) | Giao diện và server-side logic trong cùng một ứng dụng | Đã cài đặt |
 | UI runtime | React 19.3.0 | Render giao diện | Đã cài đặt |
+| Read path | React Server Components (App Router) | Đọc dữ liệu và render phía server | Runtime đã có; chưa có query nghiệp vụ |
+| Mutation path | Server Actions / Route Handlers | Xử lý form, mutation và upload | Đề xuất |
 | Styling | Tailwind CSS v4 qua `@tailwindcss/turbopack` | Utility CSS | Đã cấu hình |
 | Ngôn ngữ | TypeScript 5 (`strict`) | Type safety | Đã cấu hình |
 | Lint | ESLint 9 + `eslint-config-next` | Kiểm tra chất lượng mã | Đã cấu hình |
 | Package manager | npm (`package-lock.json`) | Quản lý dependencies | Đang sử dụng |
-| Backend | Node.js / NestJS | Xử lý nghiệp vụ và cung cấp API | Đề xuất, chưa có |
 | Database | PostgreSQL | Lưu trữ dữ liệu hệ thống | Đề xuất, chưa cấu hình |
 | ORM | Prisma | Truy vấn và quản lý dữ liệu | Đề xuất, chưa cấu hình |
 | Authentication | JWT | Xác thực người dùng nội bộ | Đề xuất, chưa cấu hình |
 | Image Storage | Cloudinary | Lưu trữ hình ảnh sản phẩm và Blog | Đề xuất, chưa cấu hình |
 | Version Control | Git / GitHub | Quản lý mã nguồn và cộng tác | Đang sử dụng |
 
-Cần đánh giá và chốt Backend, Database, Image Storage và phương thức Authentication trước khi thiết kế kỹ thuật chi tiết.
+Cần đánh giá và chốt Database, ORM, Image Storage và phương thức Authentication trước khi thiết kế kỹ thuật chi tiết.
 
 ### 4.2. Vai trò của từng công nghệ
 
 **Next.js**
 
-- Xây dựng các trang public của website.
-- Hiển thị danh sách và chi tiết sản phẩm.
-- Hiển thị Blog, số điện thoại và các liên kết Facebook, Instagram.
-- Có thể xây dựng khu vực Admin/Staff nếu lựa chọn dùng chung một Next.js application.
+- Xây dựng toàn bộ ứng dụng, gồm cả public website và khu vực Admin/Staff.
+- Dùng Server Components cho các luồng read: render danh sách, chi tiết sản phẩm, Blog và nội dung liên hệ.
+- Dùng Server Actions cho mutation từ form quản trị; dùng Route Handlers cho upload, webhook hoặc tích hợp cần HTTP endpoint.
+- Thực thi nghiệp vụ, kiểm tra Authentication/Authorization và truy cập Database trong cùng process server-side.
+- Không tạo tầng API riêng hoặc ứng dụng backend tách biệt.
 
-Trong work tree hiện tại, Next.js mới chứa trang mặc định của `create-next-app`; các trang public và Admin/Staff nêu trên chưa được triển khai.
-
-**Node.js / NestJS**
-
-- Cung cấp REST API cho Frontend.
-- Tiếp nhận và kiểm tra request.
-- Thực thi nghiệp vụ của từng module.
-- Kiểm tra Authentication và Authorization đối với API nội bộ.
-- Giao tiếp với Database thông qua Prisma.
-- Tích hợp dịch vụ lưu trữ hình ảnh nếu Cloudinary được lựa chọn.
+Trong work tree hiện tại, Next.js mới chứa trang mặc định của `create-next-app`; các trang public, Admin/Staff và server-side logic nêu trên chưa được triển khai.
 
 **PostgreSQL**
 
@@ -208,18 +201,18 @@ Trong work tree hiện tại, Next.js mới chứa trang mặc định của `cr
 - Định nghĩa data model ở tầng ORM.
 - Truy vấn dữ liệu từ PostgreSQL.
 - Quản lý database migrations sau khi schema được phê duyệt.
-- Hỗ trợ thao tác dữ liệu trong các Backend module.
+- Hỗ trợ thao tác dữ liệu trong các module server-side.
 
 **JWT**
 
 - Là phương án xác thực người dùng nội bộ được đề xuất.
-- Không thay thế việc kiểm tra quyền truy cập ở Backend.
+- Không thay thế việc kiểm tra quyền truy cập ở server-side.
 - Cần xác định thêm token expiration, refresh token, logout và thu hồi token trước khi triển khai.
 
 **Cloudinary**
 
 - Là phương án lưu trữ và phân phối image assets.
-- Backend quản lý nghiệp vụ liên kết hình ảnh với Product hoặc Blog.
+- Server-side code trong Next.js quản lý nghiệp vụ liên kết hình ảnh với Product hoặc Blog.
 - Database lưu metadata hoặc reference của asset sau khi cấu trúc dữ liệu được xác nhận.
 
 **Git / GitHub**
@@ -239,7 +232,9 @@ Cấu trúc thực tế tại thời điểm cập nhật:
 
 ```text
 ant-jewelry/
-├── app/                  # layout.tsx, page.tsx, globals.css
+├── src/
+│   ├── app/              # layout.tsx, page.tsx, globals.css
+│   └── types/            # Product, Category, BlogPost contracts
 ├── public/               # Static assets
 ├── docs/                 # Tài liệu dự án
 ├── next.config.ts        # Cấu hình Next.js
@@ -251,18 +246,18 @@ ant-jewelry/
 └── .gitignore
 ```
 
-- Chỉ có một Next.js application ở thư mục gốc; chưa có thư mục `frontend/` hoặc `backend/`.
-- `app/page.tsx` đang là trang mặc định của `create-next-app`; `app/layout.tsx` khai báo metadata mặc định.
-- Chưa có API route, route handler nghiệp vụ, Database, Prisma, Authentication hoặc Cloudinary.
+- Chỉ có một Next.js application ở thư mục gốc, source code trong `src/`; chưa có thư mục `frontend/` hoặc `backend/`.
+- `src/app/page.tsx` đang là trang mặc định của `create-next-app`; `src/app/layout.tsx` khai báo metadata mặc định.
+- Chưa có Server Action, Route Handler nghiệp vụ, Database, Prisma, Authentication hoặc Cloudinary.
 - Các script hiện có: `dev`, `build`, `start`, `lint`. Chưa có script `test`.
 
 ### 5.2. Kiến trúc đề xuất
 
-Dựa trên Technology Direction trong SAD, hệ thống có thể được tổ chức theo các lớp:
+Hệ thống được tổ chức trong **một Next.js application duy nhất**, không có tầng API riêng:
 
-1. **Presentation Layer:** Next.js.
-2. **Application Layer:** NestJS REST API.
-3. **Domain / Module Layer:** các module nghiệp vụ.
+1. **Presentation / UI Layer:** Next.js App Router, gồm Server Components và Client Components.
+2. **Application / Server Layer:** Server Components cho read; Server Actions và Route Handlers cho mutation.
+3. **Domain / Module Layer:** các module nghiệp vụ TypeScript.
 4. **Data Access Layer:** Prisma.
 5. **Data Layer:** PostgreSQL.
 6. **External Service:** Cloudinary cho hình ảnh nếu được lựa chọn.
@@ -273,16 +268,10 @@ Sơ đồ dưới đây là kiến trúc logic đề xuất, chưa có trong wor
 flowchart TB
     Browser[Customer / Admin / Staff Browser]
 
-    subgraph FE[Presentation Layer]
-        Next[Next.js Application]
-        PublicUI[Public Website]
-        AdminUI[Admin / Staff Interface]
-        Next --> PublicUI
-        Next --> AdminUI
-    end
-
-    subgraph APP[Application Layer]
-        API[NestJS REST API]
+    subgraph NEXT[Next.js Application - single deployment]
+        UI[App Router UI<br/>Server Components + Client Components]
+        Read[Read path<br/>Server Components]
+        Mutate[Mutation path<br/>Server Actions / Route Handlers]
         Auth[Authentication / Authorization]
         Product[Product Module]
         ProductType[Product Type Module]
@@ -292,14 +281,21 @@ flowchart TB
         Blog[Blog Module]
         User[User / Role Module - pending confirmation]
 
-        API --> Auth
-        API --> Product
-        API --> ProductType
-        API --> ProductImage
-        API --> ProductPrice
-        API --> Category
-        API --> Blog
-        API --> User
+        UI --> Read
+        UI --> Mutate
+        Mutate --> Auth
+        Read --> Product
+        Read --> ProductType
+        Read --> ProductImage
+        Read --> Category
+        Read --> Blog
+        Mutate --> Product
+        Mutate --> ProductType
+        Mutate --> ProductImage
+        Mutate --> ProductPrice
+        Mutate --> Category
+        Mutate --> Blog
+        Mutate --> User
     end
 
     subgraph DATA[Data and External Services]
@@ -308,9 +304,7 @@ flowchart TB
         Cloudinary[Cloudinary]
     end
 
-    Browser --> Next
-    PublicUI -->|Public API Request| API
-    AdminUI -->|Protected API Request| API
+    Browser --> UI
 
     Product --> Prisma
     ProductType --> Prisma
@@ -327,7 +321,7 @@ flowchart TB
 
 ### 5.3. Presentation Layer
 
-Presentation Layer chịu trách nhiệm giao tiếp với người dùng thông qua giao diện Next.js.
+Presentation Layer chịu trách nhiệm giao tiếp với người dùng thông qua giao diện Next.js App Router.
 
 Có thể chia giao diện thành hai khu vực:
 
@@ -347,24 +341,23 @@ Admin / Staff Interface
 - Blog Management.
 - User / Role Management theo quyền được cấp.
 
-SAD chưa xác định Home Page và Contact Information là nội dung tĩnh trên Frontend hay lấy từ API. Cần xác nhận trước khi quyết định cách tổ chức data fetching.
+SAD chưa xác định Home Page và Contact Information là nội dung tĩnh trong Server Component hay lấy từ dữ liệu server. Cần xác nhận trước khi quyết định cách tổ chức data fetching.
 
-### 5.4. Application Layer
+### 5.4. Application / Server Layer
 
-Application Layer dự kiến sử dụng NestJS để cung cấp REST API.
+Không có tầng API riêng. Next.js đảm nhận cả read và mutation trong cùng application:
 
-Trách nhiệm chính:
-- Tiếp nhận HTTP request từ Frontend.
-- Kiểm tra dữ liệu đầu vào.
+- **Read:** Server Components gọi trực tiếp các query function server-side; không cần public REST endpoint.
+- **Mutation:** Server Actions xử lý form quản trị; Route Handlers chỉ dùng cho upload, webhook hoặc tích hợp cần HTTP endpoint.
+- Kiểm tra dữ liệu đầu vào tại server boundary.
 - Xác thực người dùng đối với chức năng nội bộ.
-- Kiểm tra quyền thực hiện thao tác.
-- Gọi module nghiệp vụ tương ứng.
-- Truy cập dữ liệu thông qua Prisma.
-- Trả về response dạng JSON.
+- Kiểm tra quyền thực hiện thao tác trước khi gọi module nghiệp vụ.
+- Gọi module nghiệp vụ tương ứng và truy cập dữ liệu thông qua Prisma.
+- Gọi `revalidatePath` / `revalidateTag` sau mutation để làm mới dữ liệu read.
 
 ### 5.5. Domain / Module Layer
 
-Backend được định hướng chia thành các module theo nghiệp vụ. Chi tiết được trình bày tại mục 6.
+Các module nghiệp vụ được tổ chức trong cùng Next.js application, không tách Backend. Chi tiết được trình bày tại mục 6.
 
 ### 5.6. Data Access Layer
 
@@ -382,8 +375,8 @@ PostgreSQL là Database được đề xuất trong SAD. Các bảng logic hiệ
 
 Không tạo migrations production dựa trên các quan hệ còn đang được đánh dấu Cần xác nhận.
 
-## 6. Backend Module Architecture
-Các module dưới đây là ranh giới nghiệp vụ đề xuất. Chúng chưa phải danh sách thư mục hoặc class đã tồn tại trong source code.
+## 6. Module Architecture
+Các module dưới đây là ranh giới nghiệp vụ đề xuất trong cùng Next.js application. Chúng chưa phải danh sách thư mục hoặc class đã tồn tại trong source code.
 ### 6.1. Product Module
 Mục đích: Quản lý và cung cấp dữ liệu sản phẩm.
 
@@ -476,72 +469,92 @@ SAD đề xuất JWT cho Authentication nhưng cấu trúc User/Role và quan h�
 
 Các trách nhiệm dự kiến:
 - Đăng nhập tài khoản nội bộ.
-- Xác thực request.
+- Xác thực request/session ở server-side.
 - Quản lý tài khoản.
 - Quản lý Role và Permission sau khi mô hình được phê duyệt.
 - Kiểm tra quyền truy cập chức năng quản trị.
-Không được coi JWT là toàn bộ giải pháp bảo mật. Backend vẫn phải kiểm tra quyền trên từng API hoặc nhóm thao tác được bảo vệ.
+Không được coi JWT là toàn bộ giải pháp bảo mật. Server-side code vẫn phải kiểm tra quyền trên từng Server Action / Route Handler hoặc nhóm thao tác được bảo vệ.
 
 ## 7. System Request Flow
 
-> Work tree chưa có API, Database hoặc luồng dữ liệu nào được triển khai. Các sơ đồ dưới đây là luồng đề xuất từ SAD.
+> Work tree chưa có Database hoặc luồng dữ liệu nào được triển khai. Các sơ đồ dưới đây là luồng đề xuất; read đi qua Server Components, mutation đi qua Server Actions / Route Handlers.
 
-### 7.1. Luồng xem danh sách sản phẩm
+### 7.1. Luồng read — xem danh sách sản phẩm
 
 ```mermaid
 sequenceDiagram
     actor Customer
-    participant FE as Next.js
-    participant API as NestJS REST API
+    participant RSC as Next.js Server Component
     participant Product as Product Module
+    participant Prisma as Prisma
     participant DB as PostgreSQL
 
-    Customer->>FE: Mở trang Product Listing
-    FE->>API: GET /api/products
-    API->>Product: Gửi query parameters
+    Customer->>RSC: Mở /c/[slug]
+    RSC->>Product: getProducts(filters, sort, pagination)
     Product->>Product: Validate filter, sort, pagination
-    Product->>DB: Query Product data
-    DB-->>Product: Product records
-    Product-->>API: Product list result
-    API-->>FE: JSON response
-    FE-->>Customer: Hiển thị danh sách sản phẩm
+    Product->>Prisma: Query product data
+    Prisma->>DB: SELECT
+    DB-->>Prisma: Rows
+    Prisma-->>Product: Product records
+    Product-->>RSC: Typed result
+    RSC-->>Customer: Stream HTML (Server Component)
 ```
 
-Các query parameters, pagination, sort mặc định và cách xác định giá cần được xác nhận trước khi hoàn thiện API contract.
+Không có public API trung gian. Các query parameters, pagination, sort mặc định và cách xác định giá cần được xác nhận trước khi hoàn thiện contract của query function.
 
-### 7.2. Luồng xem chi tiết sản phẩm
+### 7.2. Luồng read — xem chi tiết sản phẩm
 
 ```mermaid
 sequenceDiagram
     actor Customer
-    participant FE as Next.js
-    participant API as NestJS REST API
+    participant RSC as Next.js Server Component
     participant Product as Product Module
+    participant Prisma as Prisma
     participant DB as PostgreSQL
 
-    Customer->>FE: Chọn một sản phẩm
-    FE->>API: GET /api/products/{product_id}
-    API->>Product: Yêu cầu chi tiết sản phẩm
-    Product->>DB: Query Product, Product Type, Images, Price
-    DB-->>Product: Product detail data
-    Product-->>API: Detail result
-    API-->>FE: JSON response
-    FE-->>Customer: Hiển thị Product Detail
+    Customer->>RSC: Mở /p/[slug]
+    RSC->>Product: getProductBySlug(slug)
+    Product->>Prisma: Query Product, Type, Images, Price
+    Prisma->>DB: SELECT
+    DB-->>Prisma: Rows
+    Prisma-->>Product: Product detail data
+    Product-->>RSC: Typed result
+    RSC-->>Customer: Stream HTML (Server Component)
 ```
 
-SAD đề xuất product_id dạng UUID. Cách tra cứu bằng slug trên URL vẫn cần xác nhận.
+SAD đề xuất product_id dạng UUID. Sitemap hiện dùng slug trên URL; quy tắc tra cứu slug vẫn cần xác nhận (OI-011, OI-025).
 
-### 7.3. Luồng quản trị nội bộ
-Luồng tổng quát dự kiến:
-1. Admin hoặc Staff truy cập khu vực quản trị.
-2. Người dùng gửi thông tin đăng nhập.
-3. Backend xác thực tài khoản.
-4. Backend kiểm tra Role/Permission.
-5. Người dùng gọi chức năng theo quyền được cấp.
-6. Backend chuyển request đến module nghiệp vụ tương ứng.
-7. Module thực hiện thao tác dữ liệu thông qua Prisma.
-8. Backend trả response cho Frontend.
-JWT là phương án được đề xuất trong SAD. Token lifecycle, refresh token, logout, thu hồi token và chính sách bảo mật tài khoản cần được xác định trước khi triển khai.
+### 7.3. Luồng mutation — quản trị nội dung
+
+```mermaid
+sequenceDiagram
+    actor Admin
+    participant UI as Admin UI (Client Component)
+    participant Action as Server Action / Route Handler
+    participant Auth as Auth Module
+    participant Module as Business Module
+    participant Prisma as Prisma
+    participant DB as PostgreSQL
+
+    Admin->>UI: Submit form
+    UI->>Action: Gọi Server Action
+    Action->>Auth: Kiểm tra session + permission
+    Auth-->>Action: Allowed / Denied
+    alt Denied
+        Action-->>UI: Trả lỗi 403
+    else Allowed
+        Action->>Action: Validate input
+        Action->>Module: Thực hiện nghiệp vụ
+        Module->>Prisma: Insert / Update / Delete
+        Prisma->>DB: SQL
+        DB-->>Prisma: OK
+        Module-->>Action: Kết quả
+        Action->>Action: revalidatePath / revalidateTag
+        Action-->>UI: Trả kết quả và refresh dữ liệu
+    end
+```
+
+Route Handlers chỉ dùng cho upload, webhook hoặc tích hợp cần HTTP endpoint; không tạo một tầng REST API riêng cho toàn bộ ứng dụng. JWT là phương án được đề xuất trong SAD. Token lifecycle, refresh token, logout, thu hồi token và chính sách bảo mật tài khoản cần được xác định trước khi triển khai.
 
 ## 8. Logical Data Architecture
 
@@ -678,146 +691,79 @@ Theo SAD, Database physical design chỉ nên được thực hiện sau khi cá
 - OI-018: cấu trúc lưu trữ hình ảnh.
 Do đó, ERD trong tài liệu này chỉ là Logical Data Model để rà soát, không được dùng thay thế cho DDL hoặc Prisma Schema đã phê duyệt.
 
-## 9. API Architecture
+## 9. Server Data Access and Mutation Architecture
 
-> Work tree chưa có API route hoặc route handler nào. Toàn bộ endpoint dưới đây là đề xuất từ SAD, không phải API đã được triển khai.
+> Work tree chưa có Server Action hoặc Route Handler nào. SAD có đề xuất endpoint HTTP, nhưng kiến trúc hiện tại **không tạo tầng REST API riêng**: read đi qua Server Components, mutation đi qua Server Actions / Route Handlers.
 
 ### 9.1. Nguyên tắc chung
-SAD đề xuất các quy ước API sau:
 
 | Hạng mục | Nội dung | Trạng thái |
 |---|---|---|
-| Protocol | HTTP | Đề xuất |
-| Payload | JSON mã hóa UTF-8 | Đề xuất |
-| API Style | REST | Đề xuất |
-| Public API Prefix | /api | Đề xuất |
-| Admin API Prefix | /api/admin | Đề xuất |
+| Read path | Server Components gọi query function server-side | Đề xuất |
+| Mutation path | Server Actions; Route Handlers cho upload/webhook | Đề xuất |
+| Public HTTP API | Không có tầng public API riêng | Đã chốt |
+| Admin HTTP API | Không có tầng admin API riêng; mutation qua Server Actions | Đã chốt |
+| Payload | Typed arguments / `FormData`; JSON cho Route Handlers | Đề xuất |
+| Validation | Validate tại server boundary trước khi gọi module | Đề xuất |
 | Resource Identifier | UUID cho product_id và blog_id | Theo mô hình logic; cần đồng bộ với schema cuối |
-| API Versioning | Chưa xác định | Cần xác nhận OI-023 |
-| Pagination | page, limit được nêu trong API đề xuất | Cần xác nhận OI-023 |
-| Sorting | Các giá trị sort được đề xuất trong API | Mặc định cần xác nhận OI-023 |
-| Error Format | Chưa chốt | Cần xác nhận OI-023 |
+| Pagination / Sorting | Typed parameters cho query function | Cần xác nhận OI-023 |
+| Error Handling | Typed result hoặc redirect; format lỗi thống nhất | Cần xác nhận OI-023 |
+| Revalidation | `revalidatePath` / `revalidateTag` sau mutation | Đề xuất |
 
-### 9.2. Public API được đề xuất
-Các endpoint sau được liệt kê trong SAD. Tất cả đều là API đề xuất, không phải endpoint đã được triển khai hoặc xác minh.
+### 9.2. Read path — Server Components
 
-| API ID | Method | Endpoint | Mục đích | Trạng thái / Phụ thuộc |
-|---|---|---|---|---|
-| API-P01 | GET | /api/products | Lấy danh sách sản phẩm | Đề xuất; category/type, price, pagination và sorting cần xác nhận |
-| API-P02 | GET | /api/products/{product_id} | Lấy chi tiết sản phẩm | Đề xuất; slug, description, specifications và image fields cần xác nhận |
-| API-P03 | GET | /api/product-types | Lấy danh sách Product Type | Đề xuất; nhu cầu sử dụng cho bộ lọc cần xác nhận |
-| API-P04 | GET | /api/categories | Lấy danh sách Category | Chưa đặc tả đầy đủ vì Category model chưa có (OI-009) |
-| API-P05 | GET | /api/blogs | Lấy danh sách Blog | Đã khảo sát; contract vẫn thuộc phần API đề xuất |
-| API-P06 | GET | /api/blogs/{blog_id} | Lấy chi tiết Blog | Đã khảo sát; publication state và slug cần xác nhận |
+- Page/layout Server Components gọi trực tiếp query function của module nghiệp vụ.
+- Query function trả về typed domain model; không cần JSON response contract trung gian.
+- Filter, sort và pagination được truyền dưới dạng typed parameters.
+- Không expose public endpoint chỉ để phục vụ read trong cùng ứng dụng.
 
-### 9.3. API-P01 — Product Listing
-Method: GET
-Endpoint: /api/products
-
-Query parameters được đề xuất trong SAD:
-
-| Parameter | Vị trí | Kiểu | Bắt buộc | Mô tả | Trạng thái |
-|---|---|---|---|---|---|
-| category | query | string | Không | Lọc theo danh mục | Cần xác nhận Category ID hay slug (OI-009, OI-025) |
-| type | query | string | Không | Lọc theo Product Type (type_id) | Cần xác nhận (OI-009, OI-011) |
-| sort | query | string | Không | price_asc, price_desc, name_asc, name_desc | Giá trị mặc định cần xác nhận (OI-023) |
-| page | query | integer | Không | Trang hiện tại | Cần xác nhận (OI-023) |
-| limit | query | integer | Không | Số bản ghi mỗi trang | Cần xác nhận (OI-023) |
-
-Các trường response được SAD đề cập:
-
-| Response field | Nguồn dữ liệu dự kiến | Trạng thái |
+| Nhu cầu read | Nơi xử lý | Dữ liệu dự kiến |
 |---|---|---|
-| items[].product_id | product_detail.product_id | Theo mô hình logic |
-| items[].name | product_detail.name | Theo mô hình logic |
-| items[].brand | product_detail.brand | Quy tắc null cần xác nhận |
-| items[].type | product_type | Theo mô hình logic |
-| items[].price | product_price | Chưa chốt giá hiện tại và cấu trúc tiền (OI-008, OI-016) |
-| items[].thumbnail | product_images có front_image = true | URL cần xác nhận (OI-018) |
-| items[].short_description | product_detail.short_description | Theo mô hình logic |
-| pagination | Chưa xác định | Cần xác nhận (OI-023) |
+| Trang chủ | Server Component + query function | Hero content, sản phẩm nổi bật, Blog nổi bật |
+| Danh sách theo danh mục `/c/[slug]` | Server Component + `getProducts` | product_detail, product_type, product_images, product_price |
+| Chi tiết sản phẩm `/p/[slug]` | Server Component + `getProductBySlug` | product_detail, product_type, product_images, product_price |
+| Danh sách Blog `/blog` | Server Component + `getBlogPosts` | blog |
+| Chi tiết Blog `/blog/[slug]` | Server Component + `getBlogPostBySlug` | blog |
+| Trang tĩnh footer | Server Component | Nội dung tĩnh hoặc dữ liệu cấu hình |
 
-SAD nêu lỗi có thể gồm 400 khi tham số không hợp lệ và 500 khi xảy ra lỗi hệ thống. Error response schema chưa được chốt.
-### 9.4. API-P02 — Product Detail
-Method: GET
-Endpoint: /api/products/{product_id}
-- product_id là path parameter, kiểu string UUID theo đề xuất.
-- Tra cứu theo slug cần xác nhận (OI-011, OI-025).
-Các response fields được SAD đề cập:
+Các trường dữ liệu chi tiết (price, image URL, description, specifications, publication state) vẫn phụ thuộc các OI tương ứng.
 
-| Field | Nguồn | Trạng thái |
+### 9.3. Mutation path — Server Actions / Route Handlers
+
+| Nhóm thao tác | Cơ chế | Ghi chú |
 |---|---|---|
-| product_id | product_detail | Theo mô hình logic |
-| name | product_detail | Theo mô hình logic |
-| brand | product_detail | Theo mô hình logic; quy tắc null cần xác nhận |
-| short_description | product_detail | Theo mô hình logic |
-| type | product_type | Theo mô hình logic |
-| price | product_price | Cần xác nhận (OI-008, OI-016) |
-| images[] | product_images | URL và metadata cần xác nhận (OI-018) |
-| description | Chưa có trường tương ứng đầy đủ | Cần xác nhận |
-| specifications | Chưa có cấu trúc tương ứng | Cần xác nhận (OI-010) |
+| Login / logout | Server Action | Tạo hoặc hủy session cookie; kiểm tra role |
+| Product CRUD | Server Action | Validate input, authorization, `revalidatePath` |
+| Product image upload | Route Handler | `multipart/form-data`; upload Cloudinary nếu được duyệt |
+| Product price | Server Action | Validate số tiền và quyền |
+| Category CRUD | Server Action | Chỉ sau khi Category model được xác nhận |
+| Blog CRUD và publish | Server Action | Validate trạng thái `DRAFT` / `PUBLISHED` |
+| User / Role | Server Action | Chỉ role `ADMIN`; validate quyền |
+| Hero slides / settings | Server Action | Validate input và authorization |
 
-SAD đề cập 404 nếu sản phẩm không tồn tại hoặc đã bị xóa mềm và 500 khi có lỗi hệ thống. Nội dung response lỗi cần được thống nhất.
-### 9.5. API-P03 — Product Types
-Method: GET
-Endpoint: /api/product-types
+Quy tắc bắt buộc:
+- Kiểm tra Authentication và Authorization ở server-side cho mọi Server Action / Route Handler.
+- Validate toàn bộ input trước khi gọi module nghiệp vụ.
+- Không truy cập Database trực tiếp từ Client Component.
+- Trả typed result hoặc redirect; không trả JSON contract công khai nếu không cần.
+- Gọi `revalidatePath` / `revalidateTag` sau mutation để đồng bộ read path.
+- Ghi audit log cho thao tác quản trị khi chính sách được chốt.
 
-Theo đề xuất trong SAD:
-- Không có query parameter bắt buộc.
-- Response có items[] gồm type_id và name.
-- Loại trừ các bản ghi có is_delete = true.
-Việc có cần API này để phục vụ bộ lọc hay không phụ thuộc quyết định về Product Type và Category (OI-009).
-### 9.6. API-P04 — Categories
-Method: GET
-Endpoint: /api/categories
+### 9.4. Đối chiếu với endpoint SAD đề xuất
 
-SAD chưa đặc tả request/response do Category entity chưa có trong cấu trúc dữ liệu hiện tại. Không triển khai API dựa trên một schema Category tự giả định.
-### 9.7. API-P05 và API-P06 — Blog
-**API-P05**
-- Method: GET
-- Endpoint: /api/blogs
-- Mục đích: lấy danh sách bài viết Blog.
+Bảng dưới đây ghi lại cách thay thế các nhóm endpoint trong SAD; đây không phải danh sách route đã triển khai.
 
-**API-P06**
-- Method: GET
-- Endpoint: /api/blogs/{blog_id}
-- Mục đích: lấy chi tiết bài viết Blog.
-Các vấn đề còn mở:
-- Điều kiện để bài viết được công khai.
-- Trạng thái xuất bản.
-- Cách tra cứu bằng slug.
-- Cấu trúc hình ảnh của Blog.
-- Cấu trúc nội dung chi tiết.
-### 9.8. Admin API
-SAD có đề xuất các nhóm Admin API cho:
-- User / Role.
-- Product.
-- Product Image.
-- Product Price.
-- Category.
-- Blog.
-Tuy nhiên, SAD nêu rõ request/response chi tiết của Admin API chưa được hoàn thiện. Các endpoint quản trị cần được rà soát lại theo bảng API trong SAD và các Open Issues trước khi tạo API contract chính thức.
+| Nhóm trong SAD | Cách xử lý trong kiến trúc hiện tại |
+|---|---|
+| API-P01 đến API-P06 (public read) | Server Components + query functions; không public HTTP endpoint |
+| API-A01, API-A02 (login/logout) | Server Action + session cookie |
+| API-A03 đến API-A08 (product) | Server Actions cho CRUD; Route Handler cho upload ảnh |
+| API-A12 (price) | Server Action |
+| API-A13 đến API-A16 (category) | Server Actions |
+| API-A17 đến API-A21 (blog) | Server Actions |
+| API-A25 đến API-A28 (user/role) | Server Actions |
 
-| Nhóm API | Nghiệp vụ dự kiến | Vấn đề phụ thuộc |
-|---|---|---|
-| User / Role | Quản lý người dùng và quyền | OI-004, OI-021 |
-| Product | Thêm, sửa, xóa/quản lý sản phẩm | OI-005 và Product data model |
-| Product Image | Quản lý hình ảnh sản phẩm | OI-018 |
-| Product Price | Quản lý giá sản phẩm | OI-008, OI-015, OI-016 |
-| Category | Quản lý danh mục | OI-009 |
-| Blog | Quản lý bài viết | OI-006, OI-024 |
-
-### 9.9. Hướng dẫn triển khai API
-Các nội dung sau là khuyến nghị kỹ thuật để triển khai, không phải yêu cầu nghiệp vụ mới trong SAD:
-- Tách Public API khỏi Protected Admin API.
-- Validate request tại Backend.
-- Không chỉ ẩn button trên Frontend để bảo vệ chức năng.
-- Áp dụng Authorization ở Backend.
-- Không để Frontend truy cập Database trực tiếp.
-- Không công khai trực tiếp cấu trúc Database như một API contract.
-- Thống nhất Pagination, Sorting, Filtering và Error Response trước khi phát triển các màn hình sử dụng API.
-- Viết API tests sau khi request/response schema được duyệt.
-- Duy trì sự tương thích giữa API contract, Prisma Schema và Frontend data model.
+Pagination, sorting, validation rules và error format vẫn cần chốt theo OI-023 trước khi hoàn thiện query function và Server Action contract.
 
 ## 10. Authentication và Authorization
 
@@ -870,17 +816,17 @@ Phân chia trách nhiệm dự kiến:
 |---|---|
 | Cloudinary | Lưu trữ và phân phối image assets nếu được chọn |
 | PostgreSQL | Lưu thông tin tham chiếu và metadata của ảnh |
-| NestJS | Kiểm tra thao tác quản lý ảnh và liên kết ảnh với Product/Blog |
-| Next.js | Hiển thị ảnh theo URL/reference được cung cấp từ Backend |
+| Next.js server-side (Server Action / Route Handler) | Kiểm tra thao tác quản lý ảnh và liên kết ảnh với Product/Blog |
+| Next.js Server Component / Image component | Hiển thị ảnh theo URL/reference đọc từ Database hoặc Cloudinary |
 
 ### 11.2. Luồng xử lý ảnh đề xuất
 1. Admin hoặc Staff có quyền thực hiện thao tác thêm ảnh.
-2. Frontend gửi yêu cầu upload theo cơ chế được lựa chọn.
-3. Backend kiểm tra quyền và quy tắc file.
+2. Admin UI gửi yêu cầu upload qua Server Action hoặc Route Handler.
+3. Server-side code kiểm tra quyền và quy tắc file.
 4. Asset được lưu tại Cloudinary nếu dịch vụ này được phê duyệt.
-5. Backend lưu metadata/reference vào PostgreSQL.
-6. Public API trả thông tin ảnh cần hiển thị cho Frontend.
-Luồng cụ thể, bao gồm upload trực tiếp hay thông qua Backend, chưa được SAD quyết định.
+5. Server-side code lưu metadata/reference vào PostgreSQL.
+6. Server Component đọc metadata/reference và render ảnh.
+Luồng cụ thể, bao gồm upload trực tiếp từ browser lên Cloudinary hay thông qua Route Handler, chưa được SAD quyết định.
 ### 11.3. Các nội dung cần xác nhận
 - URL/path hoặc asset identifier được lưu.
 - Cloudinary public ID và các metadata cần thiết.
@@ -903,12 +849,12 @@ Bảng dưới đây tổng hợp các mối quan tâm kiến trúc và những 
 |---|---|---|
 | Responsive | Website cần hiển thị phù hợp các kích thước màn hình | Thiết kế giao diện Next.js responsive; breakpoint cụ thể thuộc UI design |
 | Performance | Chưa có số liệu về scale và traffic | Khảo sát số sản phẩm, lượng truy cập và concurrent users; xác định target trước capacity planning |
-| Security | Authentication và quyền nội bộ còn cần xác nhận | Bảo vệ Admin API tại Backend; chốt JWT, Role và Permission |
+| Security | Authentication và quyền nội bộ còn cần xác nhận | Bảo vệ route Admin và Server Actions tại server-side; chốt JWT, Role và Permission |
 | Data Integrity | Quan hệ Product/Price và các trường dữ liệu chưa hoàn chỉnh | Chốt PK, FK, constraints và price rules trước physical schema |
 | Availability | SAD chưa nêu SLA | Xác định yêu cầu uptime và phương án vận hành |
 | Backup / Recovery | Chưa có chính sách | Xác định lịch backup, retention và quy trình restore |
 | Observability | Chưa có quyết định | Lựa chọn Logging, Error Tracking và Monitoring khi lập kế hoạch triển khai |
-| Maintainability | Định hướng module Backend và ORM | Tách module theo nghiệp vụ; duy trì API/data contracts |
+| Maintainability | Định hướng module server-side và ORM | Tách module theo nghiệp vụ; duy trì data contracts |
 | Scalability | Chưa có số liệu tải | Đánh giá sau khi có traffic assumptions và yêu cầu hiệu năng |
 
 Không tự đặt SLA, throughput, response time, availability target hoặc Recovery Objective khi chưa có yêu cầu được xác nhận.
@@ -921,7 +867,9 @@ SAD không quy định cấu trúc thư mục source code. Work tree hiện tạ
 
 ```text
 ant-jewelry/
-├── app/                  # App Router: layout, page, global styles
+├── src/
+│   ├── app/              # App Router: layout, page, globals.css
+│   └── types/            # Domain contracts (Product, Category, BlogPost)
 ├── public/               # Static assets
 ├── docs/                 # Tài liệu dự án
 ├── next.config.ts        # Cấu hình Next.js
@@ -933,54 +881,43 @@ ant-jewelry/
 └── .gitignore
 ```
 
-Chưa có thư mục `frontend/`, `backend/`, `components/`, `features/` hoặc `lib/`.
+Chưa có thư mục `src/components/`, `src/features/`, `src/lib/`, `src/server/` hoặc `prisma/`.
 
-### 13.2. Cấu trúc đề xuất nếu tách Frontend và Backend
-
-Cấu trúc dưới đây chỉ là gợi ý nếu dự án lựa chọn tách Next.js Frontend và NestJS Backend. Chưa có thư mục `frontend/` hoặc `backend/` trong work tree.
+### 13.2. Cấu trúc đề xuất cho single Next.js app
 
 ```text
-an-jewelry/
-├── frontend/                         # Next.js application
-│   ├── app/                           # Routes and layouts
-│   ├── components/                    # Shared UI components
-│   ├── features/
-│   │   ├── products/
-│   │   ├── blog/
-│   │   └── admin/
-│   ├── lib/                           # API client and shared utilities
-│   └── public/                        # Static assets
-│
-├── backend/                          # NestJS application
-│   ├── src/
-│   │   ├── auth/
-│   │   ├── users/
-│   │   ├── products/
-│   │   ├── product-types/
-│   │   ├── product-images/
-│   │   ├── product-prices/
-│   │   ├── categories/                # Only after Category is approved
-│   │   └── blog/
-│   └── prisma/
-│       ├── schema.prisma
-│       ├── migrations/
-│       └── seed/
-│
-├── docs/
-│   ├── SAD.md                         # Optional exported SAD
-│   └── ARCHITECTURE.md
-│
-└── README.md
+ant-jewelry/
+├── src/
+│   ├── app/
+│   │   ├── (storefront)/              # /, /c/[slug], /p/[slug], /blog, /blog/[slug], footer pages
+│   │   ├── (admin)/admin/              # Admin routes: login, products, categories, blog, hero-slides, settings, users
+│   │   └── api/                        # Route Handlers: upload, webhook, integration only
+│   ├── components/                     # Shared UI components
+│   ├── features/                       # Domain modules: products, blog, admin, auth
+│   ├── lib/                            # Prisma client, validation, shared utilities
+│   └── types/                          # Domain contracts
+├── prisma/
+│   ├── schema.prisma
+│   ├── migrations/
+│   └── seed/
+├── public/                             # Static assets
+├── docs/                               # Tài liệu dự án
+├── next.config.ts
+├── eslint.config.mjs
+├── tsconfig.json
+├── package.json
+└── package-lock.json
 ```
 
 ### 13.3. Nguyên tắc tổ chức
-- Hiện tại code Frontend nằm trong `app/` ở thư mục gốc; `frontend/` và `backend/` chỉ được tạo sau khi kiến trúc tách ứng dụng được chốt.
-- Nếu tách ứng dụng: `frontend/` chứa Next.js application, `backend/` chứa NestJS application.
-- `features/` ở Frontend gom UI và logic theo nghiệp vụ.
-- `src/` ở Backend chứa các module nghiệp vụ.
+- Chỉ có một Next.js application; không tạo `frontend/` và `backend/` tách biệt.
+- `src/app/` chứa route, layout và ranh giới Server/Client Component.
+- `src/features/` gom module nghiệp vụ, query function và Server Action theo từng domain.
+- `src/lib/` chứa Prisma client, validation schema và utility dùng chung.
+- `src/app/api/` chỉ chứa Route Handlers cho upload, webhook hoặc tích hợp; không phải tầng REST API cho toàn bộ ứng dụng.
 - `prisma/` chứa Prisma Schema, migrations và seed data sau khi Database Model được phê duyệt.
 - `docs/` chứa tài liệu dự án.
-Cấu trúc cuối cùng có thể thay đổi nếu dự án chọn Monorepo hoặc Shared Packages. SAD chưa đưa ra quyết định này.
+Cấu trúc cuối cùng có thể thay đổi khi các module được triển khai thực tế; cập nhật tài liệu theo work tree.
 
 ## 14. Environment và Deployment
 
@@ -988,8 +925,7 @@ Cấu trúc cuối cùng có thể thay đổi nếu dự án chọn Monorepo ho
 
 SAD chưa xác định hạ tầng triển khai. Các nội dung sau cần được lựa chọn trong giai đoạn chuẩn bị triển khai.
 ### 14.1. Các thành phần cần quyết định
-- Hosting platform cho Next.js.
-- Runtime/Hosting cho NestJS.
+- Hosting platform cho Next.js (bao gồm server-side runtime cho Server Components, Server Actions và Route Handlers).
 - Managed hoặc self-hosted PostgreSQL.
 - Cloudinary account và môi trường sử dụng.
 - Domain, DNS và HTTPS.
@@ -1006,44 +942,44 @@ Tên biến môi trường cụ thể chưa được SAD xác định. Khi tri�
 - Các API keys khác nếu có.
 Không commit credentials, passwords, tokens hoặc secrets vào Git repository. Sử dụng environment variables hoặc secret manager phù hợp với hạ tầng được chọn.
 ### 14.3. Deployment topology
-Chưa có cơ sở để chốt một topology cụ thể. Có thể xem xét cách triển khai Frontend, Backend và Database độc lập hoặc trên cùng một nền tảng, nhưng cần căn cứ vào yêu cầu vận hành, ngân sách, traffic và năng lực quản trị hạ tầng.
+Chưa có cơ sở để chốt một topology cụ thể. Có thể xem xét cách triển khai Next.js application và Database độc lập hoặc trên cùng một nền tảng, nhưng cần căn cứ vào yêu cầu vận hành, ngân sách, traffic và năng lực quản trị hạ tầng.
 
 Không coi bất kỳ Hosting Provider hoặc Cloud Provider cụ thể nào là quyết định của dự án khi SAD chưa nêu.
 
 ## 15. Open Issues ảnh hưởng đến Architecture
-Phụ lục D của SAD là danh sách Open Issues chính thức. Bảng dưới đây tổng hợp các vấn đề quan trọng có ảnh hưởng trực tiếp đến kiến trúc, Database, API và bảo mật. Bảng này không thay thế toàn bộ nội dung Phụ lục D.
+Phụ lục D của SAD là danh sách Open Issues chính thức. Bảng dưới đây tổng hợp các vấn đề quan trọng có ảnh hưởng trực tiếp đến kiến trúc, Database, data access và bảo mật. Bảng này không thay thế toàn bộ nội dung Phụ lục D.
 
 | Open Issue | Nội dung cần xác nhận | Ảnh hưởng đến kiến trúc |
 |---|---|---|
 | OI-004 | Phân quyền Admin/Staff | Authentication, Authorization, Admin UI |
-| OI-005 | Phạm vi và thao tác Product Management | Product Module và Admin API |
+| OI-005 | Phạm vi và thao tác Product Management | Product Module và Server Actions |
 | OI-006 | Phạm vi Blog Management và quy tắc nội dung | Blog Module, publication workflow |
 | OI-008 | Quan hệ Product và Price, mô hình giá | Database relationship, price query |
-| OI-009 | Category entity và quan hệ với Product | Category Module, Product filters, API |
+| OI-009 | Category entity và quan hệ với Product | Category Module, Product filters, query functions |
 | OI-010 | Thông số riêng của sản phẩm, ví dụ thuộc tính nhẫn/đá | Product Detail data model và UI |
-| OI-011 | URL Routing và slug | Frontend routing, API lookup |
+| OI-011 | URL Routing và slug | App Router routing, slug lookup |
 | OI-012 | Hiệu năng và yêu cầu định lượng | NFR, capacity planning |
 | OI-015 | Vòng tham chiếu price_id / product_id | Physical Database Design |
 | OI-016 | Số tiền, currency, kiểu dữ liệu và độ chính xác | Price model, sorting, display |
 | OI-017 | Database chính thức và quy ước kiểu chuỗi | Database schema consistency |
 | OI-018 | Image URL/path, thứ tự ảnh và cấu trúc ảnh Blog | Image Storage, Product Detail, Blog |
 | OI-021 | User/Role model và quan hệ với Staff | Authentication, Authorization, User Management |
-| OI-023 | Pagination, Sorting, API versioning, timezone và Error Format | API standards |
+| OI-023 | Pagination, Sorting, validation, timezone và Error Format | Server data/mutation standards |
 | OI-024 | Quy tắc xác định Blog được công khai | Blog public query và publication workflow |
-| OI-025 | Slug và định danh trên URL | Routing và API lookup |
+| OI-025 | Slug và định danh trên URL | Routing và slug lookup |
 
 ### 15.1. Các vấn đề chặn thiết kế Database
 Theo SAD, cần giải quyết các vấn đề trọng yếu trước khi hoàn thiện physical Database Design, đặc biệt OI-008, OI-015, OI-016, OI-017 và OI-018.
-### 15.2. Các vấn đề chặn thiết kế API
+### 15.2. Các vấn đề chặn thiết kế data access và mutation
 - Giá chưa có trường số tiền và quy tắc giá hiện tại rõ ràng.
 - Hình ảnh chưa có đầy đủ URL/path và thứ tự hiển thị.
 - Slug trên URL chưa được đối chiếu với cấu trúc dữ liệu.
 - Admin Permission, User/Role và Authentication chưa hoàn chỉnh.
-- Pagination, Sorting, API Versioning, timezone và Error Format chưa được chốt.
+- Pagination, Sorting, validation rules, timezone và Error Format chưa được chốt.
 ### 15.3. Các tài liệu còn thiếu theo SAD
 SAD nêu rõ đây chưa phải bộ tài liệu thiết kế triển khai cuối cùng. Các nội dung còn thiếu hoặc chưa hoàn thiện gồm:
 - Physical Database Design.
-- Chi tiết request/response của Admin API.
+- Chi tiết input/output của Server Actions và query functions.
 - UI Specification.
 - Test Specification.
 Các tài liệu này cần được hoàn thiện sau khi những Open Issues liên quan được xác nhận.
@@ -1065,21 +1001,20 @@ Phase 2 — Hoàn thiện Data Model
 - Xác định User/Role/Staff relationship.
 - Rà soát PK, FK, indexes và constraints.
 - Phê duyệt Physical Database Design.
-Phase 3 — Hoàn thiện API Contract
-- Chốt Public API.
-- Chốt Admin API.
-- Chốt request/response DTO.
+Phase 3 — Hoàn thiện Server Data và Mutation Contract
+- Chốt query functions cho read path (Server Components).
+- Chốt Server Actions và Route Handlers cho mutation path.
+- Chốt typed input/output.
 - Chốt validation rules.
 - Chốt Pagination và Sorting.
 - Chốt Error Response.
-- Chốt API Versioning.
 - Chốt Authentication và Authorization behavior.
 Phase 4 — Khởi tạo Project
 - [x] Khởi tạo Next.js application (16.4.5, App Router) ở thư mục gốc.
 - [x] Cấu hình Tailwind CSS v4, TypeScript strict và ESLint 9.
 - [x] Thiết lập Git workflow.
 - [x] Tạo tài liệu dự án trong `docs/`.
-- [ ] Khởi tạo NestJS application.
+- [ ] Tổ chức module server-side trong `src/features/` và `src/lib/`.
 - [ ] Cấu hình PostgreSQL.
 - [ ] Cấu hình Prisma.
 - [ ] Cấu hình environment variables.
@@ -1096,7 +1031,7 @@ Phase 6 — Xây dựng Internal Access
 - Authentication.
 - User Management.
 - Role / Permission.
-- Backend Authorization.
+- Server-side Authorization.
 - Admin / Staff UI.
 - Các workflow nội bộ được phê duyệt.
 Phase 7 — Xây dựng Content Management
@@ -1108,9 +1043,9 @@ Phase 7 — Xây dựng Content Management
 Phase 8 — Testing và Release
 - Unit Tests.
 - Integration Tests.
-- API Tests.
+- Server Action / Route Handler Tests.
 - Authorization Tests.
-- Frontend/UI Tests.
+- UI Tests.
 - Responsive checks.
 - Security review.
 - Database backup/restore verification.
@@ -1121,10 +1056,10 @@ Phase 8 — Testing và Release
 Các nguyên tắc cần tuân thủ trong quá trình phát triển:
 1. Giữ phạm vi nền tảng là website giới thiệu sản phẩm trang sức; khách hàng liên hệ trực tiếp qua số điện thoại và các liên kết Facebook, Instagram được công bố.
 2. Không tự ý thêm Shopping Cart, Online Ordering, Online Payment, Order Management hoặc Custom Design.
-3. Next.js đã được cài đặt ở thư mục gốc; các công nghệ Backend, Database, ORM, Authentication và Image Storage vẫn cần được chốt.
-4. Không coi các API path trong SAD là endpoint đã được triển khai.
+3. Dùng một Next.js application duy nhất; read qua Server Components, mutation qua Server Actions / Route Handlers. Database, ORM, Authentication và Image Storage vẫn cần được chốt.
+4. Không coi các endpoint SAD đề xuất là route hoặc Server Action đã được triển khai.
 5. Không tạo Database migrations cuối cùng khi quan hệ và trường dữ liệu quan trọng còn chưa được xác nhận.
-6. Thực hiện Authorization ở Backend; không chỉ dựa vào việc ẩn giao diện trên Frontend.
+6. Thực hiện Authorization ở server-side; không chỉ dựa vào việc ẩn giao diện trên client.
 7. Giữ Product Type và Product Category là hai khái niệm riêng nếu nghiệp vụ cần quản lý độc lập.
 8. Phân biệt nội dung đã có trong work tree với nội dung Đã xác định, Cần xác nhận và Đề xuất.
 9. Mọi thay đổi phạm vi nghiệp vụ cần được xác nhận và cập nhật vào tài liệu liên quan.
@@ -1137,14 +1072,14 @@ Bảng này dùng để theo dõi các quyết định đã có trong work tree 
 
 | Decision ID | Nội dung | Phương án hiện tại | Trạng thái |
 |---|---|---|---|
-| ADR-001 | Frontend framework | Next.js 16.4.5 (App Router) | Đã cài đặt ở thư mục gốc |
-| ADR-002 | Backend framework | Node.js / NestJS | Đề xuất, cần chốt |
+| ADR-001 | Application framework | Next.js 16.4.5 (App Router) | Đã cài đặt ở thư mục gốc |
+| ADR-002 | Application topology | Một Next.js application duy nhất; không có backend tách biệt | Đã chốt |
 | ADR-003 | Database | PostgreSQL | Đề xuất, cần chốt |
 | ADR-004 | ORM | Prisma | Đề xuất |
 | ADR-005 | Internal Authentication | JWT | Đề xuất, cần thiết kế chi tiết |
 | ADR-006 | Image Storage | Cloudinary | Đề xuất, cần chốt |
-| ADR-007 | API Style | REST-style JSON API | Đề xuất |
-| ADR-008 | Repository structure | Một Next.js app ở thư mục gốc | Hiện tại; tách frontend/ và backend/ chưa được quyết định |
+| ADR-007 | Data access và mutation | Server Components cho read; Server Actions / Route Handlers cho mutation | Đã chốt |
+| ADR-008 | Repository structure | Một Next.js app trong `src/`; không tách frontend/backend | Đã chốt |
 | ADR-010 | Category model | Tách khỏi Product Type nếu nghiệp vụ cần | Cần xác nhận |
 | ADR-011 | Styling | Tailwind CSS v4 qua `@tailwindcss/turbopack` | Đã cấu hình |
 | ADR-012 | Language | TypeScript 5, chế độ `strict` | Đã cấu hình |
@@ -1167,6 +1102,6 @@ Tài liệu nguồn chính:
 - Appendix C — Review Conclusion.
 - Appendix D — Open Issues.
 - Appendix E — Change Log.
-SAD v1.1 là bản dự thảo phục vụ rà soát và xác nhận nghiệp vụ. Tài liệu nêu rõ Physical Database Design, Admin API request/response chi tiết, UI Specification và Test Specification chưa hoàn thiện.
+SAD v1.1 là bản dự thảo phục vụ rà soát và xác nhận nghiệp vụ. Tài liệu nêu rõ Physical Database Design, chi tiết input/output của Server Actions, UI Specification và Test Specification chưa hoàn thiện.
 
 Vì vậy, ARCHITECTURE.md này vẫn là kiến trúc đề xuất cho các phần chưa triển khai. Phần hiện trạng đã được cập nhật theo bộ khung Next.js trong work tree; nội dung cần tiếp tục được cập nhật khi các Open Issues được đóng và khi có thêm source code thực tế.
