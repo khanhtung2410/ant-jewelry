@@ -335,7 +335,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Mô tả | Customer chọn một danh mục để xem các sản phẩm thuộc danh mục đó. |
 | Actor | Customer |
 | Tiền điều kiện | Không có; danh mục được chọn tồn tại. |
-| Luồng chính | 1. Customer chọn một danh mục từ menu Sản phẩm hoặc từ khối "VIEW PRODUCTS" trên trang chủ.<br>2. Hệ thống hiển thị các sản phẩm thuộc danh mục đó (đường dẫn quan sát: `/public/c/{tên-danh-mục}`, ví dụ `wedding-bands`, `necklace`). |
+| Luồng chính | 1. Customer chọn một danh mục từ menu Sản phẩm hoặc từ khối "VIEW PRODUCTS" trên trang chủ.<br>2. Hệ thống hiển thị các sản phẩm thuộc danh mục đó (route theo sitemap: `/c/[slug]`, ví dụ `/c/wedding-bands`; đường dẫn quan sát cũ: `/public/c/{tên-danh-mục}`). |
 | Luồng thay thế | 2a. Danh mục không có sản phẩm: hiển thị trạng thái danh sách trống (TBC).<br>2b. Danh mục không tồn tại: hiển thị trang báo lỗi không tìm thấy (đề xuất). |
 | Hậu điều kiện | Danh sách hiển thị đúng danh mục đã chọn. Dữ liệu hệ thống không thay đổi. |
 | Ưu tiên | High |
@@ -365,7 +365,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Mô tả | Customer xem trang chi tiết của một sản phẩm, gồm tên, nhãn hiệu, loại sản phẩm, giới thiệu ngắn và giá. |
 | Actor | Customer |
 | Tiền điều kiện | Sản phẩm tồn tại và đang được hiển thị công khai. |
-| Luồng chính | 1. Customer chọn sản phẩm từ danh sách hoặc truy cập đường dẫn chi tiết (quan sát: `/public/{tên-sản-phẩm}`).<br>2. Hệ thống hiển thị tên, nhãn hiệu, loại, giới thiệu ngắn và giá.<br>3. Hệ thống hiển thị hình ảnh (FR-008) và mô tả, thông số (FR-009). |
+| Luồng chính | 1. Customer chọn sản phẩm từ danh sách hoặc truy cập đường dẫn chi tiết (route theo sitemap: `/p/[slug]`; đường dẫn quan sát cũ: `/public/{tên-sản-phẩm}`).<br>2. Hệ thống hiển thị tên, nhãn hiệu, loại, giới thiệu ngắn và giá.<br>3. Hệ thống hiển thị hình ảnh (FR-008) và mô tả, thông số (FR-009). |
 | Luồng thay thế | 1a. Sản phẩm không tồn tại hoặc đã xóa mềm: hệ thống không hiển thị chi tiết (trả về không tìm thấy); nội dung thông báo TBC. |
 | Hậu điều kiện | Thông tin sản phẩm được hiển thị. Dữ liệu hệ thống không thay đổi. |
 | Ưu tiên | High |
@@ -1191,24 +1191,35 @@ erDiagram
  
 ## 9. Yêu cầu giao diện ngoài
  
-### 9.1. Giao diện người dùng (User Interface)
- 
-SAD **chưa có UI Specification**. Bảng dưới liệt kê các trang công khai quan sát được và các màn hình quản trị dự kiến. Mẫu đường dẫn là quan sát tại thời điểm 05/11/2026 và chưa phải quy tắc URL chính thức (OI-011, OI-025).
- 
-| Trang/màn hình | Đường dẫn quan sát hoặc dự kiến | Thành phần chính | Yêu cầu | Trạng thái |
-|---|---|---|---|---|
-| Trang chủ | `/` | Menu; banner trượt; khối sản phẩm theo danh mục (Wedding Bands, Engagement, Everyday) có nút "VIEW PRODUCTS"; khối Blog nổi bật; khối liên hệ; chân trang | FR-001 | Đã quan sát |
-| Danh sách sản phẩm | `/public/c` | Thẻ sản phẩm (2 ảnh, tên, giá); chọn sắp xếp (4 tùy chọn); nút "SEE MORE" | FR-004, FR-006 | Đã quan sát |
-| Danh sách theo danh mục | `/public/c/{danh-mục}` | Như trên | FR-005 | Đã quan sát |
-| Chi tiết sản phẩm | `/public/{tên-sản-phẩm}` | Thư viện ảnh có nút chuyển; tên, nhãn hiệu, loại, giá; mô tả; thông số; nút "ORDER NOW"; khối "YOU MIGHT ALSO LIKE" | FR-007 đến FR-009 | Đã quan sát; nút và khối bổ sung TBC (OI-031, OI-032) |
-| Danh sách Blog | `/blog` | Thẻ bài viết (ảnh, tiêu đề, tóm tắt, "LEARN MORE") | FR-010 | Đã quan sát |
-| Chi tiết Blog | `/blog/{slug}` | Tiêu đề; ngày đăng; nội dung; ảnh; khối "OTHER BLOGS" | FR-011 | Đã quan sát |
-| Thông tin liên hệ | Khối trên trang; mục CONTACT trên menu | Số điện thoại, liên kết Facebook/Instagram | FR-003 | Đã quan sát |
-| Các trang tĩnh ở chân trang | TBC | Điều khoản và điều kiện; Chính sách bảo mật; Vận chuyển và Đổi trả; Chăm sóc trang sức | Không có yêu cầu trong SAD | TBC (OI-028) |
-| Đăng nhập quản trị | TBC | Nhập thông tin xác thực; thông báo lỗi | FR-033 | Dự kiến; TBC |
-| Quản trị sản phẩm, danh mục, hình ảnh, giá | TBC | Danh sách; biểu mẫu thêm/sửa; xác nhận xóa/ẩn; tải ảnh | FR-020 đến FR-027 | Dự kiến; TBC |
-| Quản trị Blog | TBC | Danh sách; biểu mẫu thêm/sửa; trạng thái | FR-028 đến FR-032 | Dự kiến; TBC |
-| Quản lý tài khoản và phân quyền | TBC | Danh sách tài khoản; thiết lập quyền | FR-035, FR-036 | Dự kiến; TBC |
+### 9.1. Sitemap và giao diện người dùng (User Interface)
+
+Sitemap dưới đây chốt route cho Storefront và khu vực Admin. Cột **Màn Figma** đối chiếu với 6 màn thiết kế hiện có; các trang không xuất hiện trong Figma được ghi "—". Ma trận quyền chi tiết vẫn theo OI-004; bảng chỉ ghi role được truy cập ở mức route.
+
+| Route | Màn Figma | Các khối chính | Quyền truy cập |
+|---|---|---|---|
+| `/` | Home | Header/menu; hero slides; khối sản phẩm theo danh mục (Wedding Bands, Engagement, Everyday) có nút "VIEW PRODUCTS"; Blog nổi bật; khối liên hệ; footer | Công khai |
+| `/c/[slug]` | Category | Tiêu đề danh mục; danh sách thẻ sản phẩm (2 ảnh, tên, giá); sắp xếp (4 tùy chọn); "SEE MORE"/phân trang | Công khai |
+| `/p/[slug]` | Product | Thư viện ảnh có nút chuyển; tên, nhãn hiệu, loại, giá; mô tả; thông số; nút "ORDER NOW"; khối "YOU MIGHT ALSO LIKE" | Công khai |
+| Overlay trên `/p/[slug]` (không phải route riêng) | Product + Contact popover | Popover "ORDER NOW": chỉ số điện thoại và link Facebook/Instagram; không có form liên hệ | Công khai |
+| `/blog` | Blog list | Thẻ bài viết (ảnh, tiêu đề, tóm tắt, "LEARN MORE") | Công khai |
+| `/blog/[slug]` | Blog detail | Tiêu đề; ngày đăng; nội dung; ảnh; khối "OTHER BLOGS" | Công khai |
+| `/terms-and-conditions` | — | Điều khoản và điều kiện | Công khai |
+| `/privacy-policy` | — | Chính sách bảo mật | Công khai |
+| `/shipping-and-return` | — | Vận chuyển và Đổi trả | Công khai |
+| `/jewelry-care` | — | Chăm sóc trang sức | Công khai |
+| `/admin/login` | — | Đăng nhập quản trị; nhập thông tin xác thực; thông báo lỗi | Công khai (chưa xác thực) |
+| `/admin/products/*` | — | Danh sách; biểu mẫu thêm/sửa; hình ảnh; giá; xác nhận xóa/ẩn | ADMIN, EDITOR |
+| `/admin/categories/*` | — | Danh sách; biểu mẫu thêm/sửa/xóa danh mục | ADMIN, EDITOR |
+| `/admin/blog/*` | — | Danh sách; biểu mẫu thêm/sửa bài viết; trạng thái `DRAFT`/`PUBLISHED` | ADMIN, EDITOR |
+| `/admin/hero-slides/*` | — | Danh sách; biểu mẫu thêm/sửa/xóa hero slide | ADMIN, EDITOR |
+| `/admin/settings` | — | Cấu hình website: thông tin cửa hàng, số điện thoại, link Facebook/Instagram | ADMIN |
+| `/admin/users/*` | — | Danh sách tài khoản; gán role `ADMIN`/`EDITOR` | ADMIN |
+
+**Contact popover:** không phải route riêng; mở từ nút "ORDER NOW" trên `/p/[slug]` dưới dạng overlay, chỉ hiển thị số điện thoại và link Facebook/Instagram, không có form gửi liên hệ (BR-003).
+
+**Phân quyền route Admin:** `ADMIN` có toàn quyền; `EDITOR` được truy cập các module nội dung (products, categories, blog, hero slides) nhưng không được quản lý settings hoặc users. Việc ánh xạ role `EDITOR` với actor Staff của SAD và ma trận quyền chi tiết vẫn theo OI-004.
+
+**Đối chiếu Figma:** sitemap phủ đủ 6 màn: Home (`/`), Category (`/c/[slug]`), Product (`/p/[slug]`), Product + Contact popover (overlay trên `/p/[slug]`), Blog list (`/blog`), Blog detail (`/blog/[slug]`).
 
 **Yêu cầu chung cho giao diện:** responsive (NFR-001); tương thích trình duyệt (NFR-002); nhất quán (NFR-003); điều hướng rõ ràng (NFR-015); ảnh có alt text (NFR-018). Ngôn ngữ giao diện: TBC (OI-029).
  
