@@ -1,5 +1,78 @@
 # AI Change Log
 
+## 2026-11-08 09:22:23 +07:00 — Fix docs/README.md for GitHub
+
+### User prompt
+
+> fix README.md at docs/
+> - Nội dung: mô tả dự án, prerequisites, npm install / npm run dev / npm run build, link tới docs/*.
+> - AC: README hiển thị trên trang repo GitHub.
+>
+> if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Updated `docs/README.md` work-tree status to reflect the actual `src/app/` App Router structure and the `src/types/domain.ts` contracts.
+- Corrected the project tree in `docs/README.md` from `app/` at the repository root to `src/app/` and `src/types/`.
+- Corrected the `@/*` TypeScript alias description to point at `src/*` (matching `tsconfig.json`).
+- Changed the related-document list to relative Markdown links (`./REQUIREMENTS.md`, `./ARCHITECTURE.md`, `./CONTRIBUTING.md`, `./AI_LOGS.md`) so they resolve from `docs/` when GitHub renders the README.
+- Kept the existing project description, prerequisites (Node.js >= 20.9.0, npm, Git) and the `npm install`, `npm run dev`, `npm run build` instructions.
+
+### Output summary
+
+`docs/README.md` now describes the actual repository, lists prerequisites and the required setup/build commands, and links to every document in `docs/` using GitHub-safe relative paths. Because the repository has no root README, GitHub renders `docs/README.md` on the repository landing page; the corrected links resolve to the sibling `docs/*` files.
+
+---
+
+## 2026-11-07 13:26:18 +07:00 — Verify domain entities and align docs
+
+### User prompt
+
+> Định nghĩa Product, Category, BlogPost.
+> - Không any, không @ts-ignore.
+> - price: integer, đơn vị VND.
+> - slug: string cho cả 3 entity.
+> - Status dùng union literal ("DRAFT" | "PUBLISHED", "VISIBLE" | "HIDDEN"…), không dùng string.
+> - AC: npx tsc --noEmit pass.
+>
+> if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Verified `src/types/domain.ts`: `Product`, `Category`, `BlogPost` already satisfy the requested contracts (string `slug` on all three; literal-union statuses `VISIBLE | HIDDEN` for Product/Category and `DRAFT | PUBLISHED` for BlogPost; `price` uses the branded integer `VndPrice` in VND with a `createVndPrice` integer guard). No `any` or `@ts-ignore` is present.
+- Fixed `docs/ARCHITECTURE.md` references from the non-existent `src/types/catalog.ts` to the actual `src/types/domain.ts` (work-tree status line and logical data architecture note).
+- No changes to `src/types/domain.ts` were needed.
+
+### Output summary
+
+Domain contracts are in place and consistent with the requirements. `npx tsc --noEmit` exits with code 0. The architecture document now points to the real domain type file, and this entry records the verification at the top of the log.
+
+---
+
+## 2026-11-07 11:43:38 +07:00 — Define domain domain types
+
+### User prompt
+
+> Định nghĩa Product, Category, BlogPost.
+> - Không any, không @ts-ignore.
+> - price: integer, đơn vị VND.
+> - slug: string cho cả 3 entity.
+> - Status dùng union literal ("DRAFT" | "PUBLISHED", "VISIBLE" | "HIDDEN"…), không dùng string.
+> - AC: npx tsc --noEmit pass.
+> if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Added `src/types/domain.ts` with `Product`, `Category`, and `BlogPost` interfaces; each has a string slug and a literal-union status.
+- Added a branded VND integer price type and `createVndPrice` guard to reject non-integer amounts.
+- Updated `docs/ARCHITECTURE.md` to record the domain type contracts without implying a database or workflow exists.
+
+### Output summary
+
+Domain entities now have strict TypeScript contracts, product prices are represented as integer VND, and content/visibility statuses are constrained to literal unions. No `any` or `@ts-ignore` was added. Validation requested: `npx tsc --noEmit`.
+
+---
+
 ## 2026-11-07 10:00:00 +07:00 — Remove reporting workflow from docs
 
 ### User instruction
@@ -71,7 +144,7 @@ The contributing guide and README now match the current repository instead of th
 ## Changes made
 
 - Updated `REQUIREMENTS.md` to remove contact-submission requirements, use cases, validation/data rules, APIs, and related acceptance criteria. Preserved surviving identifiers rather than renumbering them.
+- Updated `REQUIREMENTS.md` to remove contact-submission requirements, use cases, validation/data rules, APIs, and related acceptance criteria. Preserved surviving identifiers rather than renumbering them.
 - Restricted the customer-facing contact requirement to the phone number and Facebook/Instagram links already present in the source materials. The official phone number and social URLs remain `[CONFIRMATION REQUIRED]`; no values or additional contact channels were invented.
 - Updated `ARCHITECTURE.md` to remove the contact-submission module, request flow, data entity, endpoints, administration workflow, security/privacy design, repository folders, and implementation phase.
 - Updated `README.md` to describe direct contact through the existing phone and social-link channels, with no contact form or submission flow.
-
