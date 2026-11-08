@@ -3,7 +3,7 @@
 > **Trạng thái tài liệu:** Kiến trúc đề xuất, đã đối chiếu với work tree hiện tại  
 > **Tài liệu nguồn:** `AN_JEWELRY_SAD_v1.1.docx`  
 > **Cập nhật theo work tree:** 2026-11-06  
-> **Trạng thái work tree:** Có bộ khung Next.js 16.4.5 (App Router) tại thư mục gốc với React 19.3.0, Tailwind CSS v4, TypeScript strict và ESLint 9. Chưa có Backend, Database, ORM, Authentication, Image Storage, API nghiệp vụ hoặc chức năng nghiệp vụ nào. Các phần còn lại của tài liệu là kiến trúc đề xuất, không phải mô tả một hệ thống đã được triển khai hoặc xác minh.  
+> **Trạng thái work tree:** Có bộ khung Next.js 16.4.5 (App Router) tại thư mục gốc với React 19.3.0, Tailwind CSS v4, TypeScript strict và ESLint 9. `src/types/domain.ts` bổ sung hợp đồng TypeScript cho `Product`, `Category`, `BlogPost`; chưa có Backend, Database, ORM, API nghiệp vụ hoặc workflow nghiệp vụ.
 > **Ngôn ngữ:** Nội dung diễn giải bằng tiếng Việt; giữ nguyên các technical terms, tên công nghệ, tên module, tên bảng, tên API, identifier và code terms bằng tiếng Anh.
 
 ---
@@ -545,7 +545,7 @@ JWT là phương án được đề xuất trong SAD. Token lifecycle, refresh t
 
 ## 8. Logical Data Architecture
 
-> Work tree chưa có Database hoặc Prisma. Toàn bộ entity, quan hệ và ERD dưới đây là mô hình logic từ SAD, không phải schema vật lý đã tồn tại.
+> Work tree chưa có Database hoặc Prisma. Các entity, quan hệ và ERD dưới đây là mô hình logic từ SAD, không phải schema vật lý. `src/types/domain.ts` định nghĩa TypeScript contracts cho `Product`, `Category` và `BlogPost`; các type này không hàm ý rằng persistence hoặc workflow đã được triển khai.
 
 ### 8.1. Các entity được xác định trong SAD
 SAD Appendix A và Section 6 đề cập các bảng logic sau:

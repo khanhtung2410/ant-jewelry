@@ -6,7 +6,7 @@ Website giới thiệu sản phẩm trang sức; khách hàng liên hệ trực 
 
 AN JEWELRY là website dành cho khách hàng có nhu cầu tìm hiểu các sản phẩm trang sức và liên hệ trực tiếp với cửa hàng.
 
-**Trạng thái hiện tại:** repository mới có bộ khung Next.js (App Router) và trang mặc định của `create-next-app`. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
+**Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict và các contract domain ban đầu trong `src/types/domain.ts`; trang chủ vẫn hiển thị nội dung mặc định của `create-next-app`. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
 
 Chức năng định hướng:
 
@@ -93,7 +93,7 @@ Các file cấu hình hiện có:
 |---|---|
 | `next.config.ts` | Cấu hình Next.js: `cacheComponents`, `partialPrefetching`, `experimental.agentFeedback` và loader Tailwind CSS cho Turbopack |
 | `eslint.config.mjs` | Cấu hình ESLint 9 với `eslint-config-next` |
-| `tsconfig.json` | Cấu hình TypeScript strict; alias `@/*` trỏ về thư mục gốc repository |
+| `tsconfig.json` | Cấu hình TypeScript strict; alias `@/*` trỏ về `src/*` |
 | `package.json` | Dependencies và các script `dev`, `build`, `start`, `lint` |
 | `.gitignore` | Bỏ qua `node_modules`, `.next`, `out`, `build`, file môi trường và file build của TypeScript |
 
@@ -118,7 +118,9 @@ Cấu trúc thực tế hiện tại:
 
 ```text
 ant-jewelry/
-├── app/                  # App Router: layout, page, global styles
+├── src/
+│   ├── app/              # App Router: layout, page, global styles
+│   └── types/            # TypeScript domain contracts (Product, Category, BlogPost)
 ├── public/               # Static assets
 ├── docs/                 # Tài liệu dự án
 ├── next.config.ts        # Cấu hình Next.js
@@ -150,10 +152,10 @@ Repository chưa có file `LICENSE`. Loại license (MIT, Apache-2.0, GPL-3.0 ho
 
 ## 10. Tài liệu liên quan
 
-- `docs/REQUIREMENTS.md` — Đặc tả yêu cầu hệ thống.
-- `docs/ARCHITECTURE.md` — Kiến trúc hệ thống đề xuất.
-- `docs/CONTRIBUTING.md` — Quy trình làm việc, code, commit và Pull Request.
-- `docs/AI_LOGS.md` — Nhật ký thay đổi do AI thực hiện.
+- [`REQUIREMENTS.md`](./REQUIREMENTS.md) — Đặc tả yêu cầu hệ thống.
+- [`ARCHITECTURE.md`](./ARCHITECTURE.md) — Kiến trúc hệ thống đề xuất.
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md) — Quy trình làm việc, code, commit và Pull Request.
+- [`AI_LOGS.md`](./AI_LOGS.md) — Nhật ký thay đổi do AI thực hiện.
 - `AN_JEWELRY_SAD_v1.1.docx` — Tài liệu nguồn System Analysis and Design (không có trong work tree hiện tại).
 
 `ARCHITECTURE.md` được xây dựng dựa trên SAD v1.1. Những công nghệ và thiết kế chưa được xác nhận trong tài liệu kiến trúc không được xem là implementation đã hoàn thành.
