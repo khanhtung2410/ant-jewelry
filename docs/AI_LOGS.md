@@ -1,5 +1,36 @@
 # AI Change Log
 
+## 2026-11-09 23:00:00 +07:00 — Add shared ProductCard, Carousel, BlogRow and formatPrice (G1.3)
+
+### User prompt
+
+> G1.3 — create Component dùng chung.
+> ProductCard (ảnh vuông nền #EFEEEC, hover đổi ảnh thứ 2, tên, giá, color swatch),
+> Carousel (5 card, nút ‹ › góc phải dưới, VIEW PRODUCTS góc phải trên),
+> BlogRow, formatPrice.
+> formatPrice(10000000) → "10.000.000" có unit test; card đúng khi sản phẩm chỉ có 1 ảnh hoặc không có màu; carousel đúng khi < 5 sản phẩm; swatch có aria-label tên màu.
+>
+> create new commit branch, commit strictly follow contributing rule and pull_request_template.md
+> also give pr title
+> if change, add prompt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Branched `feature/g1-3-shared-components` from `feature/g1-2-tokens-layout` because the components build on the G1.2 tokens and layout.
+- Added `src/lib/format-price.ts`: groups VND digits with dots (`10000000` → `10.000.000`) and leaves the currency unit to the caller. Added `src/lib/format-price.test.ts`.
+- Added `src/components/product-card.tsx`: square `product-image-frame` (the `#EFEEEC` token), front image plus a second gallery image that fades in on hover, product name, formatted price and colour swatches. Single-image products render one image; products without colours render no swatch list; each swatch exposes the colour name through `aria-label`. Placeholder products that reuse the same image URL do not get a pointless hover layer.
+- Added `src/components/carousel.tsx`: product carousel with five cards per page, `getCarouselPage()` windowing helper, VIEW PRODUCTS link at the top right and `‹` / `›` buttons at the bottom right. Fewer than five products render in full with both arrows disabled; the last page shows the remainder; an empty list shows a short empty state.
+- Added `src/components/blog-row.tsx`: horizontal Blog row with cover image, `dd.mm.yyyy` publication date, title, summary and READ MORE link.
+- Added `src/components/product-card.test.tsx` and `src/components/carousel.test.tsx`, rendering the components with `react-dom/server` and mocked `next/image` / `next/link` to cover the one-image, no-colour, swatch-label, fewer-than-five and pagination cases.
+- Verified the components at runtime through a temporary `/preview` route: the first carousel rendered five cards with the next arrow enabled, the three-item carousel disabled both arrows, the Serenade card rendered two images and two labelled swatches, and paging to the second page showed the remaining product before returning. The temporary route was deleted afterwards.
+- Documented the new components and helper in `docs/README.md` and `docs/ARCHITECTURE.md`, and committed the `next dev` agent-feedback block in `AGENTS.md`.
+
+### Output summary
+
+Shared product, carousel and Blog components plus `formatPrice` are ready for the G1.4 screens. `npm run format`, `npm run lint`, `npm run typecheck`, `npm test` (5 files, 39 tests), `npm run format:check` and `npm run build` pass, and the required six-digit hex grep still returns no matches.
+
+---
+
 ## 2026-11-09 22:22:00 +07:00 — Add tokens-based header, footer and shell layout (G1.2)
 
 ### User prompt

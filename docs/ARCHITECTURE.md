@@ -263,7 +263,8 @@ ant-jewelry/
 
 - Chỉ có một Next.js application ở thư mục gốc, source code trong `src/`; chưa có thư mục `frontend/` hoặc `backend/`.
 - `src/app/layout.tsx` tải Geist Sans/Mono bằng `next/font`, đọc `getCategories()` và `getSettings()` rồi render `SiteHeader`/`SiteFooter` cho toàn bộ route.
-- `src/components/` chứa layout dùng chung: `header.tsx` (menu HOME, PRODUCTS có dropdown 4 danh mục, BLOG, CONTACT; hỗ trợ bàn phím), `footer.tsx` (địa chỉ, điện thoại, email, INFO, HELP, SOCIAL) và `icons.tsx` (SVG dùng `currentColor`).
+- `src/components/` chứa UI dùng chung: `header.tsx` (menu HOME, PRODUCTS có dropdown 4 danh mục, BLOG, CONTACT; hỗ trợ bàn phím), `footer.tsx` (địa chỉ, điện thoại, email, INFO, HELP, SOCIAL), `icons.tsx` (SVG dùng `currentColor`), `product-card.tsx` (khung ảnh vuông, đổi ảnh khi hover, tên/giá/swatch), `carousel.tsx` (5 card mỗi trang, nút điều hướng và VIEW PRODUCTS) và `blog-row.tsx` (ảnh bìa, ngày, tiêu đề, tóm tắt).
+- `src/lib/format-price.ts` định dạng giá VND bằng dấu chấm phân cách, ví dụ `10000000` → `10.000.000`; component tự thêm đơn vị hiển thị.
 - `src/lib/mock/` chứa 24 sản phẩm (23 hiển thị, 1 ẩn) thuộc 4 `ProductType` kiêm danh mục (WEDDING RING, ENGAGEMENT RING, NECKLACE, OTHER JEWELRY), 6 bài Blog (5 published, 1 draft), 3 hero slide (2 hiển thị, 1 ẩn) và Settings giả lập.
 - Ảnh sản phẩm mock dùng `public/mock/products/ring-*.webp`; `ring-2-1` và `ring-5-2` là ảnh phụ (góc chụp thứ hai) của `ring-2` và `ring-5`. Sản phẩm chưa có ảnh riêng dùng SVG placeholder theo `ProductType`.
 - `src/lib/queries/` là tầng truy cập dữ liệu duy nhất cho page; query trả bản clone, lọc danh mục bằng `ProductType` và loại bản ghi hidden/draft khỏi storefront.
