@@ -6,7 +6,7 @@ Website giới thiệu sản phẩm trang sức; khách hàng liên hệ trực 
 
 AN JEWELRY là website dành cho khách hàng có nhu cầu tìm hiểu các sản phẩm trang sức và liên hệ trực tiếp với cửa hàng.
 
-**Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict, ESLint, Prettier, Vitest và các contract domain trong `src/types/domain.ts`; mock data nằm trong `src/lib/mock/` (sản phẩm dùng ảnh `.webp` trong `public/mock/products/`, sản phẩm chưa có ảnh dùng SVG placeholder) và mọi trang phải đọc dữ liệu qua query function trong `src/lib/queries/`. Root layout dùng design tokens trong `src/app/globals.css`, tải font qua `next/font` và render header/footer dùng chung từ `src/components/`. Chưa có trang chủ hoàn chỉnh, Database, Prisma hoặc Authentication. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
+**Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict, ESLint, Prettier, Vitest và các contract domain trong `src/types/domain.ts`; mock data nằm trong `src/lib/mock/` (sản phẩm dùng ảnh `.webp` trong `public/mock/products/`, sản phẩm chưa có ảnh dùng SVG placeholder) và mọi trang phải đọc dữ liệu qua query function trong `src/lib/queries/`. Root layout dùng design tokens trong `src/app/globals.css`, tải font qua `next/font` và render header/footer dùng chung từ `src/components/`. Các component dùng chung cho sản phẩm và Blog (`ProductCard`, `Carousel`, `BlogRow`) cùng helper `formatPrice` đã có unit test. Chưa có trang chủ hoàn chỉnh, Database, Prisma hoặc Authentication. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
 
 Chức năng định hướng:
 
@@ -131,7 +131,9 @@ ant-jewelry/
 │   └── pull_request_template.md  # Mẫu mô tả Pull Request
 ├── src/
 │   ├── app/              # App Router: layout, page, global styles
+│   ├── components/       # Header, footer, ProductCard, Carousel, BlogRow, icon dùng chung
 │   ├── lib/
+│   │   ├── format-price.ts  # Định dạng giá VND, ví dụ 10000000 -> 10.000.000
 │   │   ├── mock/         # Mock data có type cho Product, Category, BlogPost, HeroSlide, Settings
 │   │   └── queries/      # Query functions; trang chỉ import từ đây
 │   ├── types/            # TypeScript domain contracts
