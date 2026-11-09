@@ -2,8 +2,8 @@
 
 > **Trạng thái tài liệu:** Kiến trúc đề xuất, đã đối chiếu với work tree hiện tại  
 > **Tài liệu nguồn:** `AN_JEWELRY_SAD_v1.1.docx`  
-> **Cập nhật theo work tree:** 2026-11-08  
-> **Trạng thái work tree:** Có một Next.js application duy nhất (16.4.5, App Router) với React 19.3.0, Tailwind CSS v4, TypeScript strict và ESLint 9. `src/types/domain.ts` bổ sung hợp đồng TypeScript cho `Product`, `Category`, `BlogPost`; chưa có Database, ORM, Server Action, Route Handler nghiệp vụ hoặc workflow nghiệp vụ.
+> **Cập nhật theo work tree:** 2026-11-09  
+> **Trạng thái work tree:** Có một Next.js application duy nhất (16.4.5, App Router) với React 19.3.0, Tailwind CSS v4, TypeScript strict, ESLint 9, Prettier 3 và Vitest 5. `src/types/domain.ts` bổ sung hợp đồng TypeScript cho `Product`, `Category`, `BlogPost`; `.env.example` và `.github/pull_request_template.md` đã có. Chưa có Database, Prisma, Authentication, Server Action, Route Handler nghiệp vụ hoặc workflow nghiệp vụ.
 > **Ngôn ngữ:** Nội dung diễn giải bằng tiếng Việt; giữ nguyên các technical terms, tên công nghệ, tên module, tên bảng, tên API, identifier và code terms bằng tiếng Anh.
 
 ---
@@ -156,25 +156,28 @@ Quyền cụ thể của Staff và mối quan hệ giữa Staff với User/Role 
 
 ### 4.1. Technology Stack
 
-SAD v1.1 nêu định hướng sử dụng Next.js. Kiến trúc đã chốt dùng **một Next.js application duy nhất**; Database, ORM, Authentication và Image Storage vẫn là phương án đề xuất, chưa được cấu hình.
+SAD v1.1 nêu định hướng sử dụng Next.js. Kiến trúc đã chốt dùng **một Next.js application duy nhất**, Prisma với SQLite cho dev và PostgreSQL cho production; Authentication và Image Storage vẫn là phương án đề xuất, chưa được cấu hình.
 
 | Thành phần | Công nghệ | Vai trò | Trạng thái trong work tree |
 |---|---|---|---|
 | Application | Next.js 16.4.5 (App Router) | Giao diện và server-side logic trong cùng một ứng dụng | Đã cài đặt |
 | UI runtime | React 19.3.0 | Render giao diện | Đã cài đặt |
 | Read path | React Server Components (App Router) | Đọc dữ liệu và render phía server | Runtime đã có; chưa có query nghiệp vụ |
-| Mutation path | Server Actions / Route Handlers | Xử lý form, mutation và upload | Đề xuất |
+| Mutation path | Server Actions; Route Handlers chỉ cho upload | Xử lý form, mutation và upload | Đã chốt; chưa triển khai |
 | Styling | Tailwind CSS v4 qua `@tailwindcss/turbopack` | Utility CSS | Đã cấu hình |
 | Ngôn ngữ | TypeScript 5 (`strict`) | Type safety | Đã cấu hình |
 | Lint | ESLint 9 + `eslint-config-next` | Kiểm tra chất lượng mã | Đã cấu hình |
+| Format | Prettier 3 | Format mã nguồn | Đã cấu hình |
+| Test | Vitest 5 | Unit test | Đã cấu hình |
 | Package manager | npm (`package-lock.json`) | Quản lý dependencies | Đang sử dụng |
-| Database | PostgreSQL | Lưu trữ dữ liệu hệ thống | Đề xuất, chưa cấu hình |
-| ORM | Prisma | Truy vấn và quản lý dữ liệu | Đề xuất, chưa cấu hình |
+| Database | SQLite (dev) / PostgreSQL (production) | Lưu trữ dữ liệu hệ thống | Đã chốt, chưa cấu hình |
+| ORM | Prisma | Truy vấn và quản lý dữ liệu | Đã chốt, chưa cấu hình |
+| Validation | Zod | Validate input tại server boundary | Đã chốt, chưa cài đặt |
 | Authentication | JWT | Xác thực người dùng nội bộ | Đề xuất, chưa cấu hình |
 | Image Storage | Cloudinary | Lưu trữ hình ảnh sản phẩm và Blog | Đề xuất, chưa cấu hình |
 | Version Control | Git / GitHub | Quản lý mã nguồn và cộng tác | Đang sử dụng |
 
-Cần đánh giá và chốt Database, ORM, Image Storage và phương thức Authentication trước khi thiết kế kỹ thuật chi tiết.
+Cần đánh giá và chốt Image Storage và phương thức Authentication trước khi thiết kế kỹ thuật chi tiết.
 
 ### 4.2. Vai trò của từng công nghệ
 
@@ -188,8 +191,9 @@ Cần đánh giá và chốt Database, ORM, Image Storage và phương thức Au
 
 Trong work tree hiện tại, Next.js mới chứa trang mặc định của `create-next-app`; các trang public, Admin/Staff và server-side logic nêu trên chưa được triển khai.
 
-**PostgreSQL**
+**SQLite / PostgreSQL**
 
+- SQLite dùng cho local development; PostgreSQL dùng cho production.
 - Lưu trữ dữ liệu sản phẩm.
 - Lưu trữ Product Type.
 - Lưu trữ thông tin hình ảnh và giá sản phẩm.
@@ -199,7 +203,7 @@ Trong work tree hiện tại, Next.js mới chứa trang mặc định của `cr
 **Prisma**
 
 - Định nghĩa data model ở tầng ORM.
-- Truy vấn dữ liệu từ PostgreSQL.
+- Truy vấn dữ liệu từ SQLite (dev) hoặc PostgreSQL (production).
 - Quản lý database migrations sau khi schema được phê duyệt.
 - Hỗ trợ thao tác dữ liệu trong các module server-side.
 
@@ -232,16 +236,23 @@ Cấu trúc thực tế tại thời điểm cập nhật:
 
 ```text
 ant-jewelry/
+├── .github/
+│   └── pull_request_template.md  # Mẫu mô tả Pull Request
 ├── src/
 │   ├── app/              # layout.tsx, page.tsx, globals.css
-│   └── types/            # Product, Category, BlogPost contracts
+│   ├── types/            # Product, Category, BlogPost contracts
+│   └── config.test.ts    # Test cấu hình project
 ├── public/               # Static assets
 ├── docs/                 # Tài liệu dự án
 ├── next.config.ts        # Cấu hình Next.js
 ├── eslint.config.mjs     # Cấu hình ESLint
+├── vitest.config.mts     # Cấu hình Vitest
 ├── tsconfig.json         # Cấu hình TypeScript
 ├── package.json          # Dependencies và scripts
 ├── package-lock.json     # Khóa phiên bản dependencies
+├── .prettierrc           # Cấu hình Prettier
+├── .prettierignore       # File Prettier bỏ qua
+├── .env.example          # Biến môi trường mẫu
 ├── AGENTS.md             # Quy tắc làm việc với Next.js
 └── .gitignore
 ```
@@ -249,7 +260,7 @@ ant-jewelry/
 - Chỉ có một Next.js application ở thư mục gốc, source code trong `src/`; chưa có thư mục `frontend/` hoặc `backend/`.
 - `src/app/page.tsx` đang là trang mặc định của `create-next-app`; `src/app/layout.tsx` khai báo metadata mặc định.
 - Chưa có Server Action, Route Handler nghiệp vụ, Database, Prisma, Authentication hoặc Cloudinary.
-- Các script hiện có: `dev`, `build`, `start`, `lint`. Chưa có script `test`.
+- Các script hiện có: `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `test`, `test:watch`.
 
 ### 5.2. Kiến trúc đề xuất
 
@@ -259,7 +270,7 @@ Hệ thống được tổ chức trong **một Next.js application duy nhất**
 2. **Application / Server Layer:** Server Components cho read; Server Actions và Route Handlers cho mutation.
 3. **Domain / Module Layer:** các module nghiệp vụ TypeScript.
 4. **Data Access Layer:** Prisma.
-5. **Data Layer:** PostgreSQL.
+5. **Data Layer:** SQLite cho dev; PostgreSQL cho production.
 6. **External Service:** Cloudinary cho hình ảnh nếu được lựa chọn.
 
 Sơ đồ dưới đây là kiến trúc logic đề xuất, chưa có trong work tree:
@@ -300,7 +311,7 @@ flowchart TB
 
     subgraph DATA[Data and External Services]
         Prisma[Prisma ORM]
-        DB[(PostgreSQL)]
+        DB[(SQLite dev / PostgreSQL prod)]
         Cloudinary[Cloudinary]
     end
 
@@ -361,7 +372,7 @@ Các module nghiệp vụ được tổ chức trong cùng Next.js application, 
 
 ### 5.6. Data Access Layer
 
-Prisma được đề xuất làm ORM để giao tiếp với PostgreSQL.
+Prisma là ORM đã chốt để giao tiếp với SQLite (dev) và PostgreSQL (production).
 
 Trách nhiệm dự kiến:
 - Ánh xạ data model.
@@ -371,7 +382,7 @@ Trách nhiệm dự kiến:
 
 ### 5.7. Data Layer
 
-PostgreSQL là Database được đề xuất trong SAD. Các bảng logic hiện có chưa đủ điều kiện để coi là Database Schema vật lý cuối cùng.
+SQLite (dev) và PostgreSQL (production) là Database đã chốt. Các bảng logic hiện có chưa đủ điều kiện để coi là Database Schema vật lý cuối cùng.
 
 Không tạo migrations production dựa trên các quan hệ còn đang được đánh dấu Cần xác nhận.
 
@@ -867,16 +878,22 @@ SAD không quy định cấu trúc thư mục source code. Work tree hiện tạ
 
 ```text
 ant-jewelry/
+├── .github/              # pull_request_template.md
 ├── src/
 │   ├── app/              # App Router: layout, page, globals.css
-│   └── types/            # Domain contracts (Product, Category, BlogPost)
+│   ├── types/            # Domain contracts (Product, Category, BlogPost)
+│   └── config.test.ts    # Test cấu hình project
 ├── public/               # Static assets
 ├── docs/                 # Tài liệu dự án
 ├── next.config.ts        # Cấu hình Next.js
 ├── eslint.config.mjs     # Cấu hình ESLint
+├── vitest.config.mts     # Cấu hình Vitest
 ├── tsconfig.json         # Cấu hình TypeScript
 ├── package.json          # Dependencies và scripts
 ├── package-lock.json     # Khóa phiên bản dependencies
+├── .prettierrc           # Cấu hình Prettier
+├── .prettierignore       # File Prettier bỏ qua
+├── .env.example          # Biến môi trường mẫu
 ├── AGENTS.md             # Quy tắc làm việc với Next.js
 └── .gitignore
 ```
@@ -921,7 +938,7 @@ Cấu trúc cuối cùng có thể thay đổi khi các module được triển 
 
 ## 14. Environment và Deployment
 
-> Work tree hiện chưa có `.env`, `.env.example` hoặc cấu hình triển khai nào. `.env*` đã nằm trong `.gitignore`. Các nội dung dưới đây là việc cần quyết định khi chuẩn bị triển khai.
+> Work tree đã có `.env.example`; chưa có `.env.local`, cấu hình triển khai hoặc biến môi trường bắt buộc. `.env*` nằm trong `.gitignore`, riêng `.env.example` được commit. Các nội dung dưới đây là việc cần quyết định khi chuẩn bị triển khai.
 
 SAD chưa xác định hạ tầng triển khai. Các nội dung sau cần được lựa chọn trong giai đoạn chuẩn bị triển khai.
 ### 14.1. Các thành phần cần quyết định
@@ -1012,12 +1029,14 @@ Phase 3 — Hoàn thiện Server Data và Mutation Contract
 Phase 4 — Khởi tạo Project
 - [x] Khởi tạo Next.js application (16.4.5, App Router) ở thư mục gốc.
 - [x] Cấu hình Tailwind CSS v4, TypeScript strict và ESLint 9.
-- [x] Thiết lập Git workflow.
+- [x] Cấu hình Prettier và Vitest.
+- [x] Thiết lập Git workflow và Pull Request template.
 - [x] Tạo tài liệu dự án trong `docs/`.
+- [x] Tạo `.env.example`.
 - [ ] Tổ chức module server-side trong `src/features/` và `src/lib/`.
-- [ ] Cấu hình PostgreSQL.
-- [ ] Cấu hình Prisma.
-- [ ] Cấu hình environment variables.
+- [ ] Cấu hình Prisma với SQLite cho dev.
+- [ ] Cấu hình PostgreSQL cho production.
+- [ ] Cấu hình environment variables thực tế.
 Phase 5 — Xây dựng Public Website
 - Home Page.
 - Product Listing.
@@ -1074,8 +1093,8 @@ Bảng này dùng để theo dõi các quyết định đã có trong work tree 
 |---|---|---|---|
 | ADR-001 | Application framework | Next.js 16.4.5 (App Router) | Đã cài đặt ở thư mục gốc |
 | ADR-002 | Application topology | Một Next.js application duy nhất; không có backend tách biệt | Đã chốt |
-| ADR-003 | Database | PostgreSQL | Đề xuất, cần chốt |
-| ADR-004 | ORM | Prisma | Đề xuất |
+| ADR-003 | Database | SQLite cho dev; PostgreSQL cho production | Đã chốt, chưa cấu hình |
+| ADR-004 | ORM | Prisma | Đã chốt, chưa cấu hình |
 | ADR-005 | Internal Authentication | JWT | Đề xuất, cần thiết kế chi tiết |
 | ADR-006 | Image Storage | Cloudinary | Đề xuất, cần chốt |
 | ADR-007 | Data access và mutation | Server Components cho read; Server Actions / Route Handlers cho mutation | Đã chốt |
@@ -1083,6 +1102,9 @@ Bảng này dùng để theo dõi các quyết định đã có trong work tree 
 | ADR-010 | Category model | Tách khỏi Product Type nếu nghiệp vụ cần | Cần xác nhận |
 | ADR-011 | Styling | Tailwind CSS v4 qua `@tailwindcss/turbopack` | Đã cấu hình |
 | ADR-012 | Language | TypeScript 5, chế độ `strict` | Đã cấu hình |
+| ADR-013 | Validation | Zod | Đã chốt, chưa cài đặt |
+| ADR-014 | Formatting | Prettier 3 | Đã cấu hình |
+| ADR-015 | Testing | Vitest 5 | Đã cấu hình |
 
 Khi có quyết định chính thức, cần cập nhật phương án, trạng thái, ngày quyết định, người phê duyệt và lý do lựa chọn.
 

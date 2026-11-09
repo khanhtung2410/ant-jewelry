@@ -6,7 +6,7 @@ Website giới thiệu sản phẩm trang sức; khách hàng liên hệ trực 
 
 AN JEWELRY là website dành cho khách hàng có nhu cầu tìm hiểu các sản phẩm trang sức và liên hệ trực tiếp với cửa hàng.
 
-**Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict và các contract domain ban đầu trong `src/types/domain.ts`; trang chủ vẫn hiển thị nội dung mặc định của `create-next-app`. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
+**Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict, ESLint, Prettier, Vitest và các contract domain ban đầu trong `src/types/domain.ts`; trang chủ vẫn hiển thị nội dung mặc định của `create-next-app`. Chưa có Database, Prisma, Authentication hoặc giao diện AN JEWELRY. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
 
 Chức năng định hướng:
 
@@ -30,14 +30,17 @@ Các thành phần đang có trong work tree:
 | Styling | Tailwind CSS v4 qua `@tailwindcss/turbopack` | Đã cấu hình |
 | Ngôn ngữ | TypeScript 5, chế độ `strict` | Đã cấu hình |
 | Lint | ESLint 9 + `eslint-config-next` | Đã cấu hình |
+| Format | Prettier 3 + `.prettierrc` | Đã cấu hình |
+| Test | Vitest 5 + `vitest.config.mts` | Đã cấu hình |
 | Package manager | npm (`package-lock.json`) | Đang sử dụng |
 | Version Control | Git / GitHub | Đang sử dụng |
-| Backend | Node.js / NestJS | Đề xuất, chưa có trong work tree |
-| Database / ORM | PostgreSQL / Prisma | Đề xuất, chưa cấu hình |
+| Server-side | Next.js Server Components, Server Actions, Route Handlers | Đã chốt; chưa triển khai |
+| Database / ORM | SQLite (dev) / PostgreSQL (production); Prisma | Đã chốt; chưa cấu hình |
+| Validation | Zod | Đã chốt; chưa cài đặt |
 | Authentication | JWT | Đề xuất, chưa cấu hình |
 | Image Storage | Cloudinary | Đề xuất, chưa cấu hình |
 
-Các lựa chọn Backend, Database, ORM, Authentication và Image Storage vẫn là đề xuất trong `ARCHITECTURE.md`, chưa được xác nhận hoặc triển khai.
+Kiến trúc đã chốt là **một Next.js application duy nhất**: Server Components cho read, Server Actions cho mutation, Route Handlers chỉ dùng cho upload. Không có NestJS hoặc tầng REST API riêng. Authentication và Image Storage vẫn là đề xuất trong `ARCHITECTURE.md`, chưa được xác nhận hoặc triển khai.
 
 ## 3. Yêu cầu / Điều kiện tiên quyết
 
@@ -45,7 +48,7 @@ Các lựa chọn Backend, Database, ORM, Authentication và Image Storage vẫn
 - **npm** (repository dùng `package-lock.json`).
 - **Git** để clone và quản lý phiên bản.
 - Chưa cần Database, ORM, tài khoản Cloudinary hoặc biến môi trường cho bộ khung hiện tại.
-- Yêu cầu phiên bản PostgreSQL và cấu hình Database local: TBD, chỉ áp dụng sau khi Backend/Database được xác nhận.
+- `.env.example` liệt kê các biến dự kiến; local dev hiện chưa bắt buộc biến nào. Khi làm phase Database, local dev dùng SQLite và production dùng PostgreSQL.
 
 ## 4. Bắt đầu sử dụng
 
@@ -82,7 +85,9 @@ npm run start
 
 ```bash
 npm run lint
-npx tsc --noEmit
+npm run typecheck
+npm test
+npm run format:check
 ```
 
 ## 5. Cấu hình
@@ -94,12 +99,15 @@ Các file cấu hình hiện có:
 | `next.config.ts` | Cấu hình Next.js: `cacheComponents`, `partialPrefetching`, `experimental.agentFeedback` và loader Tailwind CSS cho Turbopack |
 | `eslint.config.mjs` | Cấu hình ESLint 9 với `eslint-config-next` |
 | `tsconfig.json` | Cấu hình TypeScript strict; alias `@/*` trỏ về `src/*` |
-| `package.json` | Dependencies và các script `dev`, `build`, `start`, `lint` |
-| `.gitignore` | Bỏ qua `node_modules`, `.next`, `out`, `build`, file môi trường và file build của TypeScript |
+| `.prettierrc`, `.prettierignore` | Cấu hình format mã nguồn; bỏ qua `docs/`, `public/`, Markdown và lockfile |
+| `vitest.config.mts` | Cấu hình Vitest cho test đặt cạnh code trong `src/` |
+| `package.json` | Dependencies và các script `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `test`, `test:watch` |
+| `.github/pull_request_template.md` | Mẫu mô tả Pull Request |
+| `.gitignore` | Bỏ qua `node_modules`, `.next`, `out`, `build`, `.env*` (trừ `.env.example`), file SQLite local và file build của TypeScript |
 
-Hiện **chưa có** `.env`, `.env.example` hoặc biến môi trường nào được xác nhận. `.env*` đã nằm trong `.gitignore`.
+`.env.example` đã có và được commit; `.env.local` và các file `.env*` khác nằm trong `.gitignore`. Hiện chưa có biến môi trường nào bắt buộc cho local dev.
 
-Các cấu hình dự kiến cho Database, JWT và Cloudinary: TBD, chưa có trong work tree. Không commit credentials, passwords, API keys hoặc secrets vào repository.
+Database dùng Prisma với SQLite local và PostgreSQL production; cấu hình JWT và Cloudinary: TBD, chưa có trong work tree. Không commit credentials, passwords, API keys hoặc secrets vào repository.
 
 ## 6. Sử dụng
 
@@ -118,33 +126,42 @@ Cấu trúc thực tế hiện tại:
 
 ```text
 ant-jewelry/
+├── .github/
+│   └── pull_request_template.md  # Mẫu mô tả Pull Request
 ├── src/
 │   ├── app/              # App Router: layout, page, global styles
-│   └── types/            # TypeScript domain contracts (Product, Category, BlogPost)
+│   ├── types/            # TypeScript domain contracts (Product, Category, BlogPost)
+│   └── config.test.ts    # Test cấu hình project
 ├── public/               # Static assets
 ├── docs/                 # Tài liệu dự án
 ├── next.config.ts        # Cấu hình Next.js
 ├── eslint.config.mjs     # Cấu hình ESLint
+├── vitest.config.mts     # Cấu hình Vitest
 ├── tsconfig.json         # Cấu hình TypeScript
 ├── package.json          # Dependencies và scripts
 ├── package-lock.json     # Khóa phiên bản dependencies
+├── .prettierrc           # Cấu hình Prettier
+├── .prettierignore       # File Prettier bỏ qua
+├── .env.example          # Biến môi trường mẫu
 ├── AGENTS.md             # Quy tắc làm việc với Next.js trong repository
 └── .gitignore
 ```
 
-`ARCHITECTURE.md` có đề xuất tách `frontend/` và `backend/` trong tương lai, nhưng cấu trúc đó **chưa tồn tại** trong work tree. Khi thêm thư mục dùng chung như `components/`, `lib/` hoặc `constants/`, chỉ tạo khi thực sự có nhu cầu và cập nhật lại tài liệu.
+`ARCHITECTURE.md` chốt **một Next.js application duy nhất**, không tách `frontend/` và `backend/`. Khi thêm thư mục dùng chung như `components/`, `lib/` hoặc `constants/`, đặt trong `src/`, chỉ tạo khi thực sự có nhu cầu và cập nhật lại tài liệu.
 
 ## 8. Kiểm thử
 
-Repository hiện **chưa cấu hình test framework** và chưa có script `test`. Các kiểm tra hiện có:
+Repository dùng **Vitest** cho unit test; test đặt cạnh code trong `src/`. Các kiểm tra hiện có:
 
 ```bash
 npm run lint
-npx tsc --noEmit
+npm run typecheck
+npm test
+npm run format:check
 npm run build
 ```
 
-Với thay đổi giao diện, kiểm tra thủ công các luồng bị ảnh hưởng và ghi rõ trong Pull Request. Khi bổ sung test framework, cập nhật lệnh chạy test vào README và `CONTRIBUTING.md`.
+Với thay đổi giao diện, kiểm tra thủ công các luồng bị ảnh hưởng và ghi rõ trong Pull Request.
 
 ## 9. License
 

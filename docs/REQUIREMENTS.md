@@ -62,12 +62,38 @@ Phạm vi được phân loại theo mức độ xác nhận của SAD (mục 2.
 | Phân loại | Nội dung |
 |---|---|
 | **Trong phạm vi – Đã quan sát trên website công khai** | Trang chủ; danh sách sản phẩm; xem sản phẩm theo danh mục; sắp xếp theo giá và tên; chi tiết sản phẩm (hình ảnh, thông tin, thông số); danh sách và chi tiết Blog; số điện thoại và liên kết Facebook, Instagram; điều hướng giữa các trang |
-| **Trong phạm vi – Đã xác định (chủ dự án xác nhận ở mức nhóm chức năng)** | Quản trị sản phẩm và Blog; vai trò Admin và Staff |
+| **Trong phạm vi – Đã xác định (chủ dự án xác nhận ở mức nhóm chức năng)** | Quản trị sản phẩm và Blog; vai trò `ADMIN` và `EDITOR` (`EDITOR` ánh xạ actor Staff của SAD) |
 | **Ngoài phạm vi** | Giỏ hàng; đặt hàng trực tuyến; thanh toán trực tuyến; giao dịch trực tuyến; sản phẩm thiết kế/sản xuất theo yêu cầu riêng |
 | **Đề xuất mở rộng (không bắt buộc ở phiên bản hiện tại)** | Quản lý tồn kho; khuyến mãi; bảo hành; vận chuyển; chăm sóc khách hàng |
-| **TBC** | Ma trận quyền Admin/Staff; hành vi nút "ORDER NOW" trên website hiện tại (OI-031) |
- 
+| **TBC** | Ma trận quyền chi tiết giữa `ADMIN` và `EDITOR`; các vấn đề còn lại tại Phụ lục A |
+
 Nguyên tắc: không đưa giỏ hàng, đặt hàng, thanh toán, giao dịch trực tuyến hoặc thiết kế riêng trở lại phạm vi nếu chưa có thay đổi yêu cầu chính thức từ chủ dự án (SAD, Ghi chú cuối).
+
+### 1.3.1. Quyết định đã chốt (2026-11-09)
+
+Bảng dưới ghi các quyết định đã được chốt cho phiên bản triển khai. Các quyết định này thay thế nội dung TBC tương ứng trong tài liệu; các mục còn lại vẫn theo Phụ lục A.
+
+| Hạng mục | Quyết định |
+|---|---|
+| Kiến trúc | Một Next.js App Router + TypeScript strict. Read bằng Server Components; mutation bằng Server Actions; Route Handlers chỉ dùng cho upload. Không NestJS, không tầng REST API riêng. |
+| Dữ liệu | Prisma. SQLite cho development, PostgreSQL cho production. Validate bằng Zod. |
+| Vai trò | `ADMIN` toàn quyền. `EDITOR` quản lý sản phẩm (trừ giá), danh mục, Blog và hero slide; không sửa giá, không vào Settings / Users. `EDITOR` ánh xạ actor Staff của SAD. |
+| Khách liên hệ | Không có Inquiry hoặc form gửi yêu cầu. Nút "ORDER NOW" mở Contact popover gồm số điện thoại, Facebook và Instagram lấy từ Settings. |
+| Giá | Số nguyên VND (`Int`), hiển thị dạng `10.000.000`, không ký hiệu tiền tệ. |
+| Responsive | Figma chỉ có desktop 1920px; tự thiết kế mobile/tablet nhất quán với style và đính kèm ảnh chụp trong PR. |
+| Ngoài phạm vi | Giỏ hàng, thanh toán, tài khoản khách hàng, wishlist, đa ngôn ngữ. |
+| Nhãn giao diện | Figma ghi "Short by" ở màn Category; triển khai dùng "Sort by". |
+
+**Design tokens lấy từ Figma:**
+
+| Token | Giá trị | Dùng ở |
+|---|---|---|
+| Nền trang | `#FEFDF8` | body, header, footer |
+| Nền ảnh sản phẩm | `#EFEEEC` | khung ảnh vuông của card và gallery |
+| Đường kẻ | `#93AAA0` | viền dưới header, viền trên footer, divider trang sản phẩm |
+| Chữ chính | `#000000` | tên sản phẩm, giá, đoạn văn |
+| Font heading / nav | Monospace, VIẾT HOA | tiêu đề section, menu, nút; đối chiếu tên font chính xác trong Figma |
+| Font nội dung | Sans-serif | mô tả, Blog, footer |
  
 ### 1.4. Đối tượng sử dụng tài liệu
  
@@ -89,8 +115,9 @@ Nguyên tắc: không đưa giỏ hàng, đặt hàng, thanh toán, giao dịch 
 | SRS | Software Requirements Specification – đặc tả yêu cầu phần mềm |
 | BA | Business Analyst |
 | Customer | Khách hàng/khách truy cập website |
-| Admin | Quản trị viên hệ thống |
-| Staff | Nhân viên vận hành |
+| Admin | Quản trị viên hệ thống; trong triển khai dùng role `ADMIN` |
+| Staff | Nhân viên vận hành; trong triển khai dùng role `EDITOR` |
+| EDITOR | Role nội bộ quản lý nội dung (sản phẩm trừ giá, danh mục, Blog, hero slide); ánh xạ actor Staff của SAD |
 | Product (Sản phẩm) | Sản phẩm trang sức |
 | Product Type (Loại sản phẩm) | Loại trang sức, ví dụ Ring (nhẫn), Necklace (dây chuyền) |
 | Category (Danh mục) | Danh mục kinh doanh, ví dụ Wedding Bands, Engagement, Everyday, Ready to ship |
@@ -209,7 +236,7 @@ Qua đối chiếu ngày 05/11/2026, các nội dung sau xuất hiện trên web
  
 | STT | Quan sát trên website | Vấn đề | Mã OI |
 |---|---|---|---|
-| 1 | Trang chi tiết sản phẩm có nút **"ORDER NOW"** | Chưa rõ nút hoạt động ra sao; cần đối chiếu với BR-003 (không đặt hàng trực tuyến) | OI-031 |
+| 1 | Trang chi tiết sản phẩm có nút **"ORDER NOW"** | Đã chốt: mở Contact popover (số điện thoại, Facebook, Instagram từ Settings), không tạo đơn trực tuyến, phù hợp BR-003 | OI-031 |
 | 2 | Trang chi tiết sản phẩm có khối **"quyền lợi khi mua"** (chứng nhận, bảo hành, thu mua lại, thời gian chế tác) và khối **"YOU MIGHT ALSO LIKE"** (sản phẩm liên quan) | Không có trường dữ liệu tương ứng trong cấu trúc SAD; chưa rõ có thuộc phạm vi không, quy tắc chọn sản phẩm liên quan | OI-032, OI-010 |
 | 3 | Chân trang có các trang **Điều khoản và điều kiện, Chính sách bảo mật, Vận chuyển và Đổi trả, Chăm sóc trang sức** | Chưa rõ có thuộc phạm vi, ai quản trị nội dung; nội dung "Vận chuyển và Đổi trả" cần đối chiếu BR-003, BR-004 | OI-028 |
 | 4 | Giao diện dùng nhãn tiếng Anh (HOME, PRODUCTS, EXPLORE NOW…) trong khi bài Blog bằng tiếng Việt | Chưa rõ ngôn ngữ giao diện/nội dung (đơn ngữ hay đa ngữ) | OI-029 |
@@ -232,7 +259,7 @@ Qua đối chiếu ngày 05/11/2026, các nội dung sau xuất hiện trên web
  
 ### 3.2. Các tác nhân (Actors) và trách nhiệm
  
-SAD xác định **3 actor**: Customer, Admin, Staff. **SAD không có vai trò Manager**; tài liệu này không tự thêm vai trò đó. Vai trò "Employee" tương ứng với **Staff**. Nếu đơn vị vận hành cần cấp quản lý trung gian, cần bổ sung qua OI-004.
+SAD xác định **3 actor**: Customer, Admin, Staff. **SAD không có vai trò Manager**; tài liệu này không tự thêm vai trò đó. Vai trò "Employee" tương ứng với **Staff**. Trong triển khai, hai role nội bộ dùng tên `ADMIN` và `EDITOR`; `EDITOR` ánh xạ actor Staff và chỉ quản lý nội dung, không sửa giá, không vào Settings / Users. Nếu đơn vị vận hành cần cấp quản lý trung gian, cần bổ sung qua OI-004.
  
 | Actor | Mô tả | Trách nhiệm | Phạm vi quyền (theo SAD) | Trạng thái |
 |---|---|---|---|---|
@@ -371,7 +398,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Ưu tiên | High |
 | Trạng thái | Đã quan sát |
 | Hiện trạng triển khai | Đã triển khai (quan sát công khai) |
-| Liên quan | SAD: FR-CUS-006; UC-05; API-P02; BR-006, BR-010, BR-020; OI-011, OI-025 (URL dùng tên/slug nhưng dữ liệu chưa có trường slug); **OI-031** (trang chi tiết có nút "ORDER NOW"; hành vi chưa rõ); **OI-032** (khối "YOU MIGHT ALSO LIKE" quan sát thấy nhưng chưa có yêu cầu) |
+| Liên quan | SAD: FR-CUS-006; UC-05; API-P02; BR-006, BR-010, BR-020; OI-011, OI-025 (URL dùng tên/slug nhưng dữ liệu chưa có trường slug); **OI-031** ("ORDER NOW" mở Contact popover; đã chốt); **OI-032** (khối "YOU MIGHT ALSO LIKE" quan sát thấy nhưng chưa có yêu cầu) |
  
 #### FR-008 – Xem hình ảnh sản phẩm
  
@@ -779,7 +806,7 @@ Quy tắc nghiệp vụ còn hiệu lực gồm 6 quy tắc từ SAD và 9 quy t
 | ID | Tên quy tắc | Nội dung | Nguồn | Trạng thái | Yêu cầu liên quan |
 |---|---|---|---|---|---|
 | BR-001 | Phạm vi website | Website phục vụ giới thiệu và cung cấp thông tin sản phẩm trang sức. | SAD 3.2 | Đã xác định | FR-001 đến FR-011 |
-| BR-003 | Không đặt hàng trực tuyến | Hệ thống không cung cấp chức năng tạo đơn hàng trực tuyến. Hành vi nút "ORDER NOW" trên website hiện tại cần được đối chiếu trước khi xác định cách xử lý (OI-031). | SAD 3.2, 3.1.4 | Đã xác định; đối chiếu TBC | FR-007 |
+| BR-003 | Không đặt hàng trực tuyến | Hệ thống không cung cấp chức năng tạo đơn hàng trực tuyến. Nút "ORDER NOW" mở Contact popover (số điện thoại, Facebook, Instagram từ Settings), không tạo đơn và không gửi form. | SAD 3.2, 3.1.4; quyết định 2026-11-09 | Đã chốt | FR-007 |
 | BR-004 | Không thanh toán trực tuyến | Hệ thống không tích hợp quy trình thanh toán hoặc ghi nhận giao dịch trực tuyến trong phạm vi hiện tại. | SAD 3.2 | Đã xác định | Toàn bộ |
 | BR-005 | Không thiết kế riêng | Hệ thống không tiếp nhận đặt thiết kế hoặc sản xuất trang sức theo yêu cầu riêng. | SAD 3.2 | Đã xác định | Toàn bộ |
 | BR-006 | Phân loại sản phẩm | Product Type (loại trang sức, ví dụ Ring, Necklace) và Product Category (danh mục kinh doanh, ví dụ Wedding Bands, Engagement, Everyday) là hai khái niệm cần phân biệt; không gộp thành một trường nếu nghiệp vụ cần quản lý độc lập. | SAD 3.2, 2.3, B.2 | Định hướng mô hình hóa; TBC (OI-009) | FR-005, FR-007, FR-022, FR-027 |
@@ -787,7 +814,7 @@ Quy tắc nghiệp vụ còn hiệu lực gồm 6 quy tắc từ SAD và 9 quy t
 | BR-008 | Phân quyền | Admin và Staff được phân quyền theo trách nhiệm do đơn vị vận hành xác nhận. | SAD 3.2 | TBC (OI-004) | FR-020 đến FR-036 |
 | BR-010 | Chỉ hiển thị nội dung công khai | Website công khai không hiển thị bản ghi đã xóa mềm (`is_delete = true`) hoặc đã được ẩn. Tiêu chí "được công khai" của bài viết: TBC. | SAD 7.1, FR-BLOG-007 | Đề xuất; TBC (OI-005, OI-006, OI-024) | FR-004, FR-005, FR-007, FR-010, FR-011, FR-024, FR-031 |
 | BR-011 | Ảnh đại diện | Ảnh hiển thị trong danh sách sản phẩm là ảnh được đánh dấu `front_image = true`. Số lượng ảnh đại diện tối đa mỗi sản phẩm và thứ tự các ảnh còn lại: TBC. | SAD A.3, API-P01 | Đề xuất; TBC (OI-018) | FR-008, FR-025 |
-| BR-012 | Cơ sở sắp xếp theo giá | Sắp xếp theo giá dùng giá hiện hành của sản phẩm. Định nghĩa "giá hiện hành", trường số tiền và đơn vị tiền tệ: TBC. | SAD FR-CUS-004, A.2 | Đề xuất; TBC (OI-008, OI-015, OI-016) | FR-006, FR-026 |
+| BR-012 | Cơ sở sắp xếp theo giá | Sắp xếp theo giá dùng giá hiện hành của sản phẩm. Giá là số nguyên VND (`Int`), hiển thị dạng `10.000.000`, không ký hiệu tiền tệ. | SAD FR-CUS-004, A.2; quyết định 2026-11-09 | Đã chốt | FR-006, FR-026 |
 | BR-013 | Cơ sở sắp xếp theo tên | Sắp xếp theo tên theo thứ tự bảng chữ cái tăng (A–Z) hoặc giảm (Z–A). Cách xử lý tiếng Việt có dấu và phân biệt hoa/thường: TBC. | SAD FR-CUS-005 | Đề xuất; TBC | FR-006 |
 | BR-017 | Xác thực trước khi quản trị | Chỉ tài khoản nội bộ đã xác thực mới được vào khu vực quản trị. | SAD NFR-007 | Đề xuất | FR-033, NFR-007 |
 | BR-018 | Không mặc định cùng quyền | Admin và Staff không được mặc định có cùng quyền; ma trận quyền xây dựng sau khi xác định trách nhiệm từng vai trò. | SAD 3.1.5 | Đã xác định (nguyên tắc) | FR-036 |
@@ -1110,7 +1137,7 @@ Tất cả quy tắc ở đây phải được kiểm tra **ở phía máy chủ
 | DV-006 | `product_detail.short_description` | Độ dài tối đa và cho phép rỗng hay không: TBC | TBC |
 | DV-007 | `*.is_delete` | Kiểu logic; mặc định `false` khi tạo mới | Theo SAD (kiểu); mặc định là Đề xuất BA |
 | DV-008 | `product_price.changed_date` | Bắt buộc; ngày hợp lệ | Theo SAD |
-| DV-009 | `product_price` (số tiền, đơn vị) | Số tiền không âm; kiểu, độ chính xác và đơn vị tiền tệ: TBC | TBC (OI-016) |
+| DV-009 | `product_price` (số tiền) | Số nguyên VND (`Int`), không âm; hiển thị dạng `10.000.000`, không ký hiệu tiền tệ | Đã chốt (2026-11-09) |
 | DV-010 | `product_images.front_image` | Bắt buộc; kiểu logic. Số ảnh đại diện tối đa mỗi sản phẩm: TBC | Theo SAD; TBC (OI-018) |
 | DV-011 | `product_images.alt_name` | Cho phép rỗng hay không: TBC (NFR-018 đề xuất không rỗng) | TBC (OI-018) |
 | DV-012 | `product_type.name` | Bắt buộc; độ dài tối đa TBC | Theo SAD; TBC |
@@ -1198,7 +1225,7 @@ Sitemap dưới đây chốt route cho Storefront và khu vực Admin. Cột **M
 | Route | Màn Figma | Các khối chính | Quyền truy cập |
 |---|---|---|---|
 | `/` | Home | Header/menu; hero slides; khối sản phẩm theo danh mục (Wedding Bands, Engagement, Everyday) có nút "VIEW PRODUCTS"; Blog nổi bật; khối liên hệ; footer | Công khai |
-| `/c/[slug]` | Category | Tiêu đề danh mục; danh sách thẻ sản phẩm (2 ảnh, tên, giá); sắp xếp (4 tùy chọn); "SEE MORE"/phân trang | Công khai |
+| `/c/[slug]` | Category | Tiêu đề danh mục; danh sách thẻ sản phẩm (2 ảnh, tên, giá); nhãn "Sort by" (Figma ghi "Short by") với 4 tùy chọn sắp xếp; "SEE MORE"/phân trang | Công khai |
 | `/p/[slug]` | Product | Thư viện ảnh có nút chuyển; tên, nhãn hiệu, loại, giá; mô tả; thông số; nút "ORDER NOW"; khối "YOU MIGHT ALSO LIKE" | Công khai |
 | Overlay trên `/p/[slug]` (không phải route riêng) | Product + Contact popover | Popover "ORDER NOW": chỉ số điện thoại và link Facebook/Instagram; không có form liên hệ | Công khai |
 | `/blog` | Blog list | Thẻ bài viết (ảnh, tiêu đề, tóm tắt, "LEARN MORE") | Công khai |
@@ -1221,6 +1248,8 @@ Sitemap dưới đây chốt route cho Storefront và khu vực Admin. Cột **M
 
 **Đối chiếu Figma:** sitemap phủ đủ 6 màn: Home (`/`), Category (`/c/[slug]`), Product (`/p/[slug]`), Product + Contact popover (overlay trên `/p/[slug]`), Blog list (`/blog`), Blog detail (`/blog/[slug]`).
 
+**Lưu ý nhãn:** Figma ghi "Short by" ở màn Category; khi triển khai dùng "Sort by".
+
 **Yêu cầu chung cho giao diện:** responsive (NFR-001); tương thích trình duyệt (NFR-002); nhất quán (NFR-003); điều hướng rõ ràng (NFR-015); ảnh có alt text (NFR-018). Ngôn ngữ giao diện: TBC (OI-029).
  
 ### 9.2. Giao diện phần mềm (thành phần và công nghệ)
@@ -1229,21 +1258,25 @@ SAD mục 2.5 nêu phương án công nghệ **đề xuất**; đây **không** 
  
 | Thành phần | Công nghệ | Vai trò | Trạng thái |
 |---|---|---|---|
-| Frontend | Next.js | Giao diện công khai và quản trị | Định hướng theo yêu cầu dự án (ASM-007) |
-| Backend | Node.js / NestJS | Xử lý nghiệp vụ và cung cấp API | Đề xuất; TBC (OI-013) |
-| Cơ sở dữ liệu | PostgreSQL | Lưu trữ dữ liệu | Đề xuất; TBC (OI-013, OI-017) |
-| ORM | Prisma | Truy vấn và quản lý dữ liệu | Đề xuất |
+| Ứng dụng | Next.js App Router + TypeScript strict | Giao diện công khai, quản trị và server-side logic | Đã chốt (2026-11-09) |
+| Read path | React Server Components | Đọc dữ liệu và render phía server | Đã chốt |
+| Mutation path | Server Actions; Route Handlers chỉ cho upload | Xử lý form, mutation và upload | Đã chốt |
+| Cơ sở dữ liệu | SQLite (dev) / PostgreSQL (production) | Lưu trữ dữ liệu | Đã chốt; chưa cấu hình |
+| ORM | Prisma | Truy vấn và quản lý dữ liệu | Đã chốt; chưa cấu hình |
+| Validation | Zod | Validate input tại server boundary | Đã chốt; chưa cài đặt |
 | Xác thực | JWT | Xác thực người dùng nội bộ | Đề xuất; TBC (OI-021) |
 | Lưu trữ hình ảnh | Cloudinary | Lưu hình ảnh sản phẩm và Blog | Đề xuất; TBC (OI-013, OI-018). Quan sát: ảnh Blog hiện nằm ở đường dẫn dạng `/storage/images/blog/{mã}.webp` trên chính tên miền, không phải dịch vụ ngoài |
-| Quản lý mã nguồn | Git / GitHub | Quản lý phiên bản | Đề xuất |
- 
-Ranh giới giữa Frontend và Backend (API riêng hay API route của Next.js; kết xuất phía máy chủ hay trình duyệt) chưa xác định (OI-013). Hệ thống phải xử lý dữ liệu Unicode (UTF-8) để lưu và hiển thị tiếng Việt có dấu (NVARCHAR trong SAD không có trong PostgreSQL; OI-017).
+| Quản lý mã nguồn | Git / GitHub | Quản lý phiên bản | Đang sử dụng |
+
+Không có Backend hoặc tầng REST API tách biệt: read đi qua Server Components, mutation đi qua Server Actions, Route Handlers chỉ dùng cho upload. Hệ thống phải xử lý dữ liệu Unicode (UTF-8) để lưu và hiển thị tiếng Việt có dấu (NVARCHAR trong SAD không có trong PostgreSQL; OI-017).
  
 ### 9.3. Giao diện API
  
+> **Lưu ý kiến trúc:** kiến trúc đã chốt **không có tầng REST API riêng**. Các endpoint dưới đây giữ lại làm đặc tả tham khảo từ SAD Chương 7; khi triển khai, chúng được thay bằng query function (Server Components) và Server Action (mutation), Route Handler chỉ cho upload.
+
 Toàn bộ đặc tả API trong SAD Chương 7 là **đề xuất**; không có API đang chạy nào được kiểm tra.
- 
-**Nguyên tắc chung (đề xuất):** HTTP/REST; dữ liệu JSON UTF-8; tiền tố `/api` cho API công khai và `/api/admin` cho API quản trị; định danh tài nguyên là UUID; API công khai không yêu cầu xác thực; API quản trị yêu cầu xác thực và kiểm tra quyền; ngày giờ theo ISO 8601; API công khai không trả bản ghi `is_delete = true`. Phân trang, sắp xếp mặc định, phiên bản hóa đường dẫn, múi giờ và định dạng lỗi: TBC (OI-023).
+
+**Nguyên tắc chung (tham khảo):** HTTP/REST; dữ liệu JSON UTF-8; tiền tố `/api` cho API công khai và `/api/admin` cho API quản trị; định danh tài nguyên là UUID; API công khai không yêu cầu xác thực; API quản trị yêu cầu xác thực và kiểm tra quyền; ngày giờ theo ISO 8601; API công khai không trả bản ghi `is_delete = true`. Phân trang, sắp xếp mặc định, phiên bản hóa đường dẫn, múi giờ và định dạng lỗi: TBC (OI-023).
  
 **Mã trạng thái HTTP dùng chung:** 200 thành công; 201 tạo mới thành công; 400 dữ liệu/tham số không hợp lệ; 401 chưa xác thực; 403 không đủ quyền; 404 không tìm thấy; 500 lỗi hệ thống.
  
@@ -1291,7 +1324,7 @@ Không có endpoint cho giỏ hàng, đặt hàng, thanh toán hoặc thiết k�
 | ID | Ràng buộc | Nguồn | Trạng thái |
 |---|---|---|---|
 | TC-01 | Frontend sử dụng Next.js | ASM-007, SAD 2.5 | Định hướng theo yêu cầu dự án |
-| TC-02 | Backend, cơ sở dữ liệu, ORM, xác thực và lưu trữ ảnh theo phương án đề xuất: Node.js/NestJS, PostgreSQL, Prisma, JWT, Cloudinary | SAD 2.5 | Đề xuất; cần chốt (OI-013) |
+| TC-02 | Không có backend tách biệt; server-side nằm trong Next.js. Prisma với SQLite (dev) / PostgreSQL (production); validate bằng Zod. Xác thực JWT và lưu trữ ảnh Cloudinary vẫn là đề xuất | SAD 2.5; quyết định 2026-11-09 | Đã chốt phần kiến trúc/dữ liệu; JWT và Cloudinary TBC |
 | TC-03 | Hệ quản trị CSDL phải hỗ trợ lưu tiếng Việt có dấu; quy ước kiểu chuỗi phải thống nhất (SAD dùng cả VARCHAR và NVARCHAR trong khi PostgreSQL không có NVARCHAR) | SAD A.1 đến A.7 | TBC (OI-017) |
 | TC-04 | Giao diện công khai responsive cho máy tính, máy tính bảng và điện thoại | NFR-001 | Đã xác định |
 | TC-05 | Định danh bản ghi dùng UUID dạng chuỗi 36 ký tự | SAD A.1, A.6, A.7 | Theo SAD; TBC (OI-017, OI-018) |
@@ -1304,7 +1337,7 @@ Không có endpoint cho giỏ hàng, đặt hàng, thanh toán hoặc thiết k�
 | BC-01 | Không có giỏ hàng, đặt hàng, thanh toán, giao dịch trực tuyến | BR-003, BR-004 |
 | BC-02 | Không có chức năng đặt thiết kế hoặc sản xuất theo yêu cầu riêng | BR-005 |
 | BC-03 | Khách hàng xem thông tin và liên hệ trực tiếp với AN JEWELRY qua số điện thoại hoặc liên kết Facebook, Instagram | BR-001, FR-003 |
-| BC-04 | Vai trò nội bộ giới hạn ở Admin và Staff; không mặc định cùng quyền | BR-008, BR-018 |
+| BC-04 | Vai trò nội bộ giới hạn ở `ADMIN` và `EDITOR` (`EDITOR` ánh xạ Staff); không mặc định cùng quyền | BR-008, BR-018 |
 | BC-06 | Các hạng mục "đề xuất mở rộng" không bắt buộc ở phiên bản hiện tại | BR-019 |
  
 ### 10.3. Giả định dự án
@@ -1313,13 +1346,13 @@ Không có endpoint cho giỏ hàng, đặt hàng, thanh toán hoặc thiết k�
 |---|---|---|
 | ASM-001 | Hệ thống phục vụ hoạt động giới thiệu sản phẩm trang sức trên môi trường trực tuyến | Đã xác nhận (SAD); cách diễn đạt "giới thiệu" hay "kinh doanh trực tuyến" cần BA xác nhận (OI-014) |
 | ASM-002 | Khách hàng xem thông tin sản phẩm và liên hệ trực tiếp với cửa hàng qua số điện thoại hoặc liên kết Facebook, Instagram | Đã xác nhận theo yêu cầu cập nhật |
-| ASM-003 | Hệ thống có các vai trò Admin và Staff | Đã xác nhận (vai trò); quyền chi tiết TBC (SAD) |
+| ASM-003 | Hệ thống có các role nội bộ `ADMIN` và `EDITOR`; `EDITOR` ánh xạ actor Staff của SAD | Đã chốt (role); ma trận quyền chi tiết TBC (OI-004) |
 | ASM-004 | Khách hàng không đặt hàng và không thanh toán trực tuyến | Đã xác nhận theo làm rõ mới (SAD) |
 | ASM-005 | Website không hỗ trợ giao dịch trực tuyến | Đã xác nhận theo làm rõ mới (SAD) |
 | ASM-006 | Không có chức năng sản phẩm thiết kế riêng | Đã xác nhận theo làm rõ mới (SAD) |
 | ASM-007 | Next.js là định hướng công nghệ của dự án | Định hướng theo yêu cầu dự án (SAD) |
 | ASM-008 *(bổ sung)* | Nội dung quan sát trên website `antjewelry.vn` ngày 05/11/2026 chỉ là bằng chứng tham khảo cho phạm vi công khai và có thể thay đổi theo thời gian | Giả định của BA |
-| ASM-009 *(bổ sung)* | Giá hiển thị dạng số có dấu phân cách hàng nghìn, đơn vị tiền có thể là đồng Việt Nam nhưng website không ghi rõ | Giả định của BA; TBC (OI-016) |
+| ASM-009 *(bổ sung)* | Giá là số nguyên VND (`Int`), hiển thị dạng `10.000.000`, không ký hiệu tiền tệ | Đã chốt (2026-11-09) |
 | ASM-010 *(bổ sung)* | Mức ưu tiên (High/Medium/Low) và các giá trị định lượng của NFR là đề xuất của BA, cần chủ dự án phê duyệt | Giả định của BA |
 | ASM-011 *(bổ sung)* | Danh sách OI ở Phụ lục A là nguồn duy nhất cho các vấn đề cần xác nhận; một OI chỉ đóng khi có quyết định từ người có thẩm quyền | Giả định của BA, theo nguyên tắc của SAD Phụ lục D |
  
@@ -1403,7 +1436,7 @@ Tiêu chí nghiệm thu (AC) được viết ở dạng điều kiện **đo đ�
  
 | ID | Phạm vi | Điều kiện nghiệm thu | Phương pháp | Phụ thuộc |
 |---|---|---|---|---|
-| AC-061 | Phạm vi (BR-003, BR-004, BR-005) | Rà soát toàn bộ website và API: 0 chức năng giỏ hàng, thanh toán, đặt thiết kế riêng; 0 endpoint thuộc nhóm giỏ hàng, đơn hàng, thanh toán; hành vi của mọi nút có nhãn "order" (ví dụ "ORDER NOW") đã được xác nhận phù hợp với BR-003. | RS, KTTC | OI-031 |
+| AC-061 | Phạm vi (BR-003, BR-004, BR-005) | Rà soát toàn bộ website và API: 0 chức năng giỏ hàng, thanh toán, đặt thiết kế riêng; 0 endpoint thuộc nhóm giỏ hàng, đơn hàng, thanh toán; nút "ORDER NOW" chỉ mở Contact popover với số điện thoại và link Facebook/Instagram, không tạo đơn và không có form. | RS, KTTC | OI-031 |
 | AC-062 | Quản lý vấn đề cần xác nhận | Trước khi nghiệm thu mỗi module, các OI mức Cao liên quan (OI-004, OI-005, OI-015, OI-016) đã đóng bằng quyết định có ghi nhận của người có thẩm quyền; 0 yêu cầu ưu tiên High còn ở trạng thái TBC khi nghiệm thu. | RS | Phụ lục A |
 | AC-063 | Truy vết | 100% FR có ít nhất một AC; 100% NFR có ít nhất một AC; 100% FR (trừ FR-002 với điều hướng chung) có ít nhất một UC; 0 mã yêu cầu trùng lặp; ma trận mục 12 được cập nhật theo thay đổi cuối cùng. | RS | |
  
@@ -1519,13 +1552,13 @@ Danh sách giữ nguyên mã của các vấn đề cần xác nhận còn hiệ
 | OI-010 | Thông số bản nhẫn/đá áp dụng cho nhóm sản phẩm nào | Trung bình | FR-009; UC-05 | SAD |
 | OI-011 | URL Routing chính thức | Trung bình | FR-002, FR-007 | SAD |
 | OI-012 | Chỉ tiêu hiệu năng và trình duyệt cần hỗ trợ | Trung bình | NFR-002, NFR-004 | SAD |
-| OI-013 | Công nghệ Backend, cơ sở dữ liệu và lưu trữ ảnh chính thức | Trung bình (đề xuất) | Mục 9.2; TC-02 | SAD |
+| OI-013 | Công nghệ Backend, cơ sở dữ liệu và lưu trữ ảnh chính thức. **Đã chốt:** không backend tách biệt; Prisma + SQLite (dev) / PostgreSQL (production). Còn TBC: lưu trữ ảnh | Trung bình (đề xuất) | Mục 9.2; TC-02 | SAD |
 | OI-014 | Tên chính thức (AN JEWELRY hay ANT JEWELRY; tên miền antjewelry.vn; website hiển thị "AntJewelry") và mô tả vai trò hệ thống ("giới thiệu sản phẩm" hay "kinh doanh trang sức trực tuyến") | Trung bình | Mục 1.5; ASM-001 | SAD |
 | OI-015 | Quan hệ `product_detail` và `product_price` tạo vòng tham chiếu; hướng tham chiếu chuẩn; `price_id` có phải "giá hiện tại" | Cao | FR-022, FR-026; mục 8.4 | SAD |
-| OI-016 | Trường `currency` chứa mã tiền tệ hay số tiền; kiểu và độ chính xác; đơn vị tiền hiển thị | Cao | FR-004, FR-006, FR-026 | SAD |
-| OI-017 | Hệ quản trị CSDL chính thức và quy ước kiểu chuỗi (VARCHAR/NVARCHAR so với PostgreSQL) | Trung bình | Mục 8.2; TC-03 | SAD |
+| OI-016 | Trường `currency` chứa mã tiền tệ hay số tiền; kiểu và độ chính xác; đơn vị tiền hiển thị. **Đã chốt:** giá là số nguyên VND (`Int`), hiển thị `10.000.000`, không ký hiệu tiền tệ | Cao | FR-004, FR-006, FR-026 | SAD |
+| OI-017 | Hệ quản trị CSDL chính thức và quy ước kiểu chuỗi (VARCHAR/NVARCHAR so với PostgreSQL). **Đã chốt:** SQLite cho dev, PostgreSQL cho production | Trung bình | Mục 8.2; TC-03 | SAD |
 | OI-018 | Lưu trữ ảnh: trường đường dẫn/tệp và thứ tự hiển thị; Blog có một hay nhiều ảnh; giới hạn tệp | Trung bình | FR-008, FR-025, FR-032 | SAD |
-| OI-021 | Phương thức xác thực, chính sách bảo vệ tài khoản, cấu trúc lưu tài khoản Admin/Staff | Trung bình | FR-033 đến FR-035; NFR-007, N | SAD |
+| OI-021 | Phương thức xác thực, chính sách bảo vệ tài khoản, cấu trúc lưu tài khoản `ADMIN`/`EDITOR` | Trung bình | FR-033 đến FR-035; NFR-007, NFR-008 | SAD |
 | OI-022 | Hệ thống có sử dụng SKU không | Thấp (đề xuất) | Mục 8.2.1 (không có trường SKU) | SAD |
 | OI-023 | Quy ước API: phân trang (kể cả cơ chế "SEE MORE"), thứ tự mặc định, phiên bản hóa, múi giờ, định dạng lỗi | Trung bình | FR-004, FR-006, FR-010; mục 9.3 | SAD |
 | OI-024 | Blog: có bổ sung ngày đăng, trạng thái, cờ xóa mềm không (website hiển thị ngày đăng ở trang chi tiết) | Trung bình | FR-010, FR-011, FR-031 | SAD |
@@ -1534,7 +1567,7 @@ Danh sách giữ nguyên mã của các vấn đề cần xác nhận còn hiệ
 | OI-028 | Các trang tĩnh ở chân trang (Điều khoản và điều kiện, Chính sách bảo mật, Vận chuyển và Đổi trả, Chăm sóc trang sức): có thuộc phạm vi không; ai quản trị nội dung; nội dung "Vận chuyển và Đổi trả" có phù hợp BR-003, BR-004 không | Trung bình | FR-002; mục 6.4 | Bổ sung |
 | OI-029 | Ngôn ngữ giao diện và nội dung: website dùng nhãn tiếng Anh (HOME, PRODUCTS…), nội dung Blog tiếng Việt, nhãn loại sản phẩm tiếng Việt ("Nhẫn"); đơn ngữ hay đa ngữ | Thấp | Toàn bộ MOD-01 đến MOD-03; mục 9.1 | Bổ sung |
 | OI-030 | Quan hệ giữa hệ thống theo SAD và website `antjewelry.vn` đang chạy (xây mới, thay thế hay mở rộng; có di chuyển dữ liệu không); cung cấp mã nguồn, cơ sở dữ liệu và tài khoản quản trị để xác minh hiện trạng | Cao | Toàn bộ; LM-01 | Bổ sung |
-| OI-031 | Nút **"ORDER NOW"** trên trang chi tiết sản phẩm: dẫn đến đâu và thực hiện gì; có mâu thuẫn BR-003 và ASM-004 không | Cao | FR-007; BR-003; AC-061 | Bổ sung |
+| OI-031 | Nút **"ORDER NOW"** trên trang chi tiết sản phẩm: dẫn đến đâu và thực hiện gì; có mâu thuẫn BR-003 và ASM-004 không. **Đã chốt:** mở Contact popover (số điện thoại, Facebook, Instagram từ Settings); không tạo đơn, không có form | Cao | FR-007; BR-003; AC-061 | Bổ sung |
 | OI-032 | Khối "quyền lợi khi mua" (chứng nhận, bảo hành, thu mua lại, thời gian chế tác) và khối "YOU MIGHT ALSO LIKE" (sản phẩm liên quan) trên trang chi tiết: có thuộc phạm vi không; nguồn dữ liệu; quy tắc chọn sản phẩm liên quan; nội dung có hàm ý chính sách thương mại cần đối chiếu BR-003, BR-005 không | Trung bình | FR-007, FR-009; OI-010 | Bổ sung |
  
 ---
@@ -1551,7 +1584,7 @@ Danh sách giữ nguyên mã của các vấn đề cần xác nhận còn hiệ
 | 4 | Giá | Dữ liệu giá chưa rõ số tiền và đơn vị (OI-016) | Hiển thị dạng `3,680,000`, không ký hiệu tiền tệ | Bổ sung dữ kiện cho OI-016 |
 | 5 | Ảnh sản phẩm | Một sản phẩm có nhiều ảnh (A.3, B.3) | Danh sách: 2 ảnh mỗi sản phẩm; chi tiết: thư viện nhiều ảnh (sản phẩm mẫu: 9 ảnh) có nút chuyển | Phù hợp |
 | 6 | Thông số sản phẩm | Chỉ có `short_description` trong dữ liệu; thông số chưa có trường (OI-010) | Chi tiết sản phẩm mẫu có thông số: bản nhẫn, kích thước đá, loại đá, chất liệu | Bổ sung dữ kiện cho OI-010; thiếu trường dữ liệu tương ứng |
-| 8 | Đặt hàng | Không có đặt hàng trực tuyến (BR-003) | Trang chi tiết có nút "ORDER NOW"; không thấy giỏ hàng hay thanh toán | Cần làm rõ (OI-031) |
+| 8 | Đặt hàng | Không có đặt hàng trực tuyến (BR-003) | Trang chi tiết có nút "ORDER NOW"; không thấy giỏ hàng hay thanh toán | Đã chốt: "ORDER NOW" mở Contact popover, không tạo đơn (OI-031) |
 | 9 | Nội dung bổ sung ở chi tiết sản phẩm | Không có | Khối "quyền lợi khi mua"; khối "YOU MIGHT ALSO LIKE" (sản phẩm liên quan) | Ngoài SAD (OI-032) |
 | 10 | Blog | Danh sách và chi tiết; dữ liệu `blog` không có ngày đăng (OI-024) | Danh sách: 3 bài, không phân trang, không ngày đăng. Chi tiết: có ngày đăng và khối "OTHER BLOGS"; ảnh `.webp` | Bổ sung dữ kiện cho OI-024 |
 | 11 | Lưu trữ ảnh | Cloudinary (đề xuất) | Ảnh Blog nằm ở đường dẫn dạng `/storage/images/blog/…` trên chính tên miền | Khác với đề xuất; cần chốt (OI-013, OI-030) |
