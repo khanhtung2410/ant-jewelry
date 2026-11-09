@@ -6,11 +6,7 @@ Website giới thiệu sản phẩm trang sức; khách hàng liên hệ trực 
 
 AN JEWELRY là website dành cho khách hàng có nhu cầu tìm hiểu các sản phẩm trang sức và liên hệ trực tiếp với cửa hàng.
 
-<<<<<<< HEAD
-**Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict, ESLint, Prettier, Vitest và các contract domain trong `src/types/domain.ts`; mock data nằm trong `src/lib/mock/` (sản phẩm dùng ảnh `.webp` trong `public/mock/products/`, sản phẩm chưa có ảnh dùng SVG placeholder) và mọi trang phải đọc dữ liệu qua query function trong `src/lib/queries/`. Trang chủ vẫn hiển thị nội dung mặc định của `create-next-app`. Chưa có Database, Prisma, Authentication hoặc giao diện AN JEWELRY. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
-=======
-**Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict, ESLint, Prettier, Vitest và các contract domain trong `src/types/domain.ts`; mock data nằm trong `src/lib/mock/` và mọi trang phải đọc dữ liệu qua query function trong `src/lib/queries/`. Trang chủ vẫn hiển thị nội dung mặc định của `create-next-app`. Chưa có Database, Prisma, Authentication hoặc giao diện AN JEWELRY. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
->>>>>>> fdc0f57028cf3790a55b289b5767f465243f1eb7
+**Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict, ESLint, Prettier, Vitest và các contract domain trong `src/types/domain.ts`; mock data nằm trong `src/lib/mock/` (sản phẩm dùng ảnh `.webp` trong `public/mock/products/`, sản phẩm chưa có ảnh dùng SVG placeholder) và mọi trang phải đọc dữ liệu qua query function trong `src/lib/queries/`. Root layout dùng design tokens trong `src/app/globals.css`, tải font qua `next/font` và render header/footer dùng chung từ `src/components/`. Chưa có trang chủ hoàn chỉnh, Database, Prisma hoặc Authentication. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
 
 Chức năng định hướng:
 
@@ -105,6 +101,7 @@ Các file cấu hình hiện có:
 | `tsconfig.json` | Cấu hình TypeScript strict; alias `@/*` trỏ về `src/*` |
 | `.prettierrc`, `.prettierignore` | Cấu hình format mã nguồn; bỏ qua `docs/`, `public/`, Markdown và lockfile |
 | `vitest.config.mts` | Cấu hình Vitest cho test đặt cạnh code trong `src/` |
+| `src/app/globals.css` | Design tokens toàn cục từ Figma: nền `#FEFDF8`, nền ảnh sản phẩm `#EFEEEC`, đường kẻ `#93AAA0`, chữ `#000000`, font heading/nav monospace viết hoa và font nội dung sans-serif |
 | `package.json` | Dependencies và các script `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `test`, `test:watch` |
 | `.github/pull_request_template.md` | Mẫu mô tả Pull Request |
 | `.gitignore` | Bỏ qua `node_modules`, `.next`, `out`, `build`, `.env*` (trừ `.env.example`), file SQLite local và file build của TypeScript |

@@ -5,6 +5,6 @@ export const settings: Settings = {
   phone: '0900 000 000',
   facebookUrl: 'https://www.facebook.com/example.antjewelry',
   instagramUrl: 'https://www.instagram.com/example.antjewelry',
-  address: 'Số 1 Đường Mẫu, Phường Mẫu, Quận 1, TP. Hồ Chí Minh',
+  address: '1A Tăng Bạt Hổ - phường Phạm Đình Hổ - quận Hai Bà Trưng - Hà Nội',
   email: 'hello@example.com',
 };

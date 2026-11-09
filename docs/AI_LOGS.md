@@ -1,6 +1,73 @@
 # AI Change Log
 
-<<<<<<< HEAD
+## 2026-11-09 22:22:00 +07:00 — Add tokens-based header, footer and shell layout (G1.2)
+
+### User prompt
+
+> G1.2 — Tokens + Layout.  requirement
+> Tokens trong Tailwind (@theme), font qua next/font.
+> Header: logo, HOME, PRODUCTS (dropdown 4 danh mục, gạch chân mục active), BLOG, CONTACT.
+> Footer: địa chỉ / điện thoại / email + icon, INFO, HELP, SOCIAL.
+> grep -rnE "#[0-9A-Fa-f]{6}" src/components src/app --include=*.tsx không có kết quả; dropdown mở/đóng được bằng bàn phím (Enter, Esc, Tab).
+>
+> create new commit branch, commit strictly follow contributing rule and pull_request_template.md
+> also give pr title
+> if change, add prompt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Branched `feature/g1-2-tokens-layout` from `feature/design-tokens-base-styles` because the layout consumes the Figma tokens added there.
+- Added `src/components/header.tsx`: logo, HOME, PRODUCTS disclosure with the 4 seeded categories, BLOG and CONTACT; the active route gets an underline via `aria-current` styling. The disclosure opens with Enter/Space/ArrowDown, closes with Escape (focus returns to the toggle), closes on Tab out of the toggle, supports ArrowUp/ArrowDown inside the menu, and closes on outside pointer-down or focus loss.
+- Added `src/components/footer.tsx`: responsive 12-column footer with the contact block (address, phone and email links plus icons) and HOME, INFO, HELP and SOCIAL columns; SOCIAL uses the Facebook and Instagram URLs from `getSettings()`; the footer carries `id="contact"` so the CONTACT link resolves to `/#contact`.
+- Kept the live address update in `src/lib/mock/settings.ts` so the footer shows the real store address.
+- Exposed the footer's secondary text colour as the `--color-muted` Tailwind token instead of the `text-[#383838]` arbitrary values, satisfying the no-hex rule in TSX.
+- Added `src/components/icons.tsx`: inline chevron, map-pin, phone, mail, Facebook and Instagram SVGs using `currentColor` only, so no hex colours exist in TSX.
+- Updated `src/app/layout.tsx`: keeps the Geist Sans/Mono `next/font` variables, reads categories and settings through query functions, renders `SiteHeader`/`SiteFooter` around the page, and sets the AN JEWELRY metadata plus `lang="vi"`.
+- Added the provided `public/mock/products/antjewelry-logo.svg` asset used by the header and footer.
+- Removed the two remaining six-digit hex utilities from the untracked WIP `src/app/home/page.tsx` so the required grep returns no results; that file and `src/components/productCard.ts` remain uncommitted.
+- Updated `docs/README.md` and `docs/ARCHITECTURE.md` to describe the shared layout components and the root-layout wiring.
+- Omitted the copyright year from the footer because Next.js 16 rejects `new Date()` during prerendering.
+
+### Output summary
+
+The storefront now has a global, token-based header and footer rendered by the root layout. Verified in the running production build: clicking PRODUCTS or pressing Enter opens the 4-category menu, Escape closes it and keeps focus on the toggle, and Tab from the toggle closes it before moving to BLOG. Lighthouse accessibility reports 100 with no failures. `npm run format`, `npm run lint`, `npm run typecheck`, `npm test` (24 tests), `npm run format:check` and `npm run build` pass, and the required hex grep returns no matches.
+
+---
+
+## 2026-11-09 15:46:00 +07:00 — Apply Figma design tokens to the root layout stylesheet
+
+### User prompt
+
+> Token	Giá trị	Dùng ở
+> Nền trang	#FEFDF8	body, header, footer
+> Nền ảnh sản phẩm	#EFEEEC	khung ảnh vuông của card và gallery
+> Đường kẻ	#93AAA0	viền dưới header, viền trên footer, divider trang sản phẩm
+> Chữ chính	#000000	tên sản phẩm, giá, đoạn văn
+> Font heading / nav	Monospace, VIẾT HOA	tiêu đề section, menu, nút — đối chiếu tên font chính xác trong Figma
+> Font nội dung	Sans-serif	mô tả, blog, footer
+>
+> use this to change layout.css at highest level
+> create new commit branch, commit strictly follow contributing rule and pull_request_template.md
+> also give pr title
+> if change, add prompt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Updated the highest-level stylesheet imported by `src/app/layout.tsx`, `src/app/globals.css`, with the Figma tokens as CSS custom properties: page background `#FEFDF8`, product-image background `#EFEEEC`, line colour `#93AAA0` and main text `#000000`.
+- Exposed the tokens through Tailwind v4 `@theme inline` as `bg-background`, `bg-product-image`, `border-line`, `font-heading` and `font-body` utilities.
+- Set the body background, text colour and sans-serif content font; applied the monospace heading font and uppercase transform to headings, nav and buttons.
+- Added header/footer backgrounds, header bottom border, footer top border and product divider colour, plus a `.product-image-frame` helper for square card/gallery frames.
+- Removed the default dark-mode overrides so the Figma colours stay consistent.
+- Noted the stylesheet and its tokens in `docs/README.md`.
+- Removed leftover merge-conflict markers from `docs/AI_LOGS.md`, `docs/README.md`, `docs/ARCHITECTURE.md`, `src/lib/mock/products.ts` and `src/lib/queries/queries.test.ts`, keeping the webp-photo side of each conflict.
+- Left the existing uncommitted home-page move and empty `src/components/productCard.ts` untouched.
+
+### Output summary
+
+The root layout now defines and applies the Figma design tokens in one place. Verification passed: `npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`, `npm run build`.
+
+---
+
 ## 2026-11-09 15:35:00 +07:00 — Populate mock products with webp photos
 
 ### User prompt
@@ -26,8 +93,6 @@ Mock products now display the new webp photos, and `ring-2-1` / `ring-5-2` are e
 
 ---
 
-=======
->>>>>>> fdc0f57028cf3790a55b289b5767f465243f1eb7
 ## 2026-11-09 14:58:00 +07:00 — Unify ProductType with Category and fix mock data
 
 ### User prompt
