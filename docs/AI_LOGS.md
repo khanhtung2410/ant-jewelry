@@ -1,5 +1,30 @@
 # AI Change Log
 
+## 2026-11-09 15:35:00 +07:00 — Populate mock products with webp photos
+
+### User prompt
+
+> use the new webp images in products to populate mock, ex: ring-5-2 is second pic of ring-5
+>
+> use previous command brand, commit stricly follow contributing rule and pull_request_template.md
+> merge 2 pull request body, previous one has not been merged yet, also give pr title
+> if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Added a `productPhoto()` helper and an optional `images` list to `ProductSeed` in `src/lib/mock/products.ts`; the first URL becomes the front image and the rest are ordered gallery images.
+- Wired the 10 new primary webp photos into the matching ring products: `ring-1` → Solitaire Grace, `ring-2` → Étoile Pavé, `ring-3` → Blossom Three Stone, `ring-4` → Eclipse Pavé Band, `ring-5` → Serenade Twisted Band, `ring-6` → Aurora Band, `ring-7` → Halo Eternity Band, `ring-8` → Petite Promise, `ring-9` → Lumiere Slim Band, `ring-10` → Regal Emerald Cut.
+- Added the second angles as secondary gallery images: `ring-2-1` for Étoile Pavé and `ring-5-2` for Serenade Twisted Band, with `sortOrder` and `isFront` set by position.
+- Products without a matching photo keep the existing SVG placeholder per `ProductType` (both a front and a detail entry), so all mock products still expose a gallery.
+- Extended `src/lib/queries/queries.test.ts` with checks for 10 unique webp front images, webp front-image shape, ordered secondary angles for `ring-2`/`ring-5`, and SVG placeholders for products without a photo.
+- Updated `docs/README.md` and `docs/ARCHITECTURE.md` to document the webp product photos, the `ring-N-M` secondary-image convention and SVG placeholders.
+
+### Output summary
+
+Mock products now display the new webp photos, and `ring-2-1` / `ring-5-2` are exposed as the second gallery image of their parent ring. Verification passed: `npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`, `npm run build`.
+
+---
+
 ## 2026-11-09 14:58:00 +07:00 — Unify ProductType with Category and fix mock data
 
 ### User prompt

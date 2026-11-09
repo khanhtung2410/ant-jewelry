@@ -41,6 +41,9 @@ const imageByType: Record<ProductType, string> = {
   'OTHER JEWELRY': '/mock/products/ready-to-ship.svg',
 };
 
+/** `ring-5-2` is the second photo of the `ring-5` product. */
+const productPhoto = (name: string) => `/mock/products/${name}.webp`;
+
 interface ProductSeed {
   product_id: string;
   name: string;
@@ -51,6 +54,8 @@ interface ProductSeed {
   description: string;
   material: string;
   colors: ProductColor[];
+  /** First URL is the front photo, the rest are gallery photos in order. */
+  images?: string[];
   status?: ProductStatus;
 }
 
@@ -92,24 +97,23 @@ function buildDetails(seed: ProductSeed): ProductDetails {
 }
 
 function buildImages(seed: ProductSeed): ProductImage[] {
-  const url = imageByType[seed.type];
+  // Products without a dedicated photo fall back to the type placeholder twice
+  // so gallery screens still have a front image and a detail image.
+  const urls = seed.images ?? [imageByType[seed.type], imageByType[seed.type]];
 
-  return [
-    {
-      imageId: `${seed.product_id}-front`,
+  return urls.map((url, index) => {
+    const isFront = index === 0;
+
+    return {
+      imageId: isFront
+        ? `${seed.product_id}-front`
+        : `${seed.product_id}-detail${index > 1 ? `-${index}` : ''}`,
       url,
-      alt: `${seed.name} - ảnh chính`,
-      isFront: true,
-      sortOrder: 1,
-    },
-    {
-      imageId: `${seed.product_id}-detail`,
-      url,
-      alt: `${seed.name} - ảnh chi tiết`,
-      isFront: false,
-      sortOrder: 2,
-    },
-  ];
+      alt: `${seed.name} - ${isFront ? 'ảnh chính' : index === 1 ? 'ảnh chi tiết' : `ảnh chi tiết ${index}`}`,
+      isFront,
+      sortOrder: index + 1,
+    };
+  });
 }
 
 function buildProduct(seed: ProductSeed): Product {
@@ -140,6 +144,7 @@ const seeds: ProductSeed[] = [
       'Nhẫn cưới tròn cổ điển với bề mặt đánh bóng, phù hợp cho cả lễ cưới và sử dụng hằng ngày.',
     material: 'Vàng 18K',
     colors: [gold, whiteGold],
+    images: [productPhoto('ring-6')],
   },
   {
     product_id: 'prd-eclipse-pave-band',
@@ -151,6 +156,7 @@ const seeds: ProductSeed[] = [
     description: 'Nhẫn cưới pavé với dải kim cương nhỏ chạy quanh thân nhẫn, tạo ánh sáng tinh tế.',
     material: 'Vàng trắng 18K',
     colors: [whiteGold, roseGold],
+    images: [productPhoto('ring-4')],
   },
   {
     product_id: 'prd-serenade-twisted-band',
@@ -163,6 +169,7 @@ const seeds: ProductSeed[] = [
       'Thiết kế xoắn mềm mại lấy cảm hứng từ dải lụa, tôn lên vẻ thanh thoát của bàn tay.',
     material: 'Vàng hồng 18K',
     colors: [roseGold, gold],
+    images: [productPhoto('ring-5'), productPhoto('ring-5-2')],
   },
   {
     product_id: 'prd-vow-classic-band',
@@ -186,6 +193,7 @@ const seeds: ProductSeed[] = [
       'Nhẫn eternity đính kim cương quanh toàn bộ thân nhẫn, biểu tượng của tình yêu trọn vẹn.',
     material: 'Vàng trắng 18K',
     colors: [whiteGold],
+    images: [productPhoto('ring-7')],
   },
   {
     product_id: 'prd-lumiere-slim-band',
@@ -197,6 +205,7 @@ const seeds: ProductSeed[] = [
     description: 'Bản nhẫn mảnh nhẹ nhàng, phù hợp làm nhẫn cưới hoặc nhẫn stacking hằng ngày.',
     material: 'Vàng 18K',
     colors: [gold, silver],
+    images: [productPhoto('ring-9')],
   },
   {
     product_id: 'prd-solitaire-grace',
@@ -208,6 +217,7 @@ const seeds: ProductSeed[] = [
     description: 'Nhẫn đính hôn solitaire với viên kim cương chủ đặt trên bệ 4 chấu thanh mảnh.',
     material: 'Vàng trắng 18K',
     colors: [whiteGold, gold],
+    images: [productPhoto('ring-1')],
   },
   {
     product_id: 'prd-celeste-halo',
@@ -230,6 +240,7 @@ const seeds: ProductSeed[] = [
     description: 'Thiết kế nhỏ gọn với viên đá nổi bật, dành cho người yêu thích sự tinh tế.',
     material: 'Vàng hồng 18K',
     colors: [roseGold, whiteGold],
+    images: [productPhoto('ring-8')],
   },
   {
     product_id: 'prd-regal-emerald-cut',
@@ -241,6 +252,7 @@ const seeds: ProductSeed[] = [
     description: 'Viên kim cương giác cắt emerald tạo nét sang trọng, cổ điển và đầy cá tính.',
     material: 'Vàng trắng 18K',
     colors: [whiteGold, gold],
+    images: [productPhoto('ring-10')],
   },
   {
     product_id: 'prd-blossom-three-stone',
@@ -252,6 +264,7 @@ const seeds: ProductSeed[] = [
     description: 'Ba viên đá tượng trưng cho quá khứ, hiện tại và tương lai của một mối quan hệ.',
     material: 'Vàng 18K',
     colors: [gold, roseGold],
+    images: [productPhoto('ring-3')],
   },
   {
     product_id: 'prd-etoile-pave',
@@ -263,6 +276,7 @@ const seeds: ProductSeed[] = [
     description: 'Thân nhẫn pavé ôm lấy viên đá chủ, tạo hiệu ứng lấp lánh như những vì sao.',
     material: 'Vàng trắng 18K',
     colors: [whiteGold],
+    images: [productPhoto('ring-2'), productPhoto('ring-2-1')],
   },
   {
     product_id: 'prd-luna-pendant',

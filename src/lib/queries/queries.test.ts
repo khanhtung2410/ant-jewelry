@@ -85,6 +85,49 @@ describe('product queries', () => {
     expect(related.some((product) => product.product_id === 'prd-aurora-band')).toBe(false);
   });
 
+  it('assigns the webp product photos as front images', () => {
+    const photoProducts = getProducts({ includeHidden: true }).filter((product) =>
+      product.images[0]?.url.endsWith('.webp'),
+    );
+    const aurora = getProductBySlug('aurora-band');
+
+    expect(photoProducts).toHaveLength(10);
+    expect(new Set(photoProducts.map((product) => product.images[0].url)).size).toBe(10);
+    expect(aurora?.images).toEqual([
+      {
+        imageId: 'prd-aurora-band-front',
+        url: '/mock/products/ring-6.webp',
+        alt: 'Aurora Band - ảnh chính',
+        isFront: true,
+        sortOrder: 1,
+      },
+    ]);
+  });
+
+  it('keeps extra angles as ordered secondary gallery images', () => {
+    for (const [slug, first, second] of [
+      ['serenade-twisted-band', 'ring-5', 'ring-5-2'],
+      ['etoile-pave', 'ring-2', 'ring-2-1'],
+    ] as const) {
+      const images = getProductBySlug(slug)?.images ?? [];
+
+      expect(images).toHaveLength(2);
+      expect(images.map((image) => image.url)).toEqual([
+        `/mock/products/${first}.webp`,
+        `/mock/products/${second}.webp`,
+      ]);
+      expect(images.map((image) => image.sortOrder)).toEqual([1, 2]);
+      expect(images.map((image) => image.isFront)).toEqual([true, false]);
+    }
+  });
+
+  it('keeps SVG placeholders for products without a photo', () => {
+    const necklace = getProductBySlug('luna-pendant');
+
+    expect(necklace?.images).toHaveLength(2);
+    expect(necklace?.images.every((image) => image.url.endsWith('.svg'))).toBe(true);
+  });
+
   it('returns a clone so callers cannot mutate mock data', () => {
     const first = getProducts()[0];
     first.name = 'mutated';
