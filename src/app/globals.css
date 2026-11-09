@@ -1,26 +1,64 @@
 @import 'tailwindcss';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Figma design tokens */
+  --background: #fefdf8;
+  --foreground: #000000;
+  --product-image-background: #efeeec;
+  --line: #93aaa0;
+
+  /* Geist Sans/Mono are loaded in src/app/layout.tsx. */
+  --font-body-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  --font-heading-family: var(--font-geist-mono), 'Courier New', monospace;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-product-image: var(--product-image-background);
+  --color-line: var(--line);
+  --font-sans: var(--font-body-family);
+  --font-mono: var(--font-heading-family);
+  --font-body: var(--font-body-family);
+  --font-heading: var(--font-heading-family);
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-body-family);
+}
+
+header,
+footer {
+  background-color: var(--background);
+}
+
+header {
+  border-bottom: 1px solid var(--line);
+}
+
+footer {
+  border-top: 1px solid var(--line);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+nav,
+button {
+  font-family: var(--font-heading-family);
+  text-transform: uppercase;
+}
+
+hr {
+  border-color: var(--line);
+}
+
+/* Square product-image frames on cards and gallery pages. */
+.product-image-frame {
+  background-color: var(--product-image-background);
 }

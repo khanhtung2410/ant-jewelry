@@ -1,6 +1,39 @@
 # AI Change Log
 
-<<<<<<< HEAD
+## 2026-11-09 15:46:00 +07:00 — Apply Figma design tokens to the root layout stylesheet
+
+### User prompt
+
+> Token	Giá trị	Dùng ở
+> Nền trang	#FEFDF8	body, header, footer
+> Nền ảnh sản phẩm	#EFEEEC	khung ảnh vuông của card và gallery
+> Đường kẻ	#93AAA0	viền dưới header, viền trên footer, divider trang sản phẩm
+> Chữ chính	#000000	tên sản phẩm, giá, đoạn văn
+> Font heading / nav	Monospace, VIẾT HOA	tiêu đề section, menu, nút — đối chiếu tên font chính xác trong Figma
+> Font nội dung	Sans-serif	mô tả, blog, footer
+>
+> use this to change layout.css at highest level
+> create new commit branch, commit strictly follow contributing rule and pull_request_template.md
+> also give pr title
+> if change, add prompt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Updated the highest-level stylesheet imported by `src/app/layout.tsx`, `src/app/globals.css`, with the Figma tokens as CSS custom properties: page background `#FEFDF8`, product-image background `#EFEEEC`, line colour `#93AAA0` and main text `#000000`.
+- Exposed the tokens through Tailwind v4 `@theme inline` as `bg-background`, `bg-product-image`, `border-line`, `font-heading` and `font-body` utilities.
+- Set the body background, text colour and sans-serif content font; applied the monospace heading font and uppercase transform to headings, nav and buttons.
+- Added header/footer backgrounds, header bottom border, footer top border and product divider colour, plus a `.product-image-frame` helper for square card/gallery frames.
+- Removed the default dark-mode overrides so the Figma colours stay consistent.
+- Noted the stylesheet and its tokens in `docs/README.md`.
+- Removed leftover merge-conflict markers from `docs/AI_LOGS.md`, `docs/README.md`, `docs/ARCHITECTURE.md`, `src/lib/mock/products.ts` and `src/lib/queries/queries.test.ts`, keeping the webp-photo side of each conflict.
+- Left the existing uncommitted home-page move and empty `src/components/productCard.ts` untouched.
+
+### Output summary
+
+The root layout now defines and applies the Figma design tokens in one place. Verification passed: `npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`, `npm run build`.
+
+---
+
 ## 2026-11-09 15:35:00 +07:00 — Populate mock products with webp photos
 
 ### User prompt
@@ -26,8 +59,6 @@ Mock products now display the new webp photos, and `ring-2-1` / `ring-5-2` are e
 
 ---
 
-=======
->>>>>>> fdc0f57028cf3790a55b289b5767f465243f1eb7
 ## 2026-11-09 14:58:00 +07:00 — Unify ProductType with Category and fix mock data
 
 ### User prompt
