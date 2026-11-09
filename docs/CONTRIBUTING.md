@@ -77,15 +77,16 @@ Chỉ dùng chữ ASCII, chữ số và dấu gạch ngang trong tên nhánh. Kh
 ### Cấu trúc file
 
 ```text
-app/          ← route, page, layout, route handler (hiện có)
-public/       ← static assets (hiện có)
-docs/         ← tài liệu dự án (hiện có)
-components/   ← component giao diện dùng chung (tạo khi cần)
-lib/          ← tiện ích và logic dùng chung (tạo khi cần)
-constants/    ← hằng số và cấu hình domain (tạo khi cần)
+src/app/          ← route, page, layout, route handler (hiện có)
+src/types/        ← domain contracts (hiện có)
+public/           ← static assets (hiện có)
+docs/             ← tài liệu dự án (hiện có)
+src/components/   ← component giao diện dùng chung (tạo khi cần)
+src/lib/          ← tiện ích và logic dùng chung (tạo khi cần)
+src/constants/    ← hằng số và cấu hình domain (tạo khi cần)
 ```
 
-Alias `@/*` trong `tsconfig.json` trỏ về thư mục gốc repository. Đặt code gần route hoặc domain đang sử dụng; chỉ tạo thư mục dùng chung khi có nhiều nơi thực sự cần dùng.
+Alias `@/*` trong `tsconfig.json` trỏ về `src/*`. Đặt code gần route hoặc domain đang sử dụng; chỉ tạo thư mục dùng chung khi có nhiều nơi thực sự cần dùng.
 
 ### Server vs Client Component
 
@@ -95,12 +96,13 @@ Alias `@/*` trong `tsconfig.json` trỏ về thư mục gốc repository. Đặt
 
 ### Tầng gọi API
 
-- Work tree hiện tại chưa có Backend/API. Khi bổ sung, không gọi database trực tiếp từ component phía trình duyệt; database chỉ được truy cập trong server-side code/API route hoặc route handler.
-- Một số trang có thể gọi API bằng `fetch`, một số luồng có thể dùng API client/hook riêng. Khi mở rộng, ưu tiên tái sử dụng hoặc trích xuất API client/hook nếu logic cần dùng ở nhiều nơi hoặc cần kiểm thử độc lập.
+- Kiến trúc đã chốt là **một Next.js application duy nhất**: read bằng Server Components, mutation bằng Server Actions, Route Handlers chỉ dùng cho upload. Không tạo NestJS hoặc tầng REST API riêng.
+- Không gọi database trực tiếp từ component phía trình duyệt; database chỉ được truy cập trong server-side code, Server Action, query function hoặc route handler.
+- Giữ query function và Server Action trong module server-side tương ứng; tránh lặp lại logic giữa các route.
 
-### Database (chưa cấu hình)
+### Database (đã chốt công nghệ, chưa cấu hình)
 
-- Repository chưa có Database, ORM hoặc migration. `ARCHITECTURE.md` đề xuất PostgreSQL và Prisma nhưng chưa được xác nhận; không tạo schema hoặc migration trước khi có quyết định chính thức.
+- Đã chốt **Prisma**; local dev dùng **SQLite**, production dùng **PostgreSQL**. Work tree chưa có schema, migration hoặc Prisma Client; không tạo schema/migration ngoài task tương ứng.
 - Khi Database được bổ sung, mọi query phải dùng **parameterized query**, không nối chuỗi:
 
   ```ts
@@ -116,23 +118,25 @@ Alias `@/*` trong `tsconfig.json` trỏ về thư mục gốc repository. Đặt
 
 ### Validation
 
-- Validate dữ liệu không đáng tin cậy ở server, gồm body, query param và dữ liệu từ bên ngoài.
-- Dùng kiểu và helper đã có trong dự án; nếu thêm thư viện validation mới, cần cập nhật dependency và tài liệu tương ứng.
+- Validate dữ liệu không đáng tin cậy ở server, gồm body, query param, `FormData` và dữ liệu từ bên ngoài.
+- Dùng **Zod** cho schema validation; đặt schema gần Server Action hoặc module nghiệp vụ sử dụng. Zod chưa được cài trong work tree hiện tại, bổ sung khi làm phase Database/Server Action.
 
 ### Testing
 
-- Repository hiện **chưa cấu hình test framework** và chưa có script `test`.
+- Repository dùng **Vitest**; script `test` và `test:watch` đã có. Test đặt cạnh code trong `src/` với hậu tố `.test.ts` hoặc `.spec.ts`.
 - Với thay đổi giao diện hoặc logic hiện có, kiểm tra thủ công các luồng bị ảnh hưởng và ghi rõ trong Pull Request.
-- Khi bổ sung test framework, đặt test gần code liên quan và ưu tiên kiểm thử hàm thuần cùng hành vi có thể tái hiện ổn định. Cập nhật lệnh chạy test vào README và tài liệu này.
+- Ưu tiên kiểm thử hàm thuần, validation schema và hành vi server-side có thể tái hiện ổn định.
 
 ### Format & Lint
 
-- Repository cấu hình ESLint; hiện chưa cấu hình Prettier hoặc Husky pre-commit hook.
+- Repository cấu hình ESLint và Prettier; chưa cấu hình Husky pre-commit hook.
 
 ```bash
-npm run lint             # kiểm tra
+npm run lint             # kiểm tra ESLint
 npm run lint -- --fix    # yêu cầu ESLint tự sửa lỗi có thể tự động sửa
-npx tsc --noEmit         # kiểm tra kiểu
+npm run typecheck        # kiểm tra kiểu
+npm run format           # Prettier ghi lại file
+npm run format:check     # kiểm tra format, dùng trong CI/PR
 ```
 
 ---
@@ -207,11 +211,12 @@ refactor(ui): extract shared product card
 
 - [ ] Đã cập nhật từ `main` mới nhất và giải quyết conflict nếu có.
 - [ ] `npm run lint` pass.
-- [ ] `npx tsc --noEmit` pass.
+- [ ] `npm run typecheck` pass.
+- [ ] `npm test` pass.
+- [ ] `npm run format:check` pass.
 - [ ] `npm run build` thành công.
 - [ ] Đã tự review diff trên GitHub.
 - [ ] Đã cập nhật README / docs nếu thay đổi hành vi hoặc cấu hình.
-- [ ] Nếu test framework đã được cấu hình: chạy test liên quan và ghi kết quả.
 
 ### Tiêu đề PR
 
@@ -240,8 +245,11 @@ Ví dụ: "Tách logic fetch sản phẩm ra hook để test được không c�
 ## Testing
 Liệt kê các kiểm tra đã chạy và kết quả.
 
-- [ ] Lint, type-check và build
-- [ ] Unit test liên quan (nếu đã cấu hình test framework)
+- [ ] `npm run lint`
+- [ ] `npm run typecheck`
+- [ ] `npm test`
+- [ ] `npm run format:check`
+- [ ] `npm run build`
 - [ ] Kiểm tra thủ công (nếu cần), nêu môi trường và kết quả
 
 ## Screenshots (nếu là UI)
@@ -250,9 +258,10 @@ Liệt kê các kiểm tra đã chạy và kết quả.
 | <ảnh> | <ảnh> |
 
 ## Checklist
-- [ ] Test pass (nếu đã cấu hình test framework)
-- [ ] Lint pass
-- [ ] Type-check pass
+- [ ] `npm test` pass
+- [ ] `npm run lint` pass
+- [ ] `npm run typecheck` pass
+- [ ] `npm run format:check` pass
 - [ ] Không có breaking change (hoặc đã ghi rõ ở footer commit)
 - [ ] Đã cập nhật docs nếu cần
 ```

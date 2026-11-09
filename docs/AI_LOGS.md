@@ -1,5 +1,38 @@
 # AI Change Log
 
+## 2026-11-09 14:02:00 +07:00 — Align docs and tooling with the repository
+
+### User prompt
+
+> review file, check for bug, mismatch between file and iron out
+>
+> Storefront + trang quản trị + database, trong repo Ant-jewelry hiện có. Làm theo 4 giai đoạn (G0 → G4), mỗi mục có dấu ☐ là một PR.
+> Design: Figma Jewelry-website — 6 màn: Home, Category, Product, Product + Contact popover, Blog list, Blog detail. Đối chiếu thêm antjewelry.vn.
+> Quyết định đã chốt: một Next.js App Router + TypeScript strict; read bằng Server Components, mutation bằng Server Actions, Route Handlers chỉ cho upload; không NestJS, không tầng REST riêng. Prisma, SQLite dev, PostgreSQL production, validate bằng Zod. ADMIN toàn quyền; EDITOR quản lý sản phẩm (trừ giá), danh mục, Blog, hero slide; không sửa giá, không vào Settings / Users. Không có Inquiry/form; ORDER NOW mở Contact popover lấy số điện thoại + Facebook + Instagram từ Settings. Giá là số nguyên VND, hiển thị 10.000.000, không ký hiệu tiền tệ. Responsive tự thiết kế cho mobile/tablet. Ngoài phạm vi: giỏ hàng, thanh toán, tài khoản khách hàng, wishlist, đa ngôn ngữ. Design tokens: #FEFDF8, #EFEEEC, #93AAA0, #000000; heading/nav monospace viết hoa; nội dung sans-serif. Figma ghi "Short by" ở Category — sửa thành "Sort by".
+> dont code anything yet
+> create new branch, commit stricly follow contributing rule and pull_request_template.md
+> if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Reviewed the work tree against `CONTRIBUTING.md`, `pull_request_template.md` and the agreed decisions; found configuration, documentation and template mismatches rather than application-code defects.
+- Fixed `.gitignore` so `.env.example` is committed while `.env*` remains ignored; added local SQLite database file patterns.
+- Rewrote `.env.example` for Prisma with SQLite local development and PostgreSQL production placeholders.
+- Renamed `vitest.config.ts` to `vitest.config.mts`; this removes the Vitest/Vite CommonJS config-loader warning.
+- Ran Prettier across the configured code files (11 files) and fixed the missing newline in `package.json`; `npm run format:check` now passes.
+- Repaired `.github/pull_request_template.md`: its first heading was indented four spaces and rendered as a code block. The template now matches the PR sections and verification commands in `CONTRIBUTING.md`.
+- Updated `docs/README.md`: single Next.js architecture (removed NestJS), Prisma/SQLite/PostgreSQL/Zod decisions, Prettier/Vitest, `.env.example`, scripts, directory tree and verification commands.
+- Updated `docs/CONTRIBUTING.md`: `src/` structure and `@/*` alias, no separate backend/REST layer, Prisma/Zod decisions, Vitest and Prettier commands, and PR checklist/description consistency.
+- Updated `docs/ARCHITECTURE.md`: work-tree status, stack table, SQLite/PostgreSQL and Prisma decisions, repository trees, environment section, implementation checkboxes and ADR entries.
+- Updated `docs/REQUIREMENTS.md`: added the agreed decisions and Figma design tokens, aligned role names (`ADMIN`/`EDITOR`, mapping `EDITOR` to SAD Staff), integer VND price, ORDER NOW → Contact popover, single Next.js/no-REST architecture, "Sort by" label, and fixed the truncated `NFR-008` reference in OI-021.
+- No storefront, admin, database schema or Server Action code was added.
+
+### Output summary
+
+Documentation and repository tooling now match the work tree and the agreed technical decisions. Verification passed: `npm test` (2 tests), `npm run typecheck`, `npm run lint`, `npm run format:check`, and `npm run build`. The new branch is `fix/align-docs-and-tooling`; no application features were implemented.
+
+---
+
 ## 2026-11-08 10:32:32 +07:00 — Convert architecture to a single Next.js app
 
 ### User prompt
