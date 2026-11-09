@@ -242,7 +242,7 @@ Lý do / ticket liên quan. Link tới issue nếu có.
 Cách tiếp cận chính. Điểm cần lưu ý khi review.
 Ví dụ: "Tách logic fetch sản phẩm ra hook để test được không cần DOM."
 
-## Testing
+## Testing (dán các output đầy đủ của các lệnh vào sau tick)
 Liệt kê các kiểm tra đã chạy và kết quả.
 
 - [ ] `npm run lint`

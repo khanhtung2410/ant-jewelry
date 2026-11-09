@@ -263,6 +263,10 @@ ant-jewelry/
 - Chỉ có một Next.js application ở thư mục gốc, source code trong `src/`; chưa có thư mục `frontend/` hoặc `backend/`.
 - `src/app/page.tsx` đang là trang mặc định của `create-next-app`; `src/app/layout.tsx` khai báo metadata mặc định.
 - `src/lib/mock/` chứa 24 sản phẩm (23 hiển thị, 1 ẩn) thuộc 4 `ProductType` kiêm danh mục (WEDDING RING, ENGAGEMENT RING, NECKLACE, OTHER JEWELRY), 6 bài Blog (5 published, 1 draft), 3 hero slide (2 hiển thị, 1 ẩn) và Settings giả lập.
+<<<<<<< HEAD
+- Ảnh sản phẩm mock dùng `public/mock/products/ring-*.webp`; `ring-2-1` và `ring-5-2` là ảnh phụ (góc chụp thứ hai) của `ring-2` và `ring-5`. Sản phẩm chưa có ảnh riêng dùng SVG placeholder theo `ProductType`.
+=======
+>>>>>>> fdc0f57028cf3790a55b289b5767f465243f1eb7
 - `src/lib/queries/` là tầng truy cập dữ liệu duy nhất cho page; query trả bản clone, lọc danh mục bằng `ProductType` và loại bản ghi hidden/draft khỏi storefront.
 - ESLint chặn `src/app/**` import trực tiếp `@/lib/mock`.
 - Chưa có Server Action, Route Handler nghiệp vụ, Database, Prisma, Authentication hoặc Cloudinary.
