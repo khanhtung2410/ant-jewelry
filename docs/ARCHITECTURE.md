@@ -3,7 +3,7 @@
 > **Trạng thái tài liệu:** Kiến trúc đề xuất, đã đối chiếu với work tree hiện tại  
 > **Tài liệu nguồn:** `AN_JEWELRY_SAD_v1.1.docx`  
 > **Cập nhật theo work tree:** 2026-11-09  
-> **Trạng thái work tree:** Có một Next.js application duy nhất (16.4.5, App Router) với React 19.3.0, Tailwind CSS v4, TypeScript strict, ESLint 9, Prettier 3 và Vitest 5. `src/types/domain.ts` bổ sung hợp đồng TypeScript cho `Product`, `Category`, `BlogPost`; `.env.example` và `.github/pull_request_template.md` đã có. Chưa có Database, Prisma, Authentication, Server Action, Route Handler nghiệp vụ hoặc workflow nghiệp vụ.
+> **Trạng thái work tree:** Có một Next.js application duy nhất (16.4.5, App Router) với React 19.3.0, Tailwind CSS v4, TypeScript strict, ESLint 9, Prettier 3 và Vitest 5. `src/types/domain.ts` định nghĩa `Product`, `ProductColor`, `ProductImage`, `Category`, `BlogPost`, `HeroSlide`, `Settings` và `Role`; `src/lib/mock/` chứa mock data có type và `src/lib/queries/` là tầng truy cập dữ liệu duy nhất cho page. `.env.example` và `.github/pull_request_template.md` đã có. Chưa có Database, Prisma, Authentication, Server Action, Route Handler nghiệp vụ hoặc workflow nghiệp vụ.
 > **Ngôn ngữ:** Nội dung diễn giải bằng tiếng Việt; giữ nguyên các technical terms, tên công nghệ, tên module, tên bảng, tên API, identifier và code terms bằng tiếng Anh.
 
 ---
@@ -240,7 +240,10 @@ ant-jewelry/
 │   └── pull_request_template.md  # Mẫu mô tả Pull Request
 ├── src/
 │   ├── app/              # layout.tsx, page.tsx, globals.css
-│   ├── types/            # Product, Category, BlogPost contracts
+│   ├── lib/
+│   │   ├── mock/         # Mock data có type (products, categories, blog, hero, settings)
+│   │   └── queries/      # Query functions cho storefront/admin
+│   ├── types/            # Domain contracts (Product, Category, BlogPost, HeroSlide, Settings, Role)
 │   └── config.test.ts    # Test cấu hình project
 ├── public/               # Static assets
 ├── docs/                 # Tài liệu dự án
@@ -259,6 +262,9 @@ ant-jewelry/
 
 - Chỉ có một Next.js application ở thư mục gốc, source code trong `src/`; chưa có thư mục `frontend/` hoặc `backend/`.
 - `src/app/page.tsx` đang là trang mặc định của `create-next-app`; `src/app/layout.tsx` khai báo metadata mặc định.
+- `src/lib/mock/` chứa 24 sản phẩm (23 hiển thị, 1 ẩn), 4 danh mục, 6 bài Blog (5 published, 1 draft), 3 hero slide (2 hiển thị, 1 ẩn) và Settings giả lập.
+- `src/lib/queries/` là tầng truy cập dữ liệu duy nhất cho page; query trả bản clone và loại bản ghi hidden/draft khỏi storefront.
+- ESLint chặn `src/app/**` import trực tiếp `@/lib/mock`.
 - Chưa có Server Action, Route Handler nghiệp vụ, Database, Prisma, Authentication hoặc Cloudinary.
 - Các script hiện có: `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `test`, `test:watch`.
 
@@ -881,7 +887,10 @@ ant-jewelry/
 ├── .github/              # pull_request_template.md
 ├── src/
 │   ├── app/              # App Router: layout, page, globals.css
-│   ├── types/            # Domain contracts (Product, Category, BlogPost)
+│   ├── lib/
+│   │   ├── mock/         # Mock data có type
+│   │   └── queries/      # Query functions
+│   ├── types/            # Domain contracts (Product, Category, BlogPost, HeroSlide, Settings, Role)
 │   └── config.test.ts    # Test cấu hình project
 ├── public/               # Static assets
 ├── docs/                 # Tài liệu dự án
@@ -898,7 +907,7 @@ ant-jewelry/
 └── .gitignore
 ```
 
-Chưa có thư mục `src/components/`, `src/features/`, `src/lib/`, `src/server/` hoặc `prisma/`.
+Đã có `src/lib/mock/` và `src/lib/queries/`. Chưa có thư mục `src/components/`, `src/features/`, `src/server/` hoặc `prisma/`.
 
 ### 13.2. Cấu trúc đề xuất cho single Next.js app
 

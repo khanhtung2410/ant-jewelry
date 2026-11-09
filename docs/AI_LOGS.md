@@ -1,5 +1,36 @@
 # AI Change Log
 
+## 2026-11-09 14:35:00 +07:00 — G1.1 domain types, mock data and query layer
+
+### User prompt
+
+> Dùng mock data đặt trong src/lib/mock/, gõ kiểu theo src/types/domain.ts. Truy cập dữ liệu qua hàm query
+>
+> G1.1 — Domain types + mock data + query layer. Bổ sung domain.ts: Product (categoryId, brand, type, description, details, colors), ProductColor, ProductImage, Category (sortOrder), BlogPost (coverImageUrl, publishedAt), HeroSlide, Settings, Role. Mock ≥ 20 sản phẩm / 4 danh mục, 6 bài blog.
+> trang chỉ import hàm query, không import trực tiếp file mock.
+>
+> create new branch, commit stricly follow contributing rule and pull_request_template.md
+> if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Extended `src/types/domain.ts` with `ProductColor`, `ProductImage`, `Product`, `HeroSlide`, `Settings`, `Role` and `ProductType`, and added the requested fields: product `categoryId`, `brand`, `type`, `description`, `details`, `colors`; category `sortOrder`; Blog `coverImageUrl`, `publishedAt`. `createVndPrice` now also rejects negative amounts.
+- Added typed mock data in `src/lib/mock/`: 24 products (23 `VISIBLE`, 1 `HIDDEN`) across 4 categories, 6 Blog posts (5 `PUBLISHED`, 1 `DRAFT`), 3 hero slides (2 `VISIBLE`, 1 `HIDDEN`) and storefront `Settings` with clearly fake contact values.
+- Added `src/lib/queries/` as the only data-access layer: `getProducts` (category/type/status filters plus `price_asc`, `price_desc`, `name_asc`, `name_desc` sorting), `getProductBySlug`, `getProductById`, `getRelatedProducts`, `getCategories`, `getCategoryBySlug`, `getBlogPosts`, `getBlogPostBySlug`, `getHeroSlides` and `getSettings`.
+- Query functions exclude hidden/draft records from storefront results unless an admin option is passed, and return deep clones so callers cannot mutate mock sources.
+- Added local SVG placeholders under `public/mock/` for 4 product images, 6 Blog covers and 3 hero slides.
+- Added an ESLint `no-restricted-imports` rule that blocks `src/app/**` from importing `@/lib/mock` or `**/lib/mock/*`; verified the rule reports an error on a probe import.
+- Configured the `@` alias in `vitest.config.mts` so tests resolve `@/lib/...`.
+- Added `src/lib/queries/queries.test.ts` with 17 tests covering counts, hidden/draft exclusion, filters, sorting, slug lookups, related products, clone isolation, settings and the VND guard.
+- Updated `docs/README.md` and `docs/ARCHITECTURE.md` work-tree status, repository trees and the mock/query data-access rule.
+- Left the pre-existing uncommitted edit in `docs/CONTRIBUTING.md` untouched.
+
+### Output summary
+
+G1.1 is implemented on branch `feature/g1-1-domain-mock-query`: domain types, typed mock data and the query layer are in place, and pages can only reach data through `@/lib/queries` (enforced by ESLint). Mock coverage exceeds the requirement: 24 products ≥ 20, 4 categories, 6 Blog posts. Verification passed: `npm run lint`, `npm run typecheck`, `npm test` (2 files, 19 tests), `npm run format:check`, `npm run build`.
+
+---
+
 ## 2026-11-09 14:02:00 +07:00 — Align docs and tooling with the repository
 
 ### User prompt

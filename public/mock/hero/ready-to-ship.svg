@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 900" role="img" aria-label="Trang sức sẵn giao AN JEWELRY">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FEFDF8"/>
+      <stop offset="1" stop-color="#EFEEEC"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="900" fill="url(#bg)"/>
+  <path d="M1240 640 A230 230 0 0 1 1700 640" fill="none" stroke="#B76E79" stroke-width="36" stroke-linecap="round"/>
+  <circle cx="1470" cy="410" r="40" fill="#EAF4F1" stroke="#93AAA0" stroke-width="6"/>
+  <text x="160" y="400" font-family="monospace" font-size="96" letter-spacing="10" fill="#000">READY TO SHIP</text>
+  <text x="164" y="480" font-family="Arial, sans-serif" font-size="30" fill="#93AAA0">Sẵn sàng trao gửi yêu thương</text>
+  <rect x="160" y="540" width="260" height="64" fill="none" stroke="#000"/>
+  <text x="290" y="582" text-anchor="middle" font-family="monospace" font-size="24" letter-spacing="4" fill="#000">VIEW PRODUCTS</text>
+</svg>

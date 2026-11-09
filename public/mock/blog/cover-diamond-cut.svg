@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Ảnh bìa bài viết các kiểu giác cắt kim cương">
+  <rect width="1200" height="630" fill="#FEFDF8"/>
+  <rect x="40" y="40" width="1120" height="550" fill="#EFEEEC"/>
+  <path d="M980 250 L1050 320 L980 390 L910 320 Z" fill="#EAF4F1" stroke="#93AAA0" stroke-width="6"/>
+  <text x="120" y="260" font-family="monospace" font-size="30" letter-spacing="5" fill="#93AAA0">JOURNAL</text>
+  <text x="120" y="330" font-family="monospace" font-size="46" fill="#000">CÁC KIỂU GIÁC CẮT</text>
+  <text x="120" y="390" font-family="monospace" font-size="46" fill="#000">KIM CƯƠNG</text>
+  <text x="120" y="500" font-family="Arial, sans-serif" font-size="24" fill="#93AAA0">AN JEWELRY · mock cover</text>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="Ảnh bìa bài viết chọn nhẫn cưới">
+  <rect width="1200" height="630" fill="#FEFDF8"/>
+  <rect x="40" y="40" width="1120" height="550" fill="#EFEEEC"/>
+  <circle cx="930" cy="330" r="150" fill="none" stroke="#D4AF37" stroke-width="24"/>
+  <text x="120" y="260" font-family="monospace" font-size="30" letter-spacing="5" fill="#93AAA0">JOURNAL</text>
+  <text x="120" y="330" font-family="monospace" font-size="46" fill="#000">CHỌN NHẪN CƯỚI</text>
+  <text x="120" y="390" font-family="monospace" font-size="46" fill="#000">PHÙ HỢP BÀN TAY</text>
+  <text x="120" y="500" font-family="Arial, sans-serif" font-size="24" fill="#93AAA0">AN JEWELRY · mock cover</text>
+</svg>
