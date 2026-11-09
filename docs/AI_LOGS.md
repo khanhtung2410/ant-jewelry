@@ -1,5 +1,6 @@
 # AI Change Log
 
+<<<<<<< HEAD
 ## 2026-11-09 15:35:00 +07:00 — Populate mock products with webp photos
 
 ### User prompt
@@ -25,6 +26,8 @@ Mock products now display the new webp photos, and `ring-2-1` / `ring-5-2` are e
 
 ---
 
+=======
+>>>>>>> fdc0f57028cf3790a55b289b5767f465243f1eb7
 ## 2026-11-09 14:58:00 +07:00 — Unify ProductType with Category and fix mock data
 
 ### User prompt
