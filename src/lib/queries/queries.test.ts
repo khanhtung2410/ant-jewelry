@@ -85,7 +85,6 @@ describe('product queries', () => {
     expect(related.some((product) => product.product_id === 'prd-aurora-band')).toBe(false);
   });
 
-<<<<<<< HEAD
   it('assigns the webp product photos as front images', () => {
     const photoProducts = getProducts({ includeHidden: true }).filter((product) =>
       product.images[0]?.url.endsWith('.webp'),
@@ -129,8 +128,6 @@ describe('product queries', () => {
     expect(necklace?.images.every((image) => image.url.endsWith('.svg'))).toBe(true);
   });
 
-=======
->>>>>>> fdc0f57028cf3790a55b289b5767f465243f1eb7
   it('returns a clone so callers cannot mutate mock data', () => {
     const first = getProducts()[0];
     first.name = 'mutated';
