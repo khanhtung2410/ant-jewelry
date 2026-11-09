@@ -4,7 +4,6 @@ import { products } from '@/lib/mock/products';
 export type ProductSort = 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
 
 export interface GetProductsQuery {
-  categoryId?: string;
   type?: ProductType;
   status?: ProductStatus;
   includeHidden?: boolean;
@@ -27,17 +26,14 @@ function compareProducts(sort: ProductSort | undefined): (a: Product, b: Product
 }
 
 /**
- * Returns products for storefront pages. Hidden products are excluded unless
- * `includeHidden` is set explicitly for an admin screen.
+ * Returns products for storefront pages. `type` is also the category filter
+ * because ProductType and Category are one concept. Hidden products are
+ * excluded unless `includeHidden` is set explicitly for an admin screen.
  */
 export function getProducts(query: GetProductsQuery = {}): Product[] {
-  const { categoryId, type, status, includeHidden = false, sort } = query;
+  const { type, status, includeHidden = false, sort } = query;
 
   const result = products.filter((product) => {
-    if (categoryId && product.categoryId !== categoryId) {
-      return false;
-    }
-
     if (type && product.type !== type) {
       return false;
     }
@@ -84,7 +80,7 @@ export function getRelatedProducts(productId: string, limit = 4): Product[] {
   return products
     .filter(
       (product) =>
-        product.categoryId === current.categoryId &&
+        product.type === current.type &&
         product.product_id !== productId &&
         product.status === 'VISIBLE',
     )

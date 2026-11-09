@@ -1,5 +1,33 @@
 # AI Change Log
 
+## 2026-11-09 14:58:00 +07:00 — Unify ProductType with Category and fix mock data
+
+### User prompt
+
+> fix mock data with new ProductType, type and category are one, use category filter use ProductType,
+>
+> use previous command brand, commit stricly follow contributing rule and pull_request_template.md
+> merge 2 pull request body, previous one has not been merged yet, also give pr title
+> if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Kept the new `ProductType` union (`WEDDING RING`, `ENGAGEMENT RING`, `NECKLACE`, `OTHER JEWELRY`) from `src/types/domain.ts`.
+- Unified type and category: removed `Product.categoryId`, made `Product.type` the category key, and added `Category.type: ProductType` so each category maps one-to-one to a ProductType.
+- Rewrote `src/lib/mock/categories.ts` with 4 categories keyed by ProductType: Wedding Ring, Engagement Ring, Necklace, Other Jewelry, ordered by `sortOrder`.
+- Rewrote `src/lib/mock/products.ts` around the unified type: 24 products (23 visible, 1 hidden) now carry `type` instead of `categoryId`; the former jewelry form is kept only as a local `form` used to build detail rows.
+- Updated mock hero slides to link to the new category slugs (`/c/wedding-ring`, `/c/engagement-ring`, `/c/other-jewelry`).
+- Updated queries: `getProducts` filters by `type` (which is the category filter), added `getCategoryByType` and `getProductsByCategorySlug`, and `getRelatedProducts` now matches on `ProductType`.
+- Updated tests to 21 passing cases covering type filters, category-slug filtering through ProductType, one category per ProductType, related products and the existing blog/hero/settings/price checks.
+- Updated `docs/README.md`, `docs/ARCHITECTURE.md` and `docs/REQUIREMENTS.md` to record that ProductType and Category are unified and that the category filter uses ProductType.
+- Left the pre-existing uncommitted edit in `docs/CONTRIBUTING.md` untouched.
+
+### Output summary
+
+Mock data, queries and tests now use the new ProductType as the single product/category taxonomy. There is no `categoryId`; category filtering goes through `ProductType`, and `getProductsByCategorySlug` resolves a category slug to its ProductType before filtering. Verification passed: `npm run lint`, `npm run typecheck`, `npm test` (2 files, 21 tests), `npm run format:check`, `npm run build`.
+
+---
+
 ## 2026-11-09 14:35:00 +07:00 — G1.1 domain types, mock data and query layer
 
 ### User prompt

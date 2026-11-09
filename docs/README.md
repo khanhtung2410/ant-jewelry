@@ -152,7 +152,7 @@ ant-jewelry/
 
 `ARCHITECTURE.md` chốt **một Next.js application duy nhất**, không tách `frontend/` và `backend/`. Khi thêm thư mục dùng chung như `components/`, `lib/` hoặc `constants/`, đặt trong `src/`, chỉ tạo khi thực sự có nhu cầu và cập nhật lại tài liệu.
 
-**Quy ước dữ liệu:** `src/lib/mock/` chỉ chứa dữ liệu mẫu; page và component **không import trực tiếp** thư mục này. Mọi truy cập dữ liệu đi qua `src/lib/queries/` để khi thay mock bằng Prisma chỉ cần sửa tầng query. ESLint chặn import `@/lib/mock` từ `src/app/**`.
+**Quy ước dữ liệu:** `src/lib/mock/` chỉ chứa dữ liệu mẫu; page và component **không import trực tiếp** thư mục này. Mọi truy cập dữ liệu đi qua `src/lib/queries/` để khi thay mock bằng Prisma chỉ cần sửa tầng query. ESLint chặn import `@/lib/mock` từ `src/app/**`. `ProductType` và Category là một khái niệm: mỗi sản phẩm có `type`, và bộ lọc danh mục dùng chính `ProductType`.
 
 ## 8. Kiểm thử
 

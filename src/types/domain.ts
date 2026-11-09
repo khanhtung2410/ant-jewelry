@@ -21,7 +21,7 @@ export type CategoryStatus = 'VISIBLE' | 'HIDDEN';
 export type BlogPostStatus = 'DRAFT' | 'PUBLISHED';
 export type HeroSlideStatus = 'VISIBLE' | 'HIDDEN';
 
-export type ProductType = 'RING' | 'NECKLACE' | 'BRACELET' | 'EARRING';
+export type ProductType = 'WEDDING RING' | 'NECKLACE' | 'ENGAGEMENT RING' | 'OTHER JEWELRY';
 
 export type Role = 'ADMIN' | 'EDITOR';
 
@@ -43,7 +43,6 @@ export type ProductDetails = Record<string, string>;
 
 export interface Product {
   product_id: string;
-  categoryId: string;
   name: string;
   slug: string;
   brand: string;
@@ -58,6 +57,7 @@ export interface Product {
 
 export interface Category {
   category_id: string;
+  type: ProductType;
   name: string;
   slug: string;
   sortOrder: number;

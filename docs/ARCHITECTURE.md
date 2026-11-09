@@ -262,8 +262,8 @@ ant-jewelry/
 
 - Chỉ có một Next.js application ở thư mục gốc, source code trong `src/`; chưa có thư mục `frontend/` hoặc `backend/`.
 - `src/app/page.tsx` đang là trang mặc định của `create-next-app`; `src/app/layout.tsx` khai báo metadata mặc định.
-- `src/lib/mock/` chứa 24 sản phẩm (23 hiển thị, 1 ẩn), 4 danh mục, 6 bài Blog (5 published, 1 draft), 3 hero slide (2 hiển thị, 1 ẩn) và Settings giả lập.
-- `src/lib/queries/` là tầng truy cập dữ liệu duy nhất cho page; query trả bản clone và loại bản ghi hidden/draft khỏi storefront.
+- `src/lib/mock/` chứa 24 sản phẩm (23 hiển thị, 1 ẩn) thuộc 4 `ProductType` kiêm danh mục (WEDDING RING, ENGAGEMENT RING, NECKLACE, OTHER JEWELRY), 6 bài Blog (5 published, 1 draft), 3 hero slide (2 hiển thị, 1 ẩn) và Settings giả lập.
+- `src/lib/queries/` là tầng truy cập dữ liệu duy nhất cho page; query trả bản clone, lọc danh mục bằng `ProductType` và loại bản ghi hidden/draft khỏi storefront.
 - ESLint chặn `src/app/**` import trực tiếp `@/lib/mock`.
 - Chưa có Server Action, Route Handler nghiệp vụ, Database, Prisma, Authentication hoặc Cloudinary.
 - Các script hiện có: `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `test`, `test:watch`.
@@ -458,7 +458,8 @@ Mục đích: Quản lý danh mục kinh doanh nếu chức năng này được 
 SAD phân biệt:
 - Product Type: loại hình trang sức, ví dụ Ring, Necklace.
 - Product Category: nhóm kinh doanh, ví dụ Wedding Bands, Engagement, Everyday.
-Hai khái niệm này không nên gộp làm một nếu nghiệp vụ thực tế cần quản lý độc lập.
+
+**Quyết định triển khai 2026-11-09:** hai khái niệm được hợp nhất. Mỗi sản phẩm có một `ProductType` đóng vai trò danh mục; Category record giữ `type: ProductType` để điều hướng và sắp thứ tự, còn bộ lọc danh mục dùng `ProductType`.
 
 Tuy nhiên, Category entity và quan hệ giữa Category với Product chưa có trong cấu trúc dữ liệu được rà soát. Do đó, Category Module chỉ là module dự kiến, chưa phải thành phần đã được chốt.
 ### 6.6. Blog Module
@@ -661,16 +662,13 @@ erDiagram
 Lưu ý: Các thuộc tính amount, currency, url trong sơ đồ chỉ là nhãn mô tả phần dữ liệu còn thiếu, không phải tên cột hoặc kiểu dữ liệu đã được SAD phê duyệt.
 
 ### 8.4. Product Type và Product Category
-Hai khái niệm cần được giữ riêng biệt trong phân tích nghiệp vụ:
+SAD phân tích hai khái niệm riêng, nhưng quyết định triển khai ngày 2026-11-09 hợp nhất chúng: `ProductType` của sản phẩm đồng thời là danh mục, và bộ lọc danh mục dùng `ProductType`.
 
 | Khái niệm | Ý nghĩa | Ví dụ |
 |---|---|---|
-| Product Type | Loại hình trang sức | Ring, Necklace |
-| Product Category | Danh mục kinh doanh | Wedding Bands, Engagement, Everyday |
+| Product Type / Category | Loại sản phẩm kiêm danh mục | WEDDING RING, ENGAGEMENT RING, NECKLACE, OTHER JEWELRY |
 
-Một sản phẩm có thể có Product Type là Ring nhưng thuộc Product Category là Wedding Bands.
-
-SAD nêu rõ không nên gộp hai khái niệm này thành một trường dữ liệu nếu nghiệp vụ thực tế cần quản lý độc lập. Tuy nhiên, Category entity và quan hệ với Product chưa được xác định trong mô hình hiện tại.
+Category record giữ thêm `name`, `slug`, `sortOrder` và `status` để hiển thị menu và sắp thứ tự.
 ### 8.5. Các vấn đề Database cần giải quyết
 Price relationship
 

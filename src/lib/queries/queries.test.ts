@@ -4,14 +4,23 @@ import {
   getBlogPosts,
   getCategories,
   getCategoryBySlug,
+  getCategoryByType,
   getHeroSlides,
   getProductById,
   getProductBySlug,
   getProducts,
+  getProductsByCategorySlug,
   getRelatedProducts,
   getSettings,
 } from '@/lib/queries';
-import { createVndPrice } from '@/types/domain';
+import { createVndPrice, type ProductType } from '@/types/domain';
+
+const productTypes: ProductType[] = [
+  'WEDDING RING',
+  'ENGAGEMENT RING',
+  'NECKLACE',
+  'OTHER JEWELRY',
+];
 
 describe('product queries', () => {
   it('returns only visible products by default', () => {
@@ -25,15 +34,23 @@ describe('product queries', () => {
     expect(getProducts({ includeHidden: true })).toHaveLength(24);
   });
 
-  it('filters by category and type', () => {
-    const weddingBands = getProducts({ categoryId: 'cat-wedding-bands' });
-    const earrings = getProducts({ type: 'EARRING' });
+  it('filters by ProductType, which is also the category filter', () => {
+    expect(getProducts({ type: 'WEDDING RING' })).toHaveLength(6);
+    expect(getProducts({ type: 'ENGAGEMENT RING' })).toHaveLength(6);
+    expect(getProducts({ type: 'NECKLACE' })).toHaveLength(4);
+    expect(getProducts({ type: 'OTHER JEWELRY' })).toHaveLength(7);
+    expect(getProducts({ type: 'OTHER JEWELRY', includeHidden: true })).toHaveLength(8);
+  });
 
-    expect(weddingBands).toHaveLength(6);
-    expect(weddingBands.every((product) => product.categoryId === 'cat-wedding-bands')).toBe(true);
-    expect(earrings).toHaveLength(2);
-    expect(earrings.every((product) => product.type === 'EARRING')).toBe(true);
-    expect(getProducts({ type: 'EARRING', includeHidden: true })).toHaveLength(3);
+  it('filters products by category slug using the category ProductType', () => {
+    const wedding = getProductsByCategorySlug('wedding-ring');
+    const other = getProductsByCategorySlug('other-jewelry');
+
+    expect(wedding).toHaveLength(6);
+    expect(wedding.every((product) => product.type === 'WEDDING RING')).toBe(true);
+    expect(other).toHaveLength(7);
+    expect(other.every((product) => product.type === 'OTHER JEWELRY')).toBe(true);
+    expect(getProductsByCategorySlug('missing')).toEqual([]);
   });
 
   it('sorts by price in both directions', () => {
@@ -60,11 +77,11 @@ describe('product queries', () => {
     expect(getProductBySlug('dawn-stud-earrings', { includeHidden: true })?.status).toBe('HIDDEN');
   });
 
-  it('returns related products from the same category', () => {
+  it('returns related products of the same ProductType', () => {
     const related = getRelatedProducts('prd-aurora-band');
 
     expect(related).toHaveLength(4);
-    expect(related.every((product) => product.categoryId === 'cat-wedding-bands')).toBe(true);
+    expect(related.every((product) => product.type === 'WEDDING RING')).toBe(true);
     expect(related.some((product) => product.product_id === 'prd-aurora-band')).toBe(false);
   });
 
@@ -81,15 +98,22 @@ describe('category queries', () => {
     const categories = getCategories();
 
     expect(categories.map((category) => category.slug)).toEqual([
-      'wedding-bands',
-      'engagement',
-      'everyday',
-      'ready-to-ship',
+      'wedding-ring',
+      'engagement-ring',
+      'necklace',
+      'other-jewelry',
     ]);
+    expect(categories.map((category) => category.type)).toEqual(productTypes);
+  });
+
+  it('has exactly one category per ProductType', () => {
+    for (const type of productTypes) {
+      expect(getCategoryByType(type)?.type).toBe(type);
+    }
   });
 
   it('finds a category by slug', () => {
-    expect(getCategoryBySlug('engagement')?.name).toBe('Engagement');
+    expect(getCategoryBySlug('engagement-ring')?.name).toBe('Engagement Ring');
     expect(getCategoryBySlug('missing')).toBeNull();
   });
 });
@@ -121,9 +145,10 @@ describe('hero slide queries', () => {
     const slides = getHeroSlides();
 
     expect(slides.map((slide) => slide.slide_id)).toEqual([
-      'hero-wedding-bands',
-      'hero-engagement',
+      'hero-wedding-ring',
+      'hero-engagement-ring',
     ]);
+    expect(slides.map((slide) => slide.linkUrl)).toEqual(['/c/wedding-ring', '/c/engagement-ring']);
   });
 });
 
