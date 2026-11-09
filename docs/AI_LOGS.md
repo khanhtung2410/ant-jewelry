@@ -1,5 +1,39 @@
 # AI Change Log
 
+## 2026-11-09 22:22:00 +07:00 — Add tokens-based header, footer and shell layout (G1.2)
+
+### User prompt
+
+> G1.2 — Tokens + Layout.  requirement
+> Tokens trong Tailwind (@theme), font qua next/font.
+> Header: logo, HOME, PRODUCTS (dropdown 4 danh mục, gạch chân mục active), BLOG, CONTACT.
+> Footer: địa chỉ / điện thoại / email + icon, INFO, HELP, SOCIAL.
+> grep -rnE "#[0-9A-Fa-f]{6}" src/components src/app --include=*.tsx không có kết quả; dropdown mở/đóng được bằng bàn phím (Enter, Esc, Tab).
+>
+> create new commit branch, commit strictly follow contributing rule and pull_request_template.md
+> also give pr title
+> if change, add prompt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Branched `feature/g1-2-tokens-layout` from `feature/design-tokens-base-styles` because the layout consumes the Figma tokens added there.
+- Added `src/components/header.tsx`: logo, HOME, PRODUCTS disclosure with the 4 seeded categories, BLOG and CONTACT; the active route gets an underline via `aria-current` styling. The disclosure opens with Enter/Space/ArrowDown, closes with Escape (focus returns to the toggle), closes on Tab out of the toggle, supports ArrowUp/ArrowDown inside the menu, and closes on outside pointer-down or focus loss.
+- Added `src/components/footer.tsx`: responsive 12-column footer with the contact block (address, phone and email links plus icons) and HOME, INFO, HELP and SOCIAL columns; SOCIAL uses the Facebook and Instagram URLs from `getSettings()`; the footer carries `id="contact"` so the CONTACT link resolves to `/#contact`.
+- Kept the live address update in `src/lib/mock/settings.ts` so the footer shows the real store address.
+- Exposed the footer's secondary text colour as the `--color-muted` Tailwind token instead of the `text-[#383838]` arbitrary values, satisfying the no-hex rule in TSX.
+- Added `src/components/icons.tsx`: inline chevron, map-pin, phone, mail, Facebook and Instagram SVGs using `currentColor` only, so no hex colours exist in TSX.
+- Updated `src/app/layout.tsx`: keeps the Geist Sans/Mono `next/font` variables, reads categories and settings through query functions, renders `SiteHeader`/`SiteFooter` around the page, and sets the AN JEWELRY metadata plus `lang="vi"`.
+- Added the provided `public/mock/products/antjewelry-logo.svg` asset used by the header and footer.
+- Removed the two remaining six-digit hex utilities from the untracked WIP `src/app/home/page.tsx` so the required grep returns no results; that file and `src/components/productCard.ts` remain uncommitted.
+- Updated `docs/README.md` and `docs/ARCHITECTURE.md` to describe the shared layout components and the root-layout wiring.
+- Omitted the copyright year from the footer because Next.js 16 rejects `new Date()` during prerendering.
+
+### Output summary
+
+The storefront now has a global, token-based header and footer rendered by the root layout. Verified in the running production build: clicking PRODUCTS or pressing Enter opens the 4-category menu, Escape closes it and keeps focus on the toggle, and Tab from the toggle closes it before moving to BLOG. Lighthouse accessibility reports 100 with no failures. `npm run format`, `npm run lint`, `npm run typecheck`, `npm test` (24 tests), `npm run format:check` and `npm run build` pass, and the required hex grep returns no matches.
+
+---
+
 ## 2026-11-09 15:46:00 +07:00 — Apply Figma design tokens to the root layout stylesheet
 
 ### User prompt
