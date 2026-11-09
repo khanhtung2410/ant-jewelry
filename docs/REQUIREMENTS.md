@@ -83,6 +83,7 @@ Bảng dưới ghi các quyết định đã được chốt cho phiên bản tr
 | Responsive | Figma chỉ có desktop 1920px; tự thiết kế mobile/tablet nhất quán với style và đính kèm ảnh chụp trong PR. |
 | Ngoài phạm vi | Giỏ hàng, thanh toán, tài khoản khách hàng, wishlist, đa ngôn ngữ. |
 | Nhãn giao diện | Figma ghi "Short by" ở màn Category; triển khai dùng "Sort by". |
+| Phân loại sản phẩm | ProductType hợp nhất với Category: mỗi danh mục tương ứng một `ProductType`, và bộ lọc danh mục dùng chính `ProductType` đó. |
 
 **Design tokens lấy từ Figma:**
 
@@ -809,7 +810,7 @@ Quy tắc nghiệp vụ còn hiệu lực gồm 6 quy tắc từ SAD và 9 quy t
 | BR-003 | Không đặt hàng trực tuyến | Hệ thống không cung cấp chức năng tạo đơn hàng trực tuyến. Nút "ORDER NOW" mở Contact popover (số điện thoại, Facebook, Instagram từ Settings), không tạo đơn và không gửi form. | SAD 3.2, 3.1.4; quyết định 2026-11-09 | Đã chốt | FR-007 |
 | BR-004 | Không thanh toán trực tuyến | Hệ thống không tích hợp quy trình thanh toán hoặc ghi nhận giao dịch trực tuyến trong phạm vi hiện tại. | SAD 3.2 | Đã xác định | Toàn bộ |
 | BR-005 | Không thiết kế riêng | Hệ thống không tiếp nhận đặt thiết kế hoặc sản xuất trang sức theo yêu cầu riêng. | SAD 3.2 | Đã xác định | Toàn bộ |
-| BR-006 | Phân loại sản phẩm | Product Type (loại trang sức, ví dụ Ring, Necklace) và Product Category (danh mục kinh doanh, ví dụ Wedding Bands, Engagement, Everyday) là hai khái niệm cần phân biệt; không gộp thành một trường nếu nghiệp vụ cần quản lý độc lập. | SAD 3.2, 2.3, B.2 | Định hướng mô hình hóa; TBC (OI-009) | FR-005, FR-007, FR-022, FR-027 |
+| BR-006 | Phân loại sản phẩm | Product Type và Product Category được hợp nhất cho phiên bản triển khai: mỗi sản phẩm có một `ProductType` đóng vai trò danh mục, và bộ lọc danh mục dùng `ProductType`. | SAD 3.2, 2.3, B.2; quyết định 2026-11-09 | Đã chốt hợp nhất | FR-005, FR-007, FR-022, FR-027 |
 | BR-007 | Quản lý nội dung | Sản phẩm và bài viết được quản lý bởi tài khoản nội bộ có quyền phù hợp. | SAD 3.2 | Định hướng; TBC (OI-005, OI-006) | FR-020 đến FR-032 |
 | BR-008 | Phân quyền | Admin và Staff được phân quyền theo trách nhiệm do đơn vị vận hành xác nhận. | SAD 3.2 | TBC (OI-004) | FR-020 đến FR-036 |
 | BR-010 | Chỉ hiển thị nội dung công khai | Website công khai không hiển thị bản ghi đã xóa mềm (`is_delete = true`) hoặc đã được ẩn. Tiêu chí "được công khai" của bài viết: TBC. | SAD 7.1, FR-BLOG-007 | Đề xuất; TBC (OI-005, OI-006, OI-024) | FR-004, FR-005, FR-007, FR-010, FR-011, FR-024, FR-031 |

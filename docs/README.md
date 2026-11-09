@@ -6,7 +6,7 @@ Website giới thiệu sản phẩm trang sức; khách hàng liên hệ trực 
 
 AN JEWELRY là website dành cho khách hàng có nhu cầu tìm hiểu các sản phẩm trang sức và liên hệ trực tiếp với cửa hàng.
 
-**Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict, ESLint, Prettier, Vitest và các contract domain ban đầu trong `src/types/domain.ts`; trang chủ vẫn hiển thị nội dung mặc định của `create-next-app`. Chưa có Database, Prisma, Authentication hoặc giao diện AN JEWELRY. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
+**Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict, ESLint, Prettier, Vitest và các contract domain trong `src/types/domain.ts`; mock data nằm trong `src/lib/mock/` và mọi trang phải đọc dữ liệu qua query function trong `src/lib/queries/`. Trang chủ vẫn hiển thị nội dung mặc định của `create-next-app`. Chưa có Database, Prisma, Authentication hoặc giao diện AN JEWELRY. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
 
 Chức năng định hướng:
 
@@ -130,7 +130,10 @@ ant-jewelry/
 │   └── pull_request_template.md  # Mẫu mô tả Pull Request
 ├── src/
 │   ├── app/              # App Router: layout, page, global styles
-│   ├── types/            # TypeScript domain contracts (Product, Category, BlogPost)
+│   ├── lib/
+│   │   ├── mock/         # Mock data có type cho Product, Category, BlogPost, HeroSlide, Settings
+│   │   └── queries/      # Query functions; trang chỉ import từ đây
+│   ├── types/            # TypeScript domain contracts
 │   └── config.test.ts    # Test cấu hình project
 ├── public/               # Static assets
 ├── docs/                 # Tài liệu dự án
@@ -148,6 +151,8 @@ ant-jewelry/
 ```
 
 `ARCHITECTURE.md` chốt **một Next.js application duy nhất**, không tách `frontend/` và `backend/`. Khi thêm thư mục dùng chung như `components/`, `lib/` hoặc `constants/`, đặt trong `src/`, chỉ tạo khi thực sự có nhu cầu và cập nhật lại tài liệu.
+
+**Quy ước dữ liệu:** `src/lib/mock/` chỉ chứa dữ liệu mẫu; page và component **không import trực tiếp** thư mục này. Mọi truy cập dữ liệu đi qua `src/lib/queries/` để khi thay mock bằng Prisma chỉ cần sửa tầng query. ESLint chặn import `@/lib/mock` từ `src/app/**`. `ProductType` và Category là một khái niệm: mỗi sản phẩm có `type`, và bộ lọc danh mục dùng chính `ProductType`.
 
 ## 8. Kiểm thử
 
