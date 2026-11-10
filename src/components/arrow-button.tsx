@@ -20,7 +20,10 @@ export function ArrowButton({
     'hover:border-[var(--underline-color)] hover:bg-neutral-200 hover:text-[var(--underline-color)]',
     'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)] disabled:cursor-not-allowed disabled:opacity-40',
     className,
-  ].join(' ');
+  ]
+  .filter(Boolean)
+  .join(' ')
+  .trim();
 
   return (
     <button
