@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Aurora Band gold front view mock image">
+  <rect width="800" height="800" fill="#EFEEEC"/>
+  <text x="400" y="110" text-anchor="middle" font-family="monospace" font-size="32" letter-spacing="6" fill="#000">AURORA BAND</text>
+  <text x="400" y="148" text-anchor="middle" font-family="monospace" font-size="18" letter-spacing="4" fill="#93AAA0">GOLD 18K - FRONT</text>
+  <circle cx="400" cy="440" r="180" fill="none" stroke="#D4AF37" stroke-width="38"/>
+  <circle cx="400" cy="440" r="180" fill="none" stroke="#F2E3A0" stroke-width="10" opacity="0.8"/>
+  <circle cx="400" cy="440" r="132" fill="none" stroke="#93AAA0" stroke-width="1" opacity="0.35"/>
+  <text x="400" y="720" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#93AAA0">AN JEWELRY - mock image</text>
+</svg>
