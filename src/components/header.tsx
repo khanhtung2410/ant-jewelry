@@ -98,10 +98,10 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
                 HOME
               </Link>
             </li>
-            <li>
+            <li className="flex items-center">
               <ProductsMenu categories={categories} active={pathname.startsWith('/c/')} />
             </li>
-            <li>
+            <li className="flex items-center">
               <Link
                 href="/blog"
                 className={navLinkClass(isBlog)}
@@ -110,7 +110,7 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
                 BLOG
               </Link>
             </li>
-            <li>
+            <li className="flex items-center">
               <Link
                 href="/#contact"
                 className={navLinkClass(isContact)}
@@ -121,6 +121,9 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
             </li>
           </ul>
         </nav>
+
+        {/* RIGHT — spacer keeps nav truly centered */}
+        <div className="hidden md:col-span-3 md:block" aria-hidden="true" />
       </div>
 
       {menuOpen ? (
@@ -190,9 +193,7 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
   const focusFirstOnOpen = useRef(false);
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
+    if (!open) return;
 
     function handlePointerDown(event: PointerEvent) {
       if (!containerRef.current?.contains(event.target as Node)) {
@@ -222,8 +223,6 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
       closeAndFocusButton();
       return;
     }
-
-    // Tabbing from the toggle closes the disclosure before focus moves on.
     if (event.key === 'Tab' && event.target === buttonRef.current) {
       setOpen(false);
     }
@@ -238,29 +237,22 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
   }
 
   function handleMenuKeyDown(event: KeyboardEvent<HTMLUListElement>) {
-    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
-      return;
-    }
-
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     event.preventDefault();
     const items = Array.from(menuRef.current?.querySelectorAll<HTMLElement>('a') ?? []);
-    if (items.length === 0) {
-      return;
-    }
-
+    if (items.length === 0) return;
     const currentIndex = items.indexOf(document.activeElement as HTMLElement);
     const nextIndex =
       event.key === 'ArrowDown'
         ? (currentIndex + 1) % items.length
         : (currentIndex - 1 + items.length) % items.length;
-
     items[nextIndex]?.focus();
   }
 
   return (
     <div
       ref={containerRef}
-      className="relative"
+      className="relative flex h-full items-center"
       onKeyDown={handleKeyDown}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
