@@ -3,6 +3,9 @@ export {
   getProductBySlug,
   getProducts,
   getRelatedProducts,
+  parseProductSort,
+  sortProducts,
+  DEFAULT_PRODUCT_SORT,
   type GetProductsQuery,
   type ProductSort,
 } from './products';

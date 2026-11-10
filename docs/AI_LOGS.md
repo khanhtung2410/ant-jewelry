@@ -48,6 +48,27 @@ Product pages render the gallery, uppercase name, Brand/Type, price, colours, de
 
 ---
 
+## 2026-11-10 16:42:51 +07:00 — Add category listing with URL sorting and load-more
+
+### User prompt
+
+> G1.5 — Category `/c/[slug]`. Title, “Sort by” dropdown with four options (price ascending/descending, name A–Z/Z–A), 5-column × 2-row grid, SEE MORE loads 10. Sort is saved in `?sort=`; invalid values return to default; unknown slug returns 404; hide SEE MORE when exhausted; products with equal prices must not be duplicated or skipped when loading more (secondary sort by `id`).
+
+### Changes made
+
+- Added the dynamic category page with server-side slug validation, default and URL-backed sort selection, and canonical redirection for invalid sort values.
+- Added the responsive product grid and client-side SEE MORE batches of ten, hiding the control when all products are visible.
+- Added deterministic product ID tie-breaking for every sort order and tests for sorting, invalid values, 404 handling, and batch behavior.
+- Generated visible category params and added a Proxy guard so unknown category slugs receive an HTTP 404 before route streaming.
+
+### Output summary
+
+Category pages render products in a deterministic order, honor URL sort state, load additional products in batches without skipping equal-price items, and return a 404 for unknown slugs.
+
+`npm test` (11 files, 54 tests), `npm run lint`, `npm run typecheck`, `npm run build`, and targeted Prettier checks pass. Production checks confirmed valid categories return 200, unknown categories return HTTP 404, and invalid sort values redirect to `?sort=price_asc`. Browser interaction confirmed changing sort updates the URL and product order.
+
+---
+
 ## 2026-11-10 16:02:33 +07:00 — Align carousel tests with current implementation
 
 ### User prompt
