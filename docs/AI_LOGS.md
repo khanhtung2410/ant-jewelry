@@ -1,5 +1,29 @@
 # AI Change Log
 
+## 2026-11-10 21:53:50 +07:00 — Add product detail page and contact popover
+
+### User prompt
+
+> G1.6 — Product detail `/p/[slug]`. Gallery: large image plus three thumbnails with `‹ ›`, keyboard selectable; choosing a colour swatch changes the gallery, and colours without their own images fall back to the shared product images. Show the product name in uppercase, Brand, Type, price, colours, description, and Details. `ORDER NOW` opens a `CONTACT US` popover with `×`, Facebook, Instagram, and phone (`tel:`). The popover closes on `×`, Esc, or outside click, returns focus to `ORDER NOW`, and is fully keyboard operable. `YOU MIGHT ALSO LIKE` shows products from the same category, excluding the current product. Commit following `docs/CONTRIBUTING.md` and the PR template, and prepend a timestamped prompt/output summary to `docs/AI_LOGS.md`.
+
+### Changes made
+
+- Added the product detail route with static params, metadata, slug validation, and a Suspense loading shell consistent with the category page.
+- Added a client product detail layout with uppercase name, Brand/Type, price, colour swatches, description, Details, and `ORDER NOW`.
+- Added a colour-aware gallery with a three-thumbnail window, arrow paging, keyboard-selectable thumbnails, and fallback to the shared product gallery.
+- Added per-colour gallery support to the domain model and mock data, plus gold-specific mock images for Aurora Band to demonstrate colour switching while white gold exercises fallback.
+- Added an accessible contact dialog with focus trap, focus restore to the trigger, Esc/outside/× close, and Facebook, Instagram, and `tel:` links from Settings.
+- Added related products from the same category, excluding the current product, and rendered them in the existing carousel.
+- Added tests for gallery helpers, fallback behaviour, product detail markup, popover links and focus trapping, and product page 404 handling.
+
+### Output summary
+
+Product pages render the gallery, uppercase name, Brand/Type, price, colours, description, Details, and related products. Colour changes swap the gallery when colour images exist and fall back to shared images otherwise. `ORDER NOW` opens the contact dialog, which traps focus, closes via `×`, Esc, or outside click, and restores focus to the trigger. Keyboard paging and thumbnail selection work, related products exclude the current item, and unknown or hidden slugs render the not-found UI.
+
+`npm test` (15 files, 71 tests), `npm run lint`, `npm run typecheck`, and `npm run build` pass. Production checks confirmed Aurora Band renders four gold images in three-thumbnail windows, white gold falls back to the shared `ring-6.webp` image, related products are same-category and exclude Aurora Band, and the popover exposes Facebook, Instagram, and `tel:0900000000` links with the expected keyboard behaviour. `npm run format:check` still reports pre-existing files outside this change; the new files were formatted individually.
+
+---
+
 ## 2026-11-10 16:02:33 +07:00 — Align carousel tests with current implementation
 
 ### User prompt

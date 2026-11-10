@@ -56,6 +56,8 @@ interface ProductSeed {
   colors: ProductColor[];
   /** First URL is the front photo, the rest are gallery photos in order. */
   images?: string[];
+  /** Optional per-colour gallery; colours without an entry use `images`. */
+  colorImages?: Partial<Record<string, string[]>>;
   status?: ProductStatus;
 }
 
@@ -116,6 +118,26 @@ function buildImages(seed: ProductSeed): ProductImage[] {
   });
 }
 
+function buildColorImages(seed: ProductSeed, color: ProductColor): ProductImage[] | undefined {
+  const urls = seed.colorImages?.[color.colorId];
+
+  if (!urls || urls.length === 0) {
+    return undefined;
+  }
+
+  return urls.map((url, index) => {
+    const isFront = index === 0;
+
+    return {
+      imageId: `${seed.product_id}-${color.colorId}-${isFront ? 'front' : `detail-${index}`}`,
+      url,
+      alt: `${seed.name} - ${color.name} - ${isFront ? 'ảnh chính' : `ảnh chi tiết ${index}`}`,
+      isFront,
+      sortOrder: index + 1,
+    };
+  });
+}
+
 function buildProduct(seed: ProductSeed): Product {
   return {
     product_id: seed.product_id,
@@ -125,7 +147,11 @@ function buildProduct(seed: ProductSeed): Product {
     type: seed.type,
     description: seed.description,
     details: buildDetails(seed),
-    colors: seed.colors,
+    colors: seed.colors.map((color) => {
+      const images = buildColorImages(seed, color);
+
+      return images ? { ...color, images } : color;
+    }),
     images: buildImages(seed),
     price: createVndPrice(seed.price),
     status: seed.status ?? 'VISIBLE',
@@ -145,6 +171,14 @@ const seeds: ProductSeed[] = [
     material: 'Vàng 18K',
     colors: [gold, whiteGold],
     images: [productPhoto('ring-6')],
+    colorImages: {
+      'color-gold-18k': [
+        '/mock/products/aurora-band-gold-1.svg',
+        '/mock/products/aurora-band-gold-2.svg',
+        '/mock/products/aurora-band-gold-3.svg',
+        '/mock/products/aurora-band-gold-4.svg',
+      ],
+    },
   },
   {
     product_id: 'prd-eclipse-pave-band',

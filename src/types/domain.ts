@@ -29,6 +29,8 @@ export interface ProductColor {
   colorId: string;
   name: string;
   hex: string;
+  /** Optional gallery for this colour; storefront pages fall back to `Product.images`. */
+  images?: ProductImage[];
 }
 
 export interface ProductImage {
