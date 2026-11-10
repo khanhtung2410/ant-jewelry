@@ -21,9 +21,9 @@ export function ArrowButton({
     'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)] disabled:cursor-not-allowed disabled:opacity-40',
     className,
   ]
-  .filter(Boolean)
-  .join(' ')
-  .trim();
+    .filter(Boolean)
+    .join(' ')
+    .trim();
 
   return (
     <button
