@@ -34,7 +34,7 @@ Các trạng thái được sử dụng:
 
 ### 1.2. Giới hạn của tài liệu
 
-Work tree hiện tại mới có bộ khung Next.js ở thư mục gốc và trang mặc định của `create-next-app`; Database chưa tồn tại. Vì vậy, tài liệu không khẳng định:
+Work tree hiện tại có trang chủ giới thiệu dùng Server Component với dữ liệu đọc qua query functions; hero slider và product carousel là Client Components nhận dữ liệu qua props. Database chưa tồn tại. Vì vậy, tài liệu không khẳng định:
 
 - Cấu trúc module đã hoàn chỉnh; các thư mục `src/components/`, `src/features/`, `src/lib/` và `src/server/` vẫn là đề xuất.
 - Phiên bản framework hoặc package ngoài các dependency đang có trong `package.json`.
@@ -69,7 +69,7 @@ Website **không** hỗ trợ các chức năng sau trong phạm vi hiện tại
 
 Không được tự ý đưa các chức năng nằm ngoài phạm vi trên vào kiến trúc hoặc kế hoạch triển khai nếu chưa có thay đổi yêu cầu chính thức từ chủ dự án.
 
-Trong work tree hiện tại, website mới là bộ khung Next.js với trang mặc định của `create-next-app`. Chưa có trang sản phẩm, Blog, thông tin liên hệ hoặc khu vực quản trị nào được triển khai.
+Trong work tree hiện tại, trang chủ hiển thị hero slider, các carousel sản phẩm theo danh mục và hai bài Blog mới nhất. Các trang danh sách/chi tiết sản phẩm, Blog và khu vực quản trị vẫn chưa được triển khai.
 
 ### 2.2. Mục tiêu hệ thống
 
@@ -189,7 +189,7 @@ Cần đánh giá và chốt Image Storage và phương thức Authentication tr
 - Thực thi nghiệp vụ, kiểm tra Authentication/Authorization và truy cập Database trong cùng process server-side.
 - Không tạo tầng API riêng hoặc ứng dụng backend tách biệt.
 
-Trong work tree hiện tại, Next.js mới chứa trang mặc định của `create-next-app`; các trang public, Admin/Staff và server-side logic nêu trên chưa được triển khai.
+Trong work tree hiện tại, trang chủ public đã được triển khai; các trang danh sách/chi tiết sản phẩm, Blog, Admin/Staff và server-side logic nghiệp vụ nêu trên chưa được triển khai.
 
 **SQLite / PostgreSQL**
 

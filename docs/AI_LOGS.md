@@ -1,5 +1,165 @@
 # AI Change Log
 
+## 2026-11-10 16:02:33 +07:00 — Align carousel tests with current implementation
+
+### User prompt
+
+> update test file with current files
+>
+> split and commit, create branch if needed
+>
+> strictly follow contributing.md and .template pr
+> give pr body with the output
+> ask for permission between PR if too large
+
+### Changes made
+
+- Updated carousel and hero rendering tests to reflect the current product list, enabled navigation controls, hero layout, and 30px SVG arrow buttons.
+- Aligned the disabled ActionButton test with its current neutral styling.
+- Kept pure pagination-helper tests unchanged because that exported helper still exists.
+
+### Output summary
+
+The component tests now reflect current rendering behavior rather than older pagination or button-style expectations. Commit grouping and PR summary are being prepared in accordance with the contribution guide and repository template.
+
+---
+
+## 2026-11-10 15:49:05 +07:00 — Switch arrow buttons to compact SVG controls
+
+### User prompt
+
+> export function ArrowButton() { ... }
+> left and right arrow button 30x30px
+
+### Changes made
+
+- Replaced the image-based arrow states with the supplied SVG chevron and neutral-to-green hover styling.
+- Made the chevron point left or right based on the component's direction prop.
+- Set both hero and product carousel arrow buttons to 30×30px.
+
+### Output summary
+
+Both controls now use the same compact SVG button style, with matching dimensions and direction-aware icons.
+
+---
+
+## 2026-11-10 15:44:53 +07:00 — Extract reusable arrow button component
+
+### User prompt
+
+> the upper one is button, the lower one is button hover
+> button arrow right and left, make arrow button component
+
+### Changes made
+
+- Added a reusable `ArrowButton` that renders the default and colored directional assets and swaps between them on hover or keyboard focus.
+- Replaced the inline hero and product carousel arrow controls with the shared component, retaining their caller-defined dimensions and click handlers.
+- Added focused tests for both asset states, direction, accessibility labels, sizes, and disabled support.
+
+### Output summary
+
+Hero and product carousel arrows now share one component and preserve the existing button sizes. The supplied colored artwork appears on hover and keyboard focus.
+
+---
+
+## 2026-11-10 14:40:43 +07:00 — Extract shared action button component
+
+### User prompt
+
+> change button
+> make it a component, keep all size the same
+
+### Changes made
+
+- Extracted the shared `ActionButton` component with enabled link and disabled button states matching the supplied green/gray reference.
+- Reused it for the hero EXPLORE NOW and Blog SEE MORE CTAs.
+- Kept CTA height, width, minimum dimensions, padding, and responsive typography in their existing call sites.
+- Added component tests for link/disabled behavior and size classes.
+
+### Output summary
+
+The hero and Blog CTAs now use one reusable component; disabled styling is gray and enabled styling remains green. Existing sizes and placement remain set by the callers.
+
+---
+
+## 2026-11-10 14:16:16 +07:00 — Reposition hero navigation and slide indicators
+
+### User prompt
+
+> left and right button go on opposite side of the slider, position at 50% y axis
+> Explore now should be at bottom, right above Choose a slide
+> adjust the spacing between the button and indicators: spacing shorter
+
+### Changes made
+
+- Positioned the hero arrows in a full-width overlay centered at 50% height, with one arrow at each side. The overlay ignores pointer events while the buttons remain clickable.
+- Moved the Explore Now CTA to the bottom center of the image, 36px above its bottom edge.
+- Centered the slide indicators 16px above the bottom edge, leaving a tighter 12px gap below the 40px CTA.
+
+### Output summary
+
+The hero arrows now sit on opposite sides at vertical center and remain interactive. Explore Now sits directly above the centered slide indicators with reduced spacing.
+
+`npm run lint`, `npm run typecheck`, `npm test` (6 files, 41 tests), and the targeted Prettier check pass. Browser layout measurements confirmed the arrows are centered vertically, the CTA is 36px above the slider bottom, and the indicators are 16px above it (12px between CTA and indicators). The browser dev server's HMR WebSocket handshake failed during interaction verification, so button clicks could not be confirmed in that browser session.
+
+---
+
+## 2026-11-10 13:52:52 +07:00 — Recolor and wire hero/product carousel arrows
+
+### User prompt
+
+> use the left and right arrow in asset
+> onclick
+> change outline to #24453c
+> arrow to #526861
+
+### Changes made
+
+- Created recolored copies of the supplied left/right arrow PNG assets, keeping the originals unchanged. The circular outlines use `#24453c` and the chevrons use `#526861`.
+- Replaced the text glyphs in the hero slider and product carousel controls with the supplied arrow images. Previous/next click handlers remain connected; keyboard focus outlines use the requested outline color.
+- Preserved the existing in-progress homepage image and metadata changes.
+
+### Output summary
+
+Hero and product carousel arrows use the provided artwork with the requested outline/chevron colors and remain clickable. Source arrow assets are unchanged.
+
+`npm run lint`, `npm run typecheck`, `npm test` (6 files, 41 tests), and the targeted Prettier check pass. Browser verification confirmed both hero slide controls and product carousel pagination work in both directions.
+
+---
+
+## 2026-11-10 12:04:01 +07:00 — Implement homepage hero, category carousels, and Blog (G1.4)
+
+### User prompt
+
+> G1.4 — Home /. Hero slider 3 ảnh (‹ ›, dot, EXPLORE NOW), 4 section carousel theo danh mục, section BLOG 2 bài mới nhất + SEE MORE.
+> trang chỉ là Server Component; slider và carousel là Client Component nhận data qua props. Không đánh "use client" cho cả trang.
+>
+> rectangle 4 is main navigation rectangle
+> rectangle 13 í dropdownmenu css box
+> use image to set css
+>
+> new commit branch, commit strictly follow contributing rule and pull_request_template.md
+> also give pr title
+> if change, add prompt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Created `feature/g1-4-home-page` from the latest `origin/main`.
+- Replaced the default route with a Server Component that reads hero, category, product, and Blog data through the existing query functions and passes data to the interactive components as props.
+- Added the three-slide `HeroSlider` Client Component with previous/next controls, slide dots, an `EXPLORE NOW` link, and an empty state. Enabled the third existing mock hero slide.
+- Rendered one shared product carousel per category and the two newest published Blog posts with a `SEE MORE` link. Updated the carousel arrows and hero CTA to match the supplied rounded green/neutral control styles.
+- Added hero-slider tests, asserted the three hero slides and newest two Blog posts in query tests, and updated the README and architecture status.
+
+### Output summary
+
+The homepage now has three hero slides, four category product carousels, and the two newest Blog posts; only the hero and carousel components are Client Components. Browser verification confirmed the slide buttons/dots navigate, mobile navigation opens at a narrow viewport without horizontal overflow, and the desktop dropdown has a 13px gap and the green active underline.
+
+`npm run lint`, `npm run typecheck`, `npm test` (6 files, 41 tests), and `npm run build` pass. `npm run format:check` still reports four untouched baseline files: `src/app/globals.css`, `src/components/footer.tsx`, `src/components/header.tsx`, and `src/components/icons.tsx`. Changed implementation files pass targeted Prettier formatting.
+
+**Suggested PR title:** `feat(home): add homepage hero and content carousels`
+
+---
+
 ## 2026-11-10 11:06:47 +07:00 — Responsive header/footer toggles and dropdown underline
 
 ### User prompt

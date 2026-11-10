@@ -3,7 +3,7 @@ import type { HeroSlide } from '@/types/domain';
 export const heroSlides: HeroSlide[] = [
   {
     slide_id: 'hero-wedding-ring',
-    imageUrl: '/mock/hero/wedding-bands.svg',
+    imageUrl: '/mock/hero/hero-slide-1.webp',
     alt: 'Bộ sưu tập nhẫn cưới AN JEWELRY',
     title: 'WEDDING RINGS',
     subtitle: 'Dấu ấn của một lời hứa bền lâu',
@@ -13,7 +13,7 @@ export const heroSlides: HeroSlide[] = [
   },
   {
     slide_id: 'hero-engagement-ring',
-    imageUrl: '/mock/hero/engagement.svg',
+    imageUrl: '/mock/hero/hero-slide-2.webp',
     alt: 'Nhẫn đính hôn kim cương AN JEWELRY',
     title: 'ENGAGEMENT RINGS',
     subtitle: 'Khoảnh khắc bắt đầu từ một viên đá',
@@ -23,12 +23,12 @@ export const heroSlides: HeroSlide[] = [
   },
   {
     slide_id: 'hero-other-jewelry',
-    imageUrl: '/mock/hero/ready-to-ship.svg',
+    imageUrl: '/mock/hero/hero-slide-3.webp',
     alt: 'Trang sức sẵn giao AN JEWELRY',
     title: 'OTHER JEWELRY',
     subtitle: 'Sẵn sàng trao gửi yêu thương',
     linkUrl: '/c/other-jewelry',
     sortOrder: 3,
-    status: 'HIDDEN',
+    status: 'VISIBLE',
   },
 ];

@@ -8,6 +8,7 @@
   --line: #93aaa0;
   --font-color: #383838;
   --underline-color: #265649;
+  --control-outline: #24453c;
 
   /* Geist Sans/Mono are loaded in src/app/layout.tsx. */
   --font-body-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
