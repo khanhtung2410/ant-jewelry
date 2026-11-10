@@ -17,7 +17,7 @@ function navLinkClass(active: boolean) {
     'border-b-2 pb-1 transition-colors',
     active
       ? 'border-[var(--underline-color)] text-foreground'
-      : 'border-transparent hover:border-line',
+      : 'border-transparent hover:border-[var(--underline-color)]',
   ].join(' ');
 }
 
@@ -37,8 +37,6 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
   const isContact = pathname === '/contact';
 
   const mobileMenuId = useId();
-  // Store the route the menu was opened on so a navigation closes it without an
-  // effect, and browser back/forward cannot leave a stale panel open.
   const [openOnPathname, setOpenOnPathname] = useState<string | null>(null);
   const menuOpen = openOnPathname === pathname;
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -61,8 +59,15 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
 
   return (
     <header className="border-b border-line bg-background" onKeyDown={handleHeaderKeyDown}>
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
-        <div className="flex items-center justify-between gap-4 md:block">
+      {/*
+        No py on the grid: vertical padding lives on the logo cell so it
+        drives the row height. Nav (and its children) stretch to fill that
+        height, which lets the ProductsMenu dropdown anchor to the header
+        bottom via `top-full`.
+      */}
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 px-4 sm:px-6 md:grid-cols-12 md:gap-x-6 lg:px-8">
+        {/* LEFT — logo + mobile menu button (drives row height via py-4) */}
+        <div className="flex items-center justify-between gap-4 py-4 md:col-span-3 md:justify-start">
           <Link href="/" aria-label="AN JEWELRY - Home" className="inline-flex w-fit items-center">
             <Image
               src="/mock/products/antjewelry-logo.svg"
@@ -87,9 +92,13 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
           </button>
         </div>
 
-        <nav aria-label="Main navigation" className="hidden md:block">
-          <ul className="flex flex-wrap items-center gap-x-6 gap-y-3 font-heading text-sm uppercase tracking-[0.12em]">
-            <li>
+        {/* MIDDLE — nav stretches to full header height */}
+        <nav
+          aria-label="Main navigation"
+          className="hidden md:col-span-6 md:flex md:items-stretch md:justify-center"
+        >
+          <ul className="flex h-full flex-wrap gap-x-6 font-heading text-sm uppercase tracking-[0.12em]">
+            <li className="flex items-center">
               <Link
                 href="/"
                 className={navLinkClass(isHome)}
@@ -98,10 +107,10 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
                 HOME
               </Link>
             </li>
-            <li>
+            <li className="flex items-center">
               <ProductsMenu categories={categories} active={pathname.startsWith('/c/')} />
             </li>
-            <li>
+            <li className="flex items-center">
               <Link
                 href="/blog"
                 className={navLinkClass(isBlog)}
@@ -110,7 +119,7 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
                 BLOG
               </Link>
             </li>
-            <li>
+            <li className="flex items-center">
               <Link
                 href="/#contact"
                 className={navLinkClass(isContact)}
@@ -121,6 +130,9 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
             </li>
           </ul>
         </nav>
+
+        {/* RIGHT — spacer keeps nav truly centered */}
+        <div className="hidden md:col-span-3 md:block" aria-hidden="true" />
       </div>
 
       {menuOpen ? (
@@ -190,9 +202,7 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
   const focusFirstOnOpen = useRef(false);
 
   useEffect(() => {
-    if (!open) {
-      return;
-    }
+    if (!open) return;
 
     function handlePointerDown(event: PointerEvent) {
       if (!containerRef.current?.contains(event.target as Node)) {
@@ -222,8 +232,6 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
       closeAndFocusButton();
       return;
     }
-
-    // Tabbing from the toggle closes the disclosure before focus moves on.
     if (event.key === 'Tab' && event.target === buttonRef.current) {
       setOpen(false);
     }
@@ -238,29 +246,22 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
   }
 
   function handleMenuKeyDown(event: KeyboardEvent<HTMLUListElement>) {
-    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
-      return;
-    }
-
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
     event.preventDefault();
     const items = Array.from(menuRef.current?.querySelectorAll<HTMLElement>('a') ?? []);
-    if (items.length === 0) {
-      return;
-    }
-
+    if (items.length === 0) return;
     const currentIndex = items.indexOf(document.activeElement as HTMLElement);
     const nextIndex =
       event.key === 'ArrowDown'
         ? (currentIndex + 1) % items.length
         : (currentIndex - 1 + items.length) % items.length;
-
     items[nextIndex]?.focus();
   }
 
   return (
     <div
       ref={containerRef}
-      className="relative"
+      className="relative flex h-full items-center"
       onKeyDown={handleKeyDown}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
@@ -276,7 +277,7 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((value) => !value)}
         onKeyDown={handleButtonKeyDown}
-        className={`${navLinkClass(active)} inline-flex items-center gap-1 `}
+        className={`${navLinkClass(active)} gap-1`}
       >
         PRODUCTS
         <ChevronDownIcon className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -288,7 +289,7 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
           id={menuId}
           aria-label="Product categories"
           onKeyDown={handleMenuKeyDown}
-          className="absolute left-0 top-full z-20 mt-14 min-w-56 border border-line bg-background py-2 shadow-sm"
+          className="absolute left-0 top-full z-20 mt-4 min-w-56 border border-line bg-background py-2 shadow-sm"
         >
           {categories.map((category) => {
             const isCurrent = pathname === `/c/${category.slug}`;
@@ -299,13 +300,16 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
                   href={`/c/${category.slug}`}
                   onClick={() => setOpen(false)}
                   aria-current={isCurrent ? 'page' : undefined}
-                  className={`block border-b-2 px-4 py-2 text-sm transition-colors hover:bg-product-image ${
-                    isCurrent
-                      ? 'border-[var(--underline-color)] text-foreground'
-                      : 'border-transparent hover:border-[var(--underline-color)]'
-                  }`}
+                  className="group block px-4 py-2 text-sm transition-colors hover:bg-product-image"
                 >
-                  {category.name}
+                  <span
+                    className={`inline-block border-b-2 pb-1 transition-colors ${isCurrent
+                        ? 'border-[var(--underline-color)] text-foreground'
+                        : 'border-transparent group-hover:border-[var(--underline-color)]'
+                      }`}
+                  >
+                    {category.name}
+                  </span>
                 </Link>
               </li>
             );
@@ -353,11 +357,10 @@ function MobileProductsMenu({ categories, active, onNavigate }: MobileProductsMe
                   href={`/c/${category.slug}`}
                   onClick={onNavigate}
                   aria-current={isCurrent ? 'page' : undefined}
-                  className={`flex border-b-2 py-2 pl-4 font-body text-sm tracking-normal normal-case transition-colors ${
-                    isCurrent
+                  className={`flex border-b-2 py-2 pl-4 font-body text-sm tracking-normal normal-case transition-colors ${isCurrent
                       ? 'border-[var(--underline-color)] text-foreground'
                       : 'border-transparent hover:border-[var(--underline-color)]'
-                  }`}
+                    }`}
                 >
                   {category.name}
                 </Link>
