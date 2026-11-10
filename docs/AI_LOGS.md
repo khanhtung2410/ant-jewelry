@@ -1,5 +1,33 @@
 # AI Change Log
 
+## 2026-11-10 11:06:47 +07:00 — Responsive header/footer toggles and dropdown underline
+
+### User prompt
+
+> item of dropdownmenu in header should have 2px #265649 border like other link,
+> drop down menu should not overlap with header, make them have a little distance
+> implement a toggle for main navigation, footer in ms and sm scr
+>
+> commit branch, commit strictly follow contributing rule and pull_request_template.md
+> also give pr title
+> if change, add prompt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Branched `feature/responsive-nav-footer` from `main`.
+- Restored the `--underline-color: #265649` token in `src/app/globals.css`; the tracked file was missing it, so the `var(--underline-color)` used by the header fell back to the current text color.
+- `src/components/header.tsx`: active main links and PRODUCTS dropdown items now use a 2px `--underline-color` underline. Dropdown items show the same underline on hover/focus and keep the current category highlighted. The dropdown is offset from the header with `mt-14`, leaving a 15px gap at the verified 800px viewport so it no longer touches the header border.
+- `src/components/header.tsx`: below the `md` breakpoint the desktop nav is replaced by a MENU/CLOSE toggle that expands an inline mobile navigation panel. PRODUCTS expands its four categories as a nested accordion; the panel closes on navigation, Escape returns focus to the toggle, and a pathname-based open state avoids a setState-in-effect.
+- `src/components/footer.tsx`: below `md`, HOME, INFO, HELP and SOCIAL render as accordion toggles with `aria-expanded` / `aria-controls`; the contact block stays visible and the columns remain always open from `md` up.
+- `src/components/icons.tsx`: added `MenuIcon` and `CloseIcon`, both using `currentColor`.
+- Documented the responsive behaviour in `docs/README.md` and `docs/ARCHITECTURE.md`.
+
+### Output summary
+
+Header dropdown items and active links share the 2px `#265649` underline, the dropdown now sits below the header with a small gap, and the mobile/small-screen navigation and footer sections have accessible toggles. Verified at 800px (desktop nav, dropdown gap 15px, footer columns static) and in a 390px iframe (MENU/CLOSE panel with nested categories, footer accordions expanded/collapsed). `npm run format`, `npm run lint`, `npm run typecheck`, `npm test` (5 files, 39 tests), `npm run format:check` and `npm run build` pass; the six-digit hex grep still returns no matches in `src/components` and `src/app`.
+
+---
+
 ## 2026-11-09 23:00:00 +07:00 — Add shared ProductCard, Carousel, BlogRow and formatPrice (G1.3)
 
 ### User prompt
