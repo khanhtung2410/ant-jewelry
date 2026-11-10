@@ -17,7 +17,7 @@ function navLinkClass(active: boolean) {
     'border-b-2 pb-1 transition-colors',
     active
       ? 'border-[var(--underline-color)] text-foreground'
-      : 'border-transparent hover:border-[var(--underline-color)]',
+      : 'border-transparent hover:border-line',
   ].join(' ');
 }
 
@@ -37,6 +37,8 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
   const isContact = pathname === '/contact';
 
   const mobileMenuId = useId();
+  // Store the route the menu was opened on so a navigation closes it without an
+  // effect, and browser back/forward cannot leave a stale panel open.
   const [openOnPathname, setOpenOnPathname] = useState<string | null>(null);
   const menuOpen = openOnPathname === pathname;
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -59,15 +61,8 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
 
   return (
     <header className="border-b border-line bg-background" onKeyDown={handleHeaderKeyDown}>
-      {/*
-        No py on the grid: vertical padding lives on the logo cell so it
-        drives the row height. Nav (and its children) stretch to fill that
-        height, which lets the ProductsMenu dropdown anchor to the header
-        bottom via `top-full`.
-      */}
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 px-4 sm:px-6 md:grid-cols-12 md:gap-x-6 lg:px-8">
-        {/* LEFT — logo + mobile menu button (drives row height via py-4) */}
-        <div className="flex items-center justify-between gap-4 py-4 md:col-span-3 md:justify-start">
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+        <div className="flex items-center justify-between gap-4 md:block">
           <Link href="/" aria-label="AN JEWELRY - Home" className="inline-flex w-fit items-center">
             <Image
               src="/mock/products/antjewelry-logo.svg"
@@ -92,13 +87,9 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
           </button>
         </div>
 
-        {/* MIDDLE — nav stretches to full header height */}
-        <nav
-          aria-label="Main navigation"
-          className="hidden md:col-span-6 md:flex md:items-stretch md:justify-center"
-        >
-          <ul className="flex h-full flex-wrap gap-x-6 font-heading text-sm uppercase tracking-[0.12em]">
-            <li className="flex items-center">
+        <nav aria-label="Main navigation" className="hidden md:block">
+          <ul className="flex flex-wrap items-center gap-x-6 gap-y-3 font-heading text-sm uppercase tracking-[0.12em]">
+            <li>
               <Link
                 href="/"
                 className={navLinkClass(isHome)}
@@ -277,7 +268,7 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
         aria-controls={open ? menuId : undefined}
         onClick={() => setOpen((value) => !value)}
         onKeyDown={handleButtonKeyDown}
-        className={`${navLinkClass(active)} gap-1`}
+        className={`${navLinkClass(active)} inline-flex items-center gap-1 `}
       >
         PRODUCTS
         <ChevronDownIcon className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -289,7 +280,7 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
           id={menuId}
           aria-label="Product categories"
           onKeyDown={handleMenuKeyDown}
-          className="absolute left-0 top-full z-20 mt-4 min-w-56 border border-line bg-background py-2 shadow-sm"
+          className="absolute left-0 top-full z-20 mt-14 min-w-56 border border-line bg-background py-2 shadow-sm"
         >
           {categories.map((category) => {
             const isCurrent = pathname === `/c/${category.slug}`;
@@ -300,16 +291,13 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
                   href={`/c/${category.slug}`}
                   onClick={() => setOpen(false)}
                   aria-current={isCurrent ? 'page' : undefined}
-                  className="group block px-4 py-2 text-sm transition-colors hover:bg-product-image"
+                  className={`block border-b-2 px-4 py-2 text-sm transition-colors hover:bg-product-image ${
+                    isCurrent
+                      ? 'border-[var(--underline-color)] text-foreground'
+                      : 'border-transparent hover:border-[var(--underline-color)]'
+                  }`}
                 >
-                  <span
-                    className={`inline-block border-b-2 pb-1 transition-colors ${isCurrent
-                        ? 'border-[var(--underline-color)] text-foreground'
-                        : 'border-transparent group-hover:border-[var(--underline-color)]'
-                      }`}
-                  >
-                    {category.name}
-                  </span>
+                  {category.name}
                 </Link>
               </li>
             );
@@ -357,10 +345,11 @@ function MobileProductsMenu({ categories, active, onNavigate }: MobileProductsMe
                   href={`/c/${category.slug}`}
                   onClick={onNavigate}
                   aria-current={isCurrent ? 'page' : undefined}
-                  className={`flex border-b-2 py-2 pl-4 font-body text-sm tracking-normal normal-case transition-colors ${isCurrent
+                  className={`flex border-b-2 py-2 pl-4 font-body text-sm tracking-normal normal-case transition-colors ${
+                    isCurrent
                       ? 'border-[var(--underline-color)] text-foreground'
                       : 'border-transparent hover:border-[var(--underline-color)]'
-                    }`}
+                  }`}
                 >
                   {category.name}
                 </Link>
