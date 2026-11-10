@@ -1,6 +1,30 @@
 # AI Change Log
 
-## 2026-11-10 21:53:50 +07:00 — Add product detail page and contact popover
+## 2026-11-10 22:34:11 +07:00 - Add blog pages and footer static pages
+
+### User prompt
+
+> G1.7 — Blog /blog, /blog/[slug] + 4 trang footer. Blog list: 4 BlogRow mỗi lần, mới nhất trước, SEE MORE. Blog detail: tiêu đề căn giữa, “Published dd/MM/yyyy”, nội dung Markdown xen ảnh, OTHER BLOGS. Trang tĩnh: Terms and Conditions, Privacy Policy, Shipping & Return, Jewelry Care.
+> Markdown được sanitize (không render <script>); ngày hiển thị theo giờ Việt Nam.
+>
+> new commit branch, commit strictly follow contributing rule and pull_request_template.md
+> also give pr title
+> if change, add prompt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Added blog listing page at `/blog` with newest-first published posts, 4 `BlogRow` items per batch, and a `SEE MORE` control.
+- Added blog detail route at `/blog/[slug]` with centered title, Vietnam-time `Published dd/MM/yyyy` date, sanitized Markdown body rendering with interspersed images, and an `OTHER BLOGS` section excluding the current post.
+- Added static footer pages for Terms and Conditions, Privacy Policy, Shipping & Return, and Jewelry Care, and updated the footer Help link to point Jewelry Care to `/jewelry-care`.
+- Implemented safe Markdown rendering that escapes raw HTML (preventing `<script>` execution), a Vietnam-time date formatter, refreshed blog mock content as Markdown with images, and added focused tests for sanitization and date formatting.
+
+### Output summary
+
+`/blog` lists published posts newest first and reveals four more rows per `SEE MORE` action. `/blog/[slug]` renders a centered title, Vietnam-time published date, sanitized Markdown content (including images) without executing raw HTML/scripts, and up to four other published posts. Static pages are available at `/terms`, `/privacy`, `/ship`, and `/jewelry-care`, with the footer updated accordingly. Attached design images could not be viewed in this environment; implementation follows the written G1.7 requirements.
+
+---
+
+## 2026-11-10 21:53:50 +07:00 - Add product detail page and contact popover
 
 ### User prompt
 

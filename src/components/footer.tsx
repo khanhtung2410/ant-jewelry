@@ -55,7 +55,7 @@ export function SiteFooter({ settings }: SiteFooterProps) {
         <div className="md:col-span-2">
           <FooterColumn title="HELP">
             <FooterLink href="/ship">Shipping and Return</FooterLink>
-            <FooterLink href="/blog/bao-quan-trang-suc-dung-cach">Jewelry Care</FooterLink>
+            <FooterLink href="/jewelry-care">Jewelry Care</FooterLink>
           </FooterColumn>
         </div>
 
