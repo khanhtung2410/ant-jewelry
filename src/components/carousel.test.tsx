@@ -102,33 +102,39 @@ describe('getCarouselPage', () => {
 });
 
 describe('Carousel', () => {
-  it('renders all products and disables both arrows when fewer than five are provided', () => {
+  it('renders every product and keeps both arrow controls available', () => {
     const html = renderToStaticMarkup(
       <Carousel title="Wedding Ring" products={makeProducts(3)} viewAllHref="/c/wedding-ring" />,
     );
 
     expect(countCards(html)).toBe(3);
-    expect(countDisabledButtons(html)).toBe(2);
+    expect(countDisabledButtons(html)).toBe(0);
+    expect(html.match(/h-\[30px\] w-\[30px\]/g)).toHaveLength(2);
+    expect(html).toContain('d="M8.25 4.5l7.5 7.5-7.5 7.5"');
+    expect(html).toContain('aria-label="Previous products"');
+    expect(html).toContain('aria-label="Next products"');
     expect(html).toContain('VIEW PRODUCTS');
     expect(html).toContain('href="/c/wedding-ring"');
   });
 
-  it('shows five cards and enables the next arrow when more than five are provided', () => {
+  it('renders all products when there are more than five', () => {
     const html = renderToStaticMarkup(
       <Carousel title="Wedding Ring" products={makeProducts(7)} viewAllHref="/c/wedding-ring" />,
     );
 
-    expect(countCards(html)).toBe(5);
-    expect(countDisabledButtons(html)).toBe(1);
+    expect(countCards(html)).toBe(7);
+    expect(countDisabledButtons(html)).toBe(0);
   });
 
-  it('renders the empty state without arrows enabled', () => {
+  it('renders the empty state and keeps both arrow controls available', () => {
     const html = renderToStaticMarkup(
       <Carousel title="Wedding Ring" products={[]} viewAllHref="/c/wedding-ring" />,
     );
 
     expect(countCards(html)).toBe(0);
     expect(html).toContain('Chưa có sản phẩm.');
-    expect(countDisabledButtons(html)).toBe(2);
+    expect(countDisabledButtons(html)).toBe(0);
+    expect(html).toContain('aria-label="Previous products"');
+    expect(html).toContain('aria-label="Next products"');
   });
 });

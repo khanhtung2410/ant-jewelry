@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: 'AN JEWELRY',
-    template: '%s | AN JEWELRY',
+    default: 'ANT JEWELRY',
+    template: '%s | ANT JEWELRY',
   },
   description:
     'AN JEWELRY - nhẫn cưới, nhẫn đính hôn, dây chuyền và trang sức tinh tế cho mọi khoảnh khắc.',

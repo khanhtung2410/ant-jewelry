@@ -15,12 +15,14 @@ vi.mock('next/link', () => ({
     href,
     children,
     'aria-label': ariaLabel,
+    className,
   }: {
     href: string;
     children: string;
     'aria-label'?: string;
+    className?: string;
   }) => (
-    <a href={href} aria-label={ariaLabel}>
+    <a href={href} aria-label={ariaLabel} className={className}>
       {children}
     </a>
   ),
@@ -45,9 +47,18 @@ describe('HeroSlider', () => {
     expect(html).toContain('href="/c/collection-1"');
     expect(html).toContain('EXPLORE NOW');
     expect(html).toContain('Collection 1');
+    expect(html.match(/h-\[30px\] w-\[30px\]/g)).toHaveLength(2);
+    expect(html).toContain('class="h-6 w-6 rotate-180"');
+    expect(html).toContain('d="M8.25 4.5l7.5 7.5-7.5 7.5"');
+    expect(html).toContain('pointer-events-none absolute inset-x-0 top-1/2');
+    expect(html.match(/pointer-events-auto/g)).toHaveLength(2);
+    expect(html).toContain('bottom-8 left-1/2');
+    expect(html).toContain('absolute bottom-4 left-1/2');
     expect(html.match(/aria-label="Go to slide \d"/g)).toHaveLength(3);
-    expect(html).toContain('aria-label="Previous slide" disabled=""');
+    expect(html).toContain('aria-label="Previous slide"');
+    expect(html).not.toContain('aria-label="Previous slide" disabled=""');
     expect(html).toContain('aria-label="Next slide"');
+    expect(html).not.toContain('aria-label="Next slide" disabled=""');
   });
 
   it('shows an empty state without slide controls when no slides are provided', () => {

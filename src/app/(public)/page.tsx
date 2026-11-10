@@ -1,7 +1,7 @@
 import { BlogRow } from '@/components/blog-row';
 import { Carousel } from '@/components/carousel';
+import { ActionButton } from '@/components/action-button';
 import { HeroSlider } from '@/components/hero-slider';
-import Link from 'next/link';
 import {
   getBlogPosts,
   getCategories,
@@ -40,16 +40,13 @@ export default function Home() {
             >
               BLOG
             </h2>
-            <Link
-              href="/blog"
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-[var(--underline-color)] px-7 font-heading text-sm text-white transition-colors hover:bg-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--underline-color)]"
-            >
+            <ActionButton href="/blog" className="text-sm">
               SEE MORE
-            </Link>
+            </ActionButton>
           </div>
 
           {latestPosts.length > 0 ? (
-            <div className="grid gap-8 lg:grid-cols-2">
+            <div className="grid gap-8 lg:grid-cols-1">
               {latestPosts.map((post) => (
                 <BlogRow key={post.blog_id} post={post} className="h-full" />
               ))}
