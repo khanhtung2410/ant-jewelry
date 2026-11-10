@@ -12,6 +12,8 @@ import {
   getProductsByCategorySlug,
   getRelatedProducts,
   getSettings,
+  parseProductSort,
+  sortProducts,
 } from '@/lib/queries';
 import { createVndPrice, type ProductType } from '@/types/domain';
 
@@ -65,6 +67,32 @@ describe('product queries', () => {
     const names = getProducts({ sort: 'name_asc' }).map((product) => product.name);
 
     expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'vi')));
+  });
+
+  it('falls back to ascending price for missing or invalid sort values', () => {
+    expect(parseProductSort(undefined)).toBe('price_asc');
+    expect(parseProductSort('unknown')).toBe('price_asc');
+    expect(parseProductSort(['price_desc', 'name_asc'])).toBe('price_asc');
+    expect(parseProductSort('name_desc')).toBe('name_desc');
+  });
+
+  it('uses product id as a stable price tie-breaker without dropping tied products', () => {
+    const [first, second] = getProducts({ type: 'WEDDING RING' });
+    const equalPriceProducts = [
+      { ...second, price: createVndPrice(1000) },
+      { ...first, price: createVndPrice(1000) },
+    ];
+
+    const sorted = sortProducts(equalPriceProducts, 'price_asc');
+    const batches = [sorted.slice(0, 1), sorted.slice(1)].flat();
+
+    expect(sorted.map((product) => product.product_id)).toEqual(
+      [first.product_id, second.product_id].sort(),
+    );
+    expect(batches.map((product) => product.product_id)).toEqual(
+      sorted.map((product) => product.product_id),
+    );
+    expect(new Set(batches.map((product) => product.product_id)).size).toBe(2);
   });
 
   it('finds a visible product by slug or id', () => {
