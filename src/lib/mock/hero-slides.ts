@@ -29,6 +29,6 @@ export const heroSlides: HeroSlide[] = [
     subtitle: 'Sẵn sàng trao gửi yêu thương',
     linkUrl: '/c/other-jewelry',
     sortOrder: 3,
-    status: 'HIDDEN',
+    status: 'VISIBLE',
   },
 ];

@@ -6,7 +6,7 @@ Website giới thiệu sản phẩm trang sức; khách hàng liên hệ trực 
 
 AN JEWELRY là website dành cho khách hàng có nhu cầu tìm hiểu các sản phẩm trang sức và liên hệ trực tiếp với cửa hàng.
 
-**Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict, ESLint, Prettier, Vitest và các contract domain trong `src/types/domain.ts`; mock data nằm trong `src/lib/mock/` (sản phẩm dùng ảnh `.webp` trong `public/mock/products/`, sản phẩm chưa có ảnh dùng SVG placeholder) và mọi trang phải đọc dữ liệu qua query function trong `src/lib/queries/`. Root layout dùng design tokens trong `src/app/globals.css`, tải font qua `next/font` và render header/footer dùng chung từ `src/components/`. Các component dùng chung cho sản phẩm và Blog (`ProductCard`, `Carousel`, `BlogRow`) cùng helper `formatPrice` đã có unit test. Header và footer có toggle cho màn hình nhỏ: MENU/CLOSE cho navigation và accordion cho các cột footer. Chưa có trang chủ hoàn chỉnh, Database, Prisma hoặc Authentication. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
+**Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict, ESLint, Prettier, Vitest và các contract domain trong `src/types/domain.ts`; mock data nằm trong `src/lib/mock/` (sản phẩm dùng ảnh `.webp` trong `public/mock/products/`, sản phẩm chưa có ảnh dùng SVG placeholder) và mọi trang phải đọc dữ liệu qua query function trong `src/lib/queries/`. Root layout dùng design tokens trong `src/app/globals.css`, tải font qua `next/font` và render header/footer dùng chung từ `src/components/`. Trang chủ là Server Component, hiển thị hero slider 3 ảnh, 4 carousel danh mục và 2 bài Blog mới nhất; slider và carousel là Client Components nhận dữ liệu qua props. Các component dùng chung cho sản phẩm và Blog (`ProductCard`, `Carousel`, `BlogRow`) cùng helper `formatPrice` đã có unit test. Header và footer có toggle cho màn hình nhỏ: MENU/CLOSE cho navigation và accordion cho các cột footer. Database, Prisma và Authentication chưa được cấu hình. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
 
 Chức năng định hướng:
 
@@ -72,7 +72,7 @@ npm install
 npm run dev
 ```
 
-Mở [http://localhost:3000](http://localhost:3000). Hiện tại trang chủ hiển thị nội dung mặc định của `create-next-app`, chưa phải giao diện AN JEWELRY.
+Mở [http://localhost:3000](http://localhost:3000). Trang chủ hiển thị hero slider với ba ảnh, carousel sản phẩm cho bốn danh mục và hai bài Blog mới nhất.
 
 ### 4.4. Build và chạy production
 
@@ -112,7 +112,7 @@ Database dùng Prisma với SQLite local và PostgreSQL production; cấu hình 
 
 ## 6. Sử dụng
 
-Work tree hiện tại chỉ có trang chủ mặc định của Next.js. Luồng người dùng dự kiến (chưa triển khai):
+Trang chủ hiện hiển thị ba slide nổi bật, bốn carousel danh mục, hai bài Blog mới nhất và các liên kết điều hướng đến trang danh mục và Blog. Các trang đích sản phẩm và Blog chi tiết vẫn là luồng dự kiến:
 
 1. Khách hàng truy cập website AN JEWELRY.
 2. Khách hàng xem danh sách sản phẩm trang sức.

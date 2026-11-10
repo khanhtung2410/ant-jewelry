@@ -77,7 +77,7 @@ export function Carousel({ title, products, viewAllHref, className = '' }: Carou
           aria-label="Previous products"
           onClick={() => setPage(view.page - 1)}
           disabled={!view.hasPrevious}
-          className="inline-flex h-10 w-10 items-center justify-center border border-line text-xl leading-none transition-colors enabled:hover:bg-product-image disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-[var(--underline-color)] bg-product-image text-2xl leading-none text-[var(--underline-color)] transition-colors enabled:hover:bg-[var(--underline-color)] enabled:hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--underline-color)] disabled:cursor-not-allowed disabled:border-muted/50 disabled:bg-muted/40 disabled:text-muted"
         >
           <span aria-hidden="true">‹</span>
         </button>
@@ -86,7 +86,7 @@ export function Carousel({ title, products, viewAllHref, className = '' }: Carou
           aria-label="Next products"
           onClick={() => setPage(view.page + 1)}
           disabled={!view.hasNext}
-          className="inline-flex h-10 w-10 items-center justify-center border border-line text-xl leading-none transition-colors enabled:hover:bg-product-image disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-[var(--underline-color)] bg-product-image text-2xl leading-none text-[var(--underline-color)] transition-colors enabled:hover:bg-[var(--underline-color)] enabled:hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--underline-color)] disabled:cursor-not-allowed disabled:border-muted/50 disabled:bg-muted/40 disabled:text-muted"
         >
           <span aria-hidden="true">›</span>
         </button>

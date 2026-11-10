@@ -172,7 +172,10 @@ describe('blog queries', () => {
 
   it('can include drafts and limit results', () => {
     expect(getBlogPosts({ includeDrafts: true })).toHaveLength(6);
-    expect(getBlogPosts({ limit: 2 })).toHaveLength(2);
+    expect(getBlogPosts({ limit: 2 }).map((post) => post.blog_id)).toEqual([
+      'blog-choosing-wedding-band',
+      'blog-diamond-cut-guide',
+    ]);
   });
 
   it('does not expose a draft by slug on the storefront', () => {
@@ -190,8 +193,13 @@ describe('hero slide queries', () => {
     expect(slides.map((slide) => slide.slide_id)).toEqual([
       'hero-wedding-ring',
       'hero-engagement-ring',
+      'hero-other-jewelry',
     ]);
-    expect(slides.map((slide) => slide.linkUrl)).toEqual(['/c/wedding-ring', '/c/engagement-ring']);
+    expect(slides.map((slide) => slide.linkUrl)).toEqual([
+      '/c/wedding-ring',
+      '/c/engagement-ring',
+      '/c/other-jewelry',
+    ]);
   });
 });
 

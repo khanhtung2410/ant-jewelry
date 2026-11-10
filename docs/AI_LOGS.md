@@ -1,5 +1,38 @@
 # AI Change Log
 
+## 2026-11-10 12:04:01 +07:00 — Implement homepage hero, category carousels, and Blog (G1.4)
+
+### User prompt
+
+> G1.4 — Home /. Hero slider 3 ảnh (‹ ›, dot, EXPLORE NOW), 4 section carousel theo danh mục, section BLOG 2 bài mới nhất + SEE MORE.
+> trang chỉ là Server Component; slider và carousel là Client Component nhận data qua props. Không đánh "use client" cho cả trang.
+>
+> rectangle 4 is main navigation rectangle
+> rectangle 13 í dropdownmenu css box
+> use image to set css
+>
+> new commit branch, commit strictly follow contributing rule and pull_request_template.md
+> also give pr title
+> if change, add prompt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
+
+### Changes made
+
+- Created `feature/g1-4-home-page` from the latest `origin/main`.
+- Replaced the default route with a Server Component that reads hero, category, product, and Blog data through the existing query functions and passes data to the interactive components as props.
+- Added the three-slide `HeroSlider` Client Component with previous/next controls, slide dots, an `EXPLORE NOW` link, and an empty state. Enabled the third existing mock hero slide.
+- Rendered one shared product carousel per category and the two newest published Blog posts with a `SEE MORE` link. Updated the carousel arrows and hero CTA to match the supplied rounded green/neutral control styles.
+- Added hero-slider tests, asserted the three hero slides and newest two Blog posts in query tests, and updated the README and architecture status.
+
+### Output summary
+
+The homepage now has three hero slides, four category product carousels, and the two newest Blog posts; only the hero and carousel components are Client Components. Browser verification confirmed the slide buttons/dots navigate, mobile navigation opens at a narrow viewport without horizontal overflow, and the desktop dropdown has a 13px gap and the green active underline.
+
+`npm run lint`, `npm run typecheck`, `npm test` (6 files, 41 tests), and `npm run build` pass. `npm run format:check` still reports four untouched baseline files: `src/app/globals.css`, `src/components/footer.tsx`, `src/components/header.tsx`, and `src/components/icons.tsx`. Changed implementation files pass targeted Prettier formatting.
+
+**Suggested PR title:** `feat(home): add homepage hero and content carousels`
+
+---
+
 ## 2026-11-10 11:06:47 +07:00 — Responsive header/footer toggles and dropdown underline
 
 ### User prompt
