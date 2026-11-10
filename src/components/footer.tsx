@@ -1,7 +1,9 @@
+'use client';
+
 import Link from 'next/link';
-import type { ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import type { Category, Settings } from '@/types/domain';
-import { MailIcon, MapPinIcon, PhoneIcon } from './icons';
+import { ChevronDownIcon, MailIcon, MapPinIcon, PhoneIcon } from './icons';
 
 interface SiteFooterProps {
   categories: Category[];
@@ -95,18 +97,38 @@ function FooterColumn({
   titleHref?: string;
   children: ReactNode;
 }) {
+  const contentId = useId();
+  const [open, setOpen] = useState(false);
+
   return (
     <div>
       <h2 className="font-heading text-sm tracking-[0.12em] font-bold">
-        {titleHref ? (
-          <Link href={titleHref} className="transition-colors hover:text-foreground/70">
-            {title}
-          </Link>
-        ) : (
-          title
-        )}
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-controls={contentId}
+          onClick={() => setOpen((value) => !value)}
+          className="flex w-full items-center justify-between gap-2 py-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-line md:hidden"
+        >
+          {title}
+          <ChevronDownIcon className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+        <span className="hidden md:inline">
+          {titleHref ? (
+            <Link href={titleHref} className="transition-colors hover:text-foreground/70">
+              {title}
+            </Link>
+          ) : (
+            title
+          )}
+        </span>
       </h2>
-      <ul className="mt-4 space-y-3 text-sm text-muted">{children}</ul>
+      <ul
+        id={contentId}
+        className={`mt-4 space-y-3 text-sm text-muted ${open ? 'block' : 'hidden'} md:block`}
+      >
+        {children}
+      </ul>
     </div>
   );
 }
