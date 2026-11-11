@@ -9,6 +9,7 @@ import {
   type ProductFormState,
   type ProductFormValues,
 } from '../actions';
+import { ProductImageManagement } from './product-image-management';
 
 const inputClassName =
   'w-full rounded-md border border-[var(--line)] bg-background px-3 py-2 text-sm font-normal';
@@ -22,6 +23,16 @@ export type AdminProductRow = {
   category: { id: string; name: string };
 };
 
+export type AdminProductImage = {
+  id: string;
+  url: string;
+  alt: string;
+  isFront: boolean;
+  isHover: boolean;
+  sortOrder: number;
+  productColorId: string | null;
+};
+
 export type ProductCategoryOption = {
   id: string;
   name: string;
@@ -33,6 +44,7 @@ type Props = {
   products: AdminProductRow[];
   categories: ProductCategoryOption[];
   values: ProductFormValues | null;
+  selectedProductImages: AdminProductImage[];
   selectedProductName: string | null;
   search: string;
   categoryFilter: string;
@@ -44,6 +56,7 @@ export function ProductManagement({
   products,
   categories,
   values,
+  selectedProductImages,
   selectedProductName,
   search,
   categoryFilter,
@@ -195,6 +208,14 @@ export function ProductManagement({
                 categories={categories}
                 readOnly={editorView}
               />
+              {!editorView && values.productId ? (
+                <ProductImageManagement
+                  productId={values.productId}
+                  productName={selectedProductName ?? values.name}
+                  images={selectedProductImages}
+                  colors={values.colors.filter((color) => color.id)}
+                />
+              ) : null}
             </>
           ) : (
             <div className="py-8 text-sm text-[var(--font-color)]">

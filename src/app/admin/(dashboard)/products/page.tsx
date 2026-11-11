@@ -2,7 +2,10 @@ import Link from 'next/link';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { AccessDenied } from '@/features/admin/components/access-denied';
 import { getAdminSession } from '@/features/auth/session';
-import { ProductManagement } from '@/features/products/components/product-management';
+import {
+  ProductManagement,
+  type AdminProductImage,
+} from '@/features/products/components/product-management';
 import type { ProductFormValues } from '@/features/products/actions';
 import { formatPrice } from '@/features/shared/lib/format-price';
 import { prisma } from '@/features/shared/db/prisma';
@@ -48,6 +51,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
           where: { id: selectedProductId },
           include: {
             colors: { orderBy: { createdAt: 'asc' } },
+            images: { orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] },
           },
         })
       : Promise.resolve(null),
@@ -118,6 +122,19 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         }))}
         categories={categories}
         values={values}
+        selectedProductImages={
+          selectedProduct
+            ? selectedProduct.images.map((image): AdminProductImage => ({
+                id: image.id,
+                url: image.url,
+                alt: image.alt,
+                isFront: image.isFront,
+                isHover: image.isHover,
+                sortOrder: image.sortOrder,
+                productColorId: image.productColorId,
+              }))
+            : []
+        }
         selectedProductName={selectedProduct?.name ?? null}
         search={search}
         categoryFilter={categoryFilter}

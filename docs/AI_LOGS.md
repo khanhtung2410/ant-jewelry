@@ -1,5 +1,30 @@
 # AI Change Log
 
+## 2026-11-11 17:36:20 +07:00 - Add product image management (G3.3)
+
+### User prompt
+
+> **G3.3 — Upload và quản lý ảnh.** Upload nhiều ảnh qua Route Handler, sắp thứ tự, chọn ảnh hover, gán ảnh cho màu.chỉ nhận JPG / PNG / WebP ≤ 5 MB, kiểm tra ở server bằng nội dung file (không tin đuôi file / mimetype của client); xoá ảnh/sản phẩm thì dọn file; ảnh còn sau khi redeploy (lưu object storage ở production, không lưu filesystem server).open
+>
+> add to ai_log follow it format of prompt,sumarize output
+> create new branch,commit, pr title+body in english
+> strictly followw contributing.md rules
+
+Follow-up clarification:
+- Use persistent production object storage; select a dedicated hover image for product cards. No storage vendor was specified.
+
+### Changes made
+
+- Added product-image storage metadata and a persistent cleanup queue; implemented authenticated multi-file uploads with server-side 5 MiB limits and JPEG, PNG, and WebP byte-signature validation.
+- Added S3-compatible object storage uploads/deletions using Signature Version 4, with required environment-variable documentation and no filesystem persistence.
+- Added admin controls to reorder and delete images, select cover and hover images, assign images to colors, and delete products; persisted failed object deletions for retry.
+- Wired selected hover images through storefront queries and product cards, revalidated storefront routes after changes, and documented the storage behavior and configuration.
+- Created branch `feature/product-image-management`.
+
+### Output summary
+
+G3.3 image management is implemented. `npm run lint`, `npm run typecheck`, `npm run format:check`, `npm test` (21 files, 89 tests), `npx prisma validate`, and `npm run build` all passed. The admin product image-management screen was manually loaded; a live upload against an object-storage provider was not run because no provider credentials are configured in this environment.
+
 ## 2026-11-11 16:31:06 +07:00 - Add admin product CRUD (G3.2)
 
 ### User prompt

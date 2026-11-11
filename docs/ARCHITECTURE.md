@@ -174,10 +174,10 @@ SAD v1.1 nêu định hướng sử dụng Next.js. Kiến trúc đã chốt dù
 | ORM | Prisma | Truy vấn và quản lý dữ liệu | Đã chốt, chưa cấu hình |
 | Validation | Zod | Validate input tại server boundary | Đã chốt, chưa cài đặt |
 | Authentication | JWT | Xác thực người dùng nội bộ | Đề xuất, chưa cấu hình |
-| Image Storage | Cloudinary | Lưu trữ hình ảnh sản phẩm và Blog | Đề xuất, chưa cấu hình |
+| Image Storage | S3-compatible object storage | Lưu trữ hình ảnh sản phẩm | Đã chọn; Blog chưa xác định |
 | Version Control | Git / GitHub | Quản lý mã nguồn và cộng tác | Đang sử dụng |
 
-Cần đánh giá và chốt Image Storage và phương thức Authentication trước khi thiết kế kỹ thuật chi tiết.
+Cần tiếp tục xác nhận phương thức Authentication và chính sách lưu ảnh Blog.
 
 ### 4.2. Vai trò của từng công nghệ
 
@@ -213,11 +213,11 @@ Trong work tree hiện tại, trang chủ public đã được triển khai; cá
 - Không thay thế việc kiểm tra quyền truy cập ở server-side.
 - Cần xác định thêm token expiration, refresh token, logout và thu hồi token trước khi triển khai.
 
-**Cloudinary**
+**S3-compatible object storage**
 
-- Là phương án lưu trữ và phân phối image assets.
-- Server-side code trong Next.js quản lý nghiệp vụ liên kết hình ảnh với Product hoặc Blog.
-- Database lưu metadata hoặc reference của asset sau khi cấu trúc dữ liệu được xác nhận.
+- Lưu trữ bền vững product image assets bên ngoài application server filesystem.
+- Route Handler tải ảnh lên và Server Actions quản lý thứ tự, ảnh cover/hover, gán màu và xóa ảnh.
+- Database lưu URL, object key và metadata; chính sách lưu ảnh Blog chưa được xác định.
 
 **Git / GitHub**
 
@@ -269,7 +269,7 @@ ant-jewelry/
 - Ảnh sản phẩm mock dùng `public/mock/products/ring-*.webp`; `ring-2-1` và `ring-5-2` là ảnh phụ (góc chụp thứ hai) của `ring-2` và `ring-5`. Sản phẩm chưa có ảnh riêng dùng SVG placeholder theo `ProductType`.
 - `src/lib/queries/` là tầng truy cập dữ liệu duy nhất cho page; query trả bản clone, lọc danh mục bằng `ProductType` và loại bản ghi hidden/draft khỏi storefront.
 - ESLint chặn `src/app/**` import trực tiếp `@/lib/mock`.
-- Chưa có Server Action, Route Handler nghiệp vụ, Database, Prisma, Authentication hoặc Cloudinary.
+- Upload và lưu trữ ảnh sản phẩm đã triển khai bằng object storage tương thích S3; chính sách lưu ảnh Blog chưa được xác định.
 - Các script hiện có: `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `test`, `test:watch`.
 
 ### 5.2. Kiến trúc đề xuất
@@ -281,9 +281,9 @@ Hệ thống được tổ chức trong **một Next.js application duy nhất**
 3. **Domain / Module Layer:** các module nghiệp vụ TypeScript.
 4. **Data Access Layer:** Prisma.
 5. **Data Layer:** SQLite cho dev; PostgreSQL cho production.
-6. **External Service:** Cloudinary cho hình ảnh nếu được lựa chọn.
+6. **External Service:** S3-compatible object storage cho product images; Blog image storage cần được xác nhận.
 
-Sơ đồ dưới đây là kiến trúc logic đề xuất, chưa có trong work tree:
+Sơ đồ dưới đây thể hiện kiến trúc logic; product image storage đã được triển khai:
 
 ```mermaid
 flowchart TB
@@ -322,7 +322,7 @@ flowchart TB
     subgraph DATA[Data and External Services]
         Prisma[Prisma ORM]
         DB[(SQLite dev / PostgreSQL prod)]
-        Cloudinary[Cloudinary]
+        S3Storage[S3-compatible object storage]
     end
 
     Browser --> UI
@@ -336,8 +336,7 @@ flowchart TB
     User --> Prisma
 
     Prisma --> DB
-    ProductImage -->|Asset operations| Cloudinary
-    Blog -->|Asset operations, if applicable| Cloudinary
+    ProductImage -->|Product assets| S3Storage
 ```
 
 ### 5.3. Presentation Layer
@@ -434,13 +433,7 @@ Data entity: product_images.
 
 SAD cho biết một sản phẩm có thể có nhiều hình ảnh và có trường front_image để nhận diện hình đại diện.
 
-Các điểm cần xác nhận:
-- Trường lưu URL hoặc file reference.
-- Thứ tự hiển thị hình ảnh.
-- Quy tắc chọn ảnh đại diện.
-- Quy trình upload, thay thế và xóa ảnh.
-- Các metadata cần lưu trong Database.
-- Cách tích hợp Cloudinary nếu được lựa chọn.
+ProductImage lưu URL, object key, thứ tự, ảnh cover/hover và liên kết màu. Upload kiểm tra chữ ký file ở server; xóa ảnh/sản phẩm sẽ dọn object storage hoặc giữ yêu cầu xóa trong cleanup queue để thử lại. Chính sách ảnh Blog vẫn cần xác nhận.
 ### 6.4. Product Price Module
 Mục đích: Quản lý thông tin giá sản phẩm.
 
@@ -692,7 +685,7 @@ Cần xác nhận trường số tiền, kiểu dữ liệu, precision, scale v�
 
 Product image
 
-Cần xác nhận URL/path, Cloudinary reference, thứ tự hiển thị và quy tắc ảnh đại diện.
+ProductImage đã lưu URL, object key, thứ tự, trạng thái cover/hover và liên kết màu; việc dọn object storage được xử lý qua cleanup queue.
 
 Blog
 
@@ -753,7 +746,7 @@ Các trường dữ liệu chi tiết (price, image URL, description, specificat
 |---|---|---|
 | Login / logout | Server Action | Tạo hoặc hủy session cookie; kiểm tra role |
 | Product CRUD | Server Action | Validate input, authorization, `revalidatePath` |
-| Product image upload | Route Handler | `multipart/form-data`; upload Cloudinary nếu được duyệt |
+| Product image upload | Route Handler | `multipart/form-data`; kiểm tra chữ ký JPG/PNG/WebP và upload S3-compatible storage |
 | Product price | Server Action | Validate số tiền và quyền |
 | Category CRUD | Server Action | Chỉ sau khi Category model được xác nhận |
 | Blog CRUD và publish | Server Action | Validate trạng thái `DRAFT` / `PUBLISHED` |
@@ -824,40 +817,21 @@ Không đưa ra thiết kế chi tiết cho các nội dung này như thể đã
 
 ## 11. Image Storage Architecture
 
-> Work tree chưa cấu hình Cloudinary hoặc bất kỳ dịch vụ lưu trữ hình ảnh nào. Nội dung dưới đây là định hướng đề xuất.
-
-### 11.1. Định hướng
-Cloudinary là công nghệ lưu trữ hình ảnh được đề xuất trong SAD. Việc sử dụng Cloudinary cần được xác nhận trước khi triển khai.
+### 11.1. Implemented storage
+Product images are uploaded through an authenticated Next.js Route Handler and stored in S3-compatible object storage (for example AWS S3 or Cloudflare R2). The application server filesystem is not used, so image assets persist across deployments.
 
 Phân chia trách nhiệm dự kiến:
 
 | Thành phần | Trách nhiệm |
 |---|---|
-| Cloudinary | Lưu trữ và phân phối image assets nếu được chọn |
-| PostgreSQL | Lưu thông tin tham chiếu và metadata của ảnh |
-| Next.js server-side (Server Action / Route Handler) | Kiểm tra thao tác quản lý ảnh và liên kết ảnh với Product/Blog |
-| Next.js Server Component / Image component | Hiển thị ảnh theo URL/reference đọc từ Database hoặc Cloudinary |
+| S3-compatible object storage | Persist and serve uploaded product image assets |
+| Prisma database | Store image URL, object key, product/color assignment, order, cover, and hover metadata |
+| Next.js Route Handler / Server Actions | Authenticate and authorize uploads and image management; validate file content and coordinate cleanup |
+| Next.js storefront | Render image URLs read from the database |
 
-### 11.2. Luồng xử lý ảnh đề xuất
-1. Admin hoặc Staff có quyền thực hiện thao tác thêm ảnh.
-2. Admin UI gửi yêu cầu upload qua Server Action hoặc Route Handler.
-3. Server-side code kiểm tra quyền và quy tắc file.
-4. Asset được lưu tại Cloudinary nếu dịch vụ này được phê duyệt.
-5. Server-side code lưu metadata/reference vào PostgreSQL.
-6. Server Component đọc metadata/reference và render ảnh.
-Luồng cụ thể, bao gồm upload trực tiếp từ browser lên Cloudinary hay thông qua Route Handler, chưa được SAD quyết định.
-### 11.3. Các nội dung cần xác nhận
-- URL/path hoặc asset identifier được lưu.
-- Cloudinary public ID và các metadata cần thiết.
-- Image ordering.
-- Quy tắc chọn front_image.
-- Allowed file formats.
-- Maximum file size.
-- Image dimensions.
-- Thay thế ảnh.
-- Xóa ảnh trong Cloudinary và Database.
-- Blog hỗ trợ một ảnh hay nhiều ảnh.
-- Cách xử lý asset không còn được tham chiếu.
+The server validates JPEG, PNG, and WebP signatures from file bytes and enforces a 5 MiB per-file limit. `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, and `S3_PUBLIC_URL` must be configured; `S3_ENDPOINT` is optional for AWS S3 and is used for compatible services such as R2. Never commit credentials.
+
+Deletion records are queued transactionally with database deletion and processed against object storage. Failed cleanup remains queued and is reported instead of being silently discarded.
 
 ## 12. Non-functional Architecture
 SAD đề cập các vấn đề phi chức năng nhưng chưa có dữ liệu khảo sát quy mô sản phẩm, số lượng người dùng đồng thời và lưu lượng truy cập. Vì vậy, chưa có cơ sở để đưa ra các chỉ tiêu hiệu năng định lượng chính thức.
@@ -955,7 +929,7 @@ SAD chưa xác định hạ tầng triển khai. Các nội dung sau cần đư�
 ### 14.1. Các thành phần cần quyết định
 - Hosting platform cho Next.js (bao gồm server-side runtime cho Server Components, Server Actions và Route Handlers).
 - Managed hoặc self-hosted PostgreSQL.
-- Cloudinary account và môi trường sử dụng.
+- S3-compatible storage bucket, credentials, region, endpoint (nếu cần) và public URL.
 - Domain, DNS và HTTPS.
 - Quản lý secrets.
 - CI/CD pipeline.
@@ -966,7 +940,7 @@ SAD chưa xác định hạ tầng triển khai. Các nội dung sau cần đư�
 Tên biến môi trường cụ thể chưa được SAD xác định. Khi triển khai cần quản lý riêng các thông tin nhạy cảm như:
 - Database connection string.
 - JWT secret hoặc signing key.
-- Cloudinary credentials.
+- S3-compatible object storage credentials (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`).
 - Các API keys khác nếu có.
 Không commit credentials, passwords, tokens hoặc secrets vào Git repository. Sử dụng environment variables hoặc secret manager phù hợp với hạ tầng được chọn.
 ### 14.3. Deployment topology
@@ -1107,7 +1081,7 @@ Bảng này dùng để theo dõi các quyết định đã có trong work tree 
 | ADR-003 | Database | SQLite cho dev; PostgreSQL cho production | Đã chốt, chưa cấu hình |
 | ADR-004 | ORM | Prisma | Đã chốt, chưa cấu hình |
 | ADR-005 | Internal Authentication | JWT | Đề xuất, cần thiết kế chi tiết |
-| ADR-006 | Image Storage | Cloudinary | Đề xuất, cần chốt |
+| ADR-006 | Product Image Storage | S3-compatible object storage | Đã chốt; credentials cấu hình theo deployment |
 | ADR-007 | Data access và mutation | Server Components cho read; Server Actions / Route Handlers cho mutation | Đã chốt |
 | ADR-008 | Repository structure | Một Next.js app trong `src/`; không tách frontend/backend | Đã chốt |
 | ADR-010 | Category model | Tách khỏi Product Type nếu nghiệp vụ cần | Cần xác nhận |

@@ -90,6 +90,7 @@ const productCardSelect = {
       url: true,
       alt: true,
       isFront: true,
+      isHover: true,
       sortOrder: true,
       productColorId: true,
     },
@@ -102,6 +103,7 @@ type DbProductImage = {
   url: string;
   alt: string;
   isFront: boolean;
+  isHover?: boolean;
   sortOrder: number;
   productColorId?: string | null;
 };
@@ -133,6 +135,7 @@ function mapImage(image: DbProductImage): ProductImage {
     url: image.url,
     alt: image.alt,
     isFront: image.isFront,
+    isHover: image.isHover ?? false,
     sortOrder: image.sortOrder,
   };
 }
