@@ -14,6 +14,7 @@ export {
   getCategoryBySlug,
   getCategoryByType,
   getProductsByCategorySlug,
+  getStorefrontCategorySections,
 } from './categories';
 export { getBlogPostBySlug, getBlogPosts } from './blog-posts';
 export { getHeroSlides } from './hero-slides';

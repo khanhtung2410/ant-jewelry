@@ -6,7 +6,7 @@ type CategoryPageContentProps = Pick<PageProps<'/c/[slug]'>, 'params' | 'searchP
 
 export async function CategoryPageContent({ params, searchParams }: CategoryPageContentProps) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
-  const category = getCategoryBySlug(slug);
+  const category = await getCategoryBySlug(slug);
 
   if (!category) {
     notFound();
@@ -17,7 +17,7 @@ export async function CategoryPageContent({ params, searchParams }: CategoryPage
     redirect(`/c/${encodeURIComponent(slug)}?sort=${sort}`);
   }
 
-  const products = getProductsByCategorySlug(slug, { sort });
+  const products = await getProductsByCategorySlug(slug, { sort });
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">

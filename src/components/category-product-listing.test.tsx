@@ -1,5 +1,5 @@
-import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
+import { renderToStaticMarkup } from 'react-dom/server';
 import { getNextVisibleProductCount, CategoryProductListing } from './category-product-listing';
 import { getProducts } from '@/lib/queries';
 
@@ -21,8 +21,8 @@ vi.mock('next/navigation', () => ({
 }));
 
 describe('CategoryProductListing', () => {
-  it('renders the first ten products in a five-column grid and offers another batch', () => {
-    const products = getProducts({ sort: 'price_asc' });
+  it('renders the first ten products in a grid and offers another batch', async () => {
+    const products = await getProducts({ sort: 'price_asc' });
     const html = renderToStaticMarkup(
       <CategoryProductListing
         categoryName="Wedding Ring"
@@ -42,17 +42,18 @@ describe('CategoryProductListing', () => {
     expect(html).not.toContain(`href="/p/${products[10].slug}"`);
   });
 
-  it('hides SEE MORE when all products fit in the initial batch', () => {
+  it('hides SEE MORE when all products fit in the initial batch', async () => {
+    const products = await getProducts({ type: 'NECKLACE' });
     const html = renderToStaticMarkup(
       <CategoryProductListing
         categoryName="Necklace"
         categorySlug="necklace"
-        products={getProducts({ type: 'NECKLACE' })}
+        products={products}
         sort="price_asc"
       />,
     );
 
-    expect(html.match(/<article/g)).toHaveLength(4);
+    expect(html.match(/<article/g)).toHaveLength(products.length);
     expect(html).not.toContain('SEE MORE');
   });
 

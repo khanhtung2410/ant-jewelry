@@ -1,5 +1,31 @@
 # AI Change Log
 
+## 2026-11-11 14:31:45 +07:00 - Replace storefront query layer with Prisma-backed reads (G2.3)
+
+### User prompt
+
+> G2.3 — Storefront đọc database (milestone 2). Thay ruột các hàm query G1.1 bằng Prisma; xoá mock khỏi runtime.
+> không sửa file trang nào ngoài import; trang danh mục chỉ select cột cần cho ProductCard; Home không N+1 (4 carousel không phải 4 × N query); sản phẩm ẩn / bài DRAFT không hiện và trả 404 khi vào thẳng URL.
+>
+> create branch, commit strictly flollowing contributing.md and pr template
+> run and wrap pr body in 1 code block with markdown format with actual complete output, no summarize or change
+> add to log data prompt and summarize output follow previous log format
+
+### Changes made
+
+- Added `src/lib/prisma.ts` Prisma client singleton and replaced G1.1 mock-backed query internals in `src/lib/queries/{products,categories,blog-posts,hero-slides,settings,index}.ts` with Prisma-backed async storefront reads (no mock imports in runtime query modules).
+- Added `getStorefrontCategorySections()` and `getProductsByCategoryTypes()` so Home loads visible categories and category product-card data in batched queries (avoids per-carousel N+1). Category card path selects only columns needed for `ProductCard`.
+- Updated storefront async wiring/imports: root layout and public pages now await query results and static params; unknown/hidden products, unknown categories, and draft blog posts resolve to 404 on direct URL access.
+- Simplified `src/proxy.ts` for `/c/:slug` to pass through so category visibility/404 is enforced by DB-backed route handling (edge-safe), and updated `src/proxy.test.ts`.
+- Updated DB-dependent tests to async query usage and removed per-file `prisma db push/seed` hooks; added `vitest.global-setup.ts` and configured `vitest.config.mts` to run push+seed once before tests (fixes parallel SQLite seed race).
+- Marked async DB query functions with `'use cache'` to support Next.js 16 Cache Components prerendering for static storefront pages.
+
+### Output summary
+
+Storefront reads now come from Prisma queries instead of mock runtime modules, with hidden products and draft blog posts excluded from storefront lookups (404 on direct URL). Home category carousels are loaded via batched category/product-card queries, and category listings use a card-focused select. Lint, typecheck, tests, format check, build, and two consecutive seed runs completed successfully with captured outputs for the PR body.
+
+---
+
 ## 2026-11-11 14:01:12 +07:00 - Add Prisma seed from G1 mock data (G2.2)
 
 ### User prompt

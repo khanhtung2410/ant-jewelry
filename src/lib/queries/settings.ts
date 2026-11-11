@@ -1,10 +1,30 @@
 import type { Settings } from '@/types/domain';
-import { settings } from '@/lib/mock/settings';
+import { prisma } from '@/lib/prisma';
 
 /**
  * Returns storefront contact settings (phone, Facebook, Instagram, address).
- * A clone is returned so callers cannot mutate the mock source.
  */
-export function getSettings(): Settings {
-  return structuredClone(settings);
+export async function getSettings(): Promise<Settings> {
+  'use cache';
+  const record = await prisma.setting.findFirst({ orderBy: { createdAt: 'asc' } });
+
+  if (!record) {
+    return {
+      siteName: 'AN JEWELRY',
+      phone: '',
+      facebookUrl: '',
+      instagramUrl: '',
+      address: '',
+      email: '',
+    };
+  }
+
+  return {
+    siteName: record.siteName,
+    phone: record.phone,
+    facebookUrl: record.facebookUrl,
+    instagramUrl: record.instagramUrl,
+    address: record.address,
+    email: record.email,
+  };
 }

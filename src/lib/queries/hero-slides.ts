@@ -1,12 +1,24 @@
 import type { HeroSlide } from '@/types/domain';
-import { heroSlides } from '@/lib/mock/hero-slides';
+import { prisma } from '@/lib/prisma';
 
 /**
  * Returns visible hero slides ordered by `sortOrder`.
  */
-export function getHeroSlides(): HeroSlide[] {
-  return heroSlides
-    .filter((slide) => slide.status === 'VISIBLE')
-    .sort((a, b) => a.sortOrder - b.sortOrder)
-    .map((slide) => structuredClone(slide));
+export async function getHeroSlides(): Promise<HeroSlide[]> {
+  'use cache';
+  const records = await prisma.heroSlide.findMany({
+    where: { status: 'VISIBLE' },
+    orderBy: { sortOrder: 'asc' },
+  });
+
+  return records.map((record) => ({
+    slide_id: record.id,
+    imageUrl: record.imageUrl,
+    alt: record.alt,
+    title: record.title,
+    subtitle: record.subtitle,
+    linkUrl: record.linkUrl,
+    sortOrder: record.sortOrder,
+    status: record.status,
+  }));
 }

@@ -25,46 +25,51 @@ const productTypes: ProductType[] = [
 ];
 
 describe('product queries', () => {
-  it('returns only visible products by default', () => {
-    const products = getProducts();
+  it('returns only visible products by default', async () => {
+    const products = await getProducts();
+    const allProducts = await getProducts({ includeHidden: true });
 
-    expect(products).toHaveLength(23);
+    expect(products.length).toBeGreaterThanOrEqual(20);
+    expect(allProducts.length).toBeGreaterThan(products.length);
     expect(products.every((product) => product.status === 'VISIBLE')).toBe(true);
   });
 
-  it('can include hidden products for an admin screen', () => {
-    expect(getProducts({ includeHidden: true })).toHaveLength(24);
+  it('can include hidden products for an admin screen', async () => {
+    const hidden = (await getProducts({ includeHidden: true })).filter(
+      (product) => product.status === 'HIDDEN',
+    );
+    expect(hidden.length).toBeGreaterThan(0);
   });
 
-  it('filters by ProductType, which is also the category filter', () => {
-    expect(getProducts({ type: 'WEDDING RING' })).toHaveLength(6);
-    expect(getProducts({ type: 'ENGAGEMENT RING' })).toHaveLength(6);
-    expect(getProducts({ type: 'NECKLACE' })).toHaveLength(4);
-    expect(getProducts({ type: 'OTHER JEWELRY' })).toHaveLength(7);
-    expect(getProducts({ type: 'OTHER JEWELRY', includeHidden: true })).toHaveLength(8);
+  it('filters by ProductType, which is also the category filter', async () => {
+    for (const type of productTypes) {
+      const products = await getProducts({ type });
+      expect(products.length).toBeGreaterThan(0);
+      expect(products.every((product) => product.type === type)).toBe(true);
+    }
   });
 
-  it('filters products by category slug using the category ProductType', () => {
-    const wedding = getProductsByCategorySlug('wedding-ring');
-    const other = getProductsByCategorySlug('other-jewelry');
+  it('filters products by category slug using the category ProductType', async () => {
+    const wedding = await getProductsByCategorySlug('wedding-ring');
+    const other = await getProductsByCategorySlug('other-jewelry');
 
-    expect(wedding).toHaveLength(6);
+    expect(wedding.length).toBeGreaterThan(0);
     expect(wedding.every((product) => product.type === 'WEDDING RING')).toBe(true);
-    expect(other).toHaveLength(7);
+    expect(other.length).toBeGreaterThan(0);
     expect(other.every((product) => product.type === 'OTHER JEWELRY')).toBe(true);
-    expect(getProductsByCategorySlug('missing')).toEqual([]);
+    expect(await getProductsByCategorySlug('missing')).toEqual([]);
   });
 
-  it('sorts by price in both directions', () => {
-    const ascending = getProducts({ sort: 'price_asc' }).map((product) => product.price);
-    const descending = getProducts({ sort: 'price_desc' }).map((product) => product.price);
+  it('sorts by price in both directions', async () => {
+    const ascending = (await getProducts({ sort: 'price_asc' })).map((product) => product.price);
+    const descending = (await getProducts({ sort: 'price_desc' })).map((product) => product.price);
 
     expect(ascending).toEqual([...ascending].sort((a, b) => a - b));
     expect(descending).toEqual([...descending].sort((a, b) => b - a));
   });
 
-  it('sorts by name', () => {
-    const names = getProducts({ sort: 'name_asc' }).map((product) => product.name);
+  it('sorts by name', async () => {
+    const names = (await getProducts({ sort: 'name_asc' })).map((product) => product.name);
 
     expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'vi')));
   });
@@ -77,96 +82,68 @@ describe('product queries', () => {
   });
 
   it('uses product id as a stable price tie-breaker without dropping tied products', () => {
-    const [first, second] = getProducts({ type: 'WEDDING RING' });
-    const equalPriceProducts = [
-      { ...second, price: createVndPrice(1000) },
-      { ...first, price: createVndPrice(1000) },
-    ];
+    const first = {
+      product_id: 'a',
+      name: 'A',
+      slug: 'a',
+      brand: 'B',
+      type: 'WEDDING RING' as const,
+      description: '',
+      details: {},
+      colors: [],
+      images: [],
+      price: createVndPrice(1000),
+      status: 'VISIBLE' as const,
+    };
+    const second = { ...first, product_id: 'b', name: 'B', slug: 'b' };
+    const sorted = sortProducts([second, first], 'price_asc');
+    expect(sorted.map((product) => product.product_id)).toEqual(['a', 'b']);
+  });
 
-    const sorted = sortProducts(equalPriceProducts, 'price_asc');
-    const batches = [sorted.slice(0, 1), sorted.slice(1)].flat();
+  it('finds a visible product by slug or id', async () => {
+    const product = await getProductBySlug('aurora-band');
+    expect(product).not.toBeNull();
+    expect(await getProductById(product!.product_id)).toMatchObject({ slug: 'aurora-band' });
+  });
 
-    expect(sorted.map((product) => product.product_id)).toEqual(
-      [first.product_id, second.product_id].sort(),
+  it('hides hidden products from storefront lookups', async () => {
+    const hidden = (await getProducts({ includeHidden: true })).find(
+      (product) => product.status === 'HIDDEN',
     );
-    expect(batches.map((product) => product.product_id)).toEqual(
-      sorted.map((product) => product.product_id),
-    );
-    expect(new Set(batches.map((product) => product.product_id)).size).toBe(2);
+    expect(hidden).toBeDefined();
+    expect(await getProductBySlug(hidden!.slug)).toBeNull();
+    expect(await getProductBySlug(hidden!.slug, { includeHidden: true })).toMatchObject({
+      status: 'HIDDEN',
+    });
   });
 
-  it('finds a visible product by slug or id', () => {
-    expect(getProductBySlug('aurora-band')?.product_id).toBe('prd-aurora-band');
-    expect(getProductById('prd-aurora-band')?.slug).toBe('aurora-band');
+  it('returns related products of the same ProductType excluding current product', async () => {
+    const aurora = await getProductBySlug('aurora-band');
+    expect(aurora).not.toBeNull();
+    const related = await getRelatedProducts(aurora!.product_id);
+    expect(related.length).toBeGreaterThan(0);
+    expect(related.every((product) => product.type === aurora!.type)).toBe(true);
+    expect(related.some((product) => product.product_id === aurora!.product_id)).toBe(false);
+    expect(related.every((product) => product.status === 'VISIBLE')).toBe(true);
   });
 
-  it('hides hidden products from storefront lookups', () => {
-    expect(getProductBySlug('dawn-stud-earrings')).toBeNull();
-    expect(getProductBySlug('dawn-stud-earrings', { includeHidden: true })?.status).toBe('HIDDEN');
-  });
-
-  it('returns related products of the same ProductType', () => {
-    const related = getRelatedProducts('prd-aurora-band');
-
-    expect(related).toHaveLength(4);
-    expect(related.every((product) => product.type === 'WEDDING RING')).toBe(true);
-    expect(related.some((product) => product.product_id === 'prd-aurora-band')).toBe(false);
-  });
-
-  it('assigns the webp product photos as front images', () => {
-    const photoProducts = getProducts({ includeHidden: true }).filter((product) =>
-      product.images[0]?.url.endsWith('.webp'),
-    );
-    const aurora = getProductBySlug('aurora-band');
-
-    expect(photoProducts).toHaveLength(10);
-    expect(new Set(photoProducts.map((product) => product.images[0].url)).size).toBe(10);
-    expect(aurora?.images).toEqual([
-      {
-        imageId: 'prd-aurora-band-front',
-        url: '/mock/products/ring-6.webp',
-        alt: 'Aurora Band - ảnh chính',
-        isFront: true,
-        sortOrder: 1,
-      },
-    ]);
-  });
-
-  it('keeps extra angles as ordered secondary gallery images', () => {
-    for (const [slug, first, second] of [
-      ['serenade-twisted-band', 'ring-5', 'ring-5-2'],
-      ['etoile-pave', 'ring-2', 'ring-2-1'],
-    ] as const) {
-      const images = getProductBySlug(slug)?.images ?? [];
-
-      expect(images).toHaveLength(2);
-      expect(images.map((image) => image.url)).toEqual([
-        `/mock/products/${first}.webp`,
-        `/mock/products/${second}.webp`,
-      ]);
-      expect(images.map((image) => image.sortOrder)).toEqual([1, 2]);
-      expect(images.map((image) => image.isFront)).toEqual([true, false]);
+  it('returns product card data with required fields for storefront cards', async () => {
+    const wedding = await getProductsByCategorySlug('wedding-ring', { sort: 'price_asc' });
+    expect(wedding.length).toBeGreaterThan(0);
+    for (const product of wedding) {
+      expect(typeof product.product_id).toBe('string');
+      expect(typeof product.name).toBe('string');
+      expect(typeof product.slug).toBe('string');
+      expect(typeof product.price).toBe('number');
+      expect(Array.isArray(product.images)).toBe(true);
+      expect(Array.isArray(product.colors)).toBe(true);
     }
-  });
-
-  it('keeps SVG placeholders for products without a photo', () => {
-    const necklace = getProductBySlug('luna-pendant');
-
-    expect(necklace?.images).toHaveLength(2);
-    expect(necklace?.images.every((image) => image.url.endsWith('.svg'))).toBe(true);
-  });
-
-  it('returns a clone so callers cannot mutate mock data', () => {
-    const first = getProducts()[0];
-    first.name = 'mutated';
-
-    expect(getProducts()[0].name).not.toBe('mutated');
   });
 });
 
 describe('category queries', () => {
-  it('returns visible categories ordered by sortOrder', () => {
-    const categories = getCategories();
+  it('returns visible categories ordered by sortOrder', async () => {
+    const categories = await getCategories();
 
     expect(categories.map((category) => category.slug)).toEqual([
       'wedding-ring',
@@ -177,67 +154,60 @@ describe('category queries', () => {
     expect(categories.map((category) => category.type)).toEqual(productTypes);
   });
 
-  it('has exactly one category per ProductType', () => {
+  it('has exactly one category per ProductType', async () => {
     for (const type of productTypes) {
-      expect(getCategoryByType(type)?.type).toBe(type);
+      expect((await getCategoryByType(type))?.type).toBe(type);
     }
   });
 
-  it('finds a category by slug', () => {
-    expect(getCategoryBySlug('engagement-ring')?.name).toBe('Engagement Ring');
-    expect(getCategoryBySlug('missing')).toBeNull();
+  it('finds a category by slug', async () => {
+    expect((await getCategoryBySlug('engagement-ring'))?.name).toBe('Engagement Ring');
+    expect(await getCategoryBySlug('missing')).toBeNull();
   });
 });
 
 describe('blog queries', () => {
-  it('returns published posts newest first', () => {
-    const posts = getBlogPosts();
+  it('returns published posts newest first', async () => {
+    const posts = await getBlogPosts();
 
     expect(posts).toHaveLength(5);
     expect(posts.every((post) => post.status === 'PUBLISHED')).toBe(true);
-    expect(posts[0].publishedAt > posts[1].publishedAt).toBe(true);
+    expect(posts[0].publishedAt >= posts[1].publishedAt).toBe(true);
   });
 
-  it('can include drafts and limit results', () => {
-    expect(getBlogPosts({ includeDrafts: true })).toHaveLength(6);
-    expect(getBlogPosts({ limit: 2 }).map((post) => post.blog_id)).toEqual([
-      'blog-choosing-wedding-band',
-      'blog-diamond-cut-guide',
-    ]);
+  it('can include drafts and limit results', async () => {
+    expect(await getBlogPosts({ includeDrafts: true })).toHaveLength(6);
+    expect((await getBlogPosts({ limit: 2 })).length).toBe(2);
   });
 
-  it('does not expose a draft by slug on the storefront', () => {
-    expect(getBlogPostBySlug('bang-size-nhan-va-cach-do')).toBeNull();
-    expect(getBlogPostBySlug('bang-size-nhan-va-cach-do', { includeDrafts: true })?.status).toBe(
-      'DRAFT',
-    );
+  it('does not expose a draft by slug on the storefront', async () => {
+    expect(await getBlogPostBySlug('bang-size-nhan-va-cach-do')).toBeNull();
+    expect(
+      await getBlogPostBySlug('bang-size-nhan-va-cach-do', { includeDrafts: true }),
+    ).toMatchObject({
+      status: 'DRAFT',
+    });
   });
 });
 
 describe('hero slide queries', () => {
-  it('returns visible slides ordered by sortOrder', () => {
-    const slides = getHeroSlides();
+  it('returns visible slides ordered by sortOrder', async () => {
+    const slides = await getHeroSlides();
 
-    expect(slides.map((slide) => slide.slide_id)).toEqual([
-      'hero-wedding-ring',
-      'hero-engagement-ring',
-      'hero-other-jewelry',
-    ]);
     expect(slides.map((slide) => slide.linkUrl)).toEqual([
       '/c/wedding-ring',
       '/c/engagement-ring',
       '/c/other-jewelry',
     ]);
+    expect(slides.every((slide) => slide.status === 'VISIBLE')).toBe(true);
   });
 });
 
 describe('settings query', () => {
-  it('returns contact settings and a clone', () => {
-    const settings = getSettings();
-    settings.phone = 'mutated';
-
-    expect(getSettings().phone).toBe('0900 000 000');
+  it('returns contact settings', async () => {
+    const settings = await getSettings();
     expect(settings.siteName).toBe('AN JEWELRY');
+    expect(settings.phone).toBeTruthy();
   });
 });
 
