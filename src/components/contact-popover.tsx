@@ -12,9 +12,14 @@ import {
   type RefObject,
 } from 'react';
 import type { Settings } from '@/types/domain';
-import { CloseIcon, FacebookIcon, InstagramIcon, PhoneIcon } from './icons';
+import { CloseButton } from './close-button';
+import { FacebookIcon, InstagramIcon, PhoneIcon } from './icons';
 
 export type ContactSettings = Pick<Settings, 'phone' | 'facebookUrl' | 'instagramUrl'>;
+
+const dialogBackdropClass = 'fixed inset-0 z-[60] grid place-items-center bg-black/10 p-4';
+const dialogPanelClass =
+  'relative flex h-auto w-[215px] flex-col overflow-hidden rounded-3xl bg-background px-4 pb-6 pt-4 shadow-[0_8px_24px_rgba(0,0,0,0.28)]';
 
 interface ContactDialogContextValue {
   settings: ContactSettings;
@@ -73,57 +78,51 @@ export function ContactPopoverPanel({
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      className={
-        className ?? 'w-80 max-w-[calc(100vw-2rem)] border border-line bg-background p-5 shadow-lg'
-      }
+      className={className ?? dialogPanelClass}
     >
-      <div className="flex items-start justify-between gap-4">
-        <h2 id={titleId} className="font-heading text-sm tracking-[0.12em]">
+      <div className="relative mb-4 flex items-start justify-center">
+        <h2
+          id={titleId}
+          className="m-0 w-full text-center font-heading text-[15px] font-semibold tracking-wider text-[var(--font-color)]"
+        >
           CONTACT US
         </h2>
-        <button
-          type="button"
-          aria-label="Close contact popover"
+        <CloseButton
+          ariaLabel="Close contact popover"
           onClick={onClose}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-line transition-colors hover:border-[var(--underline-color)] hover:text-[var(--underline-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
-        >
-          <CloseIcon className="h-4 w-4" />
-        </button>
+          className="absolute right-0 top-0 !h-5 !w-5 !border [&>svg]:h-3 [&>svg]:w-3"
+        />
       </div>
 
-      <ul className="mt-4 space-y-3 text-sm">
-        <li>
-          <a
-            href={settings.facebookUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-3 transition-colors hover:text-[var(--underline-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
-          >
-            <FacebookIcon className="h-5 w-5" />
-            Facebook
-          </a>
-        </li>
-        <li>
-          <a
-            href={settings.instagramUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-3 transition-colors hover:text-[var(--underline-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
-          >
-            <InstagramIcon className="h-5 w-5" />
-            Instagram
-          </a>
-        </li>
-        <li>
-          <a
-            href={`tel:${settings.phone.replace(/\s+/g, '')}`}
-            className="inline-flex items-center gap-3 transition-colors hover:text-[var(--underline-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
-          >
-            <PhoneIcon className="h-5 w-5" />
-            {settings.phone}
-          </a>
-        </li>
-      </ul>
+      <div className="flex flex-col gap-2 text-[14px] text-[#265649]">
+        <a
+          href={settings.facebookUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-3 text-[14px] text-[#265649] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
+        >
+          <FacebookIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-black p-1.5 text-black" />
+          <span>AN JEWELRY</span>
+        </a>
+
+        <a
+          href={settings.instagramUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-3 text-[14px] text-[#265649] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
+        >
+          <InstagramIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-black p-1.5 text-black" />
+          <span>AN JEWELRY</span>
+        </a>
+
+        <a
+          href={`tel:${settings.phone.replace(/\s+/g, '')}`}
+          className="flex items-center gap-3 text-[14px] text-[#265649] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
+        >
+          <PhoneIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-black p-1.5 text-black [&_path]:origin-center [&_path]:scale-[0.8]" />
+          <span>{settings.phone}</span>
+        </a>
+      </div>
     </div>
   );
 }
@@ -217,7 +216,7 @@ export function ContactDialogProvider({
     <ContactDialogContext.Provider value={{ settings, openDialog, closeDialog, isOpen: open }}>
       {children}
       {open ? (
-        <div className="fixed bottom-6 right-6 z-50 sm:bottom-8 sm:right-8">
+        <div className={dialogBackdropClass}>
           <ContactPopoverPanel
             id={dialogId}
             titleId={titleId}
@@ -241,7 +240,6 @@ interface ContactPopoverProps {
   triggerClassName?: string;
   panelClassName?: string;
   containerClassName?: string;
-  as?: 'button' | 'link';
 }
 
 export function ContactPopover({
@@ -250,7 +248,6 @@ export function ContactPopover({
   triggerClassName,
   panelClassName,
   containerClassName,
-  as = 'button',
 }: ContactPopoverProps) {
   const context = useContext(ContactDialogContext);
   const localTriggerRef = useRef<HTMLButtonElement>(null);
@@ -338,9 +335,7 @@ export function ContactPopover({
   }
 
   const defaultTriggerClass =
-    as === 'link'
-      ? 'inline-flex items-center bg-transparent p-0 text-inherit'
-      : 'inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[var(--underline-color)] bg-[var(--underline-color)] px-8 font-heading text-sm tracking-[0.12em] text-white transition-colors hover:bg-background hover:text-[var(--underline-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)] sm:w-auto';
+    'inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[var(--underline-color)] bg-[var(--underline-color)] px-8 font-heading text-sm tracking-[0.12em] text-white transition-colors hover:bg-background hover:text-[var(--underline-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)] sm:w-auto';
 
   return (
     <div className={containerClassName ?? (context ? 'contents' : 'relative')}>
@@ -357,17 +352,16 @@ export function ContactPopover({
       </button>
 
       {!context && localOpen ? (
-        <ContactPopoverPanel
-          id={popoverId}
-          titleId={titleId}
-          settings={effectiveSettings}
-          onClose={() => setLocalOpen(false)}
-          panelRef={localPanelRef}
-          className={
-            panelClassName ??
-            'absolute bottom-full right-0 z-30 mb-3 w-80 max-w-[calc(100vw-2rem)] border border-line bg-background p-5 shadow-lg'
-          }
-        />
+        <div className={dialogBackdropClass}>
+          <ContactPopoverPanel
+            id={popoverId}
+            titleId={titleId}
+            settings={effectiveSettings}
+            onClose={() => setLocalOpen(false)}
+            panelRef={localPanelRef}
+            className={panelClassName}
+          />
+        </div>
       ) : null}
     </div>
   );
