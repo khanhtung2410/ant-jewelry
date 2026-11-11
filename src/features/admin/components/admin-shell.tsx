@@ -9,7 +9,7 @@ import {
   canManageProducts,
   canManageSettings,
   canManageUsers,
-} from '@/lib/permissions';
+} from '@/features/shared/lib/permissions';
 
 type NavItem = {
   href: string;

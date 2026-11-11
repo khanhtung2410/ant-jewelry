@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { getAdminSession } from '@/features/auth/session';
-import { getPermissionsForRole } from '@/lib/permissions';
+import { getPermissionsForRole } from '@/features/shared/lib/permissions';
 
 export const instant = false;
 

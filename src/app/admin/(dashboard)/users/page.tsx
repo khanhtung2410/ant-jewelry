@@ -1,7 +1,7 @@
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { AccessDenied } from '@/features/admin/components/access-denied';
 import { getAdminSession } from '@/features/auth/session';
-import { canManageUsers } from '@/lib/permissions';
+import { canManageUsers } from '@/features/shared/lib/permissions';
 
 export const instant = false;
 

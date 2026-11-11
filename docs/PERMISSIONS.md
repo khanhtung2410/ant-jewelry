@@ -27,7 +27,7 @@ This document defines the current admin roles and permissions for Ant Jewelry (G
 
 ## Implementation
 
-- Pure permission helpers live in `src/lib/permissions.ts`.
-- Unit tests live in `src/lib/permissions.test.ts`.
+- Pure permission helpers live in `src/features/shared/lib/permissions.ts`.
+- Unit tests live in `src/features/shared/lib/permissions.test.ts`.
 - Server-side checks must use these helpers (or equivalent permission checks) before performing protected admin mutations or rendering restricted admin sections.
 - UI hiding is not sufficient for authorization; protected actions must be enforced on the server.

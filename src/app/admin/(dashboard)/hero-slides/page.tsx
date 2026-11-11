@@ -1,7 +1,7 @@
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { AccessDenied } from '@/features/admin/components/access-denied';
 import { getAdminSession } from '@/features/auth/session';
-import { canManageHeroSlides } from '@/lib/permissions';
+import { canManageHeroSlides } from '@/features/shared/lib/permissions';
 
 export const instant = false;
 
