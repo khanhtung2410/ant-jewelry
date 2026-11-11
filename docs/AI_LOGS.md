@@ -1,5 +1,30 @@
 # AI Change Log
 
+## 2026-11-11 14:01:12 +07:00 - Add Prisma seed from G1 mock data (G2.2)
+
+### User prompt
+
+> G2.2 — Seed. prisma/seed.ts từ mock G1: ≥ 20 sản phẩm / 4 danh mục, ≥ 6 bài blog, 3 hero slide, Settings, 1 ADMIN + 1 EDITOR.
+> chạy seed 2 lần liên tiếp không lỗi trùng (upsert theo slug/email); mật khẩu tài khoản seed được hash.
+>
+> create branch, commit strictly flollowing contributing.md and pr template
+> run and wrap pr body in 1 code block with markdown format with actual complete output, no summarize or change
+> add to log data prompt and summarize output follow previous log format
+
+### Changes made
+
+- Added `prisma/seed.ts` to seed data from G1 mocks (`categories`, `products`, `blogPosts`, `heroSlides`, `settings`): 4 categories, 29 products, 6 blog posts, 3 hero slides, site settings, and 2 users (1 ADMIN, 1 EDITOR).
+- Implemented idempotent seeding with upserts keyed by slug/email and repeat-safe handling for hero slides/settings; product seed refreshes related colors/images per product to avoid duplicates on reruns.
+- Added hashed seed user passwords with `bcryptjs` (`Admin@123` for ADMIN, `Editor@123` for EDITOR).
+- Updated `prisma/schema.prisma` `User` model to include `passwordHash` for seeded credentials.
+- Added Prisma/seed tooling and scripts in `package.json` (`db:push`, `db:seed`, Prisma seed config) and installed required dependencies; updated lockfile accordingly.
+
+### Output summary
+
+Created `prisma/seed.ts` using G1 mock data and made it idempotent (safe to run twice consecutively without duplicate errors) with hashed seeded user passwords. Database schema was pushed locally and the seed command was executed twice successfully; lint/typecheck/test/format:check/build outputs were captured for the PR body.
+
+---
+
 ## 2026-11-11 13:35:42 +07:00 - Add ERD and Prisma schema (G2.1)
 
 ### User prompt
