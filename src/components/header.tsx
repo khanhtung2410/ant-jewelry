@@ -4,11 +4,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
-import type { Category } from '@/types/domain';
+import type { Category, Settings } from '@/types/domain';
+import { ContactPopover, type ContactSettings } from './contact-popover';
 import { ChevronDownIcon, CloseIcon, MenuIcon } from './icons';
 
 interface SiteHeaderProps {
   categories: Category[];
+  settings: Pick<Settings, 'phone' | 'facebookUrl' | 'instagramUrl'>;
 }
 
 function navLinkClass(active: boolean) {
@@ -30,11 +32,15 @@ function mobileNavLinkClass(active: boolean) {
   ].join(' ');
 }
 
-export function SiteHeader({ categories }: SiteHeaderProps) {
+export function SiteHeader({ categories, settings }: SiteHeaderProps) {
   const pathname = usePathname();
   const isHome = pathname === '/';
   const isBlog = pathname === '/blog' || pathname.startsWith('/blog/');
-  const isContact = pathname === '/contact';
+  const contactSettings: ContactSettings = {
+    phone: settings.phone,
+    facebookUrl: settings.facebookUrl,
+    instagramUrl: settings.instagramUrl,
+  };
 
   const mobileMenuId = useId();
   // Store the route the menu was opened on so a navigation closes it without an
@@ -111,13 +117,13 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
               </Link>
             </li>
             <li className="flex items-center">
-              <Link
-                href="/#contact"
-                className={navLinkClass(isContact)}
-                aria-current={isContact ? 'page' : undefined}
-              >
-                CONTACT
-              </Link>
+              <ContactPopover
+                settings={contactSettings}
+                label="CONTACT"
+                containerClassName="relative flex h-full items-center"
+                triggerClassName={`${navLinkClass(false)} inline-flex items-center`}
+                panelClassName="absolute top-full right-0 z-30 mt-3 w-80 max-w-[calc(100vw-2rem)] border border-line bg-background p-5 shadow-lg"
+              />
             </li>
           </ul>
         </nav>
@@ -161,14 +167,13 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/#contact"
-                  onClick={closeMobileMenu}
-                  className={mobileNavLinkClass(isContact)}
-                  aria-current={isContact ? 'page' : undefined}
-                >
-                  CONTACT
-                </Link>
+                <ContactPopover
+                  settings={contactSettings}
+                  label="CONTACT"
+                  containerClassName="relative"
+                  triggerClassName={mobileNavLinkClass(false)}
+                  panelClassName="absolute left-0 top-full z-30 mt-1 w-full border border-line bg-background p-5 shadow-lg"
+                />
               </li>
             </ul>
           </nav>

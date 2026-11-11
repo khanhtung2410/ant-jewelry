@@ -31,7 +31,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="vi" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <SiteHeader categories={categories} />
+        <SiteHeader categories={categories} settings={settings} />
         <div className="flex-1">{children}</div>
         <SiteFooter categories={categories} settings={settings} />
       </body>

@@ -36,6 +36,7 @@ interface ContactPopoverPanelProps {
   settings: ContactSettings;
   onClose: () => void;
   panelRef: RefObject<HTMLDivElement | null>;
+  className?: string;
 }
 
 export function ContactPopoverPanel({
@@ -44,6 +45,7 @@ export function ContactPopoverPanel({
   settings,
   onClose,
   panelRef,
+  className,
 }: ContactPopoverPanelProps) {
   return (
     <div
@@ -52,7 +54,10 @@ export function ContactPopoverPanel({
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      className="absolute bottom-full right-0 z-30 mb-3 w-80 max-w-[calc(100vw-2rem)] border border-line bg-background p-5 shadow-lg"
+      className={
+        className ??
+        'absolute bottom-full right-0 z-30 mb-3 w-80 max-w-[calc(100vw-2rem)] border border-line bg-background p-5 shadow-lg'
+      }
     >
       <div className="flex items-start justify-between gap-4">
         <h2 id={titleId} className="font-heading text-sm tracking-[0.12em]">
@@ -107,9 +112,19 @@ export function ContactPopoverPanel({
 
 interface ContactPopoverProps {
   settings: ContactSettings;
+  label?: string;
+  triggerClassName?: string;
+  panelClassName?: string;
+  containerClassName?: string;
 }
 
-export function ContactPopover({ settings }: ContactPopoverProps) {
+export function ContactPopover({
+  settings,
+  label = 'ORDER NOW',
+  triggerClassName,
+  panelClassName,
+  containerClassName,
+}: ContactPopoverProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -180,7 +195,7 @@ export function ContactPopover({ settings }: ContactPopoverProps) {
   }, [open]);
 
   return (
-    <div className="relative">
+    <div className={containerClassName ?? 'relative'}>
       <button
         ref={triggerRef}
         type="button"
@@ -188,9 +203,11 @@ export function ContactPopover({ settings }: ContactPopoverProps) {
         aria-expanded={open}
         aria-controls={popoverId}
         onClick={() => setOpen((current) => !current)}
-        className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[var(--underline-color)] bg-[var(--underline-color)] px-8 font-heading text-sm tracking-[0.12em] text-white transition-colors hover:bg-background hover:text-[var(--underline-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)] sm:w-auto"
+        className={
+          triggerClassName ??
+          'px-8 text-sm tracking-[0.12em] sm:w-auto'}
       >
-        ORDER NOW
+        {label}
       </button>
 
       {open ? (
@@ -200,6 +217,7 @@ export function ContactPopover({ settings }: ContactPopoverProps) {
           settings={settings}
           onClose={() => setOpen(false)}
           panelRef={panelRef}
+          className={panelClassName}
         />
       ) : null}
     </div>

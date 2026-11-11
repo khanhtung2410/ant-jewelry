@@ -1,5 +1,24 @@
 # AI Change Log
 
+## 2026-11-11 10:16:22 +07:00 - Show contact popup from header navigation
+
+### User prompt
+
+> press contact show popup
+> (attached image)
+
+### Changes made
+
+- Made the shared contact popover configurable (label, trigger/panel/container classes) while preserving the default ORDER NOW behavior and focus management.
+- Updated the site header to open the contact popup from the CONTACT navigation item on desktop and mobile instead of linking to the footer anchor.
+- Passed storefront contact settings into the header so the popup can display phone, Facebook, and Instagram links.
+
+### Output summary
+
+Clicking CONTACT in the header now opens the existing contact dialog popup with phone, Facebook, and Instagram links. The attached image could not be viewed in this environment; the change implements the requested popup behavior in the header navigation.
+
+---
+
 ## 2026-11-10 22:34:11 +07:00 - Add blog pages and footer static pages
 
 ### User prompt
