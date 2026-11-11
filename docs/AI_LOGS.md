@@ -1,5 +1,28 @@
 # AI Change Log
 
+## 2026-11-11 13:35:42 +07:00 - Add ERD and Prisma schema (G2.1)
+
+### User prompt
+
+> G2.1 — ERD + Prisma schema. Product, ProductColor, ProductImage (thứ tự, gắn màu hoặc dùng chung), Category, BlogPost, HeroSlide, Setting, User (role ADMIN/EDITOR). ERD dạng Mermaid trong docs/.
+> giá kiểu Int; slug unique; mỗi quan hệ có onDelete phù hợp (xoá Product → xoá màu/ảnh; không xoá Category còn sản phẩm).
+>
+> create branch, commit strictly flollowing contributing.md and pr template
+> run and write pr body with actual complete output, no summarize or change
+> add to log data prompt and summarize output follow previous log format
+
+### Changes made
+
+- Added `docs/ERD.md` with a Mermaid ERD covering `User`, `Category`, `Product`, `ProductColor`, `ProductImage`, `BlogPost`, `HeroSlide`, and `Setting`, including key fields, relationships, and delete behavior notes.
+- Added `prisma/schema.prisma` defining enums and models for the required entities: `Int` VND product price, unique slugs (`Category`, `Product`, `BlogPost`), `ProductImage` with `sortOrder` and optional `productColorId` for color-specific or shared images, `Product -> ProductColor/ProductImage` cascade deletes, and `Category -> Product` relation with `onDelete: Restrict`.
+- Included `User.role` as `ADMIN | EDITOR` and supporting status enums aligned with the domain.
+
+### Output summary
+
+Created the G2.1 ERD (Mermaid in `docs/`) and Prisma schema with the requested entities, unique slugs, integer pricing, and relation delete rules. Checks were run for the PR body and the change was prepared on a dedicated branch for commit per repository conventions.
+
+---
+
 ## 2026-11-11 13:01:17 +07:00 - Make header contact trigger consistent with navigation items
 
 ### User prompt

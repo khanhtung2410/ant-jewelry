@@ -1,0 +1,120 @@
+# G2.1 — ERD (Mermaid)
+
+Logical/entity relationship diagram for the AN JEWELRY data model.
+
+```mermaid
+erDiagram
+    USER {
+        String id PK
+        String email UK
+        String name "nullable"
+        Role role "ADMIN | EDITOR"
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    CATEGORY {
+        String id PK
+        String name
+        String slug UK
+        String type
+        Int sortOrder
+        CategoryStatus status "VISIBLE | HIDDEN"
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    PRODUCT {
+        String id PK
+        String categoryId FK
+        String name
+        String slug UK
+        String brand
+        String type
+        String description
+        Json details "nullable"
+        Int price "VND integer"
+        ProductStatus status "VISIBLE | HIDDEN"
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    PRODUCT_COLOR {
+        String id PK
+        String productId FK
+        String name
+        String hex
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    PRODUCT_IMAGE {
+        String id PK
+        String productId FK
+        String productColorId FK "nullable, shared image when null"
+        String url
+        String alt
+        Boolean isFront
+        Int sortOrder
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    BLOG_POST {
+        String id PK
+        String title
+        String slug UK
+        String summary
+        String body
+        String coverImageUrl
+        DateTime publishedAt
+        BlogPostStatus status "DRAFT | PUBLISHED"
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    HERO_SLIDE {
+        String id PK
+        String imageUrl
+        String alt
+        String title
+        String subtitle
+        String linkUrl
+        Int sortOrder
+        HeroSlideStatus status "VISIBLE | HIDDEN"
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    SETTING {
+        String id PK
+        String siteName
+        String phone
+        String facebookUrl
+        String instagramUrl
+        String address
+        String email
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
+    CATEGORY ||--o{ PRODUCT : "has (onDelete: Restrict)"
+    PRODUCT ||--o{ PRODUCT_COLOR : "has (onDelete: Cascade)"
+    PRODUCT ||--o{ PRODUCT_IMAGE : "has shared or all images (onDelete: Cascade)"
+    PRODUCT_COLOR o|--o{ PRODUCT_IMAGE : "has color-specific images (onDelete: Cascade)"
+```
+
+## Notes
+
+- **Price:** `PRODUCT.price` is stored as an integer (`Int`) in VND.
+- **Unique slugs:** `CATEGORY.slug`, `PRODUCT.slug`, and `BLOG_POST.slug` are unique.
+- **Product images:** `PRODUCT_IMAGE` always belongs to a `PRODUCT` (`productId`) and may optionally belong to a `PRODUCT_COLOR` (`productColorId`).
+  - `productColorId = null`: shared/common image for the product.
+  - `productColorId != null`: image attached to a specific color.
+  - `sortOrder` defines image order; `isFront` marks the front/primary image.
+- **Delete behavior:**
+  - Deleting a `PRODUCT` cascades to its `PRODUCT_COLOR` and `PRODUCT_IMAGE` records.
+  - Deleting a `PRODUCT_COLOR` cascades to its color-specific `PRODUCT_IMAGE` records.
+  - A `CATEGORY` cannot be deleted while related `PRODUCT` records exist (`onDelete: Restrict` on `PRODUCT.categoryId`).
+- **Roles:** `USER.role` is `ADMIN` or `EDITOR`.
+- **Schema file:** Prisma schema is defined in `prisma/schema.prisma`.
