@@ -335,18 +335,24 @@ export function ContactPopover({
     setLocalOpen((current) => !current);
   }
 
+  const triggerProps = {
+    ref: localTriggerRef,
+    type: 'button' as const,
+    'aria-haspopup': 'dialog' as const,
+    'aria-expanded': isOpen,
+    'aria-controls': isOpen ? popoverId : undefined,
+    onClick: handleClick,
+  };
+
   return (
     <div className={containerClassName ?? (context ? 'contents' : 'relative')}>
-      <ActionButton
-        ref={localTriggerRef}
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded={isOpen}
-        aria-controls={popoverId}
-        onClick={handleClick}
-      >
-        {label}
-      </ActionButton>
+      {triggerClassName ? (
+        <button {...triggerProps} className={triggerClassName}>
+          {label}
+        </button>
+      ) : (
+        <ActionButton {...triggerProps}>{label}</ActionButton>
+      )}
 
       {!context && localOpen ? (
         <div className={dialogBackdropClass}>

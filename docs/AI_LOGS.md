@@ -1,5 +1,22 @@
 # AI Change Log
 
+## 2026-11-11 13:01:17 +07:00 - Make header contact trigger consistent with navigation items
+
+### User prompt
+
+> make contact navigation in heaader the same as other, not button for consistency
+
+### Changes made
+
+- Updated `src/components/contact-popover.tsx` so that when a `triggerClassName` is provided, the trigger renders as a plain styled `<button>` (reusing the supplied nav/text classes) instead of the default `ActionButton` pill style.
+- Kept the default `ActionButton` trigger for uses without a custom trigger class (e.g. `ORDER NOW`), and preserved dialog trigger accessibility/behavior (`aria-haspopup`, `aria-expanded`, click handling, focus restore).
+
+### Output summary
+
+Header (and other custom-styled) CONTACT triggers now use the same nav/text styling approach as surrounding items instead of the pill `ActionButton`, while still opening the shared contact dialog. Lint and tests passed.
+
+---
+
 ## 2026-11-11 12:14:04 +07:00 - Add missing CloseButton component test
 
 ### User prompt
