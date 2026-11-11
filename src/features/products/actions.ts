@@ -11,6 +11,7 @@ import {
   productFormSchema,
   type ProductFormInput,
 } from './lib/product-form-schema';
+import { savedProductsRedirect } from './lib/admin-product-list';
 
 export type ProductFormValues = ProductFormInput & {
   productId?: string;
@@ -137,7 +138,7 @@ export async function saveProduct(
   };
 
   try {
-    const savedProduct = await prisma.$transaction(async (transaction) => {
+    await prisma.$transaction(async (transaction) => {
       const product = productId
         ? await transaction.product.update({ where: { id: productId }, data })
         : await transaction.product.create({ data });
@@ -176,7 +177,7 @@ export async function saveProduct(
       return product;
     });
     revalidateProductPages();
-    redirect(`/admin/products?edit=${encodeURIComponent(savedProduct.id)}&saved=1`);
+    redirect(savedProductsRedirect(String(formData.get('returnTo') ?? '')));
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
       return stateWithErrors(values, { slug: ['This slug is already in use.'] });

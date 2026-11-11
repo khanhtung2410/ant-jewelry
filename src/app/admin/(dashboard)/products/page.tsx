@@ -4,6 +4,11 @@ import { AccessDenied } from '@/features/admin/components/access-denied';
 import { getAdminSession } from '@/features/auth/session';
 import { ProductManagement } from '@/features/products/components/product-management';
 import type { ProductFormValues } from '@/features/products/actions';
+import {
+  ADMIN_PRODUCTS_PAGE_SIZE,
+  buildAdminProductsHref,
+  resolveAdminProductsPage,
+} from '@/features/products/lib/admin-product-list';
 import { formatPrice } from '@/features/shared/lib/format-price';
 import { prisma } from '@/features/shared/db/prisma';
 import { canViewProducts } from '@/features/shared/lib/permissions';
@@ -14,7 +19,7 @@ type SearchParam = string | string[] | undefined;
 
 type AdminProductsPageProps = {
   searchParams: Promise<
-    Partial<Record<'search' | 'category' | 'edit' | 'view' | 'saved', SearchParam>>
+    Partial<Record<'search' | 'category' | 'edit' | 'view' | 'saved' | 'page' | 'new', SearchParam>>
   >;
 };
 
@@ -29,19 +34,37 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
   const search = firstSearchParam(params.search).trim();
   const categoryFilter = firstSearchParam(params.category);
   const editorView = session.role === 'EDITOR';
-  const selectedProductId = firstSearchParam(editorView ? params.view : params.edit);
-  const [categories, products, selectedProduct] = await Promise.all([
+  const createRequested = !editorView && firstSearchParam(params.new) === '1';
+  const selectedProductId = createRequested
+    ? ''
+    : firstSearchParam(editorView ? params.view : params.edit);
+
+  const listWhere = {
+    ...(search ? { name: { contains: search } } : {}),
+    ...(categoryFilter ? { categoryId: categoryFilter } : {}),
+  };
+
+  const [categories, totalProducts] = await Promise.all([
     prisma.category.findMany({
       orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
       select: { id: true, name: true, type: true, status: true },
     }),
+    prisma.product.count({ where: listWhere }),
+  ]);
+
+  const { page: currentPage, totalPages } = resolveAdminProductsPage(
+    firstSearchParam(params.page),
+    totalProducts,
+    ADMIN_PRODUCTS_PAGE_SIZE,
+  );
+
+  const [products, selectedProduct] = await Promise.all([
     prisma.product.findMany({
-      where: {
-        ...(search ? { name: { contains: search } } : {}),
-        ...(categoryFilter ? { categoryId: categoryFilter } : {}),
-      },
+      where: listWhere,
       include: { category: { select: { id: true, name: true } } },
       orderBy: [{ updatedAt: 'desc' }, { name: 'asc' }],
+      skip: (currentPage - 1) * ADMIN_PRODUCTS_PAGE_SIZE,
+      take: ADMIN_PRODUCTS_PAGE_SIZE,
     }),
     selectedProductId
       ? prisma.product.findUnique({
@@ -52,6 +75,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         })
       : Promise.resolve(null),
   ]);
+
   const selectedCategory = categories.find((category) => category.id === categoryFilter);
   const defaultCategory = selectedCategory ?? categories[0];
   const values: ProductFormValues | null = selectedProduct
@@ -72,7 +96,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         })),
         published: selectedProduct.status === 'VISIBLE',
       }
-    : !editorView
+    : createRequested
       ? {
           name: '',
           slug: '',
@@ -87,6 +111,12 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         }
       : null;
 
+  const closeHref = buildAdminProductsHref({
+    search,
+    category: categoryFilter,
+    page: currentPage,
+  });
+
   return (
     <div>
       <AdminPageHeader
@@ -99,7 +129,13 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         actions={
           !editorView ? (
             <Link
-              href="/admin/products"
+              href={buildAdminProductsHref({
+                search,
+                category: categoryFilter,
+                page: currentPage,
+                create: true,
+              })}
+              aria-haspopup="dialog"
               className="rounded-md bg-foreground px-3 py-2 text-sm text-background"
             >
               New product
@@ -112,17 +148,28 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
           id: product.id,
           name: product.name,
           slug: product.slug,
+          brand: product.brand,
           price: product.price,
           status: product.status,
           category: product.category,
         }))}
         categories={categories}
-        values={values}
-        selectedProductName={selectedProduct?.name ?? null}
+        totalProducts={totalProducts}
+        currentPage={currentPage}
+        totalPages={totalPages}
         search={search}
         categoryFilter={categoryFilter}
         editorView={editorView}
         saved={firstSearchParam(params.saved) === '1'}
+        dialog={
+          values
+            ? {
+                values,
+                productName: selectedProduct?.name ?? null,
+                closeHref,
+              }
+            : null
+        }
       />
     </div>
   );
