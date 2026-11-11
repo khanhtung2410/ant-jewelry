@@ -1,5 +1,29 @@
 # AI Change Log
 
+## 2026-11-11 16:31:06 +07:00 - Add admin product CRUD (G3.2)
+
+### User prompt
+
+> layout sidebar + bảng + form, nhất quán giữa các trang.
+>
+> **G3.2 — CRUD Products.** Danh sách (tìm theo tên, lọc danh mục), tạo / sửa / ẩn-hiện. Trường: name, slug, category, type, brand, price, description, details, colors (tên + mã hex), published.Zod: price nguyên > 0 (nhập “10.000.000” được chuẩn hoá trước khi validate), slug `^[a-z0-9-]+$`, hex `#RRGGBB`; slug trùng báo lỗi tại field, không phải 500; form giữ giá trị khi lỗi; sau khi lưu storefront cập nhật (`revalidatePath` đúng trang); EDITOR thấy giá ở dạng chỉ đọc.
+>
+> add to ai_log follow it format of prompt,sumarize output
+
+Follow-up clarification:
+- EDITOR may only write blog content; product listings and details remain view-only, with price read-only.
+
+### Changes made
+
+- Implemented the admin products workspace with name search, category filtering, a product table, and create/edit form for name, slug, category/type, brand, price, description, details, colors, and published status.
+- Added Zod validation for grouped positive integer VND prices, lowercase slugs, color hex codes, and detail rows. Duplicate slugs return an inline slug error, and failed submissions retain entered values.
+- Added ADMIN-only create/update and publish/hide server actions; EDITOR can view products and prices read-only. Preserved existing color IDs while updating to avoid losing associated images.
+- Revalidated `/`, `/c/[slug]`, `/p/[slug]`, and `/admin/products` after product changes. Updated the permission matrix and added validation/permission tests.
+
+### Output summary
+
+G3.2 product management is implemented and documented. `npm run lint`, `npm run typecheck` (also run during production build), `npm test` (20 files, 85 tests), `npm run format:check`, and `npm run build` all passed.
+
 ## 2026-11-11 14:54:10 +07:00 - Restructure src into feature-based folders
 
 ### User prompt

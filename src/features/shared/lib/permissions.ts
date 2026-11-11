@@ -25,15 +25,7 @@ const ADMIN_PERMISSIONS = new Set<AdminPermission>([
   'users:manage',
 ]);
 
-const EDITOR_PERMISSIONS = new Set<AdminPermission>([
-  'products:view',
-  'products:create',
-  'products:update',
-  'products:delete',
-  'categories:manage',
-  'blog:manage',
-  'hero_slides:manage',
-]);
+const EDITOR_PERMISSIONS = new Set<AdminPermission>(['products:view', 'blog:manage']);
 
 export const ROLE_PERMISSIONS: Record<Role, readonly AdminPermission[]> = {
   ADMIN: [...ADMIN_PERMISSIONS],
@@ -50,6 +42,10 @@ export function canAccessAdmin(role: Role): boolean {
 
 export function canManageProducts(role: Role): boolean {
   return hasPermission(role, 'products:update');
+}
+
+export function canViewProducts(role: Role): boolean {
+  return hasPermission(role, 'products:view');
 }
 
 export function canEditPrice(role: Role): boolean {

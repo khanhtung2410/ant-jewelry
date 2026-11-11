@@ -6,9 +6,9 @@ import {
   canManageBlog,
   canManageCategories,
   canManageHeroSlides,
-  canManageProducts,
   canManageSettings,
   canManageUsers,
+  canViewProducts,
 } from '@/features/shared/lib/permissions';
 
 type NavItem = {
@@ -20,7 +20,7 @@ type NavItem = {
 export function AdminShell({ session, children }: { session: AdminSession; children: ReactNode }) {
   const navItems: NavItem[] = [
     { href: '/admin', label: 'Dashboard', visible: true },
-    { href: '/admin/products', label: 'Products', visible: canManageProducts(session.role) },
+    { href: '/admin/products', label: 'Products', visible: canViewProducts(session.role) },
     { href: '/admin/categories', label: 'Categories', visible: canManageCategories(session.role) },
     { href: '/admin/blog', label: 'Blog', visible: canManageBlog(session.role) },
     {
