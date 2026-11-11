@@ -14,6 +14,7 @@ import {
 import type { Settings } from '@/types/domain';
 import { CloseButton } from './close-button';
 import { FacebookIcon, InstagramIcon, PhoneIcon } from './icons';
+import { ActionButton } from './action-button';
 
 export type ContactSettings = Pick<Settings, 'phone' | 'facebookUrl' | 'instagramUrl'>;
 
@@ -334,22 +335,18 @@ export function ContactPopover({
     setLocalOpen((current) => !current);
   }
 
-  const defaultTriggerClass =
-    'inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[var(--underline-color)] bg-[var(--underline-color)] px-8 font-heading text-sm tracking-[0.12em] text-white transition-colors hover:bg-background hover:text-[var(--underline-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)] sm:w-auto';
-
   return (
     <div className={containerClassName ?? (context ? 'contents' : 'relative')}>
-      <button
+      <ActionButton
         ref={localTriggerRef}
         type="button"
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-controls={popoverId}
         onClick={handleClick}
-        className={triggerClassName ?? defaultTriggerClass}
       >
         {label}
-      </button>
+      </ActionButton>
 
       {!context && localOpen ? (
         <div className={dialogBackdropClass}>
