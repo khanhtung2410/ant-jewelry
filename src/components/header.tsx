@@ -4,13 +4,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
-import type { Category, Settings } from '@/types/domain';
-import { ContactPopover, type ContactSettings } from './contact-popover';
+import type { Category } from '@/types/domain';
+import { ContactPopover } from './contact-popover';
 import { ChevronDownIcon, CloseIcon, MenuIcon } from './icons';
 
 interface SiteHeaderProps {
   categories: Category[];
-  settings: Pick<Settings, 'phone' | 'facebookUrl' | 'instagramUrl'>;
 }
 
 function navLinkClass(active: boolean) {
@@ -32,15 +31,10 @@ function mobileNavLinkClass(active: boolean) {
   ].join(' ');
 }
 
-export function SiteHeader({ categories, settings }: SiteHeaderProps) {
+export function SiteHeader({ categories }: SiteHeaderProps) {
   const pathname = usePathname();
   const isHome = pathname === '/';
   const isBlog = pathname === '/blog' || pathname.startsWith('/blog/');
-  const contactSettings: ContactSettings = {
-    phone: settings.phone,
-    facebookUrl: settings.facebookUrl,
-    instagramUrl: settings.instagramUrl,
-  };
 
   const mobileMenuId = useId();
   // Store the route the menu was opened on so a navigation closes it without an
@@ -66,7 +60,10 @@ export function SiteHeader({ categories, settings }: SiteHeaderProps) {
   }
 
   return (
-    <header className="border-b border-line bg-background" onKeyDown={handleHeaderKeyDown}>
+    <header
+      className="sticky top-0 z-40 border-b border-line bg-background"
+      onKeyDown={handleHeaderKeyDown}
+    >
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
         <div className="flex items-center justify-between gap-4 md:block">
           <Link href="/" aria-label="AN JEWELRY - Home" className="inline-flex w-fit items-center">
@@ -118,11 +115,9 @@ export function SiteHeader({ categories, settings }: SiteHeaderProps) {
             </li>
             <li className="flex items-center">
               <ContactPopover
-                settings={contactSettings}
                 label="CONTACT"
-                containerClassName="relative flex h-full items-center"
-                triggerClassName={`${navLinkClass(false)} inline-flex items-center`}
-                panelClassName="absolute top-full right-0 z-30 mt-3 w-80 max-w-[calc(100vw-2rem)] border border-line bg-background p-5 shadow-lg"
+                containerClassName="inline-flex h-full items-center"
+                triggerClassName={`${navLinkClass(false)} cursor-pointer bg-transparent p-0`}
               />
             </li>
           </ul>
@@ -168,11 +163,9 @@ export function SiteHeader({ categories, settings }: SiteHeaderProps) {
               </li>
               <li>
                 <ContactPopover
-                  settings={contactSettings}
                   label="CONTACT"
-                  containerClassName="relative"
-                  triggerClassName={mobileNavLinkClass(false)}
-                  panelClassName="absolute left-0 top-full z-30 mt-1 w-full border border-line bg-background p-5 shadow-lg"
+                  containerClassName="block"
+                  triggerClassName={`${mobileNavLinkClass(false)} cursor-pointer bg-transparent`}
                 />
               </li>
             </ul>

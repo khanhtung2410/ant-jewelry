@@ -1,5 +1,26 @@
 # AI Change Log
 
+## 2026-11-11 10:29:34 +07:00 - Unify contact dialog and make header sticky
+
+### User prompt
+
+> header sticky, one popover contact only all other call it
+> header contact not button, header maain navigaation straight
+> footer contact call popover
+
+### Changes made
+
+- Made the header sticky and kept the main navigation items aligned in a straight row.
+- Replaced the header CONTACT popup trigger with a nav-styled trigger that opens the shared contact dialog.
+- Introduced a single shared contact dialog provider so header, footer, and product ORDER NOW open the same contact popup instance.
+- Updated the footer CONTACT item to open the contact popup instead of linking to the footer anchor.
+
+### Output summary
+
+The header is now sticky with straight main navigation, and CONTACT opens the shared contact dialog. Footer CONTACT and product ORDER NOW also open that same dialog instance. The attached design image could not be viewed in this environment; implementation follows the written request.
+
+---
+
 ## 2026-11-11 10:16:22 +07:00 - Show contact popup from header navigation
 
 ### User prompt

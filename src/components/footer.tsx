@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useId, useState, type ReactNode } from 'react';
 import type { Category, Settings } from '@/types/domain';
+import { ContactPopover } from './contact-popover';
 import { ChevronDownIcon, MailIcon, MapPinIcon, PhoneIcon } from './icons';
 
 interface SiteFooterProps {
@@ -12,7 +13,7 @@ interface SiteFooterProps {
 
 export function SiteFooter({ settings }: SiteFooterProps) {
   return (
-    <footer id="contact" className="border-t border-line bg-background">
+    <footer className="border-t border-line bg-background">
       <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-y-8 px-4 py-8 text-muted sm:grid-cols-2 sm:px-6 md:grid-cols-12 md:gap-x-6 lg:px-8">
         <div className="sm:col-span-2 md:col-span-4">
           <address className="space-y-3 text-sm not-italic">
@@ -41,7 +42,13 @@ export function SiteFooter({ settings }: SiteFooterProps) {
           <FooterColumn title="HOME" titleHref="/">
             <FooterLink href="/c">PRODUCTS</FooterLink>
             <FooterLink href="/blog">BLOG</FooterLink>
-            <FooterLink href="/#contact">CONTACT</FooterLink>
+            <li>
+              <ContactPopover
+                label="CONTACT"
+                containerClassName="inline"
+                triggerClassName="cursor-pointer bg-transparent p-0 text-sm text-muted transition-colors hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
+              />
+            </li>
           </FooterColumn>
         </div>
 
