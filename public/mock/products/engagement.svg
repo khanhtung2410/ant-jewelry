@@ -1,9 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Nhẫn đính hôn AN JEWELRY - ảnh mock">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800" role="img" aria-label="Nhẫn đính hôn ANT JEWELRY - ảnh mock">
   <rect width="800" height="800" fill="#EFEEEC"/>
   <text x="400" y="110" text-anchor="middle" font-family="monospace" font-size="34" letter-spacing="6" fill="#000">ENGAGEMENT</text>
   <circle cx="400" cy="470" r="150" fill="none" stroke="#E5E4E2" stroke-width="26"/>
   <circle cx="400" cy="470" r="150" fill="none" stroke="#93AAA0" stroke-width="2" opacity="0.45"/>
   <path d="M400 210 L470 280 L400 360 L330 280 Z" fill="#EAF4F1" stroke="#93AAA0" stroke-width="6"/>
   <path d="M400 210 L400 360 M330 280 L470 280" stroke="#93AAA0" stroke-width="3" opacity="0.7"/>
-  <text x="400" y="700" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#93AAA0">AN JEWELRY · mock image</text>
+  <text x="400" y="700" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#93AAA0">ANT JEWELRY · mock image</text>
 </svg>

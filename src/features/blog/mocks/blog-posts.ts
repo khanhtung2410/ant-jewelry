@@ -15,7 +15,7 @@ export const blogPosts: BlogPost[] = [
 - Bàn tay dài có thể cân đối hơn với bản nhẫn 2.5 - 3 mm.
 - Bề mặt đánh bóng tạo cảm giác cổ điển, dễ phối cùng nhẫn đính hôn.
 
-![Nhẫn cưới AN Jewelry](/mock/blog/cover-wedding-band.svg)
+![Nhẫn cưới ANT Jewelry](/mock/blog/cover-wedding-band.svg)
 
 ## Chất liệu và cách đeo
 

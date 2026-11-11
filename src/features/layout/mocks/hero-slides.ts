@@ -4,7 +4,7 @@ export const heroSlides: HeroSlide[] = [
   {
     slide_id: 'hero-wedding-ring',
     imageUrl: '/mock/hero/hero-slide-1.webp',
-    alt: 'Bộ sưu tập nhẫn cưới AN JEWELRY',
+    alt: 'Bộ sưu tập nhẫn cưới ANT JEWELRY',
     title: 'WEDDING RINGS',
     subtitle: 'Dấu ấn của một lời hứa bền lâu',
     linkUrl: '/c/wedding-ring',
@@ -14,7 +14,7 @@ export const heroSlides: HeroSlide[] = [
   {
     slide_id: 'hero-engagement-ring',
     imageUrl: '/mock/hero/hero-slide-2.webp',
-    alt: 'Nhẫn đính hôn kim cương AN JEWELRY',
+    alt: 'Nhẫn đính hôn kim cương ANT JEWELRY',
     title: 'ENGAGEMENT RINGS',
     subtitle: 'Khoảnh khắc bắt đầu từ một viên đá',
     linkUrl: '/c/engagement-ring',
@@ -24,7 +24,7 @@ export const heroSlides: HeroSlide[] = [
   {
     slide_id: 'hero-other-jewelry',
     imageUrl: '/mock/hero/hero-slide-3.webp',
-    alt: 'Trang sức sẵn giao AN JEWELRY',
+    alt: 'Trang sức sẵn giao ANT JEWELRY',
     title: 'OTHER JEWELRY',
     subtitle: 'Sẵn sàng trao gửi yêu thương',
     linkUrl: '/c/other-jewelry',

@@ -1,13 +1,13 @@
-# ĐẶC TẢ YÊU CẦU HỆ THỐNG (REQUIREMENTS) – AN JEWELRY
+# ĐẶC TẢ YÊU CẦU HỆ THỐNG (REQUIREMENTS) – ANT JEWELRY
  
 | Thuộc tính | Giá trị |
 |---|---|
-| Dự án | AN JEWELRY – website giới thiệu sản phẩm trang sức |
+| Dự án | ANT JEWELRY – website giới thiệu sản phẩm trang sức |
 | Tài liệu | `REQUIREMENTS.md` – Đặc tả yêu cầu phần mềm (Software Requirements Specification) |
 | Phiên bản | 1.0 – Dự thảo phục vụ rà soát và xác nhận nghiệp vụ |
 | Ngày lập | 05/11/2026 |
 | Vai trò biên soạn | Senior Business Analyst |
-| Nguồn chính | `AN_JEWELRY_SAD_v1.1.docx` (System Analysis and Design v1.1); đối chiếu website công khai `antjewelry.vn` ngày 05/11/2026 |
+| Nguồn chính | `ANT_JEWELRY_SAD_v1.1.docx` (System Analysis and Design v1.1); đối chiếu website công khai `antjewelry.vn` ngày 05/11/2026 |
 | Ngôn ngữ | Tiếng Việt |
  
 > **Cảnh báo về cơ sở bằng chứng (đọc trước khi sử dụng tài liệu)**
@@ -42,7 +42,7 @@
  
 ### 1.1. Mục đích của hệ thống
  
-AN JEWELRY là website giới thiệu các sản phẩm trang sức. Hệ thống cho phép khách hàng tham khảo thông tin sản phẩm theo danh mục, đọc các bài viết Blog, xem số điện thoại và các liên kết Facebook, Instagram để liên hệ trực tiếp với AN JEWELRY. Phía nội bộ, hệ thống định hướng hỗ trợ quản trị viên (Admin) và nhân viên (Staff) quản lý nội dung sản phẩm và bài viết.
+ANT JEWELRY là website giới thiệu các sản phẩm trang sức. Hệ thống cho phép khách hàng tham khảo thông tin sản phẩm theo danh mục, đọc các bài viết Blog, xem số điện thoại và các liên kết Facebook, Instagram để liên hệ trực tiếp với ANT JEWELRY. Phía nội bộ, hệ thống định hướng hỗ trợ quản trị viên (Admin) và nhân viên (Staff) quản lý nội dung sản phẩm và bài viết.
  
 Theo phạm vi do chủ dự án làm rõ (SAD mục 1.1, 2.2.2), website **không** hỗ trợ giỏ hàng, đặt hàng trực tuyến, thanh toán, giao dịch trực tuyến hay đặt thiết kế/sản xuất theo yêu cầu riêng.
  
@@ -100,7 +100,7 @@ Bảng dưới ghi các quyết định đã được chốt cho phiên bản tr
  
 | Đối tượng | Mục đích sử dụng |
 |---|---|
-| Chủ dự án / đơn vị vận hành AN JEWELRY | Rà soát, xác nhận nghiệp vụ, quyết định các mục TBC (Phụ lục A) |
+| Chủ dự án / đơn vị vận hành ANT JEWELRY | Rà soát, xác nhận nghiệp vụ, quyết định các mục TBC (Phụ lục A) |
 | Business Analyst | Duy trì yêu cầu, quản lý thay đổi, truy vết |
 | Nhà phát triển (Frontend, Backend) | Hiểu yêu cầu để thiết kế và lập trình; không dùng các mục TBC làm căn cứ triển khai cuối |
 | Kiểm thử viên (QA/Tester) | Xây dựng kịch bản kiểm thử từ yêu cầu và tiêu chí nghiệm thu (mục 11) |
@@ -111,7 +111,7 @@ Bảng dưới ghi các quyết định đã được chốt cho phiên bản tr
  
 | Thuật ngữ | Định nghĩa |
 |---|---|
-| AN JEWELRY | Tên hệ thống/website giới thiệu sản phẩm trang sức. Tên miền `antjewelry.vn`; website hiển thị tên "AntJewelry". Tên chính thức cần xác nhận (OI-014) |
+| ANT JEWELRY | Tên hệ thống/website giới thiệu sản phẩm trang sức. Tên miền `antjewelry.vn`; website hiển thị tên "AntJewelry". Tên chính thức cần xác nhận (OI-014) |
 | SAD | System Analysis and Design – tài liệu phân tích và thiết kế hệ thống (phiên bản 1.1) |
 | SRS | Software Requirements Specification – đặc tả yêu cầu phần mềm |
 | BA | Business Analyst |
@@ -178,7 +178,7 @@ Bảng dưới ghi các quyết định đã được chốt cho phiên bản tr
  
 ### 2.1. Bối cảnh kinh doanh
  
-AN JEWELRY là thương hiệu trang sức có cửa hàng tại Hà Nội (theo thông tin công khai trên website). Sản phẩm quan sát được gồm nhẫn (Wedding Bands, Engagement, Everyday, Ready to ship) và dây chuyền. Khách hàng tìm hiểu sản phẩm trực tuyến và liên hệ trực tiếp với AN JEWELRY qua số điện thoại hoặc liên kết Facebook, Instagram được công bố; không có giao dịch trực tuyến.
+ANT JEWELRY là thương hiệu trang sức có cửa hàng tại Hà Nội (theo thông tin công khai trên website). Sản phẩm quan sát được gồm nhẫn (Wedding Bands, Engagement, Everyday, Ready to ship) và dây chuyền. Khách hàng tìm hiểu sản phẩm trực tuyến và liên hệ trực tiếp với ANT JEWELRY qua số điện thoại hoặc liên kết Facebook, Instagram được công bố; không có giao dịch trực tuyến.
  
 Quy mô dữ liệu và lưu lượng truy cập chưa có số liệu khảo sát (SAD mục 2.6). Trên trang chủ quan sát được khoảng 41 sản phẩm được trưng bày (6 Wedding Bands, 15 Engagement, 20 Everyday); đây chỉ là con số quan sát một thời điểm, không phải tổng số sản phẩm của hệ thống.
  
@@ -193,7 +193,7 @@ flowchart LR
     C["Customer<br/>(khách truy cập)"]
     A["Admin"]
     S["Staff"]
-    subgraph SYS["Hệ thống AN JEWELRY"]
+    subgraph SYS["Hệ thống ANT JEWELRY"]
         PUB["Phân hệ công khai<br/>(Đã quan sát)"]
         ADM["Phân hệ quản trị<br/>(Dự kiến – TBC)"]
         DB[("Cơ sở dữ liệu<br/>(Đề xuất)")]
@@ -251,7 +251,7 @@ Qua đối chiếu ngày 05/11/2026, các nội dung sau xuất hiện trên web
  
 | Bên liên quan | Vai trò | Mối quan tâm chính |
 |---|---|---|
-| Chủ dự án / đơn vị vận hành AN JEWELRY | Người quyết định phạm vi, phê duyệt yêu cầu và đóng các OI | Phạm vi và quyền hạn Admin/Staff |
+| Chủ dự án / đơn vị vận hành ANT JEWELRY | Người quyết định phạm vi, phê duyệt yêu cầu và đóng các OI | Phạm vi và quyền hạn Admin/Staff |
 | Customer | Người dùng cuối của phân hệ công khai | Tìm hiểu sản phẩm và liên hệ trực tiếp với cửa hàng |
 | Admin | Người dùng nội bộ quản lý hệ thống | Kiểm soát nội dung, tài khoản, quyền |
 | Staff | Người dùng nội bộ vận hành | Cập nhật nội dung theo quyền được cấp |
@@ -298,7 +298,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
  
 | Thuộc tính | Nội dung |
 |---|---|
-| Mô tả | Hệ thống hiển thị trang chủ giới thiệu AN JEWELRY, gồm banner, các khối sản phẩm theo danh mục, khối Blog nổi bật, khối thông tin liên hệ và chân trang. |
+| Mô tả | Hệ thống hiển thị trang chủ giới thiệu ANT JEWELRY, gồm banner, các khối sản phẩm theo danh mục, khối Blog nổi bật, khối thông tin liên hệ và chân trang. |
 | Actor | Customer |
 | Tiền điều kiện | Không có (truy cập công khai); website đang hoạt động. |
 | Luồng chính | 1. Customer truy cập địa chỉ gốc của website.<br>2. Hệ thống hiển thị trang chủ gồm: menu điều hướng; banner dạng trượt; các khối sản phẩm theo danh mục (quan sát: Wedding Bands, Engagement, Everyday, mỗi sản phẩm hiển thị tên và giá); khối Blog nổi bật (quan sát: 2 bài); khối liên hệ; chân trang.<br>3. Customer chọn một liên kết để chuyển đến trang đích. |
@@ -328,10 +328,10 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
  
 | Thuộc tính | Nội dung |
 |---|---|
-| Mô tả | Hệ thống hiển thị số điện thoại và các liên kết Facebook, Instagram để Customer liên hệ trực tiếp với AN JEWELRY. [CONFIRMATION REQUIRED] BA xác nhận số điện thoại và URL Facebook/Instagram chính thức cần công bố. |
+| Mô tả | Hệ thống hiển thị số điện thoại và các liên kết Facebook, Instagram để Customer liên hệ trực tiếp với ANT JEWELRY. [CONFIRMATION REQUIRED] BA xác nhận số điện thoại và URL Facebook/Instagram chính thức cần công bố. |
 | Actor | Customer |
 | Tiền điều kiện | Không có. |
-| Luồng chính | 1. Customer truy cập khối "Liên hệ" trên trang.<br>2. Hệ thống hiển thị số điện thoại và các liên kết Facebook, Instagram đã được xác nhận.<br>3. Customer chọn liên kết Facebook hoặc Instagram để liên hệ trực tiếp với AN JEWELRY. |
+| Luồng chính | 1. Customer truy cập khối "Liên hệ" trên trang.<br>2. Hệ thống hiển thị số điện thoại và các liên kết Facebook, Instagram đã được xác nhận.<br>3. Customer chọn liên kết Facebook hoặc Instagram để liên hệ trực tiếp với ANT JEWELRY. |
 | Luồng thay thế | Không có luồng riêng được SAD ghi nhận. |
 | Hậu điều kiện | Số điện thoại và các liên kết Facebook, Instagram được hiển thị. Dữ liệu hệ thống không thay đổi. |
 | Ưu tiên | High |
@@ -950,7 +950,7 @@ Tài liệu còn 16 use case; các mã và tên còn lại được giữ nguyê
 |---|---|
 | Primary Actor | Customer |
 | Điều kiện tiên quyết | Không có. |
-| Main Success Scenario | 1. Customer truy cập khối "Liên hệ" (hoặc mục CONTACT trên menu).<br>2. Hệ thống hiển thị số điện thoại và các liên kết Facebook, Instagram.<br>3. Customer chọn một liên kết để liên hệ trực tiếp với AN JEWELRY. |
+| Main Success Scenario | 1. Customer truy cập khối "Liên hệ" (hoặc mục CONTACT trên menu).<br>2. Hệ thống hiển thị số điện thoại và các liên kết Facebook, Instagram.<br>3. Customer chọn một liên kết để liên hệ trực tiếp với ANT JEWELRY. |
 | Alternative Flows | Không có. |
 | Postconditions | Thông tin liên hệ được hiển thị; dữ liệu hệ thống không thay đổi. |
 | Điểm TBC | Nội dung tĩnh hay lấy từ dữ liệu (OI-026); URL CONTACT (OI-011). |
@@ -1255,7 +1255,7 @@ Sitemap dưới đây chốt route cho Storefront và khu vực Admin. Cột **M
  
 ### 9.2. Giao diện phần mềm (thành phần và công nghệ)
  
-SAD mục 2.5 nêu phương án công nghệ **đề xuất**; đây **không** phải xác nhận về công nghệ đang vận hành tại AN JEWELRY. Chỉ Next.js là định hướng theo yêu cầu dự án (ASM-007).
+SAD mục 2.5 nêu phương án công nghệ **đề xuất**; đây **không** phải xác nhận về công nghệ đang vận hành tại ANT JEWELRY. Chỉ Next.js là định hướng theo yêu cầu dự án (ASM-007).
  
 | Thành phần | Công nghệ | Vai trò | Trạng thái |
 |---|---|---|---|
@@ -1337,7 +1337,7 @@ Không có endpoint cho giỏ hàng, đặt hàng, thanh toán hoặc thiết k�
 |---|---|---|
 | BC-01 | Không có giỏ hàng, đặt hàng, thanh toán, giao dịch trực tuyến | BR-003, BR-004 |
 | BC-02 | Không có chức năng đặt thiết kế hoặc sản xuất theo yêu cầu riêng | BR-005 |
-| BC-03 | Khách hàng xem thông tin và liên hệ trực tiếp với AN JEWELRY qua số điện thoại hoặc liên kết Facebook, Instagram | BR-001, FR-003 |
+| BC-03 | Khách hàng xem thông tin và liên hệ trực tiếp với ANT JEWELRY qua số điện thoại hoặc liên kết Facebook, Instagram | BR-001, FR-003 |
 | BC-04 | Vai trò nội bộ giới hạn ở `ADMIN` và `EDITOR` (`EDITOR` ánh xạ Staff); không mặc định cùng quyền | BR-008, BR-018 |
 | BC-06 | Các hạng mục "đề xuất mở rộng" không bắt buộc ở phiên bản hiện tại | BR-019 |
  
@@ -1554,7 +1554,7 @@ Danh sách giữ nguyên mã của các vấn đề cần xác nhận còn hiệ
 | OI-011 | URL Routing chính thức | Trung bình | FR-002, FR-007 | SAD |
 | OI-012 | Chỉ tiêu hiệu năng và trình duyệt cần hỗ trợ | Trung bình | NFR-002, NFR-004 | SAD |
 | OI-013 | Công nghệ Backend, cơ sở dữ liệu và lưu trữ ảnh chính thức. **Đã chốt:** không backend tách biệt; Prisma + SQLite (dev) / PostgreSQL (production). Còn TBC: lưu trữ ảnh | Trung bình (đề xuất) | Mục 9.2; TC-02 | SAD |
-| OI-014 | Tên chính thức (AN JEWELRY hay ANT JEWELRY; tên miền antjewelry.vn; website hiển thị "AntJewelry") và mô tả vai trò hệ thống ("giới thiệu sản phẩm" hay "kinh doanh trang sức trực tuyến") | Trung bình | Mục 1.5; ASM-001 | SAD |
+| OI-014 | Tên chính thức (ANT JEWELRY hay ANT JEWELRY; tên miền antjewelry.vn; website hiển thị "AntJewelry") và mô tả vai trò hệ thống ("giới thiệu sản phẩm" hay "kinh doanh trang sức trực tuyến") | Trung bình | Mục 1.5; ASM-001 | SAD |
 | OI-015 | Quan hệ `product_detail` và `product_price` tạo vòng tham chiếu; hướng tham chiếu chuẩn; `price_id` có phải "giá hiện tại" | Cao | FR-022, FR-026; mục 8.4 | SAD |
 | OI-016 | Trường `currency` chứa mã tiền tệ hay số tiền; kiểu và độ chính xác; đơn vị tiền hiển thị. **Đã chốt:** giá là số nguyên VND (`Int`), hiển thị `10.000.000`, không ký hiệu tiền tệ | Cao | FR-004, FR-006, FR-026 | SAD |
 | OI-017 | Hệ quản trị CSDL chính thức và quy ước kiểu chuỗi (VARCHAR/NVARCHAR so với PostgreSQL). **Đã chốt:** SQLite cho dev, PostgreSQL cho production | Trung bình | Mục 8.2; TC-03 | SAD |
@@ -1589,7 +1589,7 @@ Danh sách giữ nguyên mã của các vấn đề cần xác nhận còn hiệ
 | 9 | Nội dung bổ sung ở chi tiết sản phẩm | Không có | Khối "quyền lợi khi mua"; khối "YOU MIGHT ALSO LIKE" (sản phẩm liên quan) | Ngoài SAD (OI-032) |
 | 10 | Blog | Danh sách và chi tiết; dữ liệu `blog` không có ngày đăng (OI-024) | Danh sách: 3 bài, không phân trang, không ngày đăng. Chi tiết: có ngày đăng và khối "OTHER BLOGS"; ảnh `.webp` | Bổ sung dữ kiện cho OI-024 |
 | 11 | Lưu trữ ảnh | Cloudinary (đề xuất) | Ảnh Blog nằm ở đường dẫn dạng `/storage/images/blog/…` trên chính tên miền | Khác với đề xuất; cần chốt (OI-013, OI-030) |
-| 12 | Tên hệ thống | "AN JEWELRY" (OI-014: có thể là "ANT JEWELRY") | Tên miền `antjewelry.vn`; tiêu đề trang "AntJewelry"; nhãn hiệu sản phẩm "Ant Jewelry" | Bổ sung dữ kiện cho OI-014 |
+| 12 | Tên hệ thống | "ANT JEWELRY" (OI-014: có thể là "ANT JEWELRY") | Tên miền `antjewelry.vn`; tiêu đề trang "AntJewelry"; nhãn hiệu sản phẩm "Ant Jewelry" | Bổ sung dữ kiện cho OI-014 |
 | 13 | Chân trang | Không nhắc | Điều khoản và điều kiện; Chính sách bảo mật; Vận chuyển và Đổi trả; Chăm sóc trang sức | Ngoài SAD (OI-028) |
 | 14 | Ngôn ngữ | Tài liệu tiếng Việt | Nhãn giao diện tiếng Anh; nội dung Blog tiếng Việt | Cần xác nhận (OI-029) |
  

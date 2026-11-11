@@ -1,10 +1,10 @@
-# AN JEWELRY
+# ANT JEWELRY
 
 Website giới thiệu sản phẩm trang sức; khách hàng liên hệ trực tiếp với cửa hàng qua số điện thoại và các liên kết Facebook, Instagram được công bố.
 
 ## 1. Tổng quan dự án
 
-AN JEWELRY là website dành cho khách hàng có nhu cầu tìm hiểu các sản phẩm trang sức và liên hệ trực tiếp với cửa hàng.
+ANT JEWELRY là website dành cho khách hàng có nhu cầu tìm hiểu các sản phẩm trang sức và liên hệ trực tiếp với cửa hàng.
 
 **Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict, ESLint, Prettier, Vitest và các contract domain trong `src/types/domain.ts`; mock data nằm trong `src/lib/mock/` (sản phẩm dùng ảnh `.webp` trong `public/mock/products/`, sản phẩm chưa có ảnh dùng SVG placeholder) và mọi trang phải đọc dữ liệu qua query function trong `src/lib/queries/`. Root layout dùng design tokens trong `src/app/globals.css`, tải font qua `next/font` và render header/footer dùng chung từ `src/components/`. Trang chủ là Server Component, hiển thị hero slider 3 ảnh, 4 carousel danh mục và 2 bài Blog mới nhất; slider và carousel là Client Components nhận dữ liệu qua props. Các component dùng chung cho sản phẩm và Blog (`ProductCard`, `Carousel`, `BlogRow`) cùng helper `formatPrice` đã có unit test. Header và footer có toggle cho màn hình nhỏ: MENU/CLOSE cho navigation và accordion cho các cột footer. Database, Prisma và Authentication chưa được cấu hình. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
 
@@ -114,7 +114,7 @@ Database dùng Prisma với SQLite local và PostgreSQL production; cấu hình 
 
 Trang chủ hiện hiển thị ba slide nổi bật, bốn carousel danh mục, hai bài Blog mới nhất và các liên kết điều hướng đến trang danh mục và Blog. Các trang đích sản phẩm và Blog chi tiết vẫn là luồng dự kiến:
 
-1. Khách hàng truy cập website AN JEWELRY.
+1. Khách hàng truy cập website ANT JEWELRY.
 2. Khách hàng xem danh sách sản phẩm trang sức.
 3. Khách hàng chọn sản phẩm để xem thông tin chi tiết.
 4. Khách hàng xem nội dung Blog hoặc thông tin liên hệ để liên hệ trực tiếp với cửa hàng.
@@ -181,6 +181,6 @@ Repository chưa có file `LICENSE`. Loại license (MIT, Apache-2.0, GPL-3.0 ho
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — Kiến trúc hệ thống đề xuất.
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md) — Quy trình làm việc, code, commit và Pull Request.
 - [`AI_LOGS.md`](./AI_LOGS.md) — Nhật ký thay đổi do AI thực hiện.
-- `AN_JEWELRY_SAD_v1.1.docx` — Tài liệu nguồn System Analysis and Design (không có trong work tree hiện tại).
+- `ANT_JEWELRY_SAD_v1.1.docx` — Tài liệu nguồn System Analysis and Design (không có trong work tree hiện tại).
 
 `ARCHITECTURE.md` được xây dựng dựa trên SAD v1.1. Những công nghệ và thiết kế chưa được xác nhận trong tài liệu kiến trúc không được xem là implementation đã hoàn thành.

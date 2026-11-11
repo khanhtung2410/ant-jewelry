@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Shipping and Return',
-  description: 'Chính sách vận chuyển và đổi trả của AN JEWELRY.',
+  description: 'Chính sách vận chuyển và đổi trả của ANT JEWELRY.',
 };
 
 export default function ShippingAndReturnPage() {
@@ -15,7 +15,7 @@ export default function ShippingAndReturnPage() {
         <section>
           <h2 className="font-heading text-base tracking-[0.08em] text-foreground">Vận chuyển</h2>
           <p className="mt-2">
-            AN JEWELRY hỗ trợ giao hàng tại Việt Nam. Thời gian và phí vận chuyển được xác nhận khi
+            ANT JEWELRY hỗ trợ giao hàng tại Việt Nam. Thời gian và phí vận chuyển được xác nhận khi
             bạn liên hệ đặt hàng, tùy theo khu vực và tình trạng sản phẩm.
           </p>
         </section>

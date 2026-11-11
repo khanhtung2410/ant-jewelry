@@ -103,7 +103,7 @@ export function ContactPopoverPanel({
           className="flex items-center gap-3 text-[14px] text-[#265649] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
         >
           <FacebookIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-black p-1.5 text-black" />
-          <span>AN JEWELRY</span>
+          <span>ANT JEWELRY</span>
         </a>
 
         <a
@@ -113,7 +113,7 @@ export function ContactPopoverPanel({
           className="flex items-center gap-3 text-[14px] text-[#265649] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
         >
           <InstagramIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-black p-1.5 text-black" />
-          <span>AN JEWELRY</span>
+          <span>ANT JEWELRY</span>
         </a>
 
         <a

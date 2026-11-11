@@ -521,7 +521,7 @@ Shared product, carousel and Blog components plus `formatPrice` are ready for th
 - Kept the live address update in `src/lib/mock/settings.ts` so the footer shows the real store address.
 - Exposed the footer's secondary text colour as the `--color-muted` Tailwind token instead of the `text-[#383838]` arbitrary values, satisfying the no-hex rule in TSX.
 - Added `src/components/icons.tsx`: inline chevron, map-pin, phone, mail, Facebook and Instagram SVGs using `currentColor` only, so no hex colours exist in TSX.
-- Updated `src/app/layout.tsx`: keeps the Geist Sans/Mono `next/font` variables, reads categories and settings through query functions, renders `SiteHeader`/`SiteFooter` around the page, and sets the AN JEWELRY metadata plus `lang="vi"`.
+- Updated `src/app/layout.tsx`: keeps the Geist Sans/Mono `next/font` variables, reads categories and settings through query functions, renders `SiteHeader`/`SiteFooter` around the page, and sets the ANT JEWELRY metadata plus `lang="vi"`.
 - Added the provided `public/mock/products/antjewelry-logo.svg` asset used by the header and footer.
 - Removed the two remaining six-digit hex utilities from the untracked WIP `src/app/home/page.tsx` so the required grep returns no results; that file and `src/components/productCard.ts` remain uncommitted.
 - Updated `docs/README.md` and `docs/ARCHITECTURE.md` to describe the shared layout components and the root-layout wiring.
@@ -866,7 +866,7 @@ The reporting workflow is gone from the active requirements and architecture doc
 
 ### Changes made
 
-- Updated `docs/CONTRIBUTING.md` to remove stale task/user examples, MSSQL references, and the unavailable `npm run test:run` check. Replaced them with AN JEWELRY domains, the actual Next.js App Router structure, and the current lint/type-check workflow.
+- Updated `docs/CONTRIBUTING.md` to remove stale task/user examples, MSSQL references, and the unavailable `npm run test:run` check. Replaced them with ANT JEWELRY domains, the actual Next.js App Router structure, and the current lint/type-check workflow.
 - Updated `docs/README.md` to describe the actual work tree: a root-level Next.js 16.4.5 App Router skeleton with React 19.3.0, Tailwind CSS v4, TypeScript strict, and ESLint. Backend, database, authentication, image storage, tests, and domain features are marked as proposed or not implemented.
 - No source code changes.
 

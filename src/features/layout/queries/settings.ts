@@ -10,7 +10,7 @@ export async function getSettings(): Promise<Settings> {
 
   if (!record) {
     return {
-      siteName: 'AN JEWELRY',
+      siteName: 'ANT JEWELRY',
       phone: '',
       facebookUrl: '',
       instagramUrl: '',

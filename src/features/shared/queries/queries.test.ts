@@ -206,7 +206,7 @@ describe('hero slide queries', () => {
 describe('settings query', () => {
   it('returns contact settings', async () => {
     const settings = await getSettings();
-    expect(settings.siteName).toBe('AN JEWELRY');
+    expect(settings.siteName).toBe('ANT JEWELRY');
     expect(settings.phone).toBeTruthy();
   });
 });
