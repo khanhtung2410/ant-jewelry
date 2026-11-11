@@ -2,8 +2,9 @@ import { Suspense } from 'react';
 import { getCategories } from '@/lib/queries';
 import { CategoryPageContent } from './category-page-content';
 
-export function generateStaticParams() {
-  return getCategories().map((category) => ({ slug: category.slug }));
+export async function generateStaticParams() {
+  const categories = await getCategories();
+  return categories.map((category) => ({ slug: category.slug }));
 }
 
 export default function CategoryPage(props: PageProps<'/c/[slug]'>) {

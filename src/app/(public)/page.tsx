@@ -2,21 +2,14 @@ import { BlogRow } from '@/components/blog-row';
 import { Carousel } from '@/components/carousel';
 import { ActionButton } from '@/components/action-button';
 import { HeroSlider } from '@/components/hero-slider';
-import {
-  getBlogPosts,
-  getCategories,
-  getHeroSlides,
-  getProductsByCategorySlug,
-} from '@/lib/queries';
+import { getBlogPosts, getHeroSlides, getStorefrontCategorySections } from '@/lib/queries';
 
-export default function Home() {
-  const categories = getCategories();
-  const productSections = categories.map((category) => ({
-    category,
-    products: getProductsByCategorySlug(category.slug),
-  }));
-  const latestPosts = getBlogPosts({ limit: 2 });
-  const heroSlides = getHeroSlides();
+export default async function Home() {
+  const [productSections, latestPosts, heroSlides] = await Promise.all([
+    getStorefrontCategorySections(),
+    getBlogPosts({ limit: 2 }),
+    getHeroSlides(),
+  ]);
 
   return (
     <main className="space-y-12 pb-16 sm:space-y-16">

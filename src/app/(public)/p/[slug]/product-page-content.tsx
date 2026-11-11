@@ -12,15 +12,17 @@ type ProductPageContentProps = Pick<PageProps<'/p/[slug]'>, 'params'>;
 
 export async function ProductPageContent({ params }: ProductPageContentProps) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getProductBySlug(slug);
 
   if (!product) {
     notFound();
   }
 
-  const category = getCategoryByType(product.type);
-  const relatedProducts = getRelatedProducts(product.product_id);
-  const settings = getSettings();
+  const [category, relatedProducts, settings] = await Promise.all([
+    getCategoryByType(product.type),
+    getRelatedProducts(product.product_id),
+    getSettings(),
+  ]);
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">

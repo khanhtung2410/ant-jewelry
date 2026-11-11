@@ -2,29 +2,31 @@ import { describe, expect, it } from 'vitest';
 import { getProductBySlug } from '@/lib/queries';
 import { getGalleryImages, getThumbnailWindowStart } from './product-gallery';
 
-const aurora = getProductBySlug('aurora-band');
-
 describe('getGalleryImages', () => {
-  it('uses the colour gallery when the colour has its own images', () => {
-    const images = getGalleryImages(aurora!, 'color-gold-18k');
+  it('uses the colour gallery when the colour has its own images', async () => {
+    const aurora = await getProductBySlug('aurora-band');
+    expect(aurora).not.toBeNull();
+    const gold = aurora!.colors.find((color) => color.hex.toUpperCase() === '#D4AF37');
+    expect(gold?.images?.length).toBeGreaterThan(0);
 
-    expect(images).toHaveLength(4);
-    expect(images.map((image) => image.url)).toEqual([
-      '/mock/products/aurora-band-gold-1.svg',
-      '/mock/products/aurora-band-gold-2.svg',
-      '/mock/products/aurora-band-gold-3.svg',
-      '/mock/products/aurora-band-gold-4.svg',
-    ]);
-    expect(images.map((image) => image.isFront)).toEqual([true, false, false, false]);
+    const images = getGalleryImages(aurora!, gold!.colorId);
+    expect(images).toEqual(gold!.images);
   });
 
-  it('falls back to the shared gallery when a colour has no images', () => {
-    const images = getGalleryImages(aurora!, 'color-white-gold-18k');
+  it('falls back to the shared gallery when a colour has no images', async () => {
+    const aurora = await getProductBySlug('aurora-band');
+    expect(aurora).not.toBeNull();
+    const withoutImages = aurora!.colors.find((color) => !color.images?.length);
+    expect(withoutImages).toBeDefined();
 
+    const images = getGalleryImages(aurora!, withoutImages!.colorId);
     expect(images).toEqual(aurora!.images);
   });
 
-  it('falls back to the shared gallery for an unknown or missing colour', () => {
+  it('falls back to the shared gallery for an unknown or missing colour', async () => {
+    const aurora = await getProductBySlug('aurora-band');
+    expect(aurora).not.toBeNull();
+
     expect(getGalleryImages(aurora!, 'missing-colour')).toEqual(aurora!.images);
     expect(getGalleryImages(aurora!)).toEqual(aurora!.images);
   });

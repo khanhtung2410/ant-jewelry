@@ -25,9 +25,8 @@ export const metadata: Metadata = {
     'AN JEWELRY - nhẫn cưới, nhẫn đính hôn, dây chuyền và trang sức tinh tế cho mọi khoảnh khắc.',
 };
 
-export default function RootLayout({ children }: LayoutProps<'/'>) {
-  const categories = getCategories();
-  const settings = getSettings();
+export default async function RootLayout({ children }: LayoutProps<'/'>) {
+  const [categories, settings] = await Promise.all([getCategories(), getSettings()]);
 
   return (
     <html lang="vi" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>

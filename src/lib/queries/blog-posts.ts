@@ -1,29 +1,56 @@
 import type { BlogPost } from '@/types/domain';
-import { blogPosts } from '@/lib/mock/blog-posts';
+import { prisma } from '@/lib/prisma';
+
+function mapBlogPost(record: {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  body: string;
+  coverImageUrl: string;
+  publishedAt: Date;
+  status: 'DRAFT' | 'PUBLISHED';
+}): BlogPost {
+  return {
+    blog_id: record.id,
+    title: record.title,
+    slug: record.slug,
+    summary: record.summary,
+    body: record.body,
+    coverImageUrl: record.coverImageUrl,
+    publishedAt: record.publishedAt.toISOString(),
+    status: record.status,
+  };
+}
 
 /**
  * Returns published Blog posts, newest first. Drafts are excluded unless
  * `includeDrafts` is set explicitly for an admin screen.
  */
-export function getBlogPosts(
+export async function getBlogPosts(
   options: { includeDrafts?: boolean; limit?: number } = {},
-): BlogPost[] {
-  const result = blogPosts
-    .filter((post) => options.includeDrafts || post.status === 'PUBLISHED')
-    .sort((a, b) => Date.parse(b.publishedAt) - Date.parse(a.publishedAt));
+): Promise<BlogPost[]> {
+  'use cache';
+  const records = await prisma.blogPost.findMany({
+    where: options.includeDrafts ? {} : { status: 'PUBLISHED' },
+    orderBy: { publishedAt: 'desc' },
+    ...(typeof options.limit === 'number' ? { take: options.limit } : {}),
+  });
 
-  const limited = typeof options.limit === 'number' ? result.slice(0, options.limit) : result;
-
-  return limited.map((post) => structuredClone(post));
+  return records.map(mapBlogPost);
 }
 
-export function getBlogPostBySlug(
+export async function getBlogPostBySlug(
   slug: string,
   options: { includeDrafts?: boolean } = {},
-): BlogPost | null {
-  const post = blogPosts.find(
-    (item) => item.slug === slug && (options.includeDrafts || item.status === 'PUBLISHED'),
-  );
+): Promise<BlogPost | null> {
+  'use cache';
+  const record = await prisma.blogPost.findFirst({
+    where: {
+      slug,
+      ...(options.includeDrafts ? {} : { status: 'PUBLISHED' }),
+    },
+  });
 
-  return post ? structuredClone(post) : null;
+  return record ? mapBlogPost(record) : null;
 }

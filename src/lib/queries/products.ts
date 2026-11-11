@@ -1,5 +1,12 @@
-import type { Product, ProductStatus, ProductType } from '@/types/domain';
-import { products } from '@/lib/mock/products';
+import type {
+  Product,
+  ProductColor,
+  ProductImage,
+  ProductStatus,
+  ProductType,
+} from '@/types/domain';
+import { createVndPrice } from '@/types/domain';
+import { prisma } from '@/lib/prisma';
 
 export type ProductSort = 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
 export const DEFAULT_PRODUCT_SORT: ProductSort = 'price_asc';
@@ -48,67 +55,220 @@ export function sortProducts(products: Product[], sort: ProductSort): Product[] 
   return [...products].sort(compareProducts(sort));
 }
 
+const productInclude = {
+  colors: {
+    include: {
+      images: {
+        orderBy: { sortOrder: 'asc' as const },
+      },
+    },
+    orderBy: { createdAt: 'asc' as const },
+  },
+  images: {
+    orderBy: { sortOrder: 'asc' as const },
+  },
+} as const;
+
+const productCardSelect = {
+  id: true,
+  name: true,
+  slug: true,
+  price: true,
+  status: true,
+  type: true,
+  colors: {
+    select: {
+      id: true,
+      name: true,
+      hex: true,
+    },
+    orderBy: { createdAt: 'asc' as const },
+  },
+  images: {
+    select: {
+      id: true,
+      url: true,
+      alt: true,
+      isFront: true,
+      sortOrder: true,
+      productColorId: true,
+    },
+    orderBy: { sortOrder: 'asc' as const },
+  },
+} as const;
+
+type DbProductImage = {
+  id: string;
+  url: string;
+  alt: string;
+  isFront: boolean;
+  sortOrder: number;
+  productColorId?: string | null;
+};
+
+type DbProductColor = {
+  id: string;
+  name: string;
+  hex: string;
+  images?: DbProductImage[];
+};
+
+type DbProduct = {
+  id: string;
+  name: string;
+  slug: string;
+  brand?: string;
+  type: string;
+  description?: string;
+  details?: unknown;
+  price: number;
+  status: ProductStatus;
+  colors: DbProductColor[];
+  images: DbProductImage[];
+};
+
+function mapImage(image: DbProductImage): ProductImage {
+  return {
+    imageId: image.id,
+    url: image.url,
+    alt: image.alt,
+    isFront: image.isFront,
+    sortOrder: image.sortOrder,
+  };
+}
+
+function mapColor(color: DbProductColor): ProductColor {
+  const images = (color.images ?? []).map(mapImage);
+  return {
+    colorId: color.id,
+    name: color.name,
+    hex: color.hex,
+    ...(images.length > 0 ? { images } : {}),
+  };
+}
+
+function mapProduct(record: DbProduct): Product {
+  const sharedImages = record.images.filter((image) => image.productColorId == null).map(mapImage);
+  const details =
+    record.details && typeof record.details === 'object' && !Array.isArray(record.details)
+      ? (record.details as Record<string, string>)
+      : {};
+
+  return {
+    product_id: record.id,
+    name: record.name,
+    slug: record.slug,
+    brand: record.brand ?? '',
+    type: record.type as ProductType,
+    description: record.description ?? '',
+    details,
+    colors: record.colors.map((color) => mapColor(color as DbProductColor)),
+    images: sharedImages,
+    price: createVndPrice(record.price),
+    status: record.status,
+  };
+}
+
+function toWhere(query: GetProductsQuery) {
+  return {
+    ...(query.type ? { type: query.type } : {}),
+    ...(query.status
+      ? { status: query.status }
+      : query.includeHidden
+        ? {}
+        : { status: 'VISIBLE' as const }),
+  };
+}
+
 /**
  * Returns products for storefront pages. `type` is also the category filter
  * because ProductType and Category are one concept. Hidden products are
  * excluded unless `includeHidden` is set explicitly for an admin screen.
  */
-export function getProducts(query: GetProductsQuery = {}): Product[] {
-  const { type, status, includeHidden = false, sort } = query;
-
-  const result = products.filter((product) => {
-    if (type && product.type !== type) {
-      return false;
-    }
-
-    if (status) {
-      return product.status === status;
-    }
-
-    return includeHidden || product.status === 'VISIBLE';
+export async function getProducts(query: GetProductsQuery = {}): Promise<Product[]> {
+  'use cache';
+  const records = await prisma.product.findMany({
+    where: toWhere(query),
+    include: productInclude,
   });
 
-  const sorted = sort ? sortProducts(result, sort) : result;
-
-  return sorted.map((product) => structuredClone(product));
+  const mapped = records.map((record) => mapProduct(record as unknown as DbProduct));
+  return query.sort ? sortProducts(mapped, query.sort) : mapped;
 }
 
-export function getProductBySlug(
+export async function getProductBySlug(
   slug: string,
   options: { includeHidden?: boolean } = {},
-): Product | null {
-  const product = products.find(
-    (item) => item.slug === slug && (options.includeHidden || item.status === 'VISIBLE'),
-  );
+): Promise<Product | null> {
+  'use cache';
+  const record = await prisma.product.findFirst({
+    where: {
+      slug,
+      ...(options.includeHidden ? {} : { status: 'VISIBLE' }),
+    },
+    include: productInclude,
+  });
 
-  return product ? structuredClone(product) : null;
+  return record ? mapProduct(record as unknown as DbProduct) : null;
 }
 
-export function getProductById(
+export async function getProductById(
   productId: string,
   options: { includeHidden?: boolean } = {},
-): Product | null {
-  const product = products.find(
-    (item) => item.product_id === productId && (options.includeHidden || item.status === 'VISIBLE'),
-  );
+): Promise<Product | null> {
+  'use cache';
+  const record = await prisma.product.findFirst({
+    where: {
+      id: productId,
+      ...(options.includeHidden ? {} : { status: 'VISIBLE' }),
+    },
+    include: productInclude,
+  });
 
-  return product ? structuredClone(product) : null;
+  return record ? mapProduct(record as unknown as DbProduct) : null;
 }
 
-export function getRelatedProducts(productId: string, limit = 4): Product[] {
-  const current = products.find((product) => product.product_id === productId);
+export async function getRelatedProducts(productId: string, limit = 4): Promise<Product[]> {
+  'use cache';
+  const current = await prisma.product.findUnique({
+    where: { id: productId },
+    select: { id: true, type: true },
+  });
 
   if (!current) {
     return [];
   }
 
-  return products
-    .filter(
-      (product) =>
-        product.type === current.type &&
-        product.product_id !== productId &&
-        product.status === 'VISIBLE',
-    )
-    .slice(0, limit)
-    .map((product) => structuredClone(product));
+  const records = await prisma.product.findMany({
+    where: {
+      type: current.type,
+      id: { not: productId },
+      status: 'VISIBLE',
+    },
+    include: productInclude,
+    take: limit,
+    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+  });
+
+  return records.map((record) => mapProduct(record as unknown as DbProduct));
+}
+
+export async function getProductsByCategoryTypes(
+  types: ProductType[],
+  options: { includeHidden?: boolean } = {},
+): Promise<Product[]> {
+  'use cache';
+  if (types.length === 0) {
+    return [];
+  }
+
+  const records = await prisma.product.findMany({
+    where: {
+      type: { in: types },
+      ...(options.includeHidden ? {} : { status: 'VISIBLE' }),
+    },
+    select: productCardSelect,
+  });
+
+  return records.map((record) => mapProduct(record as unknown as DbProduct));
 }
