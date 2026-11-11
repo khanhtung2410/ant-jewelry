@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import { ContactDialogProvider } from '@/components/contact-popover';
-import { SiteFooter } from '@/components/footer';
-import { SiteHeader } from '@/components/header';
-import { getCategories, getSettings } from '@/lib/queries';
+import { ContactDialogProvider } from '@/features/layout/components/contact-popover';
+import { SiteFooter } from '@/features/layout/components/footer';
+import { SiteHeader } from '@/features/layout/components/header';
+import { getCategories, getSettings } from '@/features/shared/queries';
 import './globals.css';
 
 const geistSans = Geist({

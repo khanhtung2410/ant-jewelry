@@ -1,6 +1,10 @@
 import { notFound, redirect } from 'next/navigation';
-import { CategoryProductListing } from '@/components/category-product-listing';
-import { getCategoryBySlug, getProductsByCategorySlug, parseProductSort } from '@/lib/queries';
+import { CategoryProductListing } from '@/features/products/components/category-product-listing';
+import {
+  getCategoryBySlug,
+  getProductsByCategorySlug,
+  parseProductSort,
+} from '@/features/shared/queries';
 
 type CategoryPageContentProps = Pick<PageProps<'/c/[slug]'>, 'params' | 'searchParams'>;
 

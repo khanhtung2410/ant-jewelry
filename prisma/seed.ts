@@ -1,10 +1,10 @@
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
-import { categories } from '../src/lib/mock/categories';
-import { blogPosts } from '../src/lib/mock/blog-posts';
-import { heroSlides } from '../src/lib/mock/hero-slides';
-import { products } from '../src/lib/mock/products';
-import { settings } from '../src/lib/mock/settings';
+import { categories } from '../src/features/products/mocks/categories';
+import { blogPosts } from '../src/features/blog/mocks/blog-posts';
+import { heroSlides } from '../src/features/layout/mocks/hero-slides';
+import { products } from '../src/features/products/mocks/products';
+import { settings } from '../src/features/layout/mocks/settings';
 
 const prisma = new PrismaClient();
 

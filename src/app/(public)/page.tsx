@@ -1,8 +1,12 @@
-import { BlogRow } from '@/components/blog-row';
-import { Carousel } from '@/components/carousel';
-import { ActionButton } from '@/components/action-button';
-import { HeroSlider } from '@/components/hero-slider';
-import { getBlogPosts, getHeroSlides, getStorefrontCategorySections } from '@/lib/queries';
+import { BlogRow } from '@/features/blog/components/blog-row';
+import { Carousel } from '@/features/products/components/carousel';
+import { ActionButton } from '@/features/layout/components/action-button';
+import { HeroSlider } from '@/features/layout/components/hero-slider';
+import {
+  getBlogPosts,
+  getHeroSlides,
+  getStorefrontCategorySections,
+} from '@/features/shared/queries';
 
 export default async function Home() {
   const [productSections, latestPosts, heroSlides] = await Promise.all([

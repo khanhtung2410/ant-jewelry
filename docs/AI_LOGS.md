@@ -1,5 +1,34 @@
 # AI Change Log
 
+## 2026-11-11 14:54:10 +07:00 - Restructure src into feature-based folders
+
+### User prompt
+
+> reorganize file
+>
+> create branch, commit strictly flollowing contributing.md and pr template
+> run and write pr body with actual complete output, no summarize or change
+> add to log data prompt and summarize output follow previous log format
+
+Follow-up clarification:
+- Restructure folders: all (feature-based src)
+- Keep Next routes in `src/app` and update all imports/tests/configs
+- Domain grouping: `products`, `blog`, `layout`, `shared`
+
+### Changes made
+
+- Created feature-based structure under `src/features/{products,blog,layout,shared}` while keeping App Router pages/layouts in `src/app`.
+- Moved domain code: shared domain/db/lib (types, Prisma client, formatters, markdown) to `src/features/shared`; product components/queries/mocks/lib to `src/features/products`; blog components/queries/mocks to `src/features/blog`; layout components/queries/mocks (header/footer/contact/hero/buttons/icons/settings/hero slides) to `src/features/layout`.
+- Rebuilt query and mock barrel exports at `src/features/shared/queries/index.ts` and `src/features/shared/mocks/index.ts` to aggregate feature modules; updated `prisma/seed.ts` mock import paths.
+- Updated alias and cross-feature imports across `src`, fixed moved-file relative paths (e.g. config test package path, layout/product/blog cross-feature component imports), and staged all rename/content updates.
+- Kept `src/proxy.ts` at root as required by Next.js; preserved route files in `src/app` with updated imports only.
+
+### Output summary
+
+Feature-based folder restructure completed with all imports/tests/configs updated. `npm run lint`, `npm run typecheck`, `npm test` (18 files, 75 tests), `npm run format:check`, `npm run build`, and two consecutive `npx prisma db seed` runs completed successfully with actual outputs captured for the PR body.
+
+---
+
 ## 2026-11-11 14:31:45 +07:00 - Replace storefront query layer with Prisma-backed reads (G2.3)
 
 ### User prompt

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { BlogDetail } from '@/components/blog-detail';
-import { getBlogPostBySlug, getBlogPosts } from '@/lib/queries';
+import { BlogDetail } from '@/features/blog/components/blog-detail';
+import { getBlogPostBySlug, getBlogPosts } from '@/features/shared/queries';
 
 export async function generateStaticParams() {
   const posts = await getBlogPosts();

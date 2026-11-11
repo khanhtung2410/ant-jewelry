@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getCategories } from '@/lib/queries';
+import { getCategories } from '@/features/shared/queries';
 import { CategoryPageContent } from './category-page-content';
 
 export async function generateStaticParams() {
