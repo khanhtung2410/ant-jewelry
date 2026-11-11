@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { BlogList } from '@/components/blog-list';
-import { getBlogPosts } from '@/lib/queries';
+import { BlogList } from '@/features/blog/components/blog-list';
+import { getBlogPosts } from '@/features/shared/queries';
 
 export const metadata: Metadata = {
   title: 'Blog',

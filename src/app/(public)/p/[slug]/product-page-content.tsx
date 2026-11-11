@@ -1,12 +1,12 @@
 import { notFound } from 'next/navigation';
-import { Carousel } from '@/components/carousel';
-import { ProductDetail } from '@/components/product-detail';
+import { Carousel } from '@/features/products/components/carousel';
+import { ProductDetail } from '@/features/products/components/product-detail';
 import {
   getCategoryByType,
   getProductBySlug,
   getRelatedProducts,
   getSettings,
-} from '@/lib/queries';
+} from '@/features/shared/queries';
 
 type ProductPageContentProps = Pick<PageProps<'/p/[slug]'>, 'params'>;
 

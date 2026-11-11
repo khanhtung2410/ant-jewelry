@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { getProductBySlug, getProducts } from '@/lib/queries';
+import { getProductBySlug, getProducts } from '@/features/shared/queries';
 import { ProductPageContent } from './product-page-content';
 
 export async function generateStaticParams() {
