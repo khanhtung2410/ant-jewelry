@@ -289,10 +289,10 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
                   href={`/c/${category.slug}`}
                   onClick={() => setOpen(false)}
                   aria-current={isCurrent ? 'page' : undefined}
-                  className={`block border-b-2 px-4 py-2 text-sm transition-colors hover:bg-product-image ${
+                  className={`block bg-no-repeat px-4 py-2 text-sm transition-colors hover:bg-product-image hover:[background-image:linear-gradient(to_right,var(--underline-color)_50%,transparent_50%)] hover:[background-position:16px_100%] hover:[background-size:calc(100%-32px)_2px] ${
                     isCurrent
-                      ? 'border-[var(--underline-color)] text-foreground'
-                      : 'border-transparent hover:border-[var(--underline-color)]'
+                      ? 'text-foreground [background-image:linear-gradient(to_right,var(--underline-color)_50%,transparent_50%)] [background-position:16px_100%] [background-size:calc(100%-32px)_2px]'
+                      : 'text-muted [background-image:none]'
                   }`}
                 >
                   {category.name}
@@ -343,10 +343,10 @@ function MobileProductsMenu({ categories, active, onNavigate }: MobileProductsMe
                   href={`/c/${category.slug}`}
                   onClick={onNavigate}
                   aria-current={isCurrent ? 'page' : undefined}
-                  className={`flex border-b-2 py-2 pl-4 font-body text-sm tracking-normal normal-case transition-colors ${
+                  className={`flex bg-no-repeat py-2 pl-4 pr-4 font-body text-sm normal-case tracking-normal transition-colors hover:[background-image:linear-gradient(to_right,var(--underline-color)_50%,transparent_50%)] hover:[background-position:16px_100%] hover:[background-size:calc(100%-32px)_2px] ${
                     isCurrent
-                      ? 'border-[var(--underline-color)] text-foreground'
-                      : 'border-transparent hover:border-[var(--underline-color)]'
+                      ? 'text-foreground [background-image:linear-gradient(to_right,var(--underline-color)_50%,transparent_50%)] [background-position:16px_100%] [background-size:calc(100%-32px)_2px]'
+                      : 'text-muted [background-image:none]'
                   }`}
                 >
                   {category.name}
