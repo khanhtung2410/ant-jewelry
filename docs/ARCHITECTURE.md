@@ -1,7 +1,7 @@
-# AN JEWELRY — ARCHITECTURE
+# ANT JEWELRY — ARCHITECTURE
 
 > **Trạng thái tài liệu:** Kiến trúc đề xuất, đã đối chiếu với work tree hiện tại  
-> **Tài liệu nguồn:** `AN_JEWELRY_SAD_v1.1.docx`  
+> **Tài liệu nguồn:** `ANT_JEWELRY_SAD_v1.1.docx`  
 > **Cập nhật theo work tree:** 2026-11-09  
 > **Trạng thái work tree:** Có một Next.js application duy nhất (16.4.5, App Router) với React 19.3.0, Tailwind CSS v4, TypeScript strict, ESLint 9, Prettier 3 và Vitest 5. `src/types/domain.ts` định nghĩa `Product`, `ProductColor`, `ProductImage`, `Category`, `BlogPost`, `HeroSlide`, `Settings` và `Role`; `src/lib/mock/` chứa mock data có type và `src/lib/queries/` là tầng truy cập dữ liệu duy nhất cho page. `.env.example` và `.github/pull_request_template.md` đã có. Chưa có Database, Prisma, Authentication, Server Action, Route Handler nghiệp vụ hoặc workflow nghiệp vụ.
 > **Ngôn ngữ:** Nội dung diễn giải bằng tiếng Việt; giữ nguyên các technical terms, tên công nghệ, tên module, tên bảng, tên API, identifier và code terms bằng tiếng Anh.
@@ -10,7 +10,7 @@
 
 ## 1. Mục đích tài liệu
 
-Tài liệu này chuyển các nội dung phân tích và thiết kế trong `AN_JEWELRY_SAD_v1.1.docx` thành bản định hướng kiến trúc kỹ thuật ban đầu cho dự án AN JEWELRY. Tài liệu được sử dụng làm cơ sở để:
+Tài liệu này chuyển các nội dung phân tích và thiết kế trong `ANT_JEWELRY_SAD_v1.1.docx` thành bản định hướng kiến trúc kỹ thuật ban đầu cho dự án ANT JEWELRY. Tài liệu được sử dụng làm cơ sở để:
 
 - Thống nhất cách nhìn tổng thể về hệ thống trước khi bắt đầu lập trình.
 - Xác định các thành phần chính, trách nhiệm của từng thành phần và cách chúng tương tác.
@@ -51,7 +51,7 @@ Các sơ đồ, module và cấu trúc thư mục trong tài liệu là định 
 
 ### 2.1. Giới thiệu
 
-AN JEWELRY là website giới thiệu các sản phẩm trang sức. Website cung cấp thông tin để khách hàng tham khảo sản phẩm, tìm hiểu nội dung liên quan và liên hệ trực tiếp với cửa hàng.
+ANT JEWELRY là website giới thiệu các sản phẩm trang sức. Website cung cấp thông tin để khách hàng tham khảo sản phẩm, tìm hiểu nội dung liên quan và liên hệ trực tiếp với cửa hàng.
 
 Theo phạm vi đã được chủ dự án làm rõ trong SAD:
 
@@ -1122,7 +1122,7 @@ Khi có quyết định chính thức, cần cập nhật phương án, trạng 
 ## 19. Tài liệu tham chiếu
 Tài liệu nguồn chính:
 
-- AN_JEWELRY_SAD_v1.1.docx
+- ANT_JEWELRY_SAD_v1.1.docx
 - Section 1 — System Survey.
 - Section 2 — Business Analysis.
 - Section 3 — System Requirements Analysis.

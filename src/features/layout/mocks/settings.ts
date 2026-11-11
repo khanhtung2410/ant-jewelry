@@ -1,7 +1,7 @@
 import type { Settings } from '@/features/shared/domain/domain';
 
 export const settings: Settings = {
-  siteName: 'AN JEWELRY',
+  siteName: 'ANT JEWELRY',
   phone: '0900 000 000',
   facebookUrl: 'https://www.facebook.com/example.antjewelry',
   instagramUrl: 'https://www.instagram.com/example.antjewelry',

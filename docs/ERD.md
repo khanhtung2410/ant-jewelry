@@ -1,6 +1,6 @@
 # G2.1 — ERD (Mermaid)
 
-Logical/entity relationship diagram for the AN JEWELRY data model.
+Logical/entity relationship diagram for the ANT JEWELRY data model.
 
 ```mermaid
 erDiagram

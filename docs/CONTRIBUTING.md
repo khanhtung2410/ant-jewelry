@@ -1,6 +1,6 @@
 # Contributing Guide
 
-Cảm ơn bạn đã quan tâm đóng góp cho **AN JEWELRY**.
+Cảm ơn bạn đã quan tâm đóng góp cho **ANT JEWELRY**.
 Tài liệu này mô tả quy trình làm việc, quy tắc code, commit và pull request.
 
 > Đọc `README.md` trước để hiểu project làm gì và cách chạy local.
@@ -170,7 +170,7 @@ npm run format:check     # kiểm tra format, dùng trong CI/PR
 
 ### Scope (tùy chọn)
 
-Dùng tên domain phù hợp với AN JEWELRY: `home`, `products`, `blog`, `admin`, `ui`, `config`, `docs`. Khi các module `auth` hoặc `db` được bổ sung, có thể dùng thêm các scope đó.
+Dùng tên domain phù hợp với ANT JEWELRY: `home`, `products`, `blog`, `admin`, `ui`, `config`, `docs`. Khi các module `auth` hoặc `db` được bổ sung, có thể dùng thêm các scope đó.
 
 ### Ví dụ
 

@@ -5,5 +5,5 @@
   <circle cx="400" cy="440" r="180" fill="none" stroke="#D4AF37" stroke-width="38"/>
   <circle cx="400" cy="440" r="180" fill="none" stroke="#F2E3A0" stroke-width="10" opacity="0.8"/>
   <circle cx="400" cy="440" r="132" fill="none" stroke="#93AAA0" stroke-width="1" opacity="0.35"/>
-  <text x="400" y="720" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#93AAA0">AN JEWELRY - mock image</text>
+  <text x="400" y="720" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#93AAA0">ANT JEWELRY - mock image</text>
 </svg>

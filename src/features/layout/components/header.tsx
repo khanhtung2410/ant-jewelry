@@ -66,10 +66,10 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
     >
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
         <div className="flex items-center justify-between gap-4 md:block">
-          <Link href="/" aria-label="AN JEWELRY - Home" className="inline-flex w-fit items-center">
+          <Link href="/" aria-label="ANT JEWELRY - Home" className="inline-flex w-fit items-center">
             <Image
               src="/mock/products/antjewelry-logo.svg"
-              alt="AN JEWELRY"
+              alt="ANT JEWELRY"
               width={96}
               height={66}
               priority

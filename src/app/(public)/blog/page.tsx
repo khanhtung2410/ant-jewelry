@@ -4,7 +4,7 @@ import { getBlogPosts } from '@/features/shared/queries';
 
 export const metadata: Metadata = {
   title: 'Blog',
-  description: 'Tin tức, cảm hứng và hướng dẫn chọn trang sức từ AN JEWELRY.',
+  description: 'Tin tức, cảm hứng và hướng dẫn chọn trang sức từ ANT JEWELRY.',
 };
 
 export default async function BlogPage() {

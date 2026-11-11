@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Terms and Conditions',
-  description: 'Điều khoản và điều kiện sử dụng website AN JEWELRY.',
+  description: 'Điều khoản và điều kiện sử dụng website ANT JEWELRY.',
 };
 
 export default function TermsPage() {
@@ -13,7 +13,7 @@ export default function TermsPage() {
       </h1>
       <div className="mt-10 space-y-6 text-sm leading-7 text-muted sm:text-base">
         <p>
-          Khi truy cập và sử dụng website AN JEWELRY, bạn đồng ý tuân thủ các điều khoản dưới đây.
+          Khi truy cập và sử dụng website ANT JEWELRY, bạn đồng ý tuân thủ các điều khoản dưới đây.
           Nội dung trên website được cung cấp nhằm giới thiệu sản phẩm và thông tin liên hệ.
         </p>
         <section>
@@ -39,7 +39,7 @@ export default function TermsPage() {
             Quyền sở hữu nội dung
           </h2>
           <p className="mt-2">
-            Mọi hình ảnh, văn bản và thiết kế trên website thuộc quyền sở hữu của AN JEWELRY hoặc
+            Mọi hình ảnh, văn bản và thiết kế trên website thuộc quyền sở hữu của ANT JEWELRY hoặc
             đối tác được cấp phép. Vui lòng không sao chép hoặc sử dụng cho mục đích thương mại khi
             chưa có sự đồng ý.
           </p>

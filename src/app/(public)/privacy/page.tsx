@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
-  description: 'Chính sách quyền riêng tư của AN JEWELRY.',
+  description: 'Chính sách quyền riêng tư của ANT JEWELRY.',
 };
 
 export default function PrivacyPage() {
@@ -13,7 +13,7 @@ export default function PrivacyPage() {
       </h1>
       <div className="mt-10 space-y-6 text-sm leading-7 text-muted sm:text-base">
         <p>
-          AN JEWELRY tôn trọng quyền riêng tư của khách hàng. Chính sách này mô tả cách chúng tôi
+          ANT JEWELRY tôn trọng quyền riêng tư của khách hàng. Chính sách này mô tả cách chúng tôi
           tiếp nhận và sử dụng thông tin khi bạn liên hệ với chúng tôi.
         </p>
         <section>
