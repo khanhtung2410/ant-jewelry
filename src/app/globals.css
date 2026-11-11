@@ -9,6 +9,8 @@
   --font-color: #383838;
   --underline-color: #265649;
   --control-outline: #24453c;
+  --button-bg-hover: #bbbab6;
+  --button-bg-normal: #6d6c6b;
 
   /* Geist Sans/Mono are loaded in src/app/layout.tsx. */
   --font-body-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
@@ -21,10 +23,17 @@
   --color-product-image: var(--product-image-background);
   --color-line: var(--line);
   --color-muted: var(--font-color);
+  --button-bg-hover: var(--button-bg-hover);
+  --button-bg-normal: var(--button-bg-normal);
   --font-sans: var(--font-body-family);
   --font-mono: var(--font-heading-family);
   --font-body: var(--font-body-family);
   --font-heading: var(--font-heading-family);
+}
+
+html,
+body {
+  overflow-x: hidden;
 }
 
 body {
