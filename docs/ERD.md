@@ -73,6 +73,16 @@ erDiagram
         DateTime updatedAt
     }
 
+    BLOG_IMAGE {
+        String id PK
+        String blogPostId FK
+        String url
+        String alt
+        Int sortOrder
+        DateTime createdAt
+        DateTime updatedAt
+    }
+
     HERO_SLIDE {
         String id PK
         String imageUrl
@@ -102,6 +112,7 @@ erDiagram
     PRODUCT ||--o{ PRODUCT_COLOR : "has (onDelete: Cascade)"
     PRODUCT ||--o{ PRODUCT_IMAGE : "has shared or all images (onDelete: Cascade)"
     PRODUCT_COLOR o|--o{ PRODUCT_IMAGE : "has color-specific images (onDelete: Cascade)"
+    BLOG_POST ||--o{ BLOG_IMAGE : "has (onDelete: Cascade)"
 ```
 
 ## Notes
@@ -116,5 +127,6 @@ erDiagram
   - Deleting a `PRODUCT` cascades to its `PRODUCT_COLOR` and `PRODUCT_IMAGE` records.
   - Deleting a `PRODUCT_COLOR` cascades to its color-specific `PRODUCT_IMAGE` records.
   - A `CATEGORY` cannot be deleted while related `PRODUCT` records exist (`onDelete: Restrict` on `PRODUCT.categoryId`).
+- **Blog images:** `BLOG_POST` can have multiple images via `BLOG_IMAGE` records (ordered by `sortOrder`, deleted when the blog post is deleted). `coverImageUrl` remains on `BLOG_POST` for the cover/primary image reference.
 - **Roles:** `USER.role` is `ADMIN` or `EDITOR`.
 - **Schema file:** Prisma schema is defined in `prisma/schema.prisma`.

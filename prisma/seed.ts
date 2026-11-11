@@ -124,7 +124,7 @@ async function main() {
   }
 
   for (const post of blogPosts) {
-    await prisma.blogPost.upsert({
+    const seededPost = await prisma.blogPost.upsert({
       where: { slug: post.slug },
       update: {
         title: post.title,
@@ -143,7 +143,35 @@ async function main() {
         publishedAt: new Date(post.publishedAt),
         status: post.status,
       },
+      select: { id: true },
     });
+
+    const imageMatches = [...post.body.matchAll(/!\[(.*?)\]\((.*?)\)/g)].map((match) => ({
+      alt: match[1] || post.title,
+      url: match[2],
+    }));
+    const uniqueImages = Array.from(
+      new Map(
+        [post.coverImageUrl, ...imageMatches.map((image) => image.url)]
+          .filter(Boolean)
+          .map((url) => {
+            const match = imageMatches.find((image) => image.url === url);
+            return [url, { url, alt: match?.alt || post.title }];
+          }),
+      ).values(),
+    );
+
+    await prisma.blogImage.deleteMany({ where: { blogPostId: seededPost.id } });
+    if (uniqueImages.length > 0) {
+      await prisma.blogImage.createMany({
+        data: uniqueImages.map((image, index) => ({
+          blogPostId: seededPost.id,
+          url: image.url,
+          alt: image.alt,
+          sortOrder: index + 1,
+        })),
+      });
+    }
   }
 
   for (const [index, slide] of heroSlides.entries()) {
