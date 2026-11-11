@@ -1,9 +1,5 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import { ContactDialogProvider } from '@/features/layout/components/contact-popover';
-import { SiteFooter } from '@/features/layout/components/footer';
-import { SiteHeader } from '@/features/layout/components/header';
-import { getCategories, getSettings } from '@/features/shared/queries';
 import './globals.css';
 
 const geistSans = Geist({
@@ -22,21 +18,13 @@ export const metadata: Metadata = {
     template: '%s | ANT JEWELRY',
   },
   description:
-    'AN JEWELRY - nhẫn cưới, nhẫn đính hôn, dây chuyền và trang sức tinh tế cho mọi khoảnh khắc.',
+    'ANT JEWELRY - nhẫn cưới, nhẫn đính hôn, dây chuyền và trang sức tinh tế cho mọi khoảnh khắc.',
 };
 
-export default async function RootLayout({ children }: LayoutProps<'/'>) {
-  const [categories, settings] = await Promise.all([getCategories(), getSettings()]);
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col bg-background text-foreground">
-        <ContactDialogProvider settings={settings}>
-          <SiteHeader categories={categories} />
-          <div className="flex-1">{children}</div>
-          <SiteFooter categories={categories} settings={settings} />
-        </ContactDialogProvider>
-      </body>
+      <body className="min-h-full bg-background text-foreground">{children}</body>
     </html>
   );
 }
