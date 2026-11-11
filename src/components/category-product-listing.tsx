@@ -83,7 +83,7 @@ export function CategoryProductListing({
       </div>
 
       {visibleProducts.length > 0 ? (
-        <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
+        <ul className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-5">
           {visibleProducts.map((product) => (
             <li key={product.product_id}>
               <ProductCard product={product} />

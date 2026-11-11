@@ -33,7 +33,7 @@ export function ProductDetail({ product, categoryName, settings }: ProductDetail
           {product.name}
         </h1>
 
-        <dl className="mt-6 space-y-2 text-sm">
+        <dl className="mt-6 flex w-full flex-col gap-2 text-sm sm:flex-row sm:items-center sm:justify-between">
           <div className="flex gap-2">
             <dt className="font-heading uppercase tracking-[0.08em] text-muted">Brand:</dt>
             <dd>{product.brand}</dd>
