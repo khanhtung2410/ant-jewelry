@@ -47,11 +47,10 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
         <ArrowButton
           direction="left"
           aria-label="Previous product image"
-          onClick={() => selectImage(Math.max(0, safeActive - 1))}
-          disabled={safeActive === 0}
+          onClick={() => selectImage((safeActive - 1 + total) % total)}
         />
 
-        <ul className="flex flex-1 items-center justify-center gap-3" aria-label="Product images">
+        <ul className="flex flex-1 items-center justify-center gap-2 sm:gap-3" aria-label="Product images">
           {visibleImages.map((image, offset) => {
             const index = start + offset;
             const selected = index === safeActive;
@@ -64,7 +63,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
                   aria-pressed={selected}
                   onClick={() => selectImage(index)}
                   className={[
-                    'product-image-frame relative block h-20 w-20 overflow-hidden border-2 transition-colors sm:h-24 sm:w-24',
+                    'product-image-frame relative block h-16 w-16 overflow-hidden border-2 transition-colors sm:h-24 sm:w-24',
                     'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]',
                     selected
                       ? 'border-[var(--underline-color)]'
@@ -88,8 +87,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
         <ArrowButton
           direction="right"
           aria-label="Next product image"
-          onClick={() => selectImage(Math.min(total - 1, safeActive + 1))}
-          disabled={safeActive === total - 1}
+          onClick={() => selectImage((safeActive + 1) % total)}
         />
       </div>
 

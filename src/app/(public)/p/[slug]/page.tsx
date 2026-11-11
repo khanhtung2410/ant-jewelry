@@ -22,13 +22,7 @@ export async function generateMetadata(props: PageProps<'/p/[slug]'>): Promise<M
   };
 }
 
-export default async function ProductPage(props: PageProps<'/p/[slug]'>) {
-  const { slug } = await props.params;
-
-  if (!getProductBySlug(slug)) {
-    notFound();
-  }
-
+export default function ProductPage(props: PageProps<'/p/[slug]'>) {
   return (
     <Suspense fallback={<ProductPageFallback />}>
       <ProductPageContent params={props.params} />

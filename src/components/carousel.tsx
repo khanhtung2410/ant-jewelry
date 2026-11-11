@@ -104,11 +104,11 @@ export function Carousel({ title, products, viewAllHref, className = '' }: Carou
             <li
               key={product.product_id}
               /*
-                - w-[calc(...)]: dynamically sets the width so exactly 2, 3, or 5 items fit
+                - w-[calc(...)]: dynamically sets the width so exactly 2 or 5 items fit
                 - shrink-0: prevents items from squishing
                 - snap-start: snaps the item perfectly to the left edge
               */
-              className="w-[calc(50%-0.5rem)] shrink-0 snap-start sm:w-[calc(33.333%-0.66rem)] lg:w-[calc(20%-0.8rem)]"
+              className="w-[calc(50%-0.5rem)] shrink-0 snap-start lg:w-[calc(20%-0.8rem)]"
             >
               <ProductCard product={product} />
             </li>
