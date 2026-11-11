@@ -36,7 +36,7 @@ describe('CategoryProductListing', () => {
     expect(html).toContain('aria-label="Sort by"');
     expect(html.match(/<option/g)).toHaveLength(4);
     expect(html).toContain('value="price_asc" selected=""');
-    expect(html).toContain('grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5');
+    expect(html).toContain('grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-5');
     expect(html.match(/<article/g)).toHaveLength(10);
     expect(html).toContain('>SEE MORE</button>');
     expect(html).not.toContain(`href="/p/${products[10].slug}"`);

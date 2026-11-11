@@ -14,10 +14,20 @@ describe('ContactPopover', () => {
     const html = renderToStaticMarkup(<ContactPopover settings={settings} />);
 
     expect(html).toContain('ORDER NOW');
+    expect(html).toContain('bg-[var(--underline-color)]');
     expect(html).toContain('aria-haspopup="dialog"');
     expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain('role="dialog"');
     expect(html).not.toContain('CONTACT US');
+  });
+
+  it('uses the supplied class for a navigation-style trigger', () => {
+    const html = renderToStaticMarkup(
+      <ContactPopover settings={settings} label="CONTACT" triggerClassName="nav-contact-link" />,
+    );
+
+    expect(html).toContain('class="nav-contact-link"');
+    expect(html).toContain('CONTACT</button>');
   });
 
   it('renders the dialog with contact links when the panel is open', () => {
@@ -40,8 +50,9 @@ describe('ContactPopover', () => {
     expect(html).toContain('href="https://www.instagram.com/example.antjewelry"');
     expect(html).toContain('href="tel:0900000000"');
     expect(html).toContain('0900 000 000');
-    expect(html).toContain('Facebook');
-    expect(html).toContain('Instagram');
+    expect(html).toContain('AN JEWELRY');
+    expect(html).toContain('hover:border-red-800');
+    expect(html).toContain('rounded-3xl');
   });
 });
 

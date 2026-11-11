@@ -1,5 +1,113 @@
 # AI Change Log
 
+## 2026-11-11 13:01:17 +07:00 - Make header contact trigger consistent with navigation items
+
+### User prompt
+
+> make contact navigation in heaader the same as other, not button for consistency
+
+### Changes made
+
+- Updated `src/components/contact-popover.tsx` so that when a `triggerClassName` is provided, the trigger renders as a plain styled `<button>` (reusing the supplied nav/text classes) instead of the default `ActionButton` pill style.
+- Kept the default `ActionButton` trigger for uses without a custom trigger class (e.g. `ORDER NOW`), and preserved dialog trigger accessibility/behavior (`aria-haspopup`, `aria-expanded`, click handling, focus restore).
+
+### Output summary
+
+Header (and other custom-styled) CONTACT triggers now use the same nav/text styling approach as surrounding items instead of the pill `ActionButton`, while still opening the shared contact dialog. Lint and tests passed.
+
+---
+
+## 2026-11-11 12:14:04 +07:00 - Add missing CloseButton component test
+
+### User prompt
+
+> create missing test file
+> add to log data prompt and summarize output follow previous log format
+
+### Changes made
+
+- Added `src/components/close-button.test.tsx` to cover the `CloseButton` component (default accessible label/button attributes, icon path, and support for custom `ariaLabel`/extra `className`).
+
+### Output summary
+
+Created the missing `CloseButton` test file and verified it with lint and the test suite. All tests passed after adding coverage.
+
+---
+
+## 2026-11-11 12:07:20 +07:00 - Fix product page instant navigation params access
+
+### User prompt
+
+> ## Error Type
+> Instant
+>
+> ## Error Message
+> Route "/p/[slug]": Next.js encountered URL data during prerendering or a navigation.
+>
+> `params` or `searchParams` accessed outside of `<Suspense>` may prevent the navigation from being instant, leading to a slower user experience.
+>
+> Ways to fix this:
+>   - [stream] Provide a placeholder with `<Suspense fallback={...}>` around the data access
+>   - [block] Set `export const instant = false` to allow a blocking route
+>
+> Learn more: https://nextjs.org/docs/messages/instant-shell-url-data
+>
+>     at ProductPage (src\app\(public)\p\[slug]\page.tsx:26:32)
+>
+> fix insight,
+> if change add to log data prompt and summarize output follow previous log format
+
+### Changes made
+
+- Updated `src/app/(public)/p/[slug]/page.tsx` so the page component no longer awaits `props.params` or performs product existence checks outside the Suspense boundary.
+- Kept URL-param-dependent data loading and `notFound()` handling inside `ProductPageContent` (rendered within `<Suspense fallback={...}>`) to satisfy instant navigation/streaming requirements while preserving behavior.
+
+### Output summary
+
+The `/p/[slug]` route now defers `params` access to the suspended `ProductPageContent`, avoiding instant-route URL-data access in the page wrapper. `generateMetadata` still resolves params for metadata as before. Lint and tests passed after the fix.
+
+---
+
+## 2026-11-11 10:29:34 +07:00 - Unify contact dialog and make header sticky
+
+### User prompt
+
+> header sticky, one popover contact only all other call it
+> header contact not button, header maain navigaation straight
+> footer contact call popover
+
+### Changes made
+
+- Made the header sticky and kept the main navigation items aligned in a straight row.
+- Replaced the header CONTACT popup trigger with a nav-styled trigger that opens the shared contact dialog.
+- Introduced a single shared contact dialog provider so header, footer, and product ORDER NOW open the same contact popup instance.
+- Updated the footer CONTACT item to open the contact popup instead of linking to the footer anchor.
+
+### Output summary
+
+The header is now sticky with straight main navigation, and CONTACT opens the shared contact dialog. Footer CONTACT and product ORDER NOW also open that same dialog instance. The attached design image could not be viewed in this environment; implementation follows the written request.
+
+---
+
+## 2026-11-11 10:16:22 +07:00 - Show contact popup from header navigation
+
+### User prompt
+
+> press contact show popup
+> (attached image)
+
+### Changes made
+
+- Made the shared contact popover configurable (label, trigger/panel/container classes) while preserving the default ORDER NOW behavior and focus management.
+- Updated the site header to open the contact popup from the CONTACT navigation item on desktop and mobile instead of linking to the footer anchor.
+- Passed storefront contact settings into the header so the popup can display phone, Facebook, and Instagram links.
+
+### Output summary
+
+Clicking CONTACT in the header now opens the existing contact dialog popup with phone, Facebook, and Instagram links. The attached image could not be viewed in this environment; the change implements the requested popup behavior in the header navigation.
+
+---
+
 ## 2026-11-10 22:34:11 +07:00 - Add blog pages and footer static pages
 
 ### User prompt

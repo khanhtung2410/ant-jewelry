@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import type { Category } from '@/types/domain';
+import { ContactPopover } from './contact-popover';
 import { ChevronDownIcon, CloseIcon, MenuIcon } from './icons';
 
 interface SiteHeaderProps {
@@ -34,7 +35,6 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
   const pathname = usePathname();
   const isHome = pathname === '/';
   const isBlog = pathname === '/blog' || pathname.startsWith('/blog/');
-  const isContact = pathname === '/contact';
 
   const mobileMenuId = useId();
   // Store the route the menu was opened on so a navigation closes it without an
@@ -60,7 +60,10 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
   }
 
   return (
-    <header className="border-b border-line bg-background" onKeyDown={handleHeaderKeyDown}>
+    <header
+      className="sticky top-0 z-40 border-b border-line bg-background"
+      onKeyDown={handleHeaderKeyDown}
+    >
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
         <div className="flex items-center justify-between gap-4 md:block">
           <Link href="/" aria-label="AN JEWELRY - Home" className="inline-flex w-fit items-center">
@@ -111,13 +114,11 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
               </Link>
             </li>
             <li className="flex items-center">
-              <Link
-                href="/#contact"
-                className={navLinkClass(isContact)}
-                aria-current={isContact ? 'page' : undefined}
-              >
-                CONTACT
-              </Link>
+              <ContactPopover
+                label="CONTACT"
+                containerClassName="inline-flex h-full items-center"
+                triggerClassName={`${navLinkClass(false)} cursor-pointer bg-transparent p-0`}
+              />
             </li>
           </ul>
         </nav>
@@ -161,14 +162,11 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
                 </Link>
               </li>
               <li>
-                <Link
-                  href="/#contact"
-                  onClick={closeMobileMenu}
-                  className={mobileNavLinkClass(isContact)}
-                  aria-current={isContact ? 'page' : undefined}
-                >
-                  CONTACT
-                </Link>
+                <ContactPopover
+                  label="CONTACT"
+                  containerClassName="block"
+                  triggerClassName={`${mobileNavLinkClass(false)} cursor-pointer bg-transparent`}
+                />
               </li>
             </ul>
           </nav>
@@ -291,10 +289,10 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
                   href={`/c/${category.slug}`}
                   onClick={() => setOpen(false)}
                   aria-current={isCurrent ? 'page' : undefined}
-                  className={`block border-b-2 px-4 py-2 text-sm transition-colors hover:bg-product-image ${
+                  className={`block bg-no-repeat px-4 py-2 text-sm transition-colors hover:bg-product-image hover:[background-image:linear-gradient(to_right,var(--underline-color)_50%,transparent_50%)] hover:[background-position:16px_100%] hover:[background-size:calc(100%-32px)_2px] ${
                     isCurrent
-                      ? 'border-[var(--underline-color)] text-foreground'
-                      : 'border-transparent hover:border-[var(--underline-color)]'
+                      ? 'text-foreground [background-image:linear-gradient(to_right,var(--underline-color)_50%,transparent_50%)] [background-position:16px_100%] [background-size:calc(100%-32px)_2px]'
+                      : 'text-muted [background-image:none]'
                   }`}
                 >
                   {category.name}
@@ -345,10 +343,10 @@ function MobileProductsMenu({ categories, active, onNavigate }: MobileProductsMe
                   href={`/c/${category.slug}`}
                   onClick={onNavigate}
                   aria-current={isCurrent ? 'page' : undefined}
-                  className={`flex border-b-2 py-2 pl-4 font-body text-sm tracking-normal normal-case transition-colors ${
+                  className={`flex bg-no-repeat py-2 pl-4 pr-4 font-body text-sm normal-case tracking-normal transition-colors hover:[background-image:linear-gradient(to_right,var(--underline-color)_50%,transparent_50%)] hover:[background-position:16px_100%] hover:[background-size:calc(100%-32px)_2px] ${
                     isCurrent
-                      ? 'border-[var(--underline-color)] text-foreground'
-                      : 'border-transparent hover:border-[var(--underline-color)]'
+                      ? 'text-foreground [background-image:linear-gradient(to_right,var(--underline-color)_50%,transparent_50%)] [background-position:16px_100%] [background-size:calc(100%-32px)_2px]'
+                      : 'text-muted [background-image:none]'
                   }`}
                 >
                   {category.name}

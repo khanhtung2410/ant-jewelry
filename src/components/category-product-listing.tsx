@@ -6,6 +6,7 @@ import type { ProductSort } from '@/lib/queries';
 import type { Product } from '@/types/domain';
 import { ChevronDownIcon } from './icons';
 import { ProductCard } from './product-card';
+import { ActionButton } from './action-button';
 
 const INITIAL_PRODUCT_COUNT = 10;
 const PRODUCT_BATCH_SIZE = 10;
@@ -83,7 +84,7 @@ export function CategoryProductListing({
       </div>
 
       {visibleProducts.length > 0 ? (
-        <ul className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-5">
+        <ul className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-5">
           {visibleProducts.map((product) => (
             <li key={product.product_id}>
               <ProductCard product={product} />
@@ -96,17 +97,15 @@ export function CategoryProductListing({
 
       {visibleCount < products.length ? (
         <div className="mt-10 flex justify-center">
-          <button
-            type="button"
+          <ActionButton
             onClick={() =>
               setVisibleCount((currentCount) =>
                 getNextVisibleProductCount(currentCount, products.length),
               )
             }
-            className="rounded-full border border-[var(--underline-color)] px-8 py-3 font-heading text-xs tracking-[0.12em] text-[var(--underline-color)] transition-colors hover:bg-[var(--underline-color)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
           >
             SEE MORE
-          </button>
+          </ActionButton>
         </div>
       ) : null}
     </section>

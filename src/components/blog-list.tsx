@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { BlogPost } from '@/types/domain';
 import { BlogRow } from './blog-row';
+import { ActionButton } from './action-button';
 
 const INITIAL_COUNT = 4;
 const BATCH_SIZE = 4;
@@ -26,13 +27,12 @@ export function BlogList({ posts }: BlogListProps) {
 
       {canShowMore ? (
         <div className="mt-10 flex justify-center">
-          <button
+          <ActionButton
             type="button"
             onClick={() => setVisibleCount((count) => Math.min(count + BATCH_SIZE, posts.length))}
-            className="font-heading text-sm tracking-[0.12em] underline decoration-[var(--underline-color)] underline-offset-8 transition-colors hover:text-[var(--underline-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--control-outline)]"
           >
             SEE MORE
-          </button>
+          </ActionButton>
         </div>
       ) : null}
     </div>
