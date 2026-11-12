@@ -6,6 +6,7 @@ import { getAdminSession } from '@/features/auth/session';
 import type { CategoryFormValues } from '@/features/products/actions/categories';
 import { CategoryManagement } from '@/features/products/components/category-management';
 import { buildAdminCategoriesHref } from '@/features/products/lib/admin-category-list';
+import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
 import { canManageCategories } from '@/features/shared/lib/permissions';
 
@@ -37,7 +38,7 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
         name: selectedCategory.name,
         slug: selectedCategory.slug,
         type: selectedCategory.type,
-        visible: selectedCategory.status === 'VISIBLE',
+        visible: selectedCategory.status === visibilityStatus.VISIBLE,
       }
     : createRequested
       ? {

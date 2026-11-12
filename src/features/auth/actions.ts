@@ -3,31 +3,33 @@
 import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/features/shared/db/prisma';
+import {
+  handleAuthActionError,
+  invalidCredentialsState,
+  type AuthActionState,
+} from './errors';
 import { clearAdminSessionCookie, setAdminSessionCookie } from './session';
 
-export type LoginState = {
-  error?: string;
-};
-
-const GENERIC_LOGIN_ERROR = 'Invalid email or password.';
-const LOGIN_UNAVAILABLE_ERROR = 'Sign-in is temporarily unavailable. Please try again later.';
+export type LoginState = AuthActionState;
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+function resolveNextPath(nextValue: FormDataEntryValue | null): string {
+  return typeof nextValue === 'string' && nextValue.startsWith('/admin') ? nextValue : '/admin';
+}
+
 export async function loginAction(_prevState: LoginState, formData: FormData): Promise<LoginState> {
   const emailValue = formData.get('email');
   const passwordValue = formData.get('password');
-  const nextValue = formData.get('next');
 
   const email = typeof emailValue === 'string' ? normalizeEmail(emailValue) : '';
   const password = typeof passwordValue === 'string' ? passwordValue : '';
-  const nextPath =
-    typeof nextValue === 'string' && nextValue.startsWith('/admin') ? nextValue : '/admin';
+  const nextPath = resolveNextPath(formData.get('next'));
 
   if (!email || !password) {
-    return { error: GENERIC_LOGIN_ERROR };
+    return invalidCredentialsState();
   }
 
   let user: {
@@ -51,17 +53,16 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
       },
     });
   } catch (error) {
-    console.error('Admin login could not load the user record:', error);
-    return { error: LOGIN_UNAVAILABLE_ERROR };
+    return handleAuthActionError('Admin login could not load the user record:', error);
   }
 
   if (!user) {
-    return { error: GENERIC_LOGIN_ERROR };
+    return invalidCredentialsState();
   }
 
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid || user.locked) {
-    return { error: GENERIC_LOGIN_ERROR };
+    return invalidCredentialsState();
   }
 
   try {
@@ -72,8 +73,7 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
       name: user.name,
     });
   } catch (error) {
-    console.error('Admin login could not create a session:', error);
-    return { error: LOGIN_UNAVAILABLE_ERROR };
+    return handleAuthActionError('Admin login could not create a session:', error);
   }
 
   redirect(nextPath);

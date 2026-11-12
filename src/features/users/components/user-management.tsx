@@ -1,6 +1,8 @@
 'use client';
 
 import { useActionState } from 'react';
+import { ROLE_CONFIG, ROLE_OPTIONS } from '@/constants/roles';
+import { getAccountStatusConfig } from '@/constants/statuses';
 import { SavedNotice } from '@/features/admin/components/form-controls';
 import type { Role } from '@/features/shared/domain/domain';
 import { saveUserAccess, type UserAccessFormState } from '../actions';
@@ -33,7 +35,8 @@ export function UserManagement({
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] px-4 py-3">
           <h2 className="font-heading text-sm tracking-[0.08em]">USERS ({users.length})</h2>
           <p className="text-xs text-[var(--font-color)]">
-            {activeCount} active · {users.length - activeCount} locked
+            {activeCount} {getAccountStatusConfig(false).label.toLowerCase()} ·{' '}
+            {users.length - activeCount} {getAccountStatusConfig(true).label.toLowerCase()}
           </p>
         </div>
 
@@ -42,9 +45,9 @@ export function UserManagement({
             <table className="w-full min-w-[820px] border-collapse text-left text-sm">
               <thead className="bg-[var(--product-image-background)] text-xs uppercase tracking-wide text-[var(--font-color)]">
                 <tr>
-                  <th className="px-4 py-3 font-medium">User</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Role &amp; access</th>
+                  <th className="px-4 py-3 font-medium">Người dùng</th>
+                  <th className="px-4 py-3 font-medium">Trạng thái</th>
+                  <th className="px-4 py-3 font-medium">Vai trò &amp; truy cập</th>
                 </tr>
               </thead>
               <tbody>
@@ -89,16 +92,20 @@ function UserRow({ user, isCurrentUser }: { user: AdminUserRow; isCurrentUser: b
       </td>
 
       <td className="px-4 py-3">
-        <span
-          className={
-            user.locked
-              ? 'rounded-full bg-red-50 px-2 py-1 text-xs text-red-800'
-              : 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-800'
-          }
-        >
-          {user.locked ? 'Locked' : 'Active'}
-        </span>
-        <p className="mt-2 text-xs text-[var(--font-color)]">{user.role}</p>
+        {(() => {
+          const status = getAccountStatusConfig(user.locked);
+          return (
+            <span
+              className="rounded-full px-2 py-1 text-xs"
+              style={{ backgroundColor: status.bg, color: status.color }}
+            >
+              {status.label}
+            </span>
+          );
+        })()}
+        <p className="mt-2 text-xs text-[var(--font-color)]">
+          {ROLE_CONFIG[user.role]?.label ?? user.role}
+        </p>
       </td>
 
       <td className="px-4 py-3">
@@ -106,14 +113,17 @@ function UserRow({ user, isCurrentUser }: { user: AdminUserRow; isCurrentUser: b
           <input type="hidden" name="userId" value={user.id} />
 
           <label className="flex items-center gap-2 text-xs text-[var(--font-color)]">
-            Role
+            Vai trò
             <select
               name="role"
               defaultValue={state.values.role}
               className="rounded-md border border-[var(--line)] bg-background px-2 py-1 text-sm text-foreground"
             >
-              <option value="EDITOR">EDITOR</option>
-              <option value="ADMIN">ADMIN</option>
+              {ROLE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -124,7 +134,7 @@ function UserRow({ user, isCurrentUser }: { user: AdminUserRow; isCurrentUser: b
               defaultChecked={state.values.locked}
               className="h-4 w-4"
             />
-            Lock access
+            Khóa tài khoản
           </label>
 
           <button

@@ -7,6 +7,7 @@ import type { BlogPostFormValues } from '@/features/blog/actions';
 import { BlogManagement } from '@/features/blog/components/blog-management';
 import { buildAdminBlogHref } from '@/features/blog/lib/admin-blog-list';
 import { prisma } from '@/features/shared/db/prisma';
+import { publishStatus } from '@/constants/statuses';
 import { todayDateInputValue, toDateInputValue } from '@/features/shared/lib/format-date';
 import { canManageBlog } from '@/features/shared/lib/permissions';
 
@@ -50,7 +51,7 @@ export default async function AdminBlogPage({ searchParams }: AdminBlogPageProps
           body: '',
           coverImageUrl: '',
           publishedAt: todayDateInputValue(),
-          status: 'DRAFT',
+          status: publishStatus.DRAFT,
         }
       : null;
 

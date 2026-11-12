@@ -3,6 +3,7 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { connection } from 'next/server';
 import { prisma } from '@/features/shared/db/prisma';
+import { getSessionCookieOptions, readValidatedSession } from './cookie';
 import {
   createSessionToken as createToken,
   SESSION_COOKIE_NAME,
@@ -11,7 +12,7 @@ import {
   type AdminSession,
 } from './session-token';
 
-export { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS };
+export { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS, getSessionCookieOptions };
 export type { AdminSession };
 
 export function getSessionMaxAgeSeconds(): number {
@@ -37,8 +38,7 @@ export function verifySessionToken(token: string | undefined | null): AdminSessi
 export async function getAdminSession(): Promise<AdminSession | null> {
   await connection();
   const cookieStore = await cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  const session = verifySessionToken(token);
+  const session = readValidatedSession(cookieStore);
   if (!session) return null;
 
   // Tokens stay valid until they expire, so re-check the account on every request.
@@ -62,22 +62,10 @@ export async function getAdminSession(): Promise<AdminSession | null> {
 export async function setAdminSessionCookie(session: Omit<AdminSession, 'exp'>): Promise<void> {
   const cookieStore = await cookies();
   const token = createSessionToken(session);
-  cookieStore.set(SESSION_COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: SESSION_MAX_AGE_SECONDS,
-  });
+  cookieStore.set(SESSION_COOKIE_NAME, token, getSessionCookieOptions(SESSION_MAX_AGE_SECONDS));
 }
 
 export async function clearAdminSessionCookie(): Promise<void> {
   const cookieStore = await cookies();
-  cookieStore.set(SESSION_COOKIE_NAME, '', {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 0,
-  });
+  cookieStore.set(SESSION_COOKIE_NAME, '', getSessionCookieOptions(0));
 }

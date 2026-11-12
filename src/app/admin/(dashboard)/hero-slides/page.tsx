@@ -6,6 +6,7 @@ import { getAdminSession } from '@/features/auth/session';
 import type { HeroSlideFormValues } from '@/features/layout/actions';
 import { HeroSlideManagement } from '@/features/layout/components/hero-slide-management';
 import { buildAdminHeroSlidesHref } from '@/features/layout/lib/admin-hero-list';
+import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
 import { canManageHeroSlides } from '@/features/shared/lib/permissions';
 
@@ -38,7 +39,7 @@ export default async function AdminHeroSlidesPage({ searchParams }: AdminHeroSli
         title: selectedSlide.title,
         subtitle: selectedSlide.subtitle,
         linkUrl: selectedSlide.linkUrl,
-        visible: selectedSlide.status === 'VISIBLE',
+        visible: selectedSlide.status === visibilityStatus.VISIBLE,
       }
     : createRequested
       ? {

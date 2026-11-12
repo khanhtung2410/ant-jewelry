@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { VISIBILITY_STATUS } from '@/constants/statuses';
 import { ReorderButtons } from '@/features/admin/components/reorder-buttons';
 import { SavedNotice } from '@/features/admin/components/form-controls';
 import type { HeroSlideFormValues } from '../actions';
@@ -88,13 +89,13 @@ export function HeroSlideManagement({
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={
-                          slide.status === 'VISIBLE'
-                            ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-800'
-                            : 'rounded-full bg-stone-100 px-2 py-1 text-xs text-stone-700'
-                        }
+                        className="rounded-full px-2 py-1 text-xs"
+                        style={{
+                          backgroundColor: VISIBILITY_STATUS[slide.status].bg,
+                          color: VISIBILITY_STATUS[slide.status].color,
+                        }}
                       >
-                        {slide.status === 'VISIBLE' ? 'Visible' : 'Hidden'}
+                        {VISIBILITY_STATUS[slide.status].label}
                       </span>
                     </td>
                     <td className="px-4 py-3">

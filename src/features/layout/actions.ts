@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { visibilityStatus } from '@/constants/statuses';
 import { getAdminSession } from '@/features/auth/session';
 import { prisma } from '@/features/shared/db/prisma';
 import {
@@ -85,7 +86,7 @@ export async function saveHeroSlide(
     title: parsed.data.title,
     subtitle: parsed.data.subtitle,
     linkUrl: parsed.data.linkUrl,
-    status: parsed.data.visible ? ('VISIBLE' as const) : ('HIDDEN' as const),
+    status: parsed.data.visible ? visibilityStatus.VISIBLE : visibilityStatus.HIDDEN,
   };
 
   if (heroSlideId) {

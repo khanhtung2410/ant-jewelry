@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { adminRole } from '@/constants/roles';
 
-export const ROLE_OPTIONS = ['ADMIN', 'EDITOR'] as const;
+export const ROLE_OPTIONS = [adminRole.ADMIN, adminRole.EDITOR] as const;
 
 export const createUserSchema = z.object({
   name: z.string().trim().max(80, 'Name is too long.'),

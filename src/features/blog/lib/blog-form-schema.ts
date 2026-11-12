@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { publishStatus } from '@/constants/statuses';
 import {
   dateInputSchema,
   requiredPathOrUrl,
@@ -13,7 +14,9 @@ export const blogPostFormSchema = z.object({
   body: requiredText('Body'),
   coverImageUrl: requiredPathOrUrl('Cover image URL'),
   publishedAt: dateInputSchema,
-  status: z.enum(['DRAFT', 'PUBLISHED'], { message: 'Choose a status.' }),
+  status: z.enum([publishStatus.DRAFT, publishStatus.PUBLISHED], {
+    message: 'Choose a status.',
+  }),
 });
 
 export type BlogPostFormInput = z.input<typeof blogPostFormSchema>;

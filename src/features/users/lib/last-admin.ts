@@ -1,4 +1,5 @@
 import type { Role } from '@/features/shared/domain/domain';
+import { adminRole } from '@/constants/roles';
 
 export type UserAccessSnapshot = {
   role: Role;
@@ -18,8 +19,8 @@ export function wouldRemoveLastActiveAdmin({
   next: UserAccessSnapshot;
   otherActiveAdminCount: number;
 }): boolean {
-  const isActiveAdmin = current.role === 'ADMIN' && !current.locked;
-  const staysActiveAdmin = next.role === 'ADMIN' && !next.locked;
+  const isActiveAdmin = current.role === adminRole.ADMIN && !current.locked;
+  const staysActiveAdmin = next.role === adminRole.ADMIN && !next.locked;
 
   return isActiveAdmin && !staysActiveAdmin && otherActiveAdminCount === 0;
 }

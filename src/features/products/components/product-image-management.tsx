@@ -31,11 +31,13 @@ export function ProductImageManagement({
   productName,
   images,
   colors,
+  className,
 }: {
   productId: string;
   productName: string;
   images: ImageRecord[];
   colors: ColorOption[];
+  className?: string;
 }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -88,7 +90,7 @@ export function ProductImageManagement({
   }
 
   return (
-    <section className="mt-6 border-t border-[var(--line)] pt-5">
+    <section className={className ?? 'mt-6 border-t border-[var(--line)] pt-5'}>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 className="font-heading text-sm tracking-[0.08em]">PRODUCT IMAGES</h3>

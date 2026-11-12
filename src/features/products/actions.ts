@@ -3,6 +3,7 @@
 import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { visibilityStatus } from '@/constants/statuses';
 import { getAdminSession } from '@/features/auth/session';
 import { prisma } from '@/features/shared/db/prisma';
 import {
@@ -120,7 +121,7 @@ export async function saveProduct(
     price: parsed.data.price,
     description: parsed.data.description,
     details: parseProductDetails(parsed.data.details),
-    status: parsed.data.published ? ('VISIBLE' as const) : ('HIDDEN' as const),
+    status: parsed.data.published ? visibilityStatus.VISIBLE : visibilityStatus.HIDDEN,
   };
 
   try {
@@ -222,7 +223,12 @@ export async function toggleProductVisibility(productId: string, _formData: Form
 
   await prisma.product.update({
     where: { id: product.id },
-    data: { status: product.status === 'VISIBLE' ? 'HIDDEN' : 'VISIBLE' },
+    data: {
+      status:
+        product.status === visibilityStatus.VISIBLE
+          ? visibilityStatus.HIDDEN
+          : visibilityStatus.VISIBLE,
+    },
   });
 
   revalidateProductPages();

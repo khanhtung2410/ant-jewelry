@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useActionState, useState, type ReactNode } from 'react';
 import { AdminDialog } from '@/features/admin/components/admin-dialog';
 import {
   FormActions,
@@ -12,7 +12,6 @@ import {
   readOnlyInputClassName,
 } from '@/features/admin/components/form-controls';
 import { saveProduct, type ProductFormState, type ProductFormValues } from '../actions';
-import { ProductImageManagement } from './product-image-management';
 import { ProductImageManagement } from './product-image-management';
 
 export type ProductCategoryOption = {
@@ -32,23 +31,12 @@ type ProductImage = {
   productColorId: string | null;
 };
 
-type ProductImage = {
-  id: string;
-  url: string;
-  alt: string;
-  isFront: boolean;
-  isHover: boolean;
-  sortOrder: number;
-  productColorId: string | null;
-};
-
 export function ProductFormDialog({
   values,
   categories,
   productName,
   editorView,
   closeHref,
-  images = [],
   images = [],
 }: {
   values: ProductFormValues;
@@ -57,13 +45,33 @@ export function ProductFormDialog({
   editorView: boolean;
   closeHref: string;
   images?: ProductImage[];
-  images?: ProductImage[];
 }) {
   const title = editorView
     ? (productName ?? 'Product details')
     : values.productId
       ? `Edit ${productName ?? 'product'}`
       : 'New product';
+
+  const imageSection = !editorView && values.productId ? (
+    <ProductImageManagement
+      productId={values.productId}
+      productName={productName ?? values.name}
+      images={images}
+      colors={values.colors.filter(
+        (color): color is { id: string; name: string; hex: string } => Boolean(color.id),
+      )}
+      className="border-b border-[var(--line)] pb-5"
+    />
+  ) : !editorView ? (
+    <section className="mt-6 border-t border-[var(--line)] pt-5">
+      <h3 className="font-heading text-sm tracking-[0.08em]">PRODUCT IMAGES</h3>
+      <p className="mt-2 text-sm text-[var(--font-color)]">
+        Save this product first to upload and manage images (JPG, PNG, or WebP; up to 5 MB each).
+        After saving, open Edit to reorder images, choose cover and hover images, assign images to
+        colors, and delete images with storage cleanup.
+      </p>
+    </section>
+  ) : null;
 
   return (
     <AdminDialog
@@ -76,32 +84,15 @@ export function ProductFormDialog({
       closeHref={closeHref}
       size="lg"
     >
+      {!editorView && values.productId ? <div className="mb-6">{imageSection}</div> : null}
       <ProductForm
         key={values.productId ?? `new-${values.categoryId}`}
         values={values}
         categories={categories}
         readOnly={editorView}
         closeHref={closeHref}
+        imageSection={!editorView && !values.productId ? imageSection : null}
       />
-      {!editorView && values.productId ? (
-        <ProductImageManagement
-          productId={values.productId}
-          productName={productName ?? values.name}
-          images={images}
-          colors={values.colors.filter(
-            (color): color is { id: string; name: string; hex: string } => Boolean(color.id),
-          )}
-        />
-      ) : !editorView ? (
-        <section className="mt-6 border-t border-[var(--line)] pt-5">
-          <h3 className="font-heading text-sm tracking-[0.08em]">PRODUCT IMAGES</h3>
-          <p className="mt-2 text-sm text-[var(--font-color)]">
-            Save this product first to upload and manage images (JPG, PNG, or WebP; up to 5 MB
-            each). After saving, open Edit to reorder images, choose cover and hover images,
-            assign images to colors, and delete images with storage cleanup.
-          </p>
-        </section>
-      ) : null}
     </AdminDialog>
   );
 }
@@ -111,11 +102,13 @@ function ProductForm({
   categories,
   readOnly,
   closeHref,
+  imageSection,
 }: {
   values: ProductFormValues;
   categories: ProductCategoryOption[];
   readOnly: boolean;
   closeHref: string;
+  imageSection?: ReactNode;
 }) {
   const initialState: ProductFormState = {
     values,
@@ -135,6 +128,7 @@ function ProductForm({
       readOnly={readOnly}
       pending={pending}
       returnTo={closeHref}
+      imageSection={imageSection}
     />
   );
 }
@@ -148,6 +142,7 @@ function ProductFormFields({
   readOnly,
   pending,
   returnTo,
+  imageSection,
 }: {
   action: (formData: FormData) => void;
   values: ProductFormValues;
@@ -157,6 +152,7 @@ function ProductFormFields({
   readOnly: boolean;
   pending: boolean;
   returnTo: string;
+  imageSection?: ReactNode;
 }) {
   const [categoryId, setCategoryId] = useState(values.categoryId);
   const selectedCategory = categories.find((category) => category.id === categoryId);
@@ -252,6 +248,8 @@ function ProductFormFields({
           Published on storefront
         </label>
       </fieldset>
+
+      {imageSection}
 
       <FormAlert message={message} />
       {errors.form?.map((error) => (

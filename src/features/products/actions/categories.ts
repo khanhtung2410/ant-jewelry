@@ -3,6 +3,7 @@
 import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { visibilityStatus } from '@/constants/statuses';
 import { getAdminSession } from '@/features/auth/session';
 import { prisma } from '@/features/shared/db/prisma';
 import {
@@ -107,7 +108,7 @@ export async function saveCategory(
     name: parsed.data.name,
     slug: parsed.data.slug,
     type: parsed.data.type,
-    status: parsed.data.visible ? ('VISIBLE' as const) : ('HIDDEN' as const),
+    status: parsed.data.visible ? visibilityStatus.VISIBLE : visibilityStatus.HIDDEN,
   };
 
   try {

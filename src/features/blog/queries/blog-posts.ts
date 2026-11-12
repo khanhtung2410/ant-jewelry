@@ -1,4 +1,5 @@
 import type { BlogPost } from '@/features/shared/domain/domain';
+import { publishStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
 
 function mapBlogPost(record: {
@@ -32,7 +33,7 @@ export async function getBlogPosts(
 ): Promise<BlogPost[]> {
   'use cache';
   const records = await prisma.blogPost.findMany({
-    where: options.includeDrafts ? {} : { status: 'PUBLISHED' },
+    where: options.includeDrafts ? {} : { status: publishStatus.PUBLISHED },
     orderBy: { publishedAt: 'desc' },
     ...(typeof options.limit === 'number' ? { take: options.limit } : {}),
   });
@@ -48,7 +49,7 @@ export async function getBlogPostBySlug(
   const record = await prisma.blogPost.findFirst({
     where: {
       slug,
-      ...(options.includeDrafts ? {} : { status: 'PUBLISHED' }),
+      ...(options.includeDrafts ? {} : { status: publishStatus.PUBLISHED }),
     },
   });
 

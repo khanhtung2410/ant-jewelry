@@ -1,4 +1,5 @@
 import type { HeroSlide } from '@/features/shared/domain/domain';
+import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
 
 /**
@@ -7,7 +8,7 @@ import { prisma } from '@/features/shared/db/prisma';
 export async function getHeroSlides(): Promise<HeroSlide[]> {
   'use cache';
   const records = await prisma.heroSlide.findMany({
-    where: { status: 'VISIBLE' },
+    where: { status: visibilityStatus.VISIBLE },
     orderBy: { sortOrder: 'asc' },
   });
 
