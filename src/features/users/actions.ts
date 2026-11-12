@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { adminRole } from '@/constants/roles';
 import { getAdminSession } from '@/features/auth/session';
 import { prisma } from '@/features/shared/db/prisma';
 import {
@@ -120,10 +121,12 @@ export async function saveUserAccess(
 
       const next = { role: parsed.data.role, locked: parsed.data.locked };
       const isLosingAdminAccess =
-        current.role === 'ADMIN' && !current.locked && (next.role !== 'ADMIN' || next.locked);
+        current.role === adminRole.ADMIN &&
+        !current.locked &&
+        (next.role !== adminRole.ADMIN || next.locked);
       const otherActiveAdminCount = isLosingAdminAccess
         ? await transaction.user.count({
-            where: { role: 'ADMIN', locked: false, id: { not: parsed.data.userId } },
+            where: { role: adminRole.ADMIN, locked: false, id: { not: parsed.data.userId } },
           })
         : 0;
 

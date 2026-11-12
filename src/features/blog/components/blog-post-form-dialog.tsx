@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
+import { BLOG_POST_STATUS_OPTIONS } from '@/constants/statuses';
 import { AdminDialog } from '@/features/admin/components/admin-dialog';
 import {
   FormActions,
@@ -76,10 +77,13 @@ export function BlogPostFormDialog({
             />
           </FormField>
 
-          <FormField label="Status" error={state.fieldErrors.status?.[0]}>
+          <FormField label="Trạng thái" error={state.fieldErrors.status?.[0]}>
             <select name="status" defaultValue={state.values.status} className={inputClassName}>
-              <option value="DRAFT">Draft</option>
-              <option value="PUBLISHED">Published</option>
+              {BLOG_POST_STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </FormField>
         </div>

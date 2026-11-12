@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useActionState } from 'react';
+import { VISIBILITY_STATUS } from '@/constants/statuses';
 import { SavedNotice } from '@/features/admin/components/form-controls';
 import { ReorderButtons } from '@/features/admin/components/reorder-buttons';
 import {
@@ -80,13 +81,13 @@ export function CategoryManagement({
                     <td className="px-4 py-3">{category.productCount}</td>
                     <td className="px-4 py-3">
                       <span
-                        className={
-                          category.status === 'VISIBLE'
-                            ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-800'
-                            : 'rounded-full bg-stone-100 px-2 py-1 text-xs text-stone-700'
-                        }
+                        className="rounded-full px-2 py-1 text-xs"
+                        style={{
+                          backgroundColor: VISIBILITY_STATUS[category.status].bg,
+                          color: VISIBILITY_STATUS[category.status].color,
+                        }}
                       >
-                        {category.status === 'VISIBLE' ? 'Visible' : 'Hidden'}
+                        {VISIBILITY_STATUS[category.status].label}
                       </span>
                     </td>
                     <td className="px-4 py-3">

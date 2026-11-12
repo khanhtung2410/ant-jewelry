@@ -3,6 +3,8 @@ import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { AccessDenied } from '@/features/admin/components/access-denied';
 import { firstSearchParam, type SearchParam } from '@/features/admin/lib/admin-search-params';
 import { getAdminSession } from '@/features/auth/session';
+import { adminRole } from '@/constants/roles';
+import { visibilityStatus } from '@/constants/statuses';
 import {
   ProductManagement,
   type AdminProductImage,
@@ -35,7 +37,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
   const params = await searchParams;
   const search = firstSearchParam(params.search).trim();
   const categoryFilter = firstSearchParam(params.category);
-  const editorView = session.role === 'EDITOR';
+  const editorView = session.role === adminRole.EDITOR;
   const createRequested = !editorView && firstSearchParam(params.new) === '1';
   const selectedProductId = createRequested
     ? ''
@@ -97,7 +99,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
           name: color.name,
           hex: color.hex,
         })),
-        published: selectedProduct.status === 'VISIBLE',
+        published: selectedProduct.status === visibilityStatus.VISIBLE,
       }
     : createRequested
       ? {

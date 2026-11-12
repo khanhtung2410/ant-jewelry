@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { VISIBILITY_STATUS, visibilityStatus } from '@/constants/statuses';
 import { SavedNotice } from '@/features/admin/components/form-controls';
 import { formatPrice } from '@/features/shared/lib/format-price';
 import { toggleProductVisibility, type ProductFormValues } from '../actions';
@@ -156,13 +157,13 @@ export function ProductManagement({
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={
-                            product.status === 'VISIBLE'
-                              ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-800'
-                              : 'rounded-full bg-stone-100 px-2 py-1 text-xs text-stone-700'
-                          }
+                          className="rounded-full px-2 py-1 text-xs"
+                          style={{
+                            backgroundColor: VISIBILITY_STATUS[product.status].bg,
+                            color: VISIBILITY_STATUS[product.status].color,
+                          }}
                         >
-                          {product.status === 'VISIBLE' ? 'Published' : 'Hidden'}
+                          {VISIBILITY_STATUS[product.status].label}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -189,7 +190,7 @@ export function ProductManagement({
                                   type="submit"
                                   className="whitespace-nowrap text-xs underline underline-offset-2"
                                 >
-                                  {product.status === 'VISIBLE' ? 'Hide' : 'Publish'}
+                                  {product.status === visibilityStatus.VISIBLE ? 'Ẩn' : 'Hiển thị'}
                                 </button>
                               </form>
                             </>

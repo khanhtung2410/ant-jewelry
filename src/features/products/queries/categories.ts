@@ -1,4 +1,5 @@
 import type { Category, Product, ProductType } from '@/features/shared/domain/domain';
+import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
 import { getProducts, getProductsByCategoryTypes, type GetProductsQuery } from './products';
 
@@ -29,7 +30,7 @@ export async function getCategories(
 ): Promise<Category[]> {
   'use cache';
   const records = await prisma.category.findMany({
-    where: options.includeHidden ? {} : { status: 'VISIBLE' },
+    where: options.includeHidden ? {} : { status: visibilityStatus.VISIBLE },
     orderBy: { sortOrder: 'asc' },
   });
 
@@ -44,7 +45,7 @@ export async function getCategoryBySlug(
   const record = await prisma.category.findFirst({
     where: {
       slug,
-      ...(options.includeHidden ? {} : { status: 'VISIBLE' }),
+      ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
     },
   });
 
@@ -59,7 +60,7 @@ export async function getCategoryByType(
   const record = await prisma.category.findFirst({
     where: {
       type,
-      ...(options.includeHidden ? {} : { status: 'VISIBLE' }),
+      ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
     },
   });
 

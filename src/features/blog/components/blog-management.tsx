@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { BLOG_POST_STATUS, publishStatus } from '@/constants/statuses';
 import { SavedNotice } from '@/features/admin/components/form-controls';
 import { formatPublishedDate } from '@/features/shared/lib/format-date';
 import type { BlogPostFormValues } from '../actions';
@@ -26,7 +27,7 @@ export function BlogManagement({
   dialog: { values: BlogPostFormValues; closeHref: string } | null;
 }) {
   const returnTo = buildAdminBlogHref();
-  const publishedCount = posts.filter((post) => post.status === 'PUBLISHED').length;
+  const publishedCount = posts.filter((post) => post.status === publishStatus.PUBLISHED).length;
   const draftCount = posts.length - publishedCount;
 
   return (
@@ -62,13 +63,13 @@ export function BlogManagement({
                     </td>
                     <td className="px-4 py-3">
                       <span
-                        className={
-                          post.status === 'PUBLISHED'
-                            ? 'rounded-full bg-emerald-50 px-2 py-1 text-xs text-emerald-800'
-                            : 'rounded-full bg-amber-50 px-2 py-1 text-xs text-amber-800'
-                        }
+                        className="rounded-full px-2 py-1 text-xs"
+                        style={{
+                          backgroundColor: BLOG_POST_STATUS[post.status].bg,
+                          color: BLOG_POST_STATUS[post.status].color,
+                        }}
                       >
-                        {post.status === 'PUBLISHED' ? 'Published' : 'Draft'}
+                        {BLOG_POST_STATUS[post.status].label}
                       </span>
                     </td>
                     <td className="px-4 py-3">

@@ -6,6 +6,7 @@ import type {
   ProductType,
 } from '@/features/shared/domain/domain';
 import { createVndPrice } from '@/features/shared/domain/domain';
+import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
 
 export type ProductSort = 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
@@ -179,7 +180,7 @@ function toWhere(query: GetProductsQuery) {
       ? { status: query.status }
       : query.includeHidden
         ? {}
-        : { status: 'VISIBLE' as const }),
+        : { status: visibilityStatus.VISIBLE }),
   };
 }
 
@@ -207,7 +208,7 @@ export async function getProductBySlug(
   const record = await prisma.product.findFirst({
     where: {
       slug,
-      ...(options.includeHidden ? {} : { status: 'VISIBLE' }),
+      ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
     },
     include: productInclude,
   });
@@ -223,7 +224,7 @@ export async function getProductById(
   const record = await prisma.product.findFirst({
     where: {
       id: productId,
-      ...(options.includeHidden ? {} : { status: 'VISIBLE' }),
+      ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
     },
     include: productInclude,
   });
@@ -246,7 +247,7 @@ export async function getRelatedProducts(productId: string, limit = 4): Promise<
     where: {
       type: current.type,
       id: { not: productId },
-      status: 'VISIBLE',
+      status: visibilityStatus.VISIBLE,
     },
     include: productInclude,
     take: limit,
@@ -268,7 +269,7 @@ export async function getProductsByCategoryTypes(
   const records = await prisma.product.findMany({
     where: {
       type: { in: types },
-      ...(options.includeHidden ? {} : { status: 'VISIBLE' }),
+      ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
     },
     select: productCardSelect,
   });

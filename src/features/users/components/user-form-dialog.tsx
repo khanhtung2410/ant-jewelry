@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { ROLE_OPTIONS, adminRole } from '@/constants/roles';
 import { AdminDialog } from '@/features/admin/components/admin-dialog';
 import {
   FormActions,
@@ -14,7 +15,7 @@ import { createUser, type CreateUserFormState } from '../actions';
 
 export function UserFormDialog({ closeHref }: { closeHref: string }) {
   const initialState: CreateUserFormState = {
-    values: { name: '', email: '', role: 'EDITOR' },
+    values: { name: '', email: '', role: adminRole.EDITOR },
     fieldErrors: {},
     message: null,
   };
@@ -55,10 +56,13 @@ export function UserFormDialog({ closeHref }: { closeHref: string }) {
           />
         </FormField>
 
-        <FormField label="Role" error={state.fieldErrors.role?.[0]}>
+        <FormField label="Vai trò" error={state.fieldErrors.role?.[0]}>
           <select name="role" defaultValue={state.values.role} className={inputClassName}>
-            <option value="EDITOR">EDITOR</option>
-            <option value="ADMIN">ADMIN</option>
+            {ROLE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </FormField>
 
