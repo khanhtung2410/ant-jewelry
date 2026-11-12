@@ -1,26 +1,52 @@
-import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
+import Link from 'next/link';
 import { AccessDenied } from '@/features/admin/components/access-denied';
+import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
+import { firstSearchParam, type SearchParam } from '@/features/admin/lib/admin-search-params';
 import { getAdminSession } from '@/features/auth/session';
+import { prisma } from '@/features/shared/db/prisma';
 import { canManageUsers } from '@/features/shared/lib/permissions';
+import { UserManagement } from '@/features/users/components/user-management';
 
 export const instant = false;
 
-export default async function AdminUsersPage() {
+type AdminUsersPageProps = {
+  searchParams: Promise<Partial<Record<'new' | 'saved', SearchParam>>>;
+};
+
+export default async function AdminUsersPage({ searchParams }: AdminUsersPageProps) {
   const session = await getAdminSession();
   if (!session) return null;
   if (!canManageUsers(session.role)) {
     return <AccessDenied message="Only ADMIN users can access Users." />;
   }
 
+  const params = await searchParams;
+  const users = await prisma.user.findMany({
+    select: { id: true, name: true, email: true, role: true, locked: true },
+    orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
+  });
+
   return (
     <div>
       <AdminPageHeader
         title="Users"
-        description="Manage internal user accounts and role assignments."
+        description="Create internal accounts, assign roles, and lock access."
+        actions={
+          <Link
+            href="/admin/users?new=1"
+            aria-haspopup="dialog"
+            className="rounded-md bg-foreground px-3 py-2 text-sm text-background"
+          >
+            New user
+          </Link>
+        }
       />
-      <div className="rounded-lg border border-dashed border-[var(--line)] p-6 text-sm text-[var(--font-color)]">
-        User management UI is not implemented in this milestone yet. Access is restricted to ADMIN.
-      </div>
+      <UserManagement
+        users={users}
+        currentUserId={session.userId}
+        saved={firstSearchParam(params.saved) === '1'}
+        createDialog={firstSearchParam(params.new) === '1'}
+      />
     </div>
   );
 }

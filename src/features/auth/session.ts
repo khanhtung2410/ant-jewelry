@@ -2,6 +2,7 @@ import 'server-only';
 
 import { cookies } from 'next/headers';
 import { connection } from 'next/server';
+import { prisma } from '@/features/shared/db/prisma';
 import {
   createSessionToken as createToken,
   SESSION_COOKIE_NAME,
@@ -37,7 +38,25 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   await connection();
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
-  return verifySessionToken(token);
+  const session = verifySessionToken(token);
+  if (!session) return null;
+
+  // Tokens stay valid until they expire, so re-check the account on every request.
+  // This makes locking an account and changing its role take effect immediately.
+  const user = await prisma.user.findUnique({
+    where: { id: session.userId },
+    select: { id: true, email: true, name: true, role: true, locked: true },
+  });
+
+  if (!user || user.locked) return null;
+
+  return {
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+    name: user.name,
+    exp: session.exp,
+  };
 }
 
 export async function setAdminSessionCookie(session: Omit<AdminSession, 'exp'>): Promise<void> {

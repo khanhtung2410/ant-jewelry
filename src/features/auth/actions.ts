@@ -36,11 +36,19 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
     name: string | null;
     passwordHash: string;
     role: 'ADMIN' | 'EDITOR';
+    locked: boolean;
   } | null = null;
   try {
     user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, email: true, name: true, passwordHash: true, role: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        passwordHash: true,
+        role: true,
+        locked: true,
+      },
     });
   } catch (error) {
     console.error('Admin login could not load the user record:', error);
@@ -52,7 +60,7 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
   }
 
   const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) {
+  if (!valid || user.locked) {
     return { error: GENERIC_LOGIN_ERROR };
   }
 

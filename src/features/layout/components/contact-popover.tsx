@@ -16,7 +16,7 @@ import { CloseButton } from './close-button';
 import { FacebookIcon, InstagramIcon, PhoneIcon } from './icons';
 import { ActionButton } from './action-button';
 
-export type ContactSettings = Pick<Settings, 'phone' | 'facebookUrl' | 'instagramUrl'>;
+export type ContactSettings = Pick<Settings, 'siteName' | 'phone' | 'facebookUrl' | 'instagramUrl'>;
 
 const dialogBackdropClass = 'fixed inset-0 z-[60] grid place-items-center bg-black/10 p-4';
 const dialogPanelClass =
@@ -103,7 +103,7 @@ export function ContactPopoverPanel({
           className="flex items-center gap-3 text-[14px] text-[#265649] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
         >
           <FacebookIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-black p-1.5 text-black" />
-          <span>ANT JEWELRY</span>
+          <span>{settings.siteName}</span>
         </a>
 
         <a
@@ -113,7 +113,7 @@ export function ContactPopoverPanel({
           className="flex items-center gap-3 text-[14px] text-[#265649] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
         >
           <InstagramIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-black p-1.5 text-black" />
-          <span>ANT JEWELRY</span>
+          <span>{settings.siteName}</span>
         </a>
 
         <a
