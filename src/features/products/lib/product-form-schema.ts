@@ -1,20 +1,18 @@
 import { z } from 'zod';
+import { requiredText, slugSchema } from '@/features/shared/lib/form-validation';
 
 const colorSchema = z.object({
   id: z.string(),
-  name: z.string().trim().min(1, 'Color name is required.'),
+  name: requiredText('Color name'),
   hex: z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a hex color in #RRGGBB format.'),
 });
 
 export const productFormSchema = z.object({
-  name: z.string().trim().min(1, 'Product name is required.'),
-  slug: z
-    .string()
-    .trim()
-    .regex(/^[a-z0-9-]+$/, 'Use lowercase letters, numbers, and hyphens only.'),
+  name: requiredText('Product name'),
+  slug: slugSchema,
   categoryId: z.string().min(1, 'Choose a category.'),
   type: z.string().min(1, 'Choose a category.'),
-  brand: z.string().trim().min(1, 'Brand is required.'),
+  brand: requiredText('Brand'),
   price: z
     .string()
     .trim()

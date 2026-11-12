@@ -5,6 +5,13 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getAdminSession } from '@/features/auth/session';
 import { prisma } from '@/features/shared/db/prisma';
+import {
+  formatZodIssues,
+  formState,
+  readFormString,
+  type FieldErrors,
+  type FormState,
+} from '@/features/shared/lib/form-validation';
 import { canManageProducts } from '@/features/shared/lib/permissions';
 import {
   parseProductDetails,
@@ -18,11 +25,7 @@ export type ProductFormValues = ProductFormInput & {
   colors: { id: string; name: string; hex: string }[];
 };
 
-export type ProductFormState = {
-  values: ProductFormValues;
-  fieldErrors: Record<string, string[]>;
-  message: string | null;
-};
+export type ProductFormState = FormState<ProductFormValues>;
 
 class InvalidProductColorError extends Error {}
 
@@ -38,15 +41,15 @@ function readFormValues(formData: FormData): ProductFormValues {
   })).filter((color) => color.id || color.name.trim() || color.hex.trim());
 
   return {
-    productId: String(formData.get('productId') ?? '') || undefined,
-    name: String(formData.get('name') ?? ''),
-    slug: String(formData.get('slug') ?? ''),
-    categoryId: String(formData.get('categoryId') ?? ''),
-    type: String(formData.get('type') ?? ''),
-    brand: String(formData.get('brand') ?? ''),
-    price: String(formData.get('price') ?? ''),
-    description: String(formData.get('description') ?? ''),
-    details: String(formData.get('details') ?? ''),
+    productId: readFormString(formData, 'productId') || undefined,
+    name: readFormString(formData, 'name'),
+    slug: readFormString(formData, 'slug'),
+    categoryId: readFormString(formData, 'categoryId'),
+    type: readFormString(formData, 'type'),
+    brand: readFormString(formData, 'brand'),
+    price: readFormString(formData, 'price'),
+    description: readFormString(formData, 'description'),
+    details: readFormString(formData, 'details'),
     colors,
     published: formData.get('published') === 'on',
   };
@@ -54,24 +57,10 @@ function readFormValues(formData: FormData): ProductFormValues {
 
 function stateWithErrors(
   values: ProductFormValues,
-  fieldErrors: Record<string, string[]>,
+  fieldErrors: FieldErrors,
   message: string | null = null,
 ): ProductFormState {
-  return { values, fieldErrors, message };
-}
-
-function formErrors(
-  values: ProductFormValues,
-  issues: { path: PropertyKey[]; message: string }[],
-): ProductFormState {
-  const fieldErrors: Record<string, string[]> = {};
-
-  for (const issue of issues) {
-    const field = issue.path.map(String).join('.') || 'form';
-    fieldErrors[field] = [...(fieldErrors[field] ?? []), issue.message];
-  }
-
-  return stateWithErrors(values, fieldErrors);
+  return formState(values, fieldErrors, message);
 }
 
 function revalidateProductPages() {
@@ -94,7 +83,7 @@ export async function saveProduct(
   const productId = String(formData.get('productId') ?? '');
   const parsed = productFormSchema.safeParse(values);
   if (!parsed.success) {
-    return formErrors(values, parsed.error.issues);
+    return formState(values, formatZodIssues(parsed.error.issues));
   }
 
   const category = await prisma.category.findUnique({

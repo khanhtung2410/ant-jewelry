@@ -1,3 +1,5 @@
+import { buildSavedRedirect } from '@/features/admin/lib/admin-redirect';
+
 export const ADMIN_PRODUCTS_PAGE_SIZE = 8;
 
 export type AdminProductsQuery = {
@@ -69,19 +71,5 @@ export function getPaginationItems(currentPage: number, totalPages: number): Pag
 }
 
 export function savedProductsRedirect(returnTo: string): string {
-  const fallback = buildAdminProductsHref({ saved: true });
-
-  try {
-    const url = new URL(returnTo, 'http://localhost');
-    if (url.pathname !== '/admin/products') return fallback;
-
-    url.searchParams.delete('edit');
-    url.searchParams.delete('view');
-    url.searchParams.delete('new');
-    url.searchParams.set('saved', '1');
-
-    return `${url.pathname}?${url.searchParams.toString()}`;
-  } catch {
-    return fallback;
-  }
+  return buildSavedRedirect(returnTo, '/admin/products');
 }

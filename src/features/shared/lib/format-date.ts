@@ -11,3 +11,23 @@ export function formatPublishedDate(isoDate: string): string {
     year: 'numeric',
   }).format(date);
 }
+
+/**
+ * Returns yyyy-mm-dd for an ISO timestamp in Vietnam time, suitable for
+ * a date input value.
+ */
+export function toDateInputValue(isoDate: string): string {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Ho_Chi_Minh',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(isoDate));
+
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+export function todayDateInputValue(): string {
+  return toDateInputValue(new Date().toISOString());
+}

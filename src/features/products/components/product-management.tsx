@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { SavedNotice } from '@/features/admin/components/form-controls';
 import { formatPrice } from '@/features/shared/lib/format-price';
 import { toggleProductVisibility, type ProductFormValues } from '../actions';
 import {
@@ -241,12 +242,7 @@ export function ProductManagement({
       </section>
 
       {saved ? (
-        <p role="status" className="mt-4 flex items-center gap-3 text-sm text-emerald-800">
-          Product saved.
-          <Link href={buildAdminProductsHref(listQuery)} className="underline underline-offset-2">
-            Dismiss
-          </Link>
-        </p>
+        <SavedNotice message="Product saved." dismissHref={buildAdminProductsHref(listQuery)} />
       ) : null}
 
       {dialog ? (

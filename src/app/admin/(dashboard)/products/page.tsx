@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { AccessDenied } from '@/features/admin/components/access-denied';
+import { firstSearchParam, type SearchParam } from '@/features/admin/lib/admin-search-params';
 import { getAdminSession } from '@/features/auth/session';
 import { ProductManagement } from '@/features/products/components/product-management';
 import type { ProductFormValues } from '@/features/products/actions';
@@ -14,8 +15,6 @@ import { prisma } from '@/features/shared/db/prisma';
 import { canViewProducts } from '@/features/shared/lib/permissions';
 
 export const instant = false;
-
-type SearchParam = string | string[] | undefined;
 
 type AdminProductsPageProps = {
   searchParams: Promise<
@@ -173,10 +172,6 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
       />
     </div>
   );
-}
-
-function firstSearchParam(value: SearchParam): string {
-  return Array.isArray(value) ? (value[0] ?? '') : (value ?? '');
 }
 
 function detailsToText(value: unknown): string {
