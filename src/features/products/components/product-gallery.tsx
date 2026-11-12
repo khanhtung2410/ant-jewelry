@@ -6,6 +6,7 @@ import type { ProductImage } from '@/features/shared/domain/domain';
 import {
   GALLERY_THUMBNAIL_COUNT,
   getThumbnailWindowStart,
+  isExternalImageUrl,
 } from '@/features/products/lib/product-gallery';
 import { ArrowButton } from '@/features/layout/components/arrow-button';
 
@@ -40,6 +41,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
           src={activeImage.url}
           alt={activeImage.alt}
           fill
+          unoptimized={isExternalImageUrl(activeImage.url)}
           priority
           sizes="(max-width: 1024px) 100vw, 50vw"
           className="object-cover"
@@ -81,6 +83,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
                     alt=""
                     aria-hidden="true"
                     fill
+                    unoptimized={isExternalImageUrl(image.url)}
                     sizes="96px"
                     className="object-cover"
                   />

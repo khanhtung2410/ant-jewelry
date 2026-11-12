@@ -3,7 +3,10 @@ import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { AccessDenied } from '@/features/admin/components/access-denied';
 import { firstSearchParam, type SearchParam } from '@/features/admin/lib/admin-search-params';
 import { getAdminSession } from '@/features/auth/session';
-import { ProductManagement } from '@/features/products/components/product-management';
+import {
+  ProductManagement,
+  type AdminProductImage,
+} from '@/features/products/components/product-management';
 import type { ProductFormValues } from '@/features/products/actions';
 import {
   ADMIN_PRODUCTS_PAGE_SIZE,
@@ -70,6 +73,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
           where: { id: selectedProductId },
           include: {
             colors: { orderBy: { createdAt: 'asc' } },
+            images: { orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] },
           },
         })
       : Promise.resolve(null),
@@ -166,6 +170,17 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
                 values,
                 productName: selectedProduct?.name ?? null,
                 closeHref,
+                images: selectedProduct
+                  ? selectedProduct.images.map((image): AdminProductImage => ({
+                      id: image.id,
+                      url: image.url,
+                      alt: image.alt,
+                      isFront: image.isFront,
+                      isHover: image.isHover,
+                      sortOrder: image.sortOrder,
+                      productColorId: image.productColorId,
+                    }))
+                  : [],
               }
             : null
         }

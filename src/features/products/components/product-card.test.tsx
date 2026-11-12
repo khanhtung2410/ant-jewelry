@@ -113,6 +113,17 @@ describe('ProductCard', () => {
     expect(html).toContain('group-hover:opacity-100');
   });
 
+  it('uses the explicitly selected hover image instead of the next gallery image', () => {
+    const hoverImage = { ...secondImage, url: '/uploads/selected-hover.webp', isHover: true };
+    const extraImage = { ...secondImage, imageId: 'prd-aurora-band-extra', sortOrder: 3 };
+    const html = renderToStaticMarkup(
+      <ProductCard product={makeProduct({ images: [frontImage, extraImage, hoverImage] })} />,
+    );
+
+    expect(html).toContain('/uploads/selected-hover.webp');
+    expect(html).not.toContain('/mock/products/ring-6-2.webp');
+  });
+
   it('does not render the swatch list when the product has no colors', () => {
     const html = renderToStaticMarkup(<ProductCard product={makeProduct({ colors: [] })} />);
 

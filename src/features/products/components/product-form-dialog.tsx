@@ -12,6 +12,7 @@ import {
   readOnlyInputClassName,
 } from '@/features/admin/components/form-controls';
 import { saveProduct, type ProductFormState, type ProductFormValues } from '../actions';
+import { ProductImageManagement } from './product-image-management';
 
 export type ProductCategoryOption = {
   id: string;
@@ -20,18 +21,30 @@ export type ProductCategoryOption = {
   status: 'VISIBLE' | 'HIDDEN';
 };
 
+type ProductImage = {
+  id: string;
+  url: string;
+  alt: string;
+  isFront: boolean;
+  isHover: boolean;
+  sortOrder: number;
+  productColorId: string | null;
+};
+
 export function ProductFormDialog({
   values,
   categories,
   productName,
   editorView,
   closeHref,
+  images = [],
 }: {
   values: ProductFormValues;
   categories: ProductCategoryOption[];
   productName: string | null;
   editorView: boolean;
   closeHref: string;
+  images?: ProductImage[];
 }) {
   const title = editorView
     ? (productName ?? 'Product details')
@@ -57,6 +70,16 @@ export function ProductFormDialog({
         readOnly={editorView}
         closeHref={closeHref}
       />
+      {!editorView && values.productId ? (
+        <ProductImageManagement
+          productId={values.productId}
+          productName={productName ?? values.name}
+          images={images}
+          colors={values.colors.filter(
+            (color): color is { id: string; name: string; hex: string } => Boolean(color.id),
+          )}
+        />
+      ) : null}
     </AdminDialog>
   );
 }

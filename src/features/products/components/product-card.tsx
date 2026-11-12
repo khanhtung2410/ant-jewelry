@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { formatPrice } from '@/features/shared/lib/format-price';
 import type { Product } from '@/features/shared/domain/domain';
+import { isExternalImageUrl } from '@/features/products/lib/product-gallery';
 
 interface ProductCardProps {
   product: Product;
@@ -12,9 +13,9 @@ export function ProductCard({ product, className = '' }: ProductCardProps) {
   const frontImage = product.images.find((image) => image.isFront) ?? product.images[0];
   // Compare URLs so placeholder products that reuse the same file do not fade
   // into an identical image.
-  const hoverImage = frontImage
-    ? product.images.find((image) => image.url !== frontImage.url)
-    : undefined;
+  const hoverImage =
+    product.images.find((image) => image.isHover) ??
+    (frontImage ? product.images.find((image) => image.url !== frontImage.url) : undefined);
 
   return (
     <article className={className}>
@@ -28,6 +29,7 @@ export function ProductCard({ product, className = '' }: ProductCardProps) {
               src={frontImage.url}
               alt={frontImage.alt}
               fill
+              unoptimized={isExternalImageUrl(frontImage.url)}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
               className="object-cover transition-opacity duration-300 group-hover:opacity-0"
             />
@@ -38,6 +40,7 @@ export function ProductCard({ product, className = '' }: ProductCardProps) {
               alt=""
               aria-hidden="true"
               fill
+              unoptimized={isExternalImageUrl(hoverImage.url)}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
               className="object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             />

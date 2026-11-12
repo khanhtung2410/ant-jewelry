@@ -2,6 +2,10 @@ import type { Product, ProductImage } from '@/features/shared/domain/domain';
 
 export const GALLERY_THUMBNAIL_COUNT = 3;
 
+export function isExternalImageUrl(url: string): boolean {
+  return url.startsWith('https://') || url.startsWith('http://');
+}
+
 /**
  * Returns the gallery for a colour. Colours without their own photos share the
  * product-level gallery, which keeps every swatch usable.

@@ -21,6 +21,16 @@ export type AdminProductRow = {
   category: { id: string; name: string };
 };
 
+export type AdminProductImage = {
+  id: string;
+  url: string;
+  alt: string;
+  isFront: boolean;
+  isHover: boolean;
+  sortOrder: number;
+  productColorId: string | null;
+};
+
 type Props = {
   products: AdminProductRow[];
   categories: ProductCategoryOption[];
@@ -35,6 +45,7 @@ type Props = {
     values: ProductFormValues;
     productName: string | null;
     closeHref: string;
+    images: AdminProductImage[];
   } | null;
 };
 
@@ -252,6 +263,7 @@ export function ProductManagement({
           productName={dialog.productName}
           editorView={editorView}
           closeHref={dialog.closeHref}
+          images={dialog.images}
         />
       ) : null}
     </div>

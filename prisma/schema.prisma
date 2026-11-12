@@ -92,9 +92,11 @@ model ProductImage {
   id             String        @id @default(cuid())
   productId      String
   productColorId String?
+  storageKey     String?       @unique
   url            String
   alt            String
   isFront        Boolean       @default(false)
+  isHover        Boolean       @default(false)
   sortOrder      Int           @default(0)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
@@ -103,6 +105,12 @@ model ProductImage {
 
   @@index([productId])
   @@index([productColorId])
+}
+
+model PendingImageDeletion {
+  id         String   @id @default(cuid())
+  storageKey String   @unique
+  createdAt  DateTime @default(now())
 }
 
 model BlogPost {

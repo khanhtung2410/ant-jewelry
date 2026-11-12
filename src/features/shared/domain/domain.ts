@@ -45,6 +45,7 @@ export interface ProductImage {
   url: string;
   alt: string;
   isFront: boolean;
+  isHover?: boolean;
   sortOrder: number;
 }
 

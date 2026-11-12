@@ -1266,7 +1266,7 @@ SAD mục 2.5 nêu phương án công nghệ **đề xuất**; đây **không** 
 | ORM | Prisma | Truy vấn và quản lý dữ liệu | Đã chốt; chưa cấu hình |
 | Validation | Zod | Validate input tại server boundary | Đã chốt; chưa cài đặt |
 | Xác thực | JWT | Xác thực người dùng nội bộ | Đề xuất; TBC (OI-021) |
-| Lưu trữ hình ảnh | Cloudinary | Lưu hình ảnh sản phẩm và Blog | Đề xuất; TBC (OI-013, OI-018). Quan sát: ảnh Blog hiện nằm ở đường dẫn dạng `/storage/images/blog/{mã}.webp` trên chính tên miền, không phải dịch vụ ngoài |
+| Lưu trữ hình ảnh | Object storage tương thích S3 | Lưu hình ảnh sản phẩm | Đã chốt cho ảnh sản phẩm; chính sách ảnh Blog còn TBC (OI-018). Quan sát: ảnh Blog hiện nằm ở đường dẫn dạng `/storage/images/blog/{mã}.webp` trên chính tên miền |
 | Quản lý mã nguồn | Git / GitHub | Quản lý phiên bản | Đang sử dụng |
 
 Không có Backend hoặc tầng REST API tách biệt: read đi qua Server Components, mutation đi qua Server Actions, Route Handlers chỉ dùng cho upload. Hệ thống phải xử lý dữ liệu Unicode (UTF-8) để lưu và hiển thị tiếng Việt có dấu (NVARCHAR trong SAD không có trong PostgreSQL; OI-017).
@@ -1312,7 +1312,7 @@ Không có endpoint cho giỏ hàng, đặt hàng, thanh toán hoặc thiết k�
  
 | Dịch vụ | Mục đích | Phạm vi | Trạng thái |
 |---|---|---|---|
-| Dịch vụ lưu trữ hình ảnh (Cloudinary đề xuất) | Lưu hình ảnh sản phẩm và Blog | FR-025, FR-032 | Đề xuất; TBC (OI-013) |
+| Dịch vụ lưu trữ hình ảnh (object storage tương thích S3) | Lưu ảnh sản phẩm; ảnh Blog chưa xác định | FR-025, FR-032 | Đã chốt cho ảnh sản phẩm; Blog còn TBC |
 | Facebook, Instagram | Chỉ là liên kết ngoài từ khối liên hệ | FR-003 | Đã quan sát |
 | Cổng thanh toán, đơn vị vận chuyển | Không tích hợp | Ngoài phạm vi (BR-004) | Ngoài phạm vi |
  
@@ -1325,7 +1325,7 @@ Không có endpoint cho giỏ hàng, đặt hàng, thanh toán hoặc thiết k�
 | ID | Ràng buộc | Nguồn | Trạng thái |
 |---|---|---|---|
 | TC-01 | Frontend sử dụng Next.js | ASM-007, SAD 2.5 | Định hướng theo yêu cầu dự án |
-| TC-02 | Không có backend tách biệt; server-side nằm trong Next.js. Prisma với SQLite (dev) / PostgreSQL (production); validate bằng Zod. Xác thực JWT và lưu trữ ảnh Cloudinary vẫn là đề xuất | SAD 2.5; quyết định 2026-11-09 | Đã chốt phần kiến trúc/dữ liệu; JWT và Cloudinary TBC |
+| TC-02 | Không có backend tách biệt; server-side nằm trong Next.js. Prisma với SQLite (dev) / PostgreSQL (production); validate bằng Zod. JWT vẫn là đề xuất; ảnh sản phẩm dùng object storage tương thích S3, ảnh Blog còn TBC | SAD 2.5; quyết định 2026-11-09 | Đã chốt phần kiến trúc/dữ liệu và lưu ảnh sản phẩm; JWT và ảnh Blog còn TBC |
 | TC-03 | Hệ quản trị CSDL phải hỗ trợ lưu tiếng Việt có dấu; quy ước kiểu chuỗi phải thống nhất (SAD dùng cả VARCHAR và NVARCHAR trong khi PostgreSQL không có NVARCHAR) | SAD A.1 đến A.7 | TBC (OI-017) |
 | TC-04 | Giao diện công khai responsive cho máy tính, máy tính bảng và điện thoại | NFR-001 | Đã xác định |
 | TC-05 | Định danh bản ghi dùng UUID dạng chuỗi 36 ký tự | SAD A.1, A.6, A.7 | Theo SAD; TBC (OI-017, OI-018) |
@@ -1553,12 +1553,12 @@ Danh sách giữ nguyên mã của các vấn đề cần xác nhận còn hiệ
 | OI-010 | Thông số bản nhẫn/đá áp dụng cho nhóm sản phẩm nào | Trung bình | FR-009; UC-05 | SAD |
 | OI-011 | URL Routing chính thức | Trung bình | FR-002, FR-007 | SAD |
 | OI-012 | Chỉ tiêu hiệu năng và trình duyệt cần hỗ trợ | Trung bình | NFR-002, NFR-004 | SAD |
-| OI-013 | Công nghệ Backend, cơ sở dữ liệu và lưu trữ ảnh chính thức. **Đã chốt:** không backend tách biệt; Prisma + SQLite (dev) / PostgreSQL (production). Còn TBC: lưu trữ ảnh | Trung bình (đề xuất) | Mục 9.2; TC-02 | SAD |
+| OI-013 | Công nghệ Backend, cơ sở dữ liệu và lưu trữ ảnh chính thức. **Đã chốt:** không backend tách biệt; Prisma + SQLite (dev) / PostgreSQL (production); object storage tương thích S3 cho ảnh sản phẩm | Trung bình (đề xuất) | Mục 9.2; TC-02 | SAD |
 | OI-014 | Tên chính thức (ANT JEWELRY hay ANT JEWELRY; tên miền antjewelry.vn; website hiển thị "AntJewelry") và mô tả vai trò hệ thống ("giới thiệu sản phẩm" hay "kinh doanh trang sức trực tuyến") | Trung bình | Mục 1.5; ASM-001 | SAD |
 | OI-015 | Quan hệ `product_detail` và `product_price` tạo vòng tham chiếu; hướng tham chiếu chuẩn; `price_id` có phải "giá hiện tại" | Cao | FR-022, FR-026; mục 8.4 | SAD |
 | OI-016 | Trường `currency` chứa mã tiền tệ hay số tiền; kiểu và độ chính xác; đơn vị tiền hiển thị. **Đã chốt:** giá là số nguyên VND (`Int`), hiển thị `10.000.000`, không ký hiệu tiền tệ | Cao | FR-004, FR-006, FR-026 | SAD |
 | OI-017 | Hệ quản trị CSDL chính thức và quy ước kiểu chuỗi (VARCHAR/NVARCHAR so với PostgreSQL). **Đã chốt:** SQLite cho dev, PostgreSQL cho production | Trung bình | Mục 8.2; TC-03 | SAD |
-| OI-018 | Lưu trữ ảnh: trường đường dẫn/tệp và thứ tự hiển thị; Blog có một hay nhiều ảnh; giới hạn tệp | Trung bình | FR-008, FR-025, FR-032 | SAD |
+| OI-018 | Ảnh sản phẩm: hỗ trợ JPG/PNG/WebP ≤ 5 MiB, nhiều ảnh, thứ tự, ảnh cover/hover, gán màu và dọn object khi xóa đã triển khai. Còn TBC: chính sách lưu ảnh Blog | Trung bình | FR-008, FR-025, FR-032 | SAD |
 | OI-021 | Phương thức xác thực, chính sách bảo vệ tài khoản, cấu trúc lưu tài khoản `ADMIN`/`EDITOR` | Trung bình | FR-033 đến FR-035; NFR-007, NFR-008 | SAD |
 | OI-022 | Hệ thống có sử dụng SKU không | Thấp (đề xuất) | Mục 8.2.1 (không có trường SKU) | SAD |
 | OI-023 | Quy ước API: phân trang (kể cả cơ chế "SEE MORE"), thứ tự mặc định, phiên bản hóa, múi giờ, định dạng lỗi | Trung bình | FR-004, FR-006, FR-010; mục 9.3 | SAD |
@@ -1588,7 +1588,7 @@ Danh sách giữ nguyên mã của các vấn đề cần xác nhận còn hiệ
 | 8 | Đặt hàng | Không có đặt hàng trực tuyến (BR-003) | Trang chi tiết có nút "ORDER NOW"; không thấy giỏ hàng hay thanh toán | Đã chốt: "ORDER NOW" mở Contact popover, không tạo đơn (OI-031) |
 | 9 | Nội dung bổ sung ở chi tiết sản phẩm | Không có | Khối "quyền lợi khi mua"; khối "YOU MIGHT ALSO LIKE" (sản phẩm liên quan) | Ngoài SAD (OI-032) |
 | 10 | Blog | Danh sách và chi tiết; dữ liệu `blog` không có ngày đăng (OI-024) | Danh sách: 3 bài, không phân trang, không ngày đăng. Chi tiết: có ngày đăng và khối "OTHER BLOGS"; ảnh `.webp` | Bổ sung dữ kiện cho OI-024 |
-| 11 | Lưu trữ ảnh | Cloudinary (đề xuất) | Ảnh Blog nằm ở đường dẫn dạng `/storage/images/blog/…` trên chính tên miền | Khác với đề xuất; cần chốt (OI-013, OI-030) |
+| 11 | Lưu trữ ảnh | Object storage tương thích S3 cho ảnh sản phẩm | Ảnh Blog nằm ở đường dẫn dạng `/storage/images/blog/…` trên chính tên miền | Ảnh sản phẩm đã triển khai; ảnh Blog còn chờ quyết định (OI-018, OI-030) |
 | 12 | Tên hệ thống | "ANT JEWELRY" (OI-014: có thể là "ANT JEWELRY") | Tên miền `antjewelry.vn`; tiêu đề trang "AntJewelry"; nhãn hiệu sản phẩm "Ant Jewelry" | Bổ sung dữ kiện cho OI-014 |
 | 13 | Chân trang | Không nhắc | Điều khoản và điều kiện; Chính sách bảo mật; Vận chuyển và Đổi trả; Chăm sóc trang sức | Ngoài SAD (OI-028) |
 | 14 | Ngôn ngữ | Tài liệu tiếng Việt | Nhãn giao diện tiếng Anh; nội dung Blog tiếng Việt | Cần xác nhận (OI-029) |
