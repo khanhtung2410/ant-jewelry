@@ -13,12 +13,23 @@ import {
 } from '@/features/admin/components/form-controls';
 import { saveProduct, type ProductFormState, type ProductFormValues } from '../actions';
 import { ProductImageManagement } from './product-image-management';
+import { ProductImageManagement } from './product-image-management';
 
 export type ProductCategoryOption = {
   id: string;
   name: string;
   type: string;
   status: 'VISIBLE' | 'HIDDEN';
+};
+
+type ProductImage = {
+  id: string;
+  url: string;
+  alt: string;
+  isFront: boolean;
+  isHover: boolean;
+  sortOrder: number;
+  productColorId: string | null;
 };
 
 type ProductImage = {
@@ -38,12 +49,14 @@ export function ProductFormDialog({
   editorView,
   closeHref,
   images = [],
+  images = [],
 }: {
   values: ProductFormValues;
   categories: ProductCategoryOption[];
   productName: string | null;
   editorView: boolean;
   closeHref: string;
+  images?: ProductImage[];
   images?: ProductImage[];
 }) {
   const title = editorView
@@ -79,6 +92,15 @@ export function ProductFormDialog({
             (color): color is { id: string; name: string; hex: string } => Boolean(color.id),
           )}
         />
+      ) : !editorView ? (
+        <section className="mt-6 border-t border-[var(--line)] pt-5">
+          <h3 className="font-heading text-sm tracking-[0.08em]">PRODUCT IMAGES</h3>
+          <p className="mt-2 text-sm text-[var(--font-color)]">
+            Save this product first to upload and manage images (JPG, PNG, or WebP; up to 5 MB
+            each). After saving, open Edit to reorder images, choose cover and hover images,
+            assign images to colors, and delete images with storage cleanup.
+          </p>
+        </section>
       ) : null}
     </AdminDialog>
   );
