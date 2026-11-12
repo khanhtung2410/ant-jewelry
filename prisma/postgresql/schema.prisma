@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+}
+
+enum ProductStatus {
+  VISIBLE
+  HIDDEN
+}
+
+enum CategoryStatus {
+  VISIBLE
+  HIDDEN
+}
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum HeroSlideStatus {
+  VISIBLE
+  HIDDEN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String
+  role         Role     @default(EDITOR)
+  locked       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Category {
+  id        String         @id @default(cuid())
+  name      String
+  slug      String         @unique
+  type      String
+  sortOrder Int            @default(0)
+  status    CategoryStatus @default(VISIBLE)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  products  Product[]
+}
+
+model Product {
+  id          String         @id @default(cuid())
+  categoryId  String
+  name        String
+  slug        String         @unique
+  brand       String
+  type        String
+  description String
+  details     Json?
+  price       Int
+  status      ProductStatus  @default(VISIBLE)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  category    Category       @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  colors      ProductColor[]
+  images      ProductImage[]
+
+  @@index([categoryId])
+}
+
+model ProductColor {
+  id        String         @id @default(cuid())
+  productId String
+  name      String
+  hex       String
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  product   Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  images    ProductImage[]
+
+  @@index([productId])
+}
+
+model ProductImage {
+  id             String        @id @default(cuid())
+  productId      String
+  productColorId String?
+  storageKey     String?       @unique
+  url            String
+  alt            String
+  isFront        Boolean       @default(false)
+  isHover        Boolean       @default(false)
+  sortOrder      Int           @default(0)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  product        Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productColor   ProductColor? @relation(fields: [productColorId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([productColorId])
+}
+
+model PendingImageDeletion {
+  id         String   @id @default(cuid())
+  storageKey String   @unique
+  createdAt  DateTime @default(now())
+}
+
+model BlogPost {
+  id            String         @id @default(cuid())
+  title         String
+  slug          String         @unique
+  summary       String
+  body          String
+  coverImageUrl String
+  publishedAt   DateTime
+  status        BlogPostStatus @default(DRAFT)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  images        BlogImage[]
+}
+
+model BlogImage {
+  id         String   @id @default(cuid())
+  blogPostId String
+  url        String
+  alt        String
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  blogPost   BlogPost @relation(fields: [blogPostId], references: [id], onDelete: Cascade)
+
+  @@index([blogPostId])
+}
+
+model HeroSlide {
+  id        String          @id @default(cuid())
+  imageUrl  String
+  alt       String
+  title     String
+  subtitle  String
+  linkUrl   String
+  sortOrder Int             @default(0)
+  status    HeroSlideStatus @default(VISIBLE)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model Setting {
+  id           String   @id @default(cuid())
+  siteName     String
+  phone        String
+  facebookUrl  String
+  instagramUrl String
+  address      String
+  email        String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

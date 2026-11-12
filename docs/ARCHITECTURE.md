@@ -923,30 +923,29 @@ Cấu trúc cuối cùng có thể thay đổi khi các module được triển 
 
 ## 14. Environment và Deployment
 
-> Work tree đã có `.env.example`; chưa có `.env.local`, cấu hình triển khai hoặc biến môi trường bắt buộc. `.env*` nằm trong `.gitignore`, riêng `.env.example` được commit. Các nội dung dưới đây là việc cần quyết định khi chuẩn bị triển khai.
+Deployment target đã được chọn: Next.js trên Vercel, PostgreSQL cho production và S3-compatible object storage cho ảnh sản phẩm. Các tài khoản/tài nguyên production vẫn cần được provision; xem [`DEPLOY.md`](./DEPLOY.md) để thực hiện thiết lập an toàn.
 
-SAD chưa xác định hạ tầng triển khai. Các nội dung sau cần được lựa chọn trong giai đoạn chuẩn bị triển khai.
-### 14.1. Các thành phần cần quyết định
-- Hosting platform cho Next.js (bao gồm server-side runtime cho Server Components, Server Actions và Route Handlers).
-- Managed hoặc self-hosted PostgreSQL.
-- S3-compatible storage bucket, credentials, region, endpoint (nếu cần) và public URL.
-- Domain, DNS và HTTPS.
-- Quản lý secrets.
-- CI/CD pipeline.
-- Database migration strategy.
-- Backup và restore procedure.
-- Development, Staging và Production environments.
-### 14.2. Environment variables
-Tên biến môi trường cụ thể chưa được SAD xác định. Khi triển khai cần quản lý riêng các thông tin nhạy cảm như:
-- Database connection string.
-- JWT secret hoặc signing key.
-- S3-compatible object storage credentials (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`).
-- Các API keys khác nếu có.
-Không commit credentials, passwords, tokens hoặc secrets vào Git repository. Sử dụng environment variables hoặc secret manager phù hợp với hạ tầng được chọn.
-### 14.3. Deployment topology
-Chưa có cơ sở để chốt một topology cụ thể. Có thể xem xét cách triển khai Next.js application và Database độc lập hoặc trên cùng một nền tảng, nhưng cần căn cứ vào yêu cầu vận hành, ngân sách, traffic và năng lực quản trị hạ tầng.
+### 14.1. Environment variables
 
-Không coi bất kỳ Hosting Provider hoặc Cloud Provider cụ thể nào là quyết định của dự án khi SAD chưa nêu.
+- `DATABASE_URL`: PostgreSQL connection string của production.
+- `DIRECT_URL`: direct PostgreSQL connection cho Prisma migrations; tách khỏi connection pool của application.
+- `AUTH_SECRET`: secret ngẫu nhiên dùng ký session cookie.
+- `SITE_URL`: canonical HTTPS origin của website.
+- `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_URL`.
+- `S3_ENDPOINT`: tùy chọn với AWS S3; bắt buộc theo endpoint của dịch vụ S3-compatible như Cloudflare R2.
+
+Không commit credentials, passwords, tokens hoặc secrets vào Git repository. Lưu production values trong Vercel Environment Variables hoặc secret manager.
+
+### 14.2. Database và triển khai
+
+- Local development/test tiếp tục dùng `prisma/schema.prisma` (SQLite).
+- Production client và migrations dùng `prisma/postgresql/schema.prisma` cùng migration directory riêng trong `prisma/postgresql/migrations/`.
+- Vercel dùng `npm run build:production` để sinh Prisma Client cho PostgreSQL trước khi build ứng dụng.
+- Áp dụng migrations trước khi chuyển traffic; không chạy `prisma db push` hoặc demo seed trên production.
+- Tạo ADMIN đầu tiên bằng `npm run db:create-admin:production`, nhập password tương tác thay vì lưu trong repository hay command history.
+- Sao lưu PostgreSQL trước migration; nếu cần rollback, phục hồi backup hoặc triển khai forward-fix, không sửa migration đã áp dụng.
+
+`https://antjewelry.vn/` đang phản hồi với website hiện hữu, nhưng chưa được xác minh là deployment của ứng dụng trong repository này. Không đổi DNS/domain cutover cho đến khi chủ sở hữu xác nhận kế hoạch thay thế website hiện tại.
 
 ## 15. Open Issues ảnh hưởng đến Architecture
 Phụ lục D của SAD là danh sách Open Issues chính thức. Bảng dưới đây tổng hợp các vấn đề quan trọng có ảnh hưởng trực tiếp đến kiến trúc, Database, data access và bảo mật. Bảng này không thay thế toàn bộ nội dung Phụ lục D.
