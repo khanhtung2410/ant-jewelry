@@ -17,6 +17,10 @@ describe('formatPrice', () => {
     expect(formatPrice(1234567890)).toBe('1.234.567.890');
   });
 
+  it('formats negative amounts with a leading sign', () => {
+    expect(formatPrice(-1234567)).toBe('-1.234.567');
+  });
+
   it('rounds fractional amounts to the nearest dong', () => {
     expect(formatPrice(1500.4)).toBe('1.500');
     expect(formatPrice(1500.6)).toBe('1.501');

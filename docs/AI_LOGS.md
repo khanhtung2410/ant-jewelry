@@ -1,5 +1,31 @@
 ﻿# AI Change Log
 
+## 2026-11-12 16:18:43 +07:00 - Add product journey E2E coverage
+
+### User prompt
+
+> **G4.1 — Test.** Unit: `formatPrice`, sort/phân trang, schema Zod, hàm quyền. E2E (Playwright): Home → VIEW PRODUCTS → đổi sort → mở sản phẩm → đổi màu → ORDER NOW thấy số điện thoại; admin sửa giá → storefront đổi; EDITOR không sửa được giá. E2E chạy trên database riêng; selector theo role/label, không theo class; không dùng `waitForTimeout`.
+>
+> create new branch,commit,pr title+body strictly follow contributing.md
+> summarize output, promt, time to ailog
+
+### Changes made
+
+- Added Playwright journeys for storefront sorting, product color/contact, ADMIN price updates, and EDITOR read-only access. E2E setup resets and seeds a separate `prisma/e2e.db`; selectors use roles and labels.
+- Added cache tagging and immediate invalidation for product saves after the storefront E2E exposed stale product prices.
+- Extended unit coverage for negative price formatting, descending name sorting without mutation, and invalid Zod prices; added a Vitest shim for Next cache APIs.
+- Created branch `test/g4-1-e2e-coverage`.
+
+### Output summary
+
+`npm test` passed (36 files, 151 tests); `npm run test:e2e` passed (3 browser journeys); `npm run lint`, `npm run typecheck`, and `npm run build` passed. Changed-file Prettier checks passed. Repository-wide `npm run format:check` still reports seven untouched pre-existing files: `src/app/error.tsx`, `src/app/loading.tsx`, `src/app/not-found.tsx`, `src/constants/roles.test.ts`, `src/constants/statuses.ts`, `src/features/auth/actions.ts`, and `src/features/products/components/product-form-dialog.tsx`.
+
+### Time
+
+About 37 minutes elapsed from 15:41:54 to 16:18:43 (+07:00) for implementation and validation.
+
+---
+
 ## 2026-11-12 15:16:11 +07:00 - Add SEO metadata and improve storefront performance
 
 ### User prompt

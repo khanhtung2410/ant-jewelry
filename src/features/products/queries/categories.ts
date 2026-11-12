@@ -1,3 +1,4 @@
+import { cacheTag } from 'next/cache';
 import type { Category, Product, ProductType } from '@/features/shared/domain/domain';
 import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
@@ -76,6 +77,7 @@ export async function getProductsByCategorySlug(
   query: Omit<GetProductsQuery, 'type'> = {},
 ): Promise<Product[]> {
   'use cache';
+  cacheTag('products');
   const category = await getCategoryBySlug(slug);
   return category ? getProducts({ ...query, type: category.type }) : [];
 }
@@ -84,6 +86,7 @@ export async function getStorefrontCategorySections(): Promise<
   { category: Category; products: Product[] }[]
 > {
   'use cache';
+  cacheTag('products');
   const categories = await getCategories();
   const products = await getProductsByCategoryTypes(categories.map((category) => category.type));
   const productsByType = new Map<ProductType, Product[]>();
