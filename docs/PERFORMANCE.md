@@ -4,26 +4,28 @@
 
 The baseline was captured on the production build before this change with Lighthouse 13.6.0 and Chrome 157.0.8103.52, using mobile emulation and simulated throttling. Each URL was audited once on the local Windows environment; the homepage ran first after server startup, so treat its result as an indicative, potentially cold-cache baseline rather than a repeatable average.
 
-| Page | Audit | Before | After | Target |
+Three post-change runs were captured sequentially against the same production build with the same Lighthouse and Chrome versions and mobile settings. The Home Performance score varied substantially, so the median and full range are shown.
+
+| Page | Audit | Before (one run) | After (median; range) | Target |
 |---|---|---:|---:|---:|
-| Home (`/`) | Performance | 41 | Not measured | ≥ 85 |
-| Home (`/`) | Accessibility | 96 | Not measured | ≥ 90 |
-| Home (`/`) | SEO | 100 | Not measured | ≥ 95 |
-| Product (`/p/aurora-band`) | Performance | 83 | Not measured | ≥ 85 |
-| Product (`/p/aurora-band`) | Accessibility | 100 | Not measured | ≥ 90 |
-| Product (`/p/aurora-band`) | SEO | 100 | Not measured | ≥ 95 |
+| Home (`/`) | Performance | 41 | 68 (62–84) | ≥ 85 — not met |
+| Home (`/`) | Accessibility | 96 | 96 | ≥ 90 — met |
+| Home (`/`) | SEO | 100 | 100 | ≥ 95 — met |
+| Product (`/p/aurora-band`) | Performance | 83 | 89 (83–93) | ≥ 85 — median met |
+| Product (`/p/aurora-band`) | Accessibility | 100 | 100 | ≥ 90 — met |
+| Product (`/p/aurora-band`) | SEO | 100 | 100 | ≥ 95 — met |
 
-| Page | Before FCP | Before LCP | Before TBT |
-|---|---:|---:|---:|
-| Home | 2.2 s | 6.8 s | 2,380 ms |
-| Product | 1.0 s | 3.0 s | 440 ms |
+| Page | Before FCP / LCP / TBT | After median FCP / LCP / TBT (range) |
+|---|---|---|
+| Home | 2.2 s / 6.8 s / 2,380 ms | 1.0 s / 3.7 s / 850 ms (FCP 1.0–1.1 s, LCP 3.5–4.0 s, TBT 320–1,740 ms) |
+| Product | 1.0 s / 3.0 s / 440 ms | 0.8 s / 2.5 s / 360 ms (FCP 0.8–0.9 s, LCP 2.5–3.0 s, TBT 160–550 ms) |
 
-The post-change Lighthouse run was not permitted by the execution environment, so the target scores are **not verified** and no after scores are claimed. Re-run the same mobile Lighthouse audits against a production build to complete the comparison.
+The hero LCP request is discoverable, eagerly loaded, and marked high priority in the final run. Home Performance remained below target in all three runs (best 84); its TBT also varied considerably on this local Windows runner. The product median meets the target, but one of its three runs scored 83. Treat these scores as local measurements, not a production-device guarantee.
 
 ## Changes
 
 - Product cards in carousels now remain server-rendered; only the scroll-arrow controls need client-side JavaScript.
-- The hero and product-gallery lead images use the Next.js 16 `preload` prop; responsive images provide `sizes` and descriptive `alt` text.
+- The hero image uses eager loading and high fetch priority; the product-gallery lead image uses the Next.js 16 `preload` prop. Responsive images provide `sizes` and descriptive `alt` text.
 - Product and blog detail pages emit canonical, Open Graph, and Twitter metadata.
 - `sitemap.xml` lists visible categories/products and published blog posts; `robots.txt` allows storefront routes and excludes admin/API paths.
 

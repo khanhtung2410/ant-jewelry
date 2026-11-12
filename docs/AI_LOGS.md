@@ -12,17 +12,19 @@
 ### Changes made
 
 - Added canonical, Open Graph, and Twitter metadata for storefront, product, and blog pages; generated sitemap and robots routes using the configured production site URL.
-- Kept product cards server-rendered and isolated carousel scrolling to a small client component; preloaded the hero and product lead images using the Next.js 16 Image API.
-- Documented Lighthouse baseline, target thresholds, and the unavailable post-change audit in `docs/PERFORMANCE.md`.
+- Kept product cards server-rendered and isolated carousel scrolling to a small client component; prioritized the hero and preloaded the product lead image using the Next.js 16 Image API.
+- Documented before/after Lighthouse measurements and target thresholds in `docs/PERFORMANCE.md`.
 - Created branch `feature/seo-performance`.
 
 ### Output summary
 
-`npm run build`, `npm run lint`, `npm run typecheck`, and `npm test` passed (36 files, 148 tests); changed TypeScript files passed targeted Prettier checks. Production route checks verified product/blog metadata, 38 sitemap URLs, robots directives, the styled 404, and working carousel scrolling. Repository-wide `npm run format:check` still reports seven untouched files. Pre-change Lighthouse scores were Home 41/96/100 and Product 83/100/100 (Performance/Accessibility/SEO); post-change scores were not measured because the audit rerun was not permitted, so the requested thresholds remain unverified. Lighthouse details are recorded in `docs/PERFORMANCE.md`.
+`npm run build`, `npm run lint`, `npm run typecheck`, and `npm test` passed (36 files, 148 tests); changed TypeScript files passed targeted Prettier checks. Production route checks verified product/blog metadata, 38 sitemap URLs, robots directives, the styled 404, and working carousel scrolling. Repository-wide `npm run format:check` still reports seven untouched files. Pre-change Lighthouse scores were Home 41/96/100 and Product 83/100/100 (Performance/Accessibility/SEO). Three post-change runs gave Home median 68/96/100 (Performance range 62–84) and Product median 89/100/100 (Performance range 83–93); Home Performance remains below target. Full measurements are in `docs/PERFORMANCE.md`.
 
 ### Time
 
 27 minutes elapsed from 14:49 to 15:16 (+07:00) for implementation and validation.
+
+The Lighthouse follow-up took about 13 minutes from 15:22 to 15:35 (+07:00).
 
 ---
 
