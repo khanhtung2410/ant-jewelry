@@ -13,23 +13,12 @@ import {
 } from '@/features/admin/components/form-controls';
 import { saveProduct, type ProductFormState, type ProductFormValues } from '../actions';
 import { ProductImageManagement } from './product-image-management';
-import { ProductImageManagement } from './product-image-management';
 
 export type ProductCategoryOption = {
   id: string;
   name: string;
   type: string;
   status: 'VISIBLE' | 'HIDDEN';
-};
-
-type ProductImage = {
-  id: string;
-  url: string;
-  alt: string;
-  isFront: boolean;
-  isHover: boolean;
-  sortOrder: number;
-  productColorId: string | null;
 };
 
 type ProductImage = {
@@ -49,14 +38,12 @@ export function ProductFormDialog({
   editorView,
   closeHref,
   images = [],
-  images = [],
 }: {
   values: ProductFormValues;
   categories: ProductCategoryOption[];
   productName: string | null;
   editorView: boolean;
   closeHref: string;
-  images?: ProductImage[];
   images?: ProductImage[];
 }) {
   const title = editorView
