@@ -1,3 +1,4 @@
+import { cacheTag } from 'next/cache';
 import type {
   Product,
   ProductColor,
@@ -191,6 +192,7 @@ function toWhere(query: GetProductsQuery) {
  */
 export async function getProducts(query: GetProductsQuery = {}): Promise<Product[]> {
   'use cache';
+  cacheTag('products');
   const records = await prisma.product.findMany({
     where: toWhere(query),
     include: productInclude,
@@ -205,6 +207,7 @@ export async function getProductBySlug(
   options: { includeHidden?: boolean } = {},
 ): Promise<Product | null> {
   'use cache';
+  cacheTag('products');
   const record = await prisma.product.findFirst({
     where: {
       slug,
@@ -221,6 +224,7 @@ export async function getProductById(
   options: { includeHidden?: boolean } = {},
 ): Promise<Product | null> {
   'use cache';
+  cacheTag('products');
   const record = await prisma.product.findFirst({
     where: {
       id: productId,
@@ -234,6 +238,7 @@ export async function getProductById(
 
 export async function getRelatedProducts(productId: string, limit = 4): Promise<Product[]> {
   'use cache';
+  cacheTag('products');
   const current = await prisma.product.findUnique({
     where: { id: productId },
     select: { id: true, type: true },
@@ -262,6 +267,7 @@ export async function getProductsByCategoryTypes(
   options: { includeHidden?: boolean } = {},
 ): Promise<Product[]> {
   'use cache';
+  cacheTag('products');
   if (types.length === 0) {
     return [];
   }

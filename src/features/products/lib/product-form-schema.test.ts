@@ -35,6 +35,12 @@ describe('productFormSchema', () => {
     );
   });
 
+  it('rejects zero, decimal, and negative prices', () => {
+    for (const price of ['0', '1000.5', '-1000']) {
+      expect(productFormSchema.safeParse({ ...validProduct, price }).success).toBe(false);
+    }
+  });
+
   it('validates detail lines and parses them into key/value pairs', () => {
     expect(
       productFormSchema.safeParse({ ...validProduct, details: 'Incomplete detail' }).success,

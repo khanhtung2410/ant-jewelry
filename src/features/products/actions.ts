@@ -1,7 +1,7 @@
 'use server';
 
 import { Prisma } from '@prisma/client';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag, updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { visibilityStatus } from '@/constants/statuses';
 import { getAdminSession } from '@/features/auth/session';
@@ -192,6 +192,7 @@ export async function saveProduct(
     });
     await processPendingProductImageDeletions();
     revalidateProductPages();
+    updateTag('products');
     redirect(savedProductsRedirect(String(formData.get('returnTo') ?? '')));
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -235,6 +236,7 @@ export async function toggleProductVisibility(productId: string, _formData: Form
 }
 
 function revalidateProductPages() {
+  revalidateTag('products', 'max');
   for (const [path, type] of getProductRevalidationPaths()) {
     if (type) {
       revalidatePath(path, type);

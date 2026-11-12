@@ -74,6 +74,17 @@ describe('product queries', () => {
     expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'vi')));
   });
 
+  it('sorts names descending without mutating the input list', async () => {
+    const products = await getProducts();
+    const originalIds = products.map((product) => product.product_id);
+    const sorted = sortProducts(products, 'name_desc');
+
+    expect(sorted.map((product) => product.name)).toEqual(
+      [...products.map((product) => product.name)].sort((a, b) => b.localeCompare(a, 'vi')),
+    );
+    expect(products.map((product) => product.product_id)).toEqual(originalIds);
+  });
+
   it('falls back to ascending price for missing or invalid sort values', () => {
     expect(parseProductSort(undefined)).toBe('price_asc');
     expect(parseProductSort('unknown')).toBe('price_asc');

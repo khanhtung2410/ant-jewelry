@@ -124,6 +124,7 @@ Alias `@/*` trong `tsconfig.json` trỏ về `src/*`. Đặt code gần route ho
 ### Testing
 
 - Repository dùng **Vitest**; script `test` và `test:watch` đã có. Test đặt cạnh code trong `src/` với hậu tố `.test.ts` hoặc `.spec.ts`.
+- E2E dùng **Playwright**; cài browser Chromium bằng `npx playwright install chromium`, sau đó chạy `npm run test:e2e`. Lệnh này tạo schema và seed riêng trong `prisma/e2e.db` trước khi khởi động ứng dụng, không dùng database local của Vitest.
 - Với thay đổi giao diện hoặc logic hiện có, kiểm tra thủ công các luồng bị ảnh hưởng và ghi rõ trong Pull Request.
 - Ưu tiên kiểm thử hàm thuần, validation schema và hành vi server-side có thể tái hiện ổn định.
 
