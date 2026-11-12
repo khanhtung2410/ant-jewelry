@@ -79,6 +79,15 @@ export function ProductFormDialog({
             (color): color is { id: string; name: string; hex: string } => Boolean(color.id),
           )}
         />
+      ) : !editorView ? (
+        <section className="mt-6 border-t border-[var(--line)] pt-5">
+          <h3 className="font-heading text-sm tracking-[0.08em]">PRODUCT IMAGES</h3>
+          <p className="mt-2 text-sm text-[var(--font-color)]">
+            Save this product first to upload and manage images (JPG, PNG, or WebP; up to 5 MB
+            each). After saving, open Edit to reorder images, choose cover and hover images,
+            assign images to colors, and delete images with storage cleanup.
+          </p>
+        </section>
       ) : null}
     </AdminDialog>
   );
