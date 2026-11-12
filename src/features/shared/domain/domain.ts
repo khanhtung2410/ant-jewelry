@@ -21,7 +21,14 @@ export type CategoryStatus = 'VISIBLE' | 'HIDDEN';
 export type BlogPostStatus = 'DRAFT' | 'PUBLISHED';
 export type HeroSlideStatus = 'VISIBLE' | 'HIDDEN';
 
-export type ProductType = 'WEDDING RING' | 'NECKLACE' | 'ENGAGEMENT RING' | 'OTHER JEWELRY';
+export const PRODUCT_TYPES = [
+  'WEDDING RING',
+  'ENGAGEMENT RING',
+  'NECKLACE',
+  'OTHER JEWELRY',
+] as const;
+
+export type ProductType = (typeof PRODUCT_TYPES)[number];
 
 export type Role = 'ADMIN' | 'EDITOR';
 

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ContactPopover, ContactPopoverPanel, getFocusTrapTarget } from './contact-popover';
 
 const settings = {
+  siteName: 'ANT JEWELRY',
   phone: '0900 000 000',
   facebookUrl: 'https://www.facebook.com/example.antjewelry',
   instagramUrl: 'https://www.instagram.com/example.antjewelry',

@@ -22,8 +22,15 @@ This document defines the current admin roles and permissions for Ant Jewelry (G
 | Manage categories | Yes | No | Create/update/delete/reorder as implemented. |
 | Manage blog posts | Yes | Yes | The only write permission granted to EDITOR. |
 | Manage hero slides | Yes | No | Create/update/delete/reorder/visibility as implemented. |
-| Manage settings | Yes | No | Includes storefront/contact settings. |
-| Manage users and permissions | Yes | No | User/role administration is ADMIN-only. |
+| Manage settings | Yes | No | Storefront site name, phone, email, address, Facebook, and Instagram values used by the header, footer, and contact popover. |
+| Manage users and permissions | Yes | No | Create accounts, assign roles, and lock accounts. ADMIN-only. |
+
+## Account safety
+
+- Locked accounts cannot sign in, and an existing session becomes invalid on its next request because the session check re-reads the account record.
+- A role change also takes effect on the next request.
+- The last active (unlocked) `ADMIN` cannot be demoted or locked; at least one active ADMIN must always remain.
+- Settings and Users mutations are enforced in their server actions, so calling them directly as an `EDITOR` is rejected even when the UI is bypassed.
 
 ## Implementation
 

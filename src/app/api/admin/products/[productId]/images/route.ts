@@ -36,7 +36,7 @@ function revalidateProductPages(): void {
 
 export async function POST(
   request: Request,
-  context: RouteContext<'/api/admin/products/[productId]/images'>,
+  context: { params: Promise<{ productId: string }> },
 ): Promise<Response> {
   const session = await getAdminSession();
   if (!session || !canManageProducts(session.role)) {

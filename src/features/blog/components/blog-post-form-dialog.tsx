@@ -1,0 +1,186 @@
+'use client';
+
+import { useActionState, useState } from 'react';
+import { AdminDialog } from '@/features/admin/components/admin-dialog';
+import {
+  FormActions,
+  FormAlert,
+  FormCancelButton,
+  FormField,
+  FormSubmitButton,
+  ImageUrlField,
+  inputClassName,
+} from '@/features/admin/components/form-controls';
+import { renderMarkdown } from '@/features/shared/lib/markdown';
+import { saveBlogPost, type BlogPostFormState, type BlogPostFormValues } from '../actions';
+
+type EditorTab = 'write' | 'preview';
+
+export function BlogPostFormDialog({
+  values,
+  closeHref,
+}: {
+  values: BlogPostFormValues;
+  closeHref: string;
+}) {
+  const initialState: BlogPostFormState = {
+    values,
+    fieldErrors: {},
+    message: null,
+  };
+  const [state, formAction, pending] = useActionState(saveBlogPost, initialState);
+
+  return (
+    <AdminDialog
+      title={values.blogId ? `Edit ${values.title}` : 'New blog post'}
+      description="Draft posts stay hidden from the storefront until you publish them."
+      closeHref={closeHref}
+      size="lg"
+    >
+      <form action={formAction} className="space-y-4">
+        {values.blogId ? <input type="hidden" name="blogId" value={values.blogId} /> : null}
+        <input type="hidden" name="returnTo" value={closeHref} />
+
+        <FormField label="Title" error={state.fieldErrors.title?.[0]}>
+          <input name="title" defaultValue={state.values.title} className={inputClassName} />
+        </FormField>
+
+        <FormField
+          label="Slug"
+          hint="Used in the post URL, for example /blog/cach-chon-nhan-cuoi."
+          error={state.fieldErrors.slug?.[0]}
+        >
+          <input name="slug" defaultValue={state.values.slug} className={inputClassName} />
+        </FormField>
+
+        <FormField label="Summary" error={state.fieldErrors.summary?.[0]}>
+          <textarea
+            name="summary"
+            defaultValue={state.values.summary}
+            rows={3}
+            className={inputClassName}
+          />
+        </FormField>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField
+            label="Published date"
+            hint="Shown in Vietnam time."
+            error={state.fieldErrors.publishedAt?.[0]}
+          >
+            <input
+              type="date"
+              name="publishedAt"
+              defaultValue={state.values.publishedAt}
+              className={inputClassName}
+            />
+          </FormField>
+
+          <FormField label="Status" error={state.fieldErrors.status?.[0]}>
+            <select name="status" defaultValue={state.values.status} className={inputClassName}>
+              <option value="DRAFT">Draft</option>
+              <option value="PUBLISHED">Published</option>
+            </select>
+          </FormField>
+        </div>
+
+        <ImageUrlField
+          label="Cover image URL"
+          name="coverImageUrl"
+          defaultValue={state.values.coverImageUrl}
+          hint="Use a site path (starting with /) or an http(s) URL."
+          error={state.fieldErrors.coverImageUrl?.[0]}
+          previewAlt="Cover preview"
+        />
+
+        <BodyEditor initialValue={state.values.body} error={state.fieldErrors.body?.[0]} />
+
+        <FormAlert message={state.message} />
+        {state.fieldErrors.form?.map((error) => (
+          <p key={error} role="alert" className="text-sm text-red-700">
+            {error}
+          </p>
+        ))}
+
+        <FormActions>
+          <FormCancelButton closeHref={closeHref} />
+          <FormSubmitButton pending={pending}>
+            {values.blogId ? 'Save post' : 'Create post'}
+          </FormSubmitButton>
+        </FormActions>
+      </form>
+    </AdminDialog>
+  );
+}
+
+function BodyEditor({ initialValue, error }: { initialValue: string; error?: string }) {
+  const [tab, setTab] = useState<EditorTab>('write');
+  const [body, setBody] = useState(initialValue);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium">Body (Markdown)</p>
+        <div
+          role="tablist"
+          aria-label="Body editor mode"
+          className="flex rounded-md border border-[var(--line)] p-0.5"
+        >
+          <TabButton active={tab === 'write'} onClick={() => setTab('write')}>
+            Write
+          </TabButton>
+          <TabButton active={tab === 'preview'} onClick={() => setTab('preview')}>
+            Preview
+          </TabButton>
+        </div>
+      </div>
+
+      <textarea
+        name="body"
+        value={body}
+        onChange={(event) => setBody(event.target.value)}
+        rows={14}
+        hidden={tab !== 'write'}
+        className={`${inputClassName} font-mono`}
+      />
+
+      {tab === 'preview' ? (
+        <div className="min-h-72 rounded-md border border-[var(--line)] px-4 py-2">
+          {body.trim() ? (
+            renderMarkdown(body)
+          ) : (
+            <p className="py-6 text-sm text-[var(--font-color)]">
+              Nothing to preview yet. Add Markdown in the Write tab.
+            </p>
+          )}
+        </div>
+      ) : null}
+
+      {error ? <p className="text-xs text-red-700">{error}</p> : null}
+    </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`rounded px-3 py-1 text-xs font-medium transition ${
+        active ? 'bg-foreground text-background' : 'text-[var(--font-color)] hover:text-foreground'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
