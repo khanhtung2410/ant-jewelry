@@ -33,6 +33,23 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(aBuf, bBuf);
 }
 
+function isRole(value: unknown): value is Role {
+  return value === 'ADMIN' || value === 'EDITOR';
+}
+
+function isValidSessionPayload(payload: Partial<SessionPayload>): payload is SessionPayload {
+  return (
+    typeof payload.userId === 'string' &&
+    payload.userId.length > 0 &&
+    typeof payload.email === 'string' &&
+    payload.email.length > 0 &&
+    isRole(payload.role) &&
+    (payload.name === null || typeof payload.name === 'string') &&
+    typeof payload.exp === 'number' &&
+    Number.isInteger(payload.exp)
+  );
+}
+
 export function createSessionToken(session: Omit<AdminSession, 'exp'>, secret: string): string {
   const payload: SessionPayload = {
     ...session,
@@ -48,8 +65,8 @@ export function verifySessionToken(
   secret: string | undefined,
 ): AdminSession | null {
   if (!token || !secret) return null;
-  const [encodedPayload, signature] = token.split('.');
-  if (!encodedPayload || !signature) return null;
+  const [encodedPayload, signature, ...rest] = token.split('.');
+  if (!encodedPayload || !signature || rest.length > 0) return null;
 
   let expectedSignature: string;
   try {
@@ -62,13 +79,7 @@ export function verifySessionToken(
 
   try {
     const payload = JSON.parse(base64UrlDecode(encodedPayload)) as Partial<SessionPayload>;
-    if (
-      typeof payload.userId !== 'string' ||
-      typeof payload.email !== 'string' ||
-      (payload.role !== 'ADMIN' && payload.role !== 'EDITOR') ||
-      (payload.name !== null && typeof payload.name !== 'string') ||
-      typeof payload.exp !== 'number'
-    ) {
+    if (!isValidSessionPayload(payload)) {
       return null;
     }
 

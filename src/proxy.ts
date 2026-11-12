@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { SESSION_COOKIE_NAME, verifySessionToken } from '@/features/auth/session-token';
+import { readValidatedSession } from '@/features/auth/cookie';
 
 function isAdminLoginPath(pathname: string): boolean {
   return pathname === '/admin/login' || pathname.startsWith('/admin/login/');
@@ -20,8 +20,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const session = verifySessionToken(token, process.env.AUTH_SECRET);
+  const session = readValidatedSession(request.cookies);
 
   if (!session) {
     const loginUrl = new URL('/admin/login', request.url);
