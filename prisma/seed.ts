@@ -238,12 +238,14 @@ async function main() {
       name: 'Admin',
       passwordHash: adminPasswordHash,
       role: 'ADMIN',
+      locked: false,
     },
     create: {
       email: 'admin@antjewelry.local',
       name: 'Admin',
       passwordHash: adminPasswordHash,
       role: 'ADMIN',
+      locked: false,
     },
   });
 
@@ -253,12 +255,14 @@ async function main() {
       name: 'Editor',
       passwordHash: editorPasswordHash,
       role: 'EDITOR',
+      locked: false,
     },
     create: {
       email: 'editor@antjewelry.local',
       name: 'Editor',
       passwordHash: editorPasswordHash,
       role: 'EDITOR',
+      locked: false,
     },
   });
 

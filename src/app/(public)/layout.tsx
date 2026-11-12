@@ -9,7 +9,7 @@ export default async function PublicLayout({ children }: { children: React.React
   return (
     <div className="flex min-h-screen flex-col">
       <ContactDialogProvider settings={settings}>
-        <SiteHeader categories={categories} />
+        <SiteHeader categories={categories} settings={settings} />
         <div className="flex-1">{children}</div>
         <SiteFooter categories={categories} settings={settings} />
       </ContactDialogProvider>

@@ -1,5 +1,30 @@
 # AI Change Log
 
+## 2026-11-12 10:52:49 +07:00 - Add admin settings and user management (G3.5)
+
+### User prompt
+
+> G3.5 — Settings + Users (milestone 3). Settings: số điện thoại, Facebook, Instagram, địa chỉ, email. Users: tạo tài khoản, gán role, khoá tài khoản — chỉ ADMIN.
+> header / footer / ContactPopover đọc từ Settings, không còn hard-code; đăng nhập EDITOR, gọi thẳng Server Action sửa giá / Settings / Users (bỏ qua UI) bị từ chối; không tự hạ quyền / khoá được ADMIN cuối cùng.
+>
+> create new branch,commit
+> write pr body, title strictly follow contributin.md
+> summarize output and promt to ailog follow their format
+
+### Changes made
+
+- Added Settings management for site name, phone, email, address, Facebook, and Instagram. The ADMIN-only server action validates input with Zod, updates the single settings record, and revalidates the public layout so header/footer/contact content refreshes.
+- Wired storefront contact data to Settings: header alt/aria text and ContactPopover now use `siteName` from settings instead of a hard-coded brand label; footer already read address, phone, email, and social links from Settings.
+- Added Users management: ADMIN-only account creation with bcrypt-hashed passwords, duplicate-email field errors, role assignment, and account locking from a per-row form.
+- Added a last-active-ADMIN guard: demoting or locking the final unlocked ADMIN is rejected inside the user update transaction, so at least one usable ADMIN always remains.
+- Locked accounts are rejected at login. Existing sessions re-read the user record on every request, so locking an account or changing its role takes effect immediately instead of waiting for cookie expiry.
+- Added Prisma `User.locked`, a baseline migration plus an `add_user_account_lock` migration, and reset seeded accounts to unlocked. Updated the permission matrix.
+- Added tests for settings/user schemas, the last-admin guard, locked login rejection, and direct EDITOR calls to product price, Settings, and Users server actions.
+
+### Output summary
+
+G3.5 Settings and Users management is implemented. `npm run lint`, `npm run typecheck`, `npm test` (32 files, 133 tests), `npm run format:check`, and `npm run build` all passed. Manual smoke checks confirmed the ADMIN-only settings/users pages render and the storefront reads contact values from Settings.
+
 ## 2026-11-11 16:31:06 +07:00 - Add admin product CRUD (G3.2)
 
 ### User prompt
