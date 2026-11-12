@@ -106,7 +106,7 @@ Các file cấu hình hiện có:
 | `.github/pull_request_template.md` | Mẫu mô tả Pull Request |
 | `.gitignore` | Bỏ qua `node_modules`, `.next`, `out`, `build`, `.env*` (trừ `.env.example`), file SQLite local và file build của TypeScript |
 
-`.env.example` đã có và được commit; `.env.local` và các file `.env*` khác nằm trong `.gitignore`. Hiện chưa có biến môi trường nào bắt buộc cho local dev.
+`.env.example` đã có và được commit; `.env.local` và các file `.env*` khác nằm trong `.gitignore`. `SITE_URL` không bắt buộc khi chạy local (mặc định `http://localhost:3000`), nhưng cần đặt thành origin chính thức của website khi deploy để metadata, sitemap và robots.txt dùng URL chuẩn.
 
 Database dùng Prisma với SQLite local và PostgreSQL production; cấu hình JWT và Cloudinary: TBD, chưa có trong work tree. Không commit credentials, passwords, API keys hoặc secrets vào repository.
 
@@ -180,6 +180,7 @@ Repository chưa có file `LICENSE`. Loại license (MIT, Apache-2.0, GPL-3.0 ho
 - [`REQUIREMENTS.md`](./REQUIREMENTS.md) — Đặc tả yêu cầu hệ thống.
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — Kiến trúc hệ thống đề xuất.
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md) — Quy trình làm việc, code, commit và Pull Request.
+- [`PERFORMANCE.md`](./PERFORMANCE.md) — Mục tiêu SEO, hiệu năng và số liệu Lighthouse.
 - [`AI_LOGS.md`](./AI_LOGS.md) — Nhật ký thay đổi do AI thực hiện.
 - `ANT_JEWELRY_SAD_v1.1.docx` — Tài liệu nguồn System Analysis and Design (không có trong work tree hiện tại).
 

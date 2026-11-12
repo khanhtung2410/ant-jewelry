@@ -1,5 +1,33 @@
 ﻿# AI Change Log
 
+## 2026-11-12 15:16:11 +07:00 - Add SEO metadata and improve storefront performance
+
+### User prompt
+
+> **G4.2 — SEO + hiệu năng.** `next/image` có `sizes` và `alt`, ảnh hero ưu tiên tải; `generateMetadata` + Open Graph cho sản phẩm và blog; `sitemap.xml`, `robots.txt`; trang 404 / lỗi theo style. Lighthouse mobile Home và trang sản phẩm: Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95; số liệu trước/sau trong `docs/PERFORMANCE.md`.
+>
+> create new branch,commit,pr title+body strictly follow contributing.md
+> summarize output, promt, time to ailog
+
+### Changes made
+
+- Added canonical, Open Graph, and Twitter metadata for storefront, product, and blog pages; generated sitemap and robots routes using the configured production site URL.
+- Kept product cards server-rendered and isolated carousel scrolling to a small client component; prioritized the hero and preloaded the product lead image using the Next.js 16 Image API.
+- Documented before/after Lighthouse measurements and target thresholds in `docs/PERFORMANCE.md`.
+- Created branch `feature/seo-performance`.
+
+### Output summary
+
+`npm run build`, `npm run lint`, `npm run typecheck`, and `npm test` passed (36 files, 148 tests); changed TypeScript files passed targeted Prettier checks. Production route checks verified product/blog metadata, 38 sitemap URLs, robots directives, the styled 404, and working carousel scrolling. Repository-wide `npm run format:check` still reports seven untouched files. Pre-change Lighthouse scores were Home 41/96/100 and Product 83/100/100 (Performance/Accessibility/SEO). Three post-change runs gave Home median 68/96/100 (Performance range 62–84) and Product median 89/100/100 (Performance range 83–93); Home Performance remains below target. Full measurements are in `docs/PERFORMANCE.md`.
+
+### Time
+
+27 minutes elapsed from 14:49 to 15:16 (+07:00) for implementation and validation.
+
+The Lighthouse follow-up took about 13 minutes from 15:22 to 15:35 (+07:00).
+
+---
+
 ## 2026-11-12 14:17:37 +07:00 - Unify admin table actions
 
 ### User prompt

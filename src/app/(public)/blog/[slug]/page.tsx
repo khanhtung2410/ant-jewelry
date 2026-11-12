@@ -13,12 +13,32 @@ export async function generateMetadata(props: PageProps<'/blog/[slug]'>): Promis
   const post = await getBlogPostBySlug(slug);
 
   if (!post) {
-    return {};
+    notFound();
   }
+
+  const title = `${post.title} | ANT JEWELRY`;
 
   return {
     title: post.title,
     description: post.summary,
+    alternates: {
+      canonical: `/blog/${post.slug}`,
+    },
+    openGraph: {
+      type: 'article',
+      siteName: 'ANT JEWELRY',
+      title,
+      description: post.summary,
+      url: `/blog/${post.slug}`,
+      publishedTime: post.publishedAt,
+      images: [{ url: post.coverImageUrl, alt: post.title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: post.summary,
+      images: [{ url: post.coverImageUrl, alt: post.title }],
+    },
   };
 }
 

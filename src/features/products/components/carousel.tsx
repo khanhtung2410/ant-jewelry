@@ -1,10 +1,8 @@
-'use client';
-
 import Link from 'next/link';
-import { useId, useRef } from 'react';
+import { useId } from 'react';
 import type { Product } from '@/features/shared/domain/domain';
-import { ArrowButton } from '@/features/layout/components/arrow-button';
 import { ProductCard } from './product-card';
+import { CarouselControls } from './carousel-controls';
 
 // Keeping these exports in case they are used elsewhere in your app
 export const CAROUSEL_PAGE_SIZE = 5;
@@ -44,40 +42,9 @@ interface CarouselProps {
 
 export function Carousel({ title, products, viewAllHref, className = '' }: CarouselProps) {
   const headingId = useId();
-  const scrollRef = useRef<HTMLUListElement>(null);
-
-  // Function to slide exactly 1 product left or right
-  const handleScroll = (direction: 'next' | 'prev') => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const firstItem = container.firstElementChild as HTMLElement;
-    if (!firstItem) return;
-
-    // Calculate the exact width of one item + the gap
-    const itemWidth = firstItem.getBoundingClientRect().width;
-    const gap = parseFloat(window.getComputedStyle(container).gap || '0');
-    const scrollAmount = itemWidth + gap;
-
-    if (direction === 'next') {
-      // If we are at the end, loop back to the start
-      if (container.scrollLeft + container.clientWidth >= container.scrollWidth - 10) {
-        container.scrollTo({ left: 0, behavior: 'smooth' });
-      } else {
-        container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-      }
-    } else {
-      // If we are at the start, loop to the end
-      if (container.scrollLeft <= 10) {
-        container.scrollTo({ left: container.scrollWidth, behavior: 'smooth' });
-      } else {
-        container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
-      }
-    }
-  };
 
   return (
-    <section aria-labelledby={headingId} className={className}>
+    <section aria-labelledby={headingId} className={className} data-product-carousel>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <h2 id={headingId} className="font-heading text-lg tracking-[0.08em]">
           {title}
@@ -92,7 +59,7 @@ export function Carousel({ title, products, viewAllHref, className = '' }: Carou
 
       {products.length > 0 ? (
         <ul
-          ref={scrollRef}
+          data-product-carousel-items
           /*
             - snap-x snap-mandatory: enables native CSS snapping
             - overflow-x-auto: allows horizontal scrolling
@@ -118,18 +85,7 @@ export function Carousel({ title, products, viewAllHref, className = '' }: Carou
         <p className="mt-6 text-sm text-muted">Chưa có sản phẩm.</p>
       )}
 
-      <div className="mt-8 flex justify-end gap-2">
-        <ArrowButton
-          direction="left"
-          aria-label="Previous products"
-          onClick={() => handleScroll('prev')}
-        />
-        <ArrowButton
-          direction="right"
-          aria-label="Next products"
-          onClick={() => handleScroll('next')}
-        />
-      </div>
+      <CarouselControls />
     </section>
   );
 }

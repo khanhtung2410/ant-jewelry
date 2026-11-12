@@ -42,7 +42,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
           alt={activeImage.alt}
           fill
           unoptimized={isExternalImageUrl(activeImage.url)}
-          priority
+          preload
           sizes="(max-width: 1024px) 100vw, 50vw"
           className="object-cover"
         />
