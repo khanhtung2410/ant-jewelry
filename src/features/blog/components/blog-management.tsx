@@ -1,8 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { BLOG_POST_STATUS, publishStatus } from '@/constants/statuses';
 import { SavedNotice } from '@/features/admin/components/form-controls';
+import {
+  AdminActionButton,
+  AdminActionLink,
+  AdminTableActions,
+} from '@/features/admin/components/admin-table-actions';
 import { formatPublishedDate } from '@/features/shared/lib/format-date';
 import type { BlogPostFormValues } from '../actions';
 import { deleteBlogPost } from '../actions';
@@ -48,7 +52,7 @@ export function BlogManagement({
                   <th className="px-4 py-3 font-medium">Post</th>
                   <th className="px-4 py-3 font-medium">Published date</th>
                   <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
+                  <th className="px-4 py-3 text-center font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -72,15 +76,14 @@ export function BlogManagement({
                         {BLOG_POST_STATUS[post.status].label}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <Link
+                    <td className="px-4 py-3 text-center">
+                      <AdminTableActions>
+                        <AdminActionLink
                           href={buildAdminBlogHref({ edit: post.id })}
                           aria-haspopup="dialog"
-                          className="rounded-md border border-[var(--line)] px-3 py-1.5 text-xs font-medium transition hover:border-[var(--underline-color)] hover:text-[var(--underline-color)]"
                         >
                           Edit
-                        </Link>
+                        </AdminActionLink>
                         <form
                           action={deleteBlogPost.bind(null, post.id)}
                           onSubmit={(event) => {
@@ -89,14 +92,11 @@ export function BlogManagement({
                             }
                           }}
                         >
-                          <button
-                            type="submit"
-                            className="text-xs text-red-700 underline underline-offset-2"
-                          >
+                          <AdminActionButton type="submit" variant="danger">
                             Delete
-                          </button>
+                          </AdminActionButton>
                         </form>
-                      </div>
+                      </AdminTableActions>
                     </td>
                   </tr>
                 ))}

@@ -3,6 +3,11 @@
 import Link from 'next/link';
 import { VISIBILITY_STATUS, visibilityStatus } from '@/constants/statuses';
 import { SavedNotice } from '@/features/admin/components/form-controls';
+import {
+  AdminActionButton,
+  AdminActionLink,
+  AdminTableActions,
+} from '@/features/admin/components/admin-table-actions';
 import { formatPrice } from '@/features/shared/lib/format-price';
 import { toggleProductVisibility, type ProductFormValues } from '../actions';
 import {
@@ -135,7 +140,7 @@ export function ProductManagement({
                   <th className="px-4 py-3 font-medium">Brand</th>
                   <th className="px-4 py-3 font-medium">Price</th>
                   <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
+                  <th className="px-4 py-3 text-center font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -166,36 +171,25 @@ export function ProductManagement({
                           {VISIBILITY_STATUS[product.status].label}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap items-center gap-3">
+                      <td className="px-4 py-3 text-center">
+                        <AdminTableActions>
                           {editorView ? (
-                            <Link
-                              href={selectedHref}
-                              aria-haspopup="dialog"
-                              className="rounded-md border border-[var(--line)] px-3 py-1.5 text-xs font-medium transition hover:border-[var(--underline-color)] hover:text-[var(--underline-color)]"
-                            >
+                            <AdminActionLink href={selectedHref} aria-haspopup="dialog">
                               View
-                            </Link>
+                            </AdminActionLink>
                           ) : (
                             <>
-                              <Link
-                                href={selectedHref}
-                                aria-haspopup="dialog"
-                                className="rounded-md border border-[var(--line)] px-3 py-1.5 text-xs font-medium transition hover:border-[var(--underline-color)] hover:text-[var(--underline-color)]"
-                              >
+                              <AdminActionLink href={selectedHref} aria-haspopup="dialog">
                                 Edit
-                              </Link>
+                              </AdminActionLink>
                               <form action={toggleProductVisibility.bind(null, product.id)}>
-                                <button
-                                  type="submit"
-                                  className="whitespace-nowrap text-xs underline underline-offset-2"
-                                >
+                                <AdminActionButton type="submit">
                                   {product.status === visibilityStatus.VISIBLE ? 'Ẩn' : 'Hiển thị'}
-                                </button>
+                                </AdminActionButton>
                               </form>
                             </>
                           )}
-                        </div>
+                        </AdminTableActions>
                       </td>
                     </tr>
                   );

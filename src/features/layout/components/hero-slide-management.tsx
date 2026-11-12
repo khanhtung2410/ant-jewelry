@@ -1,9 +1,13 @@
 'use client';
 
-import Link from 'next/link';
 import { VISIBILITY_STATUS } from '@/constants/statuses';
 import { ReorderButtons } from '@/features/admin/components/reorder-buttons';
 import { SavedNotice } from '@/features/admin/components/form-controls';
+import {
+  AdminActionButton,
+  AdminActionLink,
+  AdminTableActions,
+} from '@/features/admin/components/admin-table-actions';
 import type { HeroSlideFormValues } from '../actions';
 import { deleteHeroSlide, moveHeroSlide } from '../actions';
 import { buildAdminHeroSlidesHref } from '../lib/admin-hero-list';
@@ -50,7 +54,7 @@ export function HeroSlideManagement({
                   <th className="px-4 py-3 font-medium">Slide</th>
                   <th className="px-4 py-3 font-medium">Link</th>
                   <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
+                  <th className="px-4 py-3 text-center font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -98,15 +102,14 @@ export function HeroSlideManagement({
                         {VISIBILITY_STATUS[slide.status].label}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <Link
+                    <td className="px-4 py-3 text-center">
+                      <AdminTableActions>
+                        <AdminActionLink
                           href={buildAdminHeroSlidesHref({ edit: slide.id })}
                           aria-haspopup="dialog"
-                          className="rounded-md border border-[var(--line)] px-3 py-1.5 text-xs font-medium transition hover:border-[var(--underline-color)] hover:text-[var(--underline-color)]"
                         >
                           Edit
-                        </Link>
+                        </AdminActionLink>
                         <form
                           action={deleteHeroSlide.bind(null, slide.id)}
                           onSubmit={(event) => {
@@ -115,14 +118,11 @@ export function HeroSlideManagement({
                             }
                           }}
                         >
-                          <button
-                            type="submit"
-                            className="text-xs text-red-700 underline underline-offset-2"
-                          >
+                          <AdminActionButton type="submit" variant="danger">
                             Delete
-                          </button>
+                          </AdminActionButton>
                         </form>
-                      </div>
+                      </AdminTableActions>
                     </td>
                   </tr>
                 ))}
