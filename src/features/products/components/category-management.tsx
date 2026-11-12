@@ -1,9 +1,13 @@
 'use client';
 
-import Link from 'next/link';
 import { useActionState } from 'react';
 import { VISIBILITY_STATUS } from '@/constants/statuses';
 import { SavedNotice } from '@/features/admin/components/form-controls';
+import {
+  AdminActionButton,
+  AdminActionLink,
+  AdminTableActions,
+} from '@/features/admin/components/admin-table-actions';
 import { ReorderButtons } from '@/features/admin/components/reorder-buttons';
 import {
   deleteCategory,
@@ -57,7 +61,7 @@ export function CategoryManagement({
                   <th className="px-4 py-3 font-medium">Product type</th>
                   <th className="px-4 py-3 font-medium">Products</th>
                   <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Actions</th>
+                  <th className="px-4 py-3 text-center font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -90,17 +94,16 @@ export function CategoryManagement({
                         {VISIBILITY_STATUS[category.status].label}
                       </span>
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-col items-start gap-2">
-                        <Link
+                    <td className="px-4 py-3 text-center">
+                      <AdminTableActions>
+                        <AdminActionLink
                           href={buildAdminCategoriesHref({ edit: category.id })}
                           aria-haspopup="dialog"
-                          className="rounded-md border border-[var(--line)] px-3 py-1.5 text-xs font-medium transition hover:border-[var(--underline-color)] hover:text-[var(--underline-color)]"
                         >
                           Edit
-                        </Link>
+                        </AdminActionLink>
                         <CategoryDeleteForm category={category} returnTo={returnTo} />
-                      </div>
+                      </AdminTableActions>
                     </td>
                   </tr>
                 ))}
@@ -147,14 +150,15 @@ function CategoryDeleteForm({
       >
         <input type="hidden" name="categoryId" value={category.id} />
         <input type="hidden" name="returnTo" value={returnTo} />
-        <button
+        <AdminActionButton
           type="submit"
           disabled={Boolean(blockedReason) || pending}
+          variant="danger"
           title={blockedReason ?? undefined}
-          className="text-xs text-red-700 underline underline-offset-2 disabled:cursor-not-allowed disabled:text-[var(--font-color)] disabled:no-underline disabled:opacity-70"
+          className="disabled:cursor-not-allowed disabled:text-[var(--font-color)] disabled:opacity-70"
         >
           Delete
-        </button>
+        </AdminActionButton>
       </form>
       {blockedReason ? (
         <p className="max-w-48 text-xs text-[var(--font-color)]">{blockedReason}</p>

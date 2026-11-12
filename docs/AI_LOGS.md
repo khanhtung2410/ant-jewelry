@@ -1,5 +1,26 @@
 ﻿# AI Change Log
 
+## 2026-11-12 14:17:37 +07:00 - Unify admin table actions
+
+### User prompt
+
+> centralize actions button in admin pages
+> ex: change status in product í a link, not button != edit button next to it
+> create new branch, commit, pr body and title strictly follow contributing.md
+> add promtp and summarize output + time in ailog followw format
+
+### Changes made
+
+- Added shared admin table action layout and consistent link/button variants.
+- Aligned and centered the Actions column and standardized edit, visibility, delete, and user-save controls across admin management tables.
+- Created branch `feature/centralize-admin-actions`.
+
+### Output summary
+
+Admin action controls use shared visual styles and centered table-column alignment; product status changes remain Server Action form submissions but now match the neighboring Edit control. `npm run lint`, `npm run typecheck`, `npm test` (35 files, 145 tests), `npm run build`, and targeted Prettier checks passed. Repository-wide `npm run format:check` reports pre-existing formatting issues in seven untouched files: `src/app/error.tsx`, `src/app/loading.tsx`, `src/app/not-found.tsx`, `src/constants/roles.test.ts`, `src/constants/statuses.ts`, `src/features/auth/actions.ts`, and `src/features/products/components/product-form-dialog.tsx`. Manual browser review and screenshots were not performed.
+
+---
+
 ## 2026-11-12 13:31:25 +07:00 - Add route error, not-found, and loading pages
 
 ### User prompt

@@ -4,6 +4,7 @@ import { useActionState } from 'react';
 import { ROLE_CONFIG, ROLE_OPTIONS } from '@/constants/roles';
 import { getAccountStatusConfig } from '@/constants/statuses';
 import { SavedNotice } from '@/features/admin/components/form-controls';
+import { AdminActionButton } from '@/features/admin/components/admin-table-actions';
 import type { Role } from '@/features/shared/domain/domain';
 import { saveUserAccess, type UserAccessFormState } from '../actions';
 import { UserFormDialog } from './user-form-dialog';
@@ -137,13 +138,9 @@ function UserRow({ user, isCurrentUser }: { user: AdminUserRow; isCurrentUser: b
             Khóa tài khoản
           </label>
 
-          <button
-            type="submit"
-            disabled={pending}
-            className="rounded-md border border-[var(--line)] px-3 py-1.5 text-xs font-medium transition hover:border-[var(--underline-color)] hover:text-[var(--underline-color)] disabled:opacity-60"
-          >
+          <AdminActionButton type="submit" disabled={pending} className="disabled:opacity-60">
             {pending ? 'Saving…' : 'Save'}
-          </button>
+          </AdminActionButton>
         </form>
 
         {state.fieldErrors.form?.map((error) => (
