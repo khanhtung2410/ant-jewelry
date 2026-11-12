@@ -110,7 +110,7 @@ export function AdminShell({ session, children }: { session: AdminSession; child
             onClick={() => setSidebarOpen(false)}
             className="font-heading text-sm tracking-[0.18em] text-white"
           >
-            AN JEWELRY
+            ANT JEWELRY
           </Link>
           <span className="rounded-full border border-white/30 px-2 py-0.5 font-heading text-[10px] tracking-[0.14em] text-white/80">
             {session.role}
