@@ -34,8 +34,7 @@ export function HeroSlider({ slides }: HeroSliderProps) {
           alt={activeSlide.alt}
           fill
           sizes="100vw"
-          loading="eager"
-          fetchPriority="high"
+          preload
           className="object-cover object-left"
         />
 

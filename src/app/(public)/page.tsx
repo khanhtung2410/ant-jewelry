@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { BlogRow } from '@/features/blog/components/blog-row';
 import { Carousel } from '@/features/products/components/carousel';
 import { ActionButton } from '@/features/layout/components/action-button';
@@ -7,6 +8,12 @@ import {
   getHeroSlides,
   getStorefrontCategorySections,
 } from '@/features/shared/queries';
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: '/',
+  },
+};
 
 export default async function Home() {
   const [productSections, latestPosts, heroSlides] = await Promise.all([

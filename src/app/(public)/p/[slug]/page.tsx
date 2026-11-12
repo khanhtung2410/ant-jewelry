@@ -17,9 +17,32 @@ export async function generateMetadata(props: PageProps<'/p/[slug]'>): Promise<M
     notFound();
   }
 
+  const image =
+    product.images.find((item) => item.isFront) ??
+    product.images[0] ??
+    product.colors.flatMap((color) => color.images ?? [])[0];
+  const title = `${product.name} | ANT JEWELRY`;
+
   return {
     title: product.name,
     description: product.description,
+    alternates: {
+      canonical: `/p/${product.slug}`,
+    },
+    openGraph: {
+      type: 'website',
+      siteName: 'ANT JEWELRY',
+      title,
+      description: product.description,
+      url: `/p/${product.slug}`,
+      images: image ? [{ url: image.url, alt: image.alt }] : [],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: product.description,
+      images: image ? [{ url: image.url, alt: image.alt }] : [],
+    },
   };
 }
 

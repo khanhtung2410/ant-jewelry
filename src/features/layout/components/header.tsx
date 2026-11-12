@@ -77,7 +77,8 @@ export function SiteHeader({ categories, settings }: SiteHeaderProps) {
               alt={settings.siteName}
               width={96}
               height={66}
-              priority
+              sizes="96px"
+              loading="eager"
             />
           </Link>
 
