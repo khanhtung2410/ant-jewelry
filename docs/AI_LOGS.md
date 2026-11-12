@@ -1,5 +1,36 @@
 ﻿# AI Change Log
 
+## 2026-11-12 17:09:17 +07:00 - Prepare production deployment handoff
+
+### User prompt
+
+> **G4.3 — Deploy + bàn giao (milestone 4).** Production (Vercel + PostgreSQL + object storage), migration, tài khoản ADMIN đầu tiên. `docs/DEPLOY.md` (biến môi trường, rollback, backup) và `docs/HUONG_DAN_VAN_HANH.md` cho chủ cửa hàng (thêm sản phẩm, viết blog, đổi thông tin liên hệ). Link production chạy; không có secret trong repo; bảng đối chiếu Figma ↔ production cuối cùng.
+>
+> Create a new branch, commit, and PR title/body strictly following `CONTRIBUTING.md`; summarize output, prompt, and time in this log.
+>
+> Add the 18 admin screenshots to the PR in a titled image table, including a validation-error case.
+
+### Changes made
+
+- Added a PostgreSQL-specific Prisma schema and initial production migration while preserving SQLite for local development and tests. Configured Vercel to generate the PostgreSQL client for production builds.
+- Added a one-time first-ADMIN command that confirms the remote database host, hides and confirms the password, hashes it, and refuses to create another bootstrap ADMIN. Restricted the demo seed to local SQLite.
+- Documented environment setup, migration, backup/restore, rollback, production readiness, and store-owner workflows for products, Blog, and contact settings.
+- Added 18 titled admin screenshots to `docs/g4-3-screenshots/`: 17 supplied images plus a local new-user validation capture. An email in the copied users screenshot was redacted; supplied attachments were left unchanged.
+- Recorded the production URL and Figma comparison as unverified. The provided domain currently serves a site whose product links do not match this app's `/p/[slug]` routes; no production cutover or ADMIN account was created because the Vercel, PostgreSQL, and storage resources are not provisioned.
+- Created branch `chore/g4-3-production-handoff`.
+
+### Output summary
+
+`npm run lint`, `npm run typecheck`, and `npm test` passed (36 files, 151 tests). PostgreSQL schema validation and initial migration generation passed with placeholder connection URLs; targeted Prettier checks passed. `npm run format:check` still reports seven untouched baseline files: `src/app/error.tsx`, `src/app/loading.tsx`, `src/app/not-found.tsx`, `src/constants/roles.test.ts`, `src/constants/statuses.ts`, `src/features/auth/actions.ts`, and `src/features/products/components/product-form-dialog.tsx`.
+
+Prisma client regeneration hit a Windows `EPERM` rename error because the query-engine DLL is in use by an active Node process. The production build and live deployment were not run; the supplied domain is not verified as this repository's deployment.
+
+### Time
+
+43 minutes elapsed from 16:26:23 to 17:09:17 (+07:00) for implementation, documentation, screenshot preparation, and validation.
+
+---
+
 ## 2026-11-12 16:18:43 +07:00 - Add product journey E2E coverage
 
 ### User prompt

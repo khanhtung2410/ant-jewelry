@@ -6,16 +6,13 @@ Website giới thiệu sản phẩm trang sức; khách hàng liên hệ trực 
 
 ANT JEWELRY là website dành cho khách hàng có nhu cầu tìm hiểu các sản phẩm trang sức và liên hệ trực tiếp với cửa hàng.
 
-**Trạng thái hiện tại:** repository có bộ khung Next.js 16.4.5 (App Router) trong `src/app/`, cấu hình TypeScript strict, ESLint, Prettier, Vitest và các contract domain trong `src/types/domain.ts`; mock data nằm trong `src/lib/mock/` (sản phẩm dùng ảnh `.webp` trong `public/mock/products/`, sản phẩm chưa có ảnh dùng SVG placeholder) và mọi trang phải đọc dữ liệu qua query function trong `src/lib/queries/`. Root layout dùng design tokens trong `src/app/globals.css`, tải font qua `next/font` và render header/footer dùng chung từ `src/components/`. Trang chủ là Server Component, hiển thị hero slider 3 ảnh, 4 carousel danh mục và 2 bài Blog mới nhất; slider và carousel là Client Components nhận dữ liệu qua props. Các component dùng chung cho sản phẩm và Blog (`ProductCard`, `Carousel`, `BlogRow`) cùng helper `formatPrice` đã có unit test. Header và footer có toggle cho màn hình nhỏ: MENU/CLOSE cho navigation và accordion cho các cột footer. Database, Prisma và Authentication chưa được cấu hình. Các chức năng nghiệp vụ bên dưới là định hướng theo yêu cầu, **chưa được triển khai**.
+**Trạng thái hiện tại:** repository có ứng dụng Next.js 16.4.5 (App Router), Prisma, PostgreSQL production schema, SQLite local/test schema, authentication ADMIN/EDITOR, quản trị nội dung, và object storage S3-compatible cho ảnh sản phẩm. Production infrastructure chưa được provision và website tại domain ANT JEWELRY chưa được xác nhận là bản deploy của repository này. Xem [`DEPLOY.md`](./DEPLOY.md) để biết trạng thái và các bước go-live.
 
-Chức năng định hướng:
+Chức năng hiện có:
 
-- Xem danh sách và thông tin chi tiết sản phẩm trang sức.
-- Lọc và sắp xếp sản phẩm theo các tiêu chí được hỗ trợ.
-- Xem thông tin các loại trang sức và danh mục sản phẩm.
-- Xem danh sách và nội dung chi tiết Blog.
-- Xem số điện thoại và các liên kết Facebook, Instagram của cửa hàng.
-- Hỗ trợ khu vực quản trị nội dung theo quyền được cấp (dự kiến).
+- Storefront danh mục/sản phẩm, lọc và sắp xếp, trang chi tiết, Blog và thông tin liên hệ.
+- Admin quản lý sản phẩm, ảnh, danh mục, Blog, hero slides, Settings và người dùng theo quyền ADMIN/EDITOR.
+- Upload ảnh sản phẩm lên S3-compatible storage; production cần bucket và credentials riêng.
 
 **Phạm vi hiện tại:** Website giới thiệu sản phẩm; khách hàng liên hệ trực tiếp qua số điện thoại và các liên kết Facebook, Instagram được công bố. Hệ thống không bao gồm Shopping Cart, Online Ordering, Online Payment hoặc Custom Jewelry Design. Không có biểu mẫu liên hệ hoặc luồng tiếp nhận/gửi yêu cầu liên hệ.
 
@@ -34,21 +31,21 @@ Các thành phần đang có trong work tree:
 | Test | Vitest 5 + `vitest.config.mts` | Đã cấu hình |
 | Package manager | npm (`package-lock.json`) | Đang sử dụng |
 | Version Control | Git / GitHub | Đang sử dụng |
-| Server-side | Next.js Server Components, Server Actions, Route Handlers | Đã chốt; chưa triển khai |
-| Database / ORM | SQLite (dev) / PostgreSQL (production); Prisma | Đã chốt; chưa cấu hình |
-| Validation | Zod | Đã chốt; chưa cài đặt |
-| Authentication | JWT | Đề xuất, chưa cấu hình |
-| Image Storage | Cloudinary | Đề xuất, chưa cấu hình |
+| Server-side | Next.js Server Components, Server Actions, Route Handlers | Đã triển khai |
+| Database / ORM | SQLite (dev/test), PostgreSQL (production); Prisma | Đã triển khai; production DB chưa provision |
+| Validation | Zod | Đã cài đặt |
+| Authentication | JWT trong secure cookie | Đã triển khai; production secret chưa cấu hình |
+| Image Storage | S3-compatible object storage | Đã triển khai; production bucket chưa provision |
 
-Kiến trúc đã chốt là **một Next.js application duy nhất**: Server Components cho read, Server Actions cho mutation, Route Handlers chỉ dùng cho upload. Không có NestJS hoặc tầng REST API riêng. Authentication và Image Storage vẫn là đề xuất trong `ARCHITECTURE.md`, chưa được xác nhận hoặc triển khai.
+Kiến trúc là **một Next.js application duy nhất**: Server Components cho read, Server Actions cho mutation, Route Handlers chỉ dùng cho upload. Không có NestJS hoặc tầng REST API riêng.
 
 ## 3. Yêu cầu / Điều kiện tiên quyết
 
 - **Node.js** >= 20.9.0 (theo yêu cầu của Next.js 16.4.5).
 - **npm** (repository dùng `package-lock.json`).
 - **Git** để clone và quản lý phiên bản.
-- Chưa cần Database, ORM, tài khoản Cloudinary hoặc biến môi trường cho bộ khung hiện tại.
-- `.env.example` liệt kê các biến dự kiến; local dev hiện chưa bắt buộc biến nào. Khi làm phase Database, local dev dùng SQLite và production dùng PostgreSQL.
+- Local dev/test dùng SQLite; production dùng PostgreSQL và cần cấu hình environment variables theo [`DEPLOY.md`](./DEPLOY.md).
+- Product-image uploads cần S3-compatible storage được cấu hình; không lưu ảnh trên filesystem của Vercel.
 
 ## 4. Bắt đầu sử dụng
 
@@ -69,17 +66,22 @@ npm install
 ### 4.3. Chạy dự án local
 
 ```bash
+npm run db:generate
+npm run db:push
+npm run db:seed
 npm run dev
 ```
 
-Mở [http://localhost:3000](http://localhost:3000). Trang chủ hiển thị hero slider với ba ảnh, carousel sản phẩm cho bốn danh mục và hai bài Blog mới nhất.
+Đặt `DATABASE_URL="file:./dev.db"` và `AUTH_SECRET` trong environment local trước khi chạy. Seed chỉ dành cho SQLite local/test; script từ chối các database không phải SQLite. Mở [http://localhost:3000](http://localhost:3000).
 
-### 4.4. Build và chạy production
+### 4.4. Build ứng dụng
 
 ```bash
 npm run build
 npm run start
 ```
+
+Vercel production build dùng `npm run build:production`, khai báo trong `vercel.json`; không dùng build SQLite ở production.
 
 ### 4.5. Kiểm tra chất lượng mã
 
@@ -102,22 +104,21 @@ Các file cấu hình hiện có:
 | `.prettierrc`, `.prettierignore` | Cấu hình format mã nguồn; bỏ qua `docs/`, `public/`, Markdown và lockfile |
 | `vitest.config.mts` | Cấu hình Vitest cho test đặt cạnh code trong `src/` |
 | `src/app/globals.css` | Design tokens toàn cục từ Figma: nền `#FEFDF8`, nền ảnh sản phẩm `#EFEEEC`, đường kẻ `#93AAA0`, chữ `#000000`, font heading/nav monospace viết hoa và font nội dung sans-serif |
-| `package.json` | Dependencies và các script `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `test`, `test:watch` |
+| `package.json` | Dependencies, test/build scripts, PostgreSQL migration và ADMIN bootstrap |
 | `.github/pull_request_template.md` | Mẫu mô tả Pull Request |
 | `.gitignore` | Bỏ qua `node_modules`, `.next`, `out`, `build`, `.env*` (trừ `.env.example`), file SQLite local và file build của TypeScript |
 
 `.env.example` đã có và được commit; `.env.local` và các file `.env*` khác nằm trong `.gitignore`. `SITE_URL` không bắt buộc khi chạy local (mặc định `http://localhost:3000`), nhưng cần đặt thành origin chính thức của website khi deploy để metadata, sitemap và robots.txt dùng URL chuẩn.
 
-Database dùng Prisma với SQLite local và PostgreSQL production; cấu hình JWT và Cloudinary: TBD, chưa có trong work tree. Không commit credentials, passwords, API keys hoặc secrets vào repository.
+Local SQLite dùng `prisma/schema.prisma`; production build và migrations dùng `prisma/postgresql/schema.prisma`. Không chạy demo seed trên production và không commit credentials, passwords, API keys hoặc secrets vào repository.
 
 ## 6. Sử dụng
 
-Trang chủ hiện hiển thị ba slide nổi bật, bốn carousel danh mục, hai bài Blog mới nhất và các liên kết điều hướng đến trang danh mục và Blog. Các trang đích sản phẩm và Blog chi tiết vẫn là luồng dự kiến:
+Luồng khách hàng và quản trị:
 
-1. Khách hàng truy cập website ANT JEWELRY.
-2. Khách hàng xem danh sách sản phẩm trang sức.
-3. Khách hàng chọn sản phẩm để xem thông tin chi tiết.
-4. Khách hàng xem nội dung Blog hoặc thông tin liên hệ để liên hệ trực tiếp với cửa hàng.
+1. Khách hàng duyệt danh mục, lọc/sắp xếp sản phẩm, xem chi tiết và liên hệ cửa hàng trực tiếp.
+2. ADMIN quản lý nội dung và thông tin liên hệ tại `/admin/*`; EDITOR có quyền giới hạn theo [`PERMISSIONS.md`](./PERMISSIONS.md).
+3. Vercel/PostgreSQL/object storage production chưa được provision. Xem [`DEPLOY.md`](./DEPLOY.md) trước khi thực hiện go-live.
 
 Chưa có khu vực Admin/Staff, API nghiệp vụ hoặc dữ liệu sản phẩm/Blog trong work tree.
 
@@ -181,6 +182,8 @@ Repository chưa có file `LICENSE`. Loại license (MIT, Apache-2.0, GPL-3.0 ho
 - [`ARCHITECTURE.md`](./ARCHITECTURE.md) — Kiến trúc hệ thống đề xuất.
 - [`CONTRIBUTING.md`](./CONTRIBUTING.md) — Quy trình làm việc, code, commit và Pull Request.
 - [`PERFORMANCE.md`](./PERFORMANCE.md) — Mục tiêu SEO, hiệu năng và số liệu Lighthouse.
+- [`DEPLOY.md`](./DEPLOY.md) — Hướng dẫn deploy, migration, secrets, backup và khôi phục.
+- [`HUONG_DAN_VAN_HANH.md`](./HUONG_DAN_VAN_HANH.md) — Hướng dẫn chủ cửa hàng thêm sản phẩm, viết Blog và cập nhật liên hệ.
 - [`AI_LOGS.md`](./AI_LOGS.md) — Nhật ký thay đổi do AI thực hiện.
 - `ANT_JEWELRY_SAD_v1.1.docx` — Tài liệu nguồn System Analysis and Design (không có trong work tree hiện tại).
 

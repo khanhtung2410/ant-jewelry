@@ -14,7 +14,13 @@
     "test:e2e": "tsx e2e/run.ts",
     "test:watch": "vitest",
     "db:push": "prisma db push",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "db:generate": "prisma generate",
+    "db:generate:production": "prisma generate --schema prisma/postgresql/schema.prisma",
+    "db:migrate:production": "prisma migrate deploy --schema prisma/postgresql/schema.prisma",
+    "db:migrate:status:production": "prisma migrate status --schema prisma/postgresql/schema.prisma",
+    "db:create-admin:production": "npm run db:generate:production && tsx prisma/create-admin.ts",
+    "build:production": "npm run db:generate:production && next build"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

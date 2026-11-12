@@ -17,6 +17,12 @@ function getSharedImages(product: (typeof products)[number]) {
 }
 
 async function main() {
+  if (!process.env.DATABASE_URL?.startsWith('file:')) {
+    throw new Error(
+      'The demo seed only supports local SQLite; it refuses to run against other databases.',
+    );
+  }
+
   const now = new Date();
 
   for (const category of categories) {
