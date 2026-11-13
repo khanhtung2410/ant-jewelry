@@ -41,6 +41,7 @@ export function ProductFormDialog({
   categories,
   productName,
   editorView,
+  canEditPrice,
   closeHref,
   images = [],
 }: {
@@ -48,6 +49,7 @@ export function ProductFormDialog({
   categories: ProductCategoryOption[];
   productName: string | null;
   editorView: boolean;
+  canEditPrice: boolean;
   closeHref: string;
   images?: ProductImage[];
 }) {
@@ -111,6 +113,7 @@ export function ProductFormDialog({
           values={values}
           categories={categories}
           readOnly={editorView}
+          canEditPrice={canEditPrice}
           closeHref={closeHref}
         />
       </AdminTabPanel>
@@ -150,11 +153,13 @@ function ProductForm({
   values,
   categories,
   readOnly,
+  canEditPrice,
   closeHref,
 }: {
   values: ProductFormValues;
   categories: ProductCategoryOption[];
   readOnly: boolean;
+  canEditPrice: boolean;
   closeHref: string;
 }) {
   const initialState: ProductFormState = {
@@ -173,6 +178,7 @@ function ProductForm({
       message={state.message}
       categories={categories}
       readOnly={readOnly}
+      canEditPrice={canEditPrice}
       pending={pending}
       returnTo={closeHref}
     />
@@ -186,6 +192,7 @@ function ProductFormFields({
   message,
   categories,
   readOnly,
+  canEditPrice,
   pending,
   returnTo,
 }: {
@@ -195,11 +202,13 @@ function ProductFormFields({
   message: string | null;
   categories: ProductCategoryOption[];
   readOnly: boolean;
+  canEditPrice: boolean;
   pending: boolean;
   returnTo: string;
 }) {
   const [categoryId, setCategoryId] = useState(values.categoryId);
   const selectedCategory = categories.find((category) => category.id === categoryId);
+  const priceReadOnly = readOnly || !canEditPrice;
 
   return (
     <form action={action} className="space-y-4">
@@ -259,8 +268,8 @@ function ProductFormFields({
             name="price"
             inputMode="numeric"
             defaultValue={values.price}
-            readOnly={readOnly}
-            className={readOnly ? readOnlyInputClassName : inputClassName}
+            readOnly={priceReadOnly}
+            className={priceReadOnly ? readOnlyInputClassName : inputClassName}
           />
         </FormField>
         <FormField label="Description" error={errors.description?.[0]}>

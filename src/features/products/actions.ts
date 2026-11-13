@@ -13,7 +13,7 @@ import {
   type FieldErrors,
   type FormState,
 } from '@/features/shared/lib/form-validation';
-import { canManageProducts } from '@/features/shared/lib/permissions';
+import { canEditPrice, canManageProducts, hasPermission } from '@/features/shared/lib/permissions';
 import {
   getProductRevalidationPaths,
   processPendingProductImageDeletions,
@@ -105,11 +105,22 @@ export async function saveProduct(
   const existingProduct = productId
     ? await prisma.product.findUnique({
         where: { id: productId },
-        select: { id: true },
+        select: { id: true, price: true },
       })
     : null;
   if (productId && !existingProduct) {
     return stateWithErrors(values, { form: ['This product no longer exists.'] });
+  }
+
+  if (
+    productId &&
+    existingProduct &&
+    !canEditPrice(session.role) &&
+    parsed.data.price !== existingProduct.price
+  ) {
+    return stateWithErrors(values, {
+      form: ['You do not have permission to edit product prices.'],
+    });
   }
 
   const data = {
@@ -429,7 +440,10 @@ export async function deleteProductImage(productId: string, imageId: string, _fo
 
 export async function deleteProduct(productId: string, _formData: FormData) {
   void _formData;
-  await requireProductManager();
+  const session = await getAdminSession();
+  if (!session || !hasPermission(session.role, 'products:delete')) {
+    throw new Error('You do not have permission to delete products.');
+  }
   const product = await prisma.product.findUnique({
     where: { id: productId },
     select: { id: true, images: { select: { storageKey: true } } },

@@ -14,6 +14,18 @@ vi.mock('@/features/auth/session', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }));
+vi.mock('@/features/shared/db/prisma', () => ({
+  prisma: {
+    category: {
+      findUnique: vi.fn(async () => ({ id: 'category-1', type: 'WEDDING RING' })),
+    },
+    product: {
+      findUnique: vi.fn(async ({ where }: { where: { id?: string; slug?: string } }) =>
+        where?.id ? { id: where.id, price: 1000000 } : null,
+      ),
+    },
+  },
+}));
 
 const { saveProduct } = await import('@/features/products/actions');
 const { saveSettings } = await import('@/features/settings/actions');

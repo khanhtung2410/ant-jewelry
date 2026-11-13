@@ -28,6 +28,9 @@ const eslintConfig = defineConfig([
     'out/**',
     'build/**',
     'next-env.d.ts',
+    // Local tooling / prompt skill artifacts.
+    '.opencode/**',
+    '.github/prompts/**',
   ]),
 ]);
 
