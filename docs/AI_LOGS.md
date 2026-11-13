@@ -1,5 +1,110 @@
 ﻿# AI Change Log
 
+## 2026-11-13 09:54:56 +07:00 - Share one skeleton for the not-found pages
+
+### User prompt
+
+> not found.tsx pge is repeat, make general skeleton and adjust content acordingly
+
+### Changes made
+
+- Added `StatusPage` and `StatusPageLink` in `src/features/shared/components/status-page.tsx`: one shared card with an optional eyebrow, title, description and an action row with primary/secondary link styles.
+- Rewrote `src/app/not-found.tsx`, `src/app/(public)/not-found.tsx` and `src/app/admin/not-found.tsx` to pass only their content and actions to the shared skeleton.
+- Admin 404 copy is now `Admin page not found` with an `ADMIN` eyebrow so it is clearly distinct from the root page.
+- Added `src/features/shared/components/status-page.test.tsx` covering eyebrow, title, description, action variants and the no-eyebrow/no-action case.
+
+### Output summary
+
+`npm run typecheck`, `npm run lint`, `npm test` (37 files, 154 tests) and Prettier passed. The root and public 404 pages were checked in a browser against the running dev server on port 3000. The full Playwright suite could not start its own dev server on port 3100 because a dev server is already running on port 3000.
+
+### Follow-up noticed
+
+Unmatched `/admin/*` URLs render the root 404 page, not `src/app/admin/not-found.tsx`; the admin page only runs when an admin route calls `notFound()`. Routing was left unchanged in this task.
+
+---
+
+## 2026-11-13 01:10:17 +07:00 - Extract shared admin UI and remove duplicate code
+
+### User prompt
+
+> review code, find mismatch, optimize, create component for duplicate code element
+
+### Changes made
+
+- Added `StatusBadge` (`src/features/admin/components/status-badge.tsx`) and replaced the five duplicated status badge blocks in product, Blog, category, hero slide and user management. All badges now share the same inline-flex, no-wrap styling.
+- Added `AdminTabList`, `AdminTabButton` and `AdminTabPanel` (`src/features/admin/components/admin-tabs.tsx`) and used them in the product dialog (Details/Images) and the Blog Markdown editor (Write/Preview), removing both local tab button copies.
+- Added `AdminConfirmForm` (`src/features/admin/components/admin-confirm-form.tsx`) and replaced the repeated `window.confirm` delete forms in Blog, hero slides, categories, product images and single-image deletion.
+- Added `AdminTableSection` and `AdminTableEmpty` (`src/features/admin/components/admin-table-section.tsx`) and replaced the duplicated section header and empty-state markup in all five management tables.
+- Fixed the recurring dev warning `[statuses] Unknown status key: $$typeof` in `src/constants/statuses.ts`: the fallback proxy now passes React/Fast Refresh inspection keys (`$$typeof`, `then`) through instead of treating them as statuses. Added a regression test.
+- Removed the unused `src/features/products/components/productCard.tsx` (`Card` component had no imports and its filename only differed from `product-card.tsx` by case).
+- Left the mixed English/Vietnamese admin labels unchanged because language choice is still open in OI-029, and kept `canEditPrice` because it is an exported, tested permission helper.
+
+### Output summary
+
+`npm run typecheck`, `npm run lint`, `npm test` (36 files, 152 tests), Prettier and `npm run test:e2e` (3 journeys) passed. A temporary Playwright check confirmed all five management pages render the shared table sections and that switching product dialog tabs preserves unsaved form values; the temporary spec was removed afterward.
+
+---
+
+## 2026-11-12 23:04:14 +07:00 - Stabilize product table actions when visibility changes
+
+### User prompt
+
+> an hien thi status when change status make edit button change posiotion and unalign, push them afar or align agian
+
+### Changes made
+
+- Gave the product status badge a fixed minimum width and the hide/show submit button a fixed width so the `Ẩn` / `Hiển thị` labels no longer resize the Status and Actions columns.
+- Added fixed widths for the Status and Actions columns in the product table.
+- Added a `wrap` option to `AdminTableActions` and disabled wrapping in the product row actions so Edit and the visibility toggle stay on one line.
+
+### Output summary
+
+`npm run typecheck`, `npm run lint`, `npm test` (36 files, 151 tests) and Prettier passed. A temporary Playwright check confirmed every Edit link had the same x-coordinate before and after toggling a product's visibility; the temporary spec was removed afterward.
+
+---
+
+## 2026-11-12 22:43:58 +07:00 - Move product image editing into a second dialog tab
+
+### User prompt
+
+> edit images in product should be in second tab of pop over because when scale up each pro duct color will have a lot of picture make edit text overflow
+
+### Changes made
+
+- Split the ADMIN product dialog into `Details` and `Images` tabs in `src/features/products/components/product-form-dialog.tsx`.
+- Kept the product form mounted while switching tabs so unsaved field values are not lost.
+- Moved `ProductImageManagement` out of the form area into the Images tab, leaving the details form short when products gain many color images.
+- Added a tab count (`Images (n)`) and kept the "save the product first" guidance in the Images tab for new products.
+- Hid the tabs for EDITOR read-only views, which still show only the product details form.
+
+### Output summary
+
+`npm run typecheck`, `npm run lint`, `npm test` (36 files, 151 tests), Prettier, and the Playwright E2E suite (3 journeys) passed.
+
+---
+
+## 2026-11-12 22:21:00 +07:00 - Align REQUIREMENTS with the implemented ADMIN/EDITOR permissions
+
+### User prompt
+
+> có thể cập nhật REQUIREMENTS theo mô hình phân quyền hiện tại
+
+### Changes made
+
+- Reworked the permission content in `docs/REQUIREMENTS.md` to match `docs/PERMISSIONS.md` and `src/features/shared/lib/permissions.ts`: `ADMIN` has full admin access; `EDITOR` (Staff) can view products including price read-only and manage Blog, but cannot write products, edit price, manage categories/hero slides/Settings/Users.
+- Updated objectives, scope, definitions, actor table, permission matrix, admin route table, FR-020 to FR-032 actors, UC-11/13/14/15/20, NFR-008, BR-008 and ASM-003. FR-036 and UC-20 now state that permissions are enforced server-side and role changes take effect on the next request.
+- Marked OI-004 as resolved in place while preserving requirement IDs, OI IDs and traceability; OI-005/OI-006 operational details remain TBC.
+- Updated `docs/ERD.md` for `USER.passwordHash`, `USER.locked`, `PRODUCT_IMAGE.storageKey`, `PRODUCT_IMAGE.isHover`, `PENDING_IMAGE_DELETION` and storage/cleanup notes.
+- Formatted seven pre-existing Prettier violations in `src/app/{error,loading,not-found}.tsx`, `src/constants/{roles.test,statuses}.ts`, `src/features/auth/actions.ts` and `src/features/products/components/product-form-dialog.tsx`.
+
+### Output summary
+
+`npm run format:check`, `npm run typecheck`, `npm run lint`, `npm test` (36 files, 151 tests) and `npm run build` passed. The document now describes the same ADMIN/EDITOR model as the permission code and `docs/PERMISSIONS.md`.
+
+### Time
+
+The session was resumed from a checkpoint at 22:21:00 (+07:00); the exact start of the earlier documentation review was not recorded.
+
 ## 2026-11-12 17:09:17 +07:00 - Prepare production deployment handoff
 
 ### User prompt

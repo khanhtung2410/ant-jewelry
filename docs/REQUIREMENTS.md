@@ -42,7 +42,7 @@
  
 ### 1.1. Mục đích của hệ thống
  
-ANT JEWELRY là website giới thiệu các sản phẩm trang sức. Hệ thống cho phép khách hàng tham khảo thông tin sản phẩm theo danh mục, đọc các bài viết Blog, xem số điện thoại và các liên kết Facebook, Instagram để liên hệ trực tiếp với ANT JEWELRY. Phía nội bộ, hệ thống định hướng hỗ trợ quản trị viên (Admin) và nhân viên (Staff) quản lý nội dung sản phẩm và bài viết.
+ANT JEWELRY là website giới thiệu các sản phẩm trang sức. Hệ thống cho phép khách hàng tham khảo thông tin sản phẩm theo danh mục, đọc các bài viết Blog, xem số điện thoại và các liên kết Facebook, Instagram để liên hệ trực tiếp với ANT JEWELRY. Phía nội bộ, hệ thống hỗ trợ quản trị viên (Admin) quản lý sản phẩm, danh mục, Blog, hero slide, Settings và tài khoản; nhân viên (Staff, triển khai với role `EDITOR`) chỉ xem sản phẩm và quản lý Blog.
  
 Theo phạm vi do chủ dự án làm rõ (SAD mục 1.1, 2.2.2), website **không** hỗ trợ giỏ hàng, đặt hàng trực tuyến, thanh toán, giao dịch trực tuyến hay đặt thiết kế/sản xuất theo yêu cầu riêng.
  
@@ -52,7 +52,7 @@ Theo phạm vi do chủ dự án làm rõ (SAD mục 1.1, 2.2.2), website **khô
 |---|---|---|---|
 | OBJ-01 | Cho phép khách hàng xem danh sách, danh mục, chi tiết sản phẩm và sắp xếp theo giá hoặc tên | AC-004 đến AC-010 | Đã quan sát |
 | OBJ-02 | Cung cấp nội dung Blog để khách hàng tìm hiểu thông tin liên quan đến trang sức | AC-011, AC-012 | Đã quan sát |
-| OBJ-03 | Hỗ trợ Admin/Staff quản lý sản phẩm, danh mục, Blog và tài khoản nội bộ | AC-023 đến AC-036 | Đã xác định ở mức nhóm chức năng; thao tác chi tiết TBC |
+| OBJ-03 | Hỗ trợ Admin quản lý sản phẩm, danh mục, Blog, hero slide, Settings và tài khoản nội bộ; Staff (EDITOR) xem sản phẩm và quản lý Blog | AC-023 đến AC-036 | Đã xác định; ma trận quyền đã chốt tại mục 3.3 |
 | OBJ-04 | Làm cơ sở cho phát triển, kiểm thử và nghiệm thu hệ thống | Toàn bộ mục 11 và 12 | Đề xuất |
  
 ### 1.3. Phạm vi dự án
@@ -62,10 +62,10 @@ Phạm vi được phân loại theo mức độ xác nhận của SAD (mục 2.
 | Phân loại | Nội dung |
 |---|---|
 | **Trong phạm vi – Đã quan sát trên website công khai** | Trang chủ; danh sách sản phẩm; xem sản phẩm theo danh mục; sắp xếp theo giá và tên; chi tiết sản phẩm (hình ảnh, thông tin, thông số); danh sách và chi tiết Blog; số điện thoại và liên kết Facebook, Instagram; điều hướng giữa các trang |
-| **Trong phạm vi – Đã xác định (chủ dự án xác nhận ở mức nhóm chức năng)** | Quản trị sản phẩm và Blog; vai trò `ADMIN` và `EDITOR` (`EDITOR` ánh xạ actor Staff của SAD) |
+| **Trong phạm vi – Đã xác định (chủ dự án xác nhận ở mức nhóm chức năng)** | Quản trị sản phẩm (ADMIN), Blog (ADMIN và EDITOR), danh mục/hero slide/Settings/tài khoản (ADMIN); vai trò `ADMIN` và `EDITOR` (`EDITOR` ánh xạ actor Staff của SAD) |
 | **Ngoài phạm vi** | Giỏ hàng; đặt hàng trực tuyến; thanh toán trực tuyến; giao dịch trực tuyến; sản phẩm thiết kế/sản xuất theo yêu cầu riêng |
 | **Đề xuất mở rộng (không bắt buộc ở phiên bản hiện tại)** | Quản lý tồn kho; khuyến mãi; bảo hành; vận chuyển; chăm sóc khách hàng |
-| **TBC** | Ma trận quyền chi tiết giữa `ADMIN` và `EDITOR`; các vấn đề còn lại tại Phụ lục A |
+| **TBC** | Các vấn đề còn lại tại Phụ lục A (ma trận quyền đã chốt tại mục 3.3) |
 
 Nguyên tắc: không đưa giỏ hàng, đặt hàng, thanh toán, giao dịch trực tuyến hoặc thiết kế riêng trở lại phạm vi nếu chưa có thay đổi yêu cầu chính thức từ chủ dự án (SAD, Ghi chú cuối).
 
@@ -77,7 +77,7 @@ Bảng dưới ghi các quyết định đã được chốt cho phiên bản tr
 |---|---|
 | Kiến trúc | Một Next.js App Router + TypeScript strict. Read bằng Server Components; mutation bằng Server Actions; Route Handlers chỉ dùng cho upload. Không NestJS, không tầng REST API riêng. |
 | Dữ liệu | Prisma. SQLite cho development, PostgreSQL cho production. Validate bằng Zod. |
-| Vai trò | `ADMIN` toàn quyền. `EDITOR` quản lý sản phẩm (trừ giá), danh mục, Blog và hero slide; không sửa giá, không vào Settings / Users. `EDITOR` ánh xạ actor Staff của SAD. |
+| Vai trò | `ADMIN` toàn quyền. `EDITOR` chỉ xem sản phẩm (kể cả giá, chỉ đọc) và quản lý Blog; không tạo/sửa/xóa/ẩn sản phẩm, không sửa giá, không quản lý danh mục/hero slide, không vào Settings / Users. `EDITOR` ánh xạ actor Staff của SAD. |
 | Khách liên hệ | Không có Inquiry hoặc form gửi yêu cầu. Nút "ORDER NOW" mở Contact popover gồm số điện thoại, Facebook và Instagram lấy từ Settings. |
 | Giá | Số nguyên VND (`Int`), hiển thị dạng `10.000.000`, không ký hiệu tiền tệ. |
 | Responsive | Figma chỉ có desktop 1920px; tự thiết kế mobile/tablet nhất quán với style và đính kèm ảnh chụp trong PR. |
@@ -118,7 +118,7 @@ Bảng dưới ghi các quyết định đã được chốt cho phiên bản tr
 | Customer | Khách hàng/khách truy cập website |
 | Admin | Quản trị viên hệ thống; trong triển khai dùng role `ADMIN` |
 | Staff | Nhân viên vận hành; trong triển khai dùng role `EDITOR` |
-| EDITOR | Role nội bộ quản lý nội dung (sản phẩm trừ giá, danh mục, Blog, hero slide); ánh xạ actor Staff của SAD |
+| EDITOR | Role nội bộ chỉ xem sản phẩm (kể cả giá, chỉ đọc) và quản lý Blog; không quản lý sản phẩm/danh mục/hero slide/Settings/Users; ánh xạ actor Staff của SAD |
 | Product (Sản phẩm) | Sản phẩm trang sức |
 | Product Type (Loại sản phẩm) | Loại trang sức, ví dụ Ring (nhẫn), Necklace (dây chuyền) |
 | Category (Danh mục) | Danh mục kinh doanh, ví dụ Wedding Bands, Engagement, Everyday, Ready to ship |
@@ -187,7 +187,7 @@ Quy mô dữ liệu và lưu lượng truy cập chưa có số liệu khảo s�
 Hệ thống gồm hai phân hệ:
  
 - **Phân hệ công khai (Customer):** Trang chủ, danh sách và chi tiết sản phẩm, Blog, số điện thoại và liên kết Facebook, Instagram để liên hệ trực tiếp. Không yêu cầu đăng nhập.
-- **Phân hệ quản trị (Admin, Staff) – dự kiến:** Đăng nhập, quản lý sản phẩm, danh mục, hình ảnh, giá, Blog, quản lý tài khoản và phân quyền. Phân hệ này chưa được xác minh trên thực tế và các thao tác chi tiết ở trạng thái TBC.
+- **Phân hệ quản trị (Admin, Staff) – đã triển khai:** Đăng nhập; ADMIN quản lý sản phẩm, danh mục, hình ảnh, giá, Blog, hero slide, Settings và tài khoản/phân quyền; EDITOR (Staff) chỉ xem sản phẩm và quản lý Blog. Ma trận quyền chi tiết tại mục 3.3.
 ```mermaid
 flowchart LR
     C["Customer<br/>(khách truy cập)"]
@@ -254,33 +254,36 @@ Qua đối chiếu ngày 05/11/2026, các nội dung sau xuất hiện trên web
 | Chủ dự án / đơn vị vận hành ANT JEWELRY | Người quyết định phạm vi, phê duyệt yêu cầu và đóng các OI | Phạm vi và quyền hạn Admin/Staff |
 | Customer | Người dùng cuối của phân hệ công khai | Tìm hiểu sản phẩm và liên hệ trực tiếp với cửa hàng |
 | Admin | Người dùng nội bộ quản lý hệ thống | Kiểm soát nội dung, tài khoản, quyền |
-| Staff | Người dùng nội bộ vận hành | Cập nhật nội dung theo quyền được cấp |
+| Staff | Người dùng nội bộ vận hành | Xem sản phẩm (chỉ đọc) và quản lý Blog |
 | Nhóm BA, phát triển, kiểm thử | Xây dựng và nghiệm thu hệ thống | Yêu cầu rõ ràng, kiểm thử được, không mâu thuẫn |
 | Dịch vụ lưu trữ hình ảnh | Thành phần bên ngoài, mới ở mức đề xuất (SAD mục 4.1) | Không được mô hình hóa như Actor |
  
 ### 3.2. Các tác nhân (Actors) và trách nhiệm
  
-SAD xác định **3 actor**: Customer, Admin, Staff. **SAD không có vai trò Manager**; tài liệu này không tự thêm vai trò đó. Vai trò "Employee" tương ứng với **Staff**. Trong triển khai, hai role nội bộ dùng tên `ADMIN` và `EDITOR`; `EDITOR` ánh xạ actor Staff và chỉ quản lý nội dung, không sửa giá, không vào Settings / Users. Nếu đơn vị vận hành cần cấp quản lý trung gian, cần bổ sung qua OI-004.
+SAD xác định **3 actor**: Customer, Admin, Staff. **SAD không có vai trò Manager**; tài liệu này không tự thêm vai trò đó. Vai trò "Employee" tương ứng với **Staff**. Trong triển khai, hai role nội bộ dùng tên `ADMIN` và `EDITOR`; `EDITOR` ánh xạ actor Staff, chỉ xem sản phẩm (kể cả giá, chỉ đọc) và quản lý Blog; không tạo/sửa/xóa/ẩn sản phẩm, không quản lý danh mục/hero slide, không vào Settings / Users. Ma trận quyền chi tiết tại mục 3.3.
  
-| Actor | Mô tả | Trách nhiệm | Phạm vi quyền (theo SAD) | Trạng thái |
+| Actor | Mô tả | Trách nhiệm | Phạm vi quyền | Trạng thái |
 |---|---|---|---|---|
 | **Customer** | Người truy cập website để xem thông tin sản phẩm và liên hệ trực tiếp | Xem sản phẩm, danh mục, Blog, số điện thoại và liên kết Facebook, Instagram | Truy cập công khai, không cần tài khoản. Không tạo đơn hàng, không thanh toán | Đã xác định |
-| **Admin** | Quản trị viên, quản lý và kiểm soát hoạt động hệ thống | Quản lý sản phẩm, danh mục, Blog và người dùng | Quyền chi tiết (nhân viên, phân quyền, cấu hình hệ thống) chưa xác nhận | Vai trò đã xác định; quyền chi tiết TBC (OI-004) |
-| **Staff** | Nhân viên tham gia vận hành và hỗ trợ website | Hỗ trợ vận hành website; kiểm tra thông tin sản phẩm; cập nhật sản phẩm hoặc bài viết theo quyền được cấp | "Theo quyền được cấp"; không mặc định có cùng quyền với Admin | Vai trò đã xác định; quyền chi tiết TBC (OI-004) |
- 
-### 3.3. Ma trận quyền (đề xuất, TBC)
- 
-SAD chưa có ma trận quyền (OI-004). Bảng dưới chỉ tổng hợp những gì SAD nêu; ô **"TBC"** nghĩa là SAD chưa đủ căn cứ để quyết định. Không mặc định Admin và Staff có cùng quyền.
- 
-| Chức năng | Customer | Admin | Staff | Mã yêu cầu |
+| **Admin** | Quản trị viên, quản lý và kiểm soát hoạt động hệ thống | Quản lý sản phẩm, danh mục, Blog, hero slide, Settings và người dùng | Toàn quyền trong khu vực quản trị | Vai trò và ma trận quyền đã chốt (mục 3.3) |
+| **Staff** | Nhân viên tham gia vận hành và hỗ trợ website | Xem sản phẩm (chỉ đọc, kể cả giá); tạo/sửa/xuất bản bài viết Blog | Chỉ quyền xem sản phẩm và quản lý Blog; không mặc định có cùng quyền với Admin | Vai trò và ma trận quyền đã chốt (mục 3.3) |
+
+### 3.3. Ma trận quyền (đã chốt)
+
+Ma trận dưới đây là mô hình phân quyền đang triển khai; thay thế nội dung TBC trước đây của OI-004. Quyền được kiểm tra ở phía máy chủ (Server Action/route), không chỉ ẩn nút trên giao diện.
+
+| Chức năng | Customer | Admin | Staff (EDITOR) | Mã yêu cầu |
 |---|---|---|---|---|
 | Xem nội dung công khai (trang chủ, sản phẩm, Blog, liên hệ) | Có | Có | Có | FR-001 đến FR-011 |
-| Đăng nhập/đăng xuất khu vực quản trị | Không | Có (TBC) | Có (TBC) | FR-033, FR-034 |
-| Quản lý sản phẩm | Không | Có (TBC) | Theo quyền (TBC) | FR-020 đến FR-024 |
-| Quản lý hình ảnh, giá sản phẩm | Không | TBC | TBC | FR-025, FR-026 |
-| Quản lý danh mục | Không | Có (TBC) | TBC | FR-027 |
-| Quản lý Blog | Không | Có (TBC) | Theo quyền (TBC) | FR-028 đến FR-032 |
-| Quản lý tài khoản nội bộ, phân quyền | Không | Có (TBC) | Không (TBC) | FR-035, FR-036 |
+| Đăng nhập/đăng xuất khu vực quản trị | Không | Có | Có | FR-033, FR-034 |
+| Xem danh sách/chi tiết sản phẩm trong khu vực quản trị | Không | Có | Có (chỉ đọc, kể cả giá) | FR-020, FR-021 |
+| Thêm/sửa/xóa/ẩn sản phẩm | Không | Có | Không | FR-022 đến FR-024 |
+| Quản lý hình ảnh, giá sản phẩm | Không | Có | Không | FR-025, FR-026 |
+| Quản lý danh mục | Không | Có | Không | FR-027 |
+| Quản lý Blog | Không | Có | Có | FR-028 đến FR-032 |
+| Quản lý hero slide | Không | Có | Không | FR-001 |
+| Quản lý Settings | Không | Có | Không | FR-003 |
+| Quản lý tài khoản nội bộ, phân quyền | Không | Có | Không | FR-035, FR-036 |
 
 ---
 ## 4. Yêu cầu chức năng
@@ -465,15 +468,15 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
  
 ### 4.4. MOD-06 – Quản trị sản phẩm (khu vực quản trị)
  
-> **Lưu ý chung cho MOD-06:** "quản trị sản phẩm và Blog" được chủ dự án xác định ở mức **nhóm chức năng**; thao tác cụ thể (thêm, sửa, xóa, ẩn, cập nhật giá) và quyền của từng vai trò vẫn TBC (OI-004, OI-005). Luồng bên dưới là luồng đề xuất theo UC-11 của SAD, chưa xác minh trên hệ thống thực. Luồng thay thế chung cho mọi yêu cầu của module: người dùng chưa đăng nhập bị từ chối (HTTP 401); người dùng không đủ quyền bị từ chối (HTTP 403).
+> **Lưu ý chung cho MOD-06:** "quản trị sản phẩm và Blog" được chủ dự án xác định ở mức **nhóm chức năng**; quyền của từng vai trò theo ma trận đã chốt tại mục 3.3 (ADMIN quản lý sản phẩm; EDITOR chỉ xem). Chi tiết thao tác xóa/ẩn và trạng thái hiển thị vẫn TBC (OI-005). Luồng bên dưới là luồng đề xuất theo UC-11 của SAD, chưa xác minh trên hệ thống thực. Luồng thay thế chung cho mọi yêu cầu của module: người dùng chưa đăng nhập bị từ chối (HTTP 401); người dùng không đủ quyền bị từ chối (HTTP 403).
  
 #### FR-020 – Xem danh sách sản phẩm quản trị
  
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Admin/Staff được phân quyền xem danh sách sản phẩm trong khu vực quản trị. |
-| Actor | Admin, Staff |
-| Tiền điều kiện | Đã đăng nhập; có quyền quản lý sản phẩm. |
+| Actor | Admin, Staff (EDITOR chỉ đọc) |
+| Tiền điều kiện | Đã đăng nhập; có quyền xem sản phẩm. |
 | Luồng chính | 1. Người dùng mở mục quản lý sản phẩm.<br>2. Hệ thống hiển thị danh sách sản phẩm. Việc danh sách quản trị có hiển thị cả sản phẩm đã ẩn/xóa mềm hay không: TBC (OI-005). |
 | Luồng thay thế | Theo luồng thay thế chung của module. |
 | Hậu điều kiện | Danh sách được hiển thị. Dữ liệu hệ thống không thay đổi. |
@@ -487,7 +490,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Người có quyền xem đầy đủ thông tin một sản phẩm trong khu vực quản trị (kể cả giá, hình ảnh, trạng thái). |
-| Actor | Admin, Staff |
+| Actor | Admin, Staff (EDITOR chỉ đọc) |
 | Tiền điều kiện | Như FR-020; sản phẩm được chọn tồn tại. |
 | Luồng chính | 1. Người dùng chọn một sản phẩm trong danh sách.<br>2. Hệ thống hiển thị đầy đủ thông tin sản phẩm. |
 | Luồng thay thế | Theo luồng chung; sản phẩm không tồn tại: HTTP 404. |
@@ -502,7 +505,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Người có quyền tạo thông tin sản phẩm mới. |
-| Actor | Admin; Staff theo quyền được cấp |
+| Actor | Admin |
 | Tiền điều kiện | Đã đăng nhập; có quyền thêm sản phẩm; Product Type liên quan đã tồn tại. |
 | Luồng chính | 1. Người dùng chọn thêm sản phẩm.<br>2. Người dùng nhập thông tin: tên (bắt buộc, tối đa 255 ký tự), nhãn hiệu, loại sản phẩm (bắt buộc), giới thiệu ngắn, giá (FR-026), hình ảnh (FR-025).<br>3. Hệ thống kiểm tra và lưu dữ liệu.<br>4. Hệ thống thông báo kết quả. |
 | Luồng thay thế | 3a. Dữ liệu không hợp lệ hoặc thiếu trường bắt buộc: hệ thống không lưu, thông báo lỗi theo từng trường (HTTP 400).<br>Luồng chung của module. |
@@ -517,7 +520,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Người có quyền chỉnh sửa thông tin của sản phẩm đã có. |
-| Actor | Admin; Staff theo quyền được cấp |
+| Actor | Admin |
 | Tiền điều kiện | Như FR-021. |
 | Luồng chính | 1. Người dùng mở sản phẩm và chọn chỉnh sửa.<br>2. Người dùng thay đổi thông tin (tên, nhãn hiệu, loại, giới thiệu ngắn).<br>3. Hệ thống kiểm tra và lưu.<br>4. Hệ thống thông báo kết quả. |
 | Luồng thay thế | 3a. Dữ liệu không hợp lệ: không lưu, thông báo lỗi (HTTP 400).<br>Luồng chung của module. |
@@ -532,7 +535,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Người có quyền xóa hoặc ẩn sản phẩm khỏi website, và điều chỉnh trạng thái hiển thị. Hợp nhất FR-PRO-004 và FR-PRO-008 của SAD. |
-| Actor | Admin; Staff theo quyền được cấp |
+| Actor | Admin |
 | Tiền điều kiện | Như FR-021. |
 | Luồng chính | 1. Người dùng chọn xóa hoặc ẩn sản phẩm.<br>2. Hệ thống yêu cầu xác nhận thao tác.<br>3. Người dùng xác nhận.<br>4. Hệ thống đặt cờ xóa mềm (`is_delete`) hoặc trạng thái ẩn theo cơ chế được chốt (TBC, OI-005) và thông báo kết quả. |
 | Luồng thay thế | 3a. Người dùng hủy: không thay đổi dữ liệu.<br>Luồng chung của module. |
@@ -547,7 +550,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Người có quyền thêm, thay đổi, xóa và sắp xếp hình ảnh của sản phẩm; chọn ảnh đại diện; nhập văn bản thay thế (alt text). |
-| Actor | Theo quyền (OI-004) |
+| Actor | Admin |
 | Tiền điều kiện | Như FR-021. |
 | Luồng chính | 1. Người dùng mở phần hình ảnh của sản phẩm.<br>2. Người dùng thêm ảnh mới, thay ảnh, xóa ảnh, đặt ảnh đại diện hoặc đổi thứ tự.<br>3. Hệ thống kiểm tra và lưu thay đổi.<br>4. Hệ thống thông báo kết quả. |
 | Luồng thay thế | 3a. Tệp ảnh không hợp lệ (định dạng hoặc dung lượng vượt giới hạn): hệ thống từ chối và thông báo; giới hạn cụ thể TBC (OI-018).<br>Luồng chung của module. |
@@ -562,7 +565,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Người có quyền cập nhật giá hiển thị của sản phẩm. |
-| Actor | Theo quyền (OI-004) |
+| Actor | Admin |
 | Tiền điều kiện | Như FR-021. |
 | Luồng chính | 1. Người dùng mở phần giá của sản phẩm.<br>2. Người dùng nhập giá mới.<br>3. Hệ thống kiểm tra và lưu theo cách được chốt: tạo bản ghi giá mới hoặc cập nhật bản ghi hiện tại (TBC, OI-008).<br>4. Hệ thống thông báo kết quả. |
 | Luồng thay thế | 3a. Giá không hợp lệ: không lưu, thông báo lỗi; quy tắc hợp lệ TBC (OI-016).<br>Luồng chung của module. |
@@ -577,7 +580,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Người có quyền thêm, sửa hoặc xóa danh mục sản phẩm. |
-| Actor | Admin (UC-12); Staff: TBC |
+| Actor | Admin |
 | Tiền điều kiện | Đã đăng nhập; có quyền quản lý danh mục. |
 | Luồng chính | 1. Người dùng mở mục danh mục.<br>2. Người dùng thêm, sửa hoặc xóa danh mục.<br>3. Hệ thống kiểm tra, lưu và thông báo kết quả. |
 | Luồng thay thế | 3a. Xóa danh mục đang có sản phẩm: hành vi TBC (OI-009).<br>Luồng chung của module. |
@@ -596,7 +599,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Người có quyền xem danh sách bài viết trong khu vực quản trị. |
-| Actor | Admin; Staff theo quyền được cấp |
+| Actor | Admin, Staff (EDITOR) |
 | Tiền điều kiện | Đã đăng nhập; có quyền quản lý Blog. |
 | Luồng chính | 1. Người dùng mở mục quản lý Blog.<br>2. Hệ thống hiển thị danh sách bài viết. |
 | Luồng thay thế | Theo luồng chung của module. |
@@ -611,7 +614,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Người có quyền tạo bài viết mới. |
-| Actor | Admin; Staff theo quyền được cấp |
+| Actor | Admin, Staff (EDITOR) |
 | Tiền điều kiện | Như FR-028. |
 | Luồng chính | 1. Người dùng chọn thêm bài viết.<br>2. Người dùng nhập tiêu đề, tóm tắt, nội dung (đều bắt buộc theo SAD A.7) và hình ảnh (FR-032).<br>3. Hệ thống kiểm tra và lưu.<br>4. Hệ thống thông báo kết quả. |
 | Luồng thay thế | 3a. Thiếu trường bắt buộc hoặc dữ liệu không hợp lệ: không lưu, thông báo lỗi (HTTP 400).<br>Luồng chung của module. |
@@ -626,7 +629,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Người có quyền chỉnh sửa tiêu đề, nội dung và thông tin bài viết. |
-| Actor | Admin; Staff theo quyền được cấp |
+| Actor | Admin, Staff (EDITOR) |
 | Tiền điều kiện | Như FR-028; bài viết được chọn tồn tại. |
 | Luồng chính | 1. Người dùng mở bài viết và chọn chỉnh sửa.<br>2. Người dùng thay đổi tiêu đề, tóm tắt, nội dung.<br>3. Hệ thống kiểm tra, lưu và thông báo kết quả. |
 | Luồng thay thế | 3a. Dữ liệu không hợp lệ: không lưu, thông báo lỗi (HTTP 400).<br>Luồng chung của module. |
@@ -641,7 +644,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Người có quyền xóa hoặc ẩn bài viết khỏi website và điều chỉnh trạng thái hiển thị. Hợp nhất FR-BLOG-004 và FR-BLOG-006 của SAD. |
-| Actor | Admin; Staff theo quyền được cấp (quyền xuất bản: TBC) |
+| Actor | Admin, Staff (EDITOR) |
 | Tiền điều kiện | Như FR-030. |
 | Luồng chính | 1. Người dùng chọn xóa, ẩn hoặc đổi trạng thái hiển thị của bài viết.<br>2. Hệ thống yêu cầu xác nhận (với xóa/ẩn).<br>3. Người dùng xác nhận.<br>4. Hệ thống cập nhật trạng thái hoặc cờ tương ứng và thông báo kết quả. |
 | Luồng thay thế | 3a. Người dùng hủy: không thay đổi dữ liệu.<br>Luồng chung của module. |
@@ -656,7 +659,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Người có quyền thêm hoặc thay đổi hình ảnh của bài viết. |
-| Actor | Admin; Staff theo quyền được cấp |
+| Actor | Admin, Staff (EDITOR) |
 | Tiền điều kiện | Như FR-030. |
 | Luồng chính | 1. Người dùng mở phần hình ảnh của bài viết.<br>2. Người dùng thêm hoặc thay ảnh.<br>3. Hệ thống kiểm tra, lưu và thông báo kết quả. |
 | Luồng thay thế | 3a. Tệp ảnh không hợp lệ: từ chối và thông báo; giới hạn TBC.<br>Luồng chung của module. |
@@ -719,13 +722,13 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 |---|---|
 | Mô tả | Hệ thống phân biệt quyền truy cập của Admin và Staff và giới hạn chức năng theo quyền của tài khoản đăng nhập. Hợp nhất FR-USER-004 và FR-USER-005 của SAD. |
 | Actor | Admin (thiết lập quyền); Hệ thống (thực thi) |
-| Tiền điều kiện | Đã đăng nhập (FR-033); ma trận quyền đã được xác nhận (OI-004). |
-| Luồng chính | 1. Admin thiết lập quyền truy cập theo vai trò.<br>2. Khi người dùng thao tác, hệ thống kiểm tra quyền của tài khoản đối với chức năng được yêu cầu.<br>3. Chức năng nằm trong quyền: hệ thống thực hiện thao tác. |
+| Tiền điều kiện | Đã đăng nhập (FR-033); ma trận quyền đã chốt tại mục 3.3. |
+| Luồng chính | 1. Admin gán vai trò `ADMIN` hoặc `EDITOR` cho tài khoản nội bộ khi cần (FR-035); quyền theo từng vai trò do hệ thống định nghĩa sẵn.<br>2. Khi người dùng thao tác, hệ thống kiểm tra quyền của tài khoản đối với chức năng được yêu cầu.<br>3. Chức năng nằm trong quyền: hệ thống thực hiện thao tác. |
 | Luồng thay thế | 3a. Chức năng nằm ngoài quyền: hệ thống từ chối (HTTP 403) và không thay đổi dữ liệu.<br>3b. Chưa đăng nhập: hệ thống từ chối (HTTP 401). |
 | Hậu điều kiện | Quyền truy cập được áp dụng đúng theo vai trò. |
 | Ưu tiên | High |
-| Trạng thái | Vai trò: Đã xác định; quyền chi tiết: TBC; kiểm soát truy cập: Đề xuất |
-| Hiện trạng triển khai | Chưa xác minh |
+| Trạng thái | Đã chốt: vai trò và ma trận quyền (mục 3.3); cơ chế xác thực chi tiết TBC (OI-021) |
+| Hiện trạng triển khai | Đã triển khai; quyền được kiểm tra phía máy chủ |
 | Liên quan | SAD: FR-USER-004, FR-USER-005; UC-20; API-A28; BR-008, BR-018; NFR-008; OI-004 |
  
 ## 5. Yêu cầu phi chức năng
@@ -755,7 +758,7 @@ Tài liệu có **22 yêu cầu phi chức năng** thuộc 8 nhóm: tương thí
 | ID | Tên | Mô tả và tiêu chí đo | Mã SAD | Trạng thái | Ưu tiên |
 |---|---|---|---|---|---|
 | NFR-007 | Xác thực | Mọi trang và API của khu vực quản trị yêu cầu xác thực; yêu cầu chưa xác thực nhận HTTP 401 và không nhận dữ liệu nghiệp vụ. | NFR-007 | Đề xuất; cơ chế TBC (OI-021) | High |
-| NFR-008 | Phân quyền | Người dùng chỉ thực hiện được chức năng thuộc quyền được cấp; thao tác ngoài quyền nhận HTTP 403 và không làm thay đổi dữ liệu. Việc kiểm tra thực hiện ở phía máy chủ, không chỉ ẩn nút trên giao diện. | NFR-008 | Đề xuất; ma trận quyền TBC (OI-004) | High |
+| NFR-008 | Phân quyền | Người dùng chỉ thực hiện được chức năng thuộc quyền được cấp; thao tác ngoài quyền nhận HTTP 403 và không làm thay đổi dữ liệu. Việc kiểm tra thực hiện ở phía máy chủ, không chỉ ẩn nút trên giao diện. | NFR-008 | Đề xuất; ma trận quyền đã chốt tại mục 3.3 | High |
 | NFR-010 | Kiểm tra dữ liệu đầu vào | Mọi API nhận dữ liệu từ người dùng kiểm tra kiểu, độ dài và định dạng ở phía máy chủ; dữ liệu chứa mã script hoặc câu lệnh truy vấn không được thực thi (truy vấn tham số hóa, mã hóa ký tự đặc biệt khi hiển thị). | NFR-010 | Đề xuất | High |
 | NFR-011 | Truyền tải an toàn | Toàn bộ website được phục vụ qua HTTPS; yêu cầu HTTP tự động chuyển hướng sang HTTPS. | Bổ sung | Đề xuất (bổ sung bởi BA) | High |
 | NFR-012 | Bảo vệ thông tin xác thực nội bộ | Mật khẩu tài khoản nội bộ được lưu dưới dạng băm có salt bằng thuật toán băm mật khẩu hiện hành (ví dụ bcrypt hoặc Argon2); không lưu hoặc ghi nhật ký mật khẩu dạng bản rõ. Chính sách độ mạnh mật khẩu và giới hạn số lần thử: TBC. | Bổ sung (liên quan OI-021) | Đề xuất (bổ sung bởi BA); TBC (OI-021) | High |
@@ -812,7 +815,7 @@ Quy tắc nghiệp vụ còn hiệu lực gồm 6 quy tắc từ SAD và 9 quy t
 | BR-005 | Không thiết kế riêng | Hệ thống không tiếp nhận đặt thiết kế hoặc sản xuất trang sức theo yêu cầu riêng. | SAD 3.2 | Đã xác định | Toàn bộ |
 | BR-006 | Phân loại sản phẩm | Product Type và Product Category được hợp nhất cho phiên bản triển khai: mỗi sản phẩm có một `ProductType` đóng vai trò danh mục, và bộ lọc danh mục dùng `ProductType`. | SAD 3.2, 2.3, B.2; quyết định 2026-11-09 | Đã chốt hợp nhất | FR-005, FR-007, FR-022, FR-027 |
 | BR-007 | Quản lý nội dung | Sản phẩm và bài viết được quản lý bởi tài khoản nội bộ có quyền phù hợp. | SAD 3.2 | Định hướng; TBC (OI-005, OI-006) | FR-020 đến FR-032 |
-| BR-008 | Phân quyền | Admin và Staff được phân quyền theo trách nhiệm do đơn vị vận hành xác nhận. | SAD 3.2 | TBC (OI-004) | FR-020 đến FR-036 |
+| BR-008 | Phân quyền | Admin và Staff được phân quyền theo trách nhiệm do đơn vị vận hành xác nhận. | SAD 3.2 | Đã chốt (mục 3.3) | FR-020 đến FR-036 |
 | BR-010 | Chỉ hiển thị nội dung công khai | Website công khai không hiển thị bản ghi đã xóa mềm (`is_delete = true`) hoặc đã được ẩn. Tiêu chí "được công khai" của bài viết: TBC. | SAD 7.1, FR-BLOG-007 | Đề xuất; TBC (OI-005, OI-006, OI-024) | FR-004, FR-005, FR-007, FR-010, FR-011, FR-024, FR-031 |
 | BR-011 | Ảnh đại diện | Ảnh hiển thị trong danh sách sản phẩm là ảnh được đánh dấu `front_image = true`. Số lượng ảnh đại diện tối đa mỗi sản phẩm và thứ tự các ảnh còn lại: TBC. | SAD A.3, API-P01 | Đề xuất; TBC (OI-018) | FR-008, FR-025 |
 | BR-012 | Cơ sở sắp xếp theo giá | Sắp xếp theo giá dùng giá hiện hành của sản phẩm. Giá là số nguyên VND (`Int`), hiển thị dạng `10.000.000`, không ký hiệu tiền tệ. | SAD FR-CUS-004, A.2; quyết định 2026-11-09 | Đã chốt | FR-006, FR-026 |
@@ -844,7 +847,7 @@ SAD chưa xác định chính sách lưu giữ dữ liệu sản phẩm, hình �
  
 Tài liệu còn 16 use case; các mã và tên còn lại được giữ nguyên theo SAD để duy trì truy vết. UC-03 và UC-04 được gộp trong UC-02. Các use case chưa có đặc tả gốc gồm UC-01, UC-06, UC-08, UC-12, UC-13 và UC-14; phần mô tả tương ứng là sơ bộ.
 
-**Quan hệ giữa các UC (theo sơ đồ SAD):** UC-03 và UC-04 mở rộng (`extend`) UC-02; UC-11 bao gồm (`include`) UC-13 và UC-14. Các UC quản trị (UC-10 đến UC-20) **chưa thể chốt** cho đến khi OI-004 và OI-005 được xác nhận.
+**Quan hệ giữa các UC (theo sơ đồ SAD):** UC-03 và UC-04 mở rộng (`extend`) UC-02; UC-11 bao gồm (`include`) UC-13 và UC-14. Ma trận quyền đã chốt theo OI-004 (mục 3.3); các thao tác quản trị chi tiết còn chờ OI-005.
  
 ### 7.1. Danh sách use case
  
@@ -859,13 +862,13 @@ Tài liệu còn 16 use case; các mã và tên còn lại được giữ nguyê
 | UC-07 | Xem chi tiết Blog | Customer | FR-011 | Đã quan sát | Có |
 | UC-08 | Xem thông tin liên hệ | Customer | FR-003 | Đã quan sát | Chưa có (Sơ bộ) |
 | UC-10 | Đăng nhập / Đăng xuất | Admin, Staff | FR-033, FR-034 | TBC | Có |
-| UC-11 | Quản lý sản phẩm | Admin; Staff theo quyền | FR-020 đến FR-024 | TBC | Có |
+| UC-11 | Quản lý sản phẩm | Admin (quản lý); Staff (chỉ xem) | FR-020 đến FR-024 | TBC | Có |
 | UC-12 | Quản lý danh mục | Admin | FR-027 | TBC | Chưa có (Sơ bộ) |
-| UC-13 | Quản lý hình ảnh sản phẩm | Theo quyền (OI-004) | FR-025 | TBC | Chưa có (Sơ bộ) |
-| UC-14 | Quản lý giá sản phẩm | Theo quyền (OI-004) | FR-026 | TBC | Chưa có (Sơ bộ) |
-| UC-15 | Quản lý bài viết Blog | Admin; Staff theo quyền | FR-028 đến FR-032 | TBC | Có |
+| UC-13 | Quản lý hình ảnh sản phẩm | Admin | FR-025 | TBC | Chưa có (Sơ bộ) |
+| UC-14 | Quản lý giá sản phẩm | Admin | FR-026 | TBC | Chưa có (Sơ bộ) |
+| UC-15 | Quản lý bài viết Blog | Admin, Staff (EDITOR) | FR-028 đến FR-032 | TBC | Có |
 | UC-19 | Quản lý tài khoản nội bộ | Admin | FR-035 | TBC | Có (gộp UC-19, UC-20) |
-| UC-20 | Phân quyền truy cập | Admin | FR-036 | Vai trò đã xác định; quyền chi tiết TBC | Có (gộp UC-19, UC-20) |
+| UC-20 | Phân quyền truy cập | Admin | FR-036 | Đã chốt (mục 3.3) | Có (gộp UC-19, UC-20) |
  
 ### 7.2. Use case phân hệ công khai (Customer)
  
@@ -955,7 +958,7 @@ Tài liệu còn 16 use case; các mã và tên còn lại được giữ nguyê
 | Postconditions | Thông tin liên hệ được hiển thị; dữ liệu hệ thống không thay đổi. |
 | Điểm TBC | Nội dung tĩnh hay lấy từ dữ liệu (OI-026); URL CONTACT (OI-011). |
  
-### 7.3. Use case phân hệ quản trị (Admin, Staff) – dự kiến, chờ xác nhận
+### 7.3. Use case phân hệ quản trị (Admin, Staff) – đã triển khai; chi tiết thao tác còn TBC (OI-005, OI-006)
  
 #### UC-10 – Đăng nhập / Đăng xuất
  
@@ -971,12 +974,12 @@ Tài liệu còn 16 use case; các mã và tên còn lại được giữ nguyê
  
 | Thuộc tính | Nội dung |
 |---|---|
-| Primary Actor | Admin; Staff theo quyền được cấp (OI-004) |
-| Điều kiện tiên quyết | Đã đăng nhập (UC-10) và có quyền quản lý sản phẩm. |
+| Primary Actor | Admin (quản lý); Staff (chỉ xem sản phẩm) |
+| Điều kiện tiên quyết | Đã đăng nhập (UC-10) và có quyền xem/quản lý sản phẩm. |
 | Main Success Scenario | 1. Người dùng xem danh sách sản phẩm quản trị (FR-020).<br>2. Người dùng chọn thao tác: thêm (FR-022), xem chi tiết (FR-021), cập nhật (FR-023) hoặc xóa/ẩn (FR-024).<br>3. Với thêm/cập nhật: người dùng nhập hoặc chỉnh sửa thông tin sản phẩm (name, brand, type, short_description), hình ảnh (UC-13) và giá (UC-14).<br>4. Hệ thống kiểm tra và lưu dữ liệu.<br>5. Hệ thống thông báo kết quả. |
 | Alternative Flows | 1a. Người dùng không có quyền: hệ thống từ chối thao tác (NFR-008).<br>4a. Dữ liệu không hợp lệ: hệ thống thông báo lỗi; quy tắc kiểm tra TBC. |
 | Postconditions | Dữ liệu sản phẩm được thay đổi. Xóa thực hiện bằng cờ `is_delete` (xóa mềm) hay ẩn khỏi website: TBC (OI-005). |
-| Điểm TBC | Thao tác quản trị được hỗ trợ (OI-005); ma trận quyền (OI-004); cấu trúc giá (OI-008, OI-015, OI-016); Type và Category (OI-009). |
+| Điểm TBC | Thao tác quản trị được hỗ trợ (OI-005); cấu trúc giá (OI-008, OI-015, OI-016); Type và Category (OI-009). |
  
 #### UC-12 – Quản lý danh mục *(Sơ bộ)*
  
@@ -990,10 +993,10 @@ Tài liệu còn 16 use case; các mã và tên còn lại được giữ nguyê
 | Điểm TBC | Cấu trúc Category chưa tồn tại trong dữ liệu (OI-009). |
  
 #### UC-13 – Quản lý hình ảnh sản phẩm *(Sơ bộ; được UC-11 bao gồm)*
- 
+
 | Thuộc tính | Nội dung |
 |---|---|
-| Primary Actor | Theo quyền (OI-004) |
+| Primary Actor | Admin |
 | Điều kiện tiên quyết | Đã đăng nhập; có quyền; sản phẩm tồn tại. |
 | Main Success Scenario | 1. Người dùng mở phần hình ảnh của sản phẩm.<br>2. Người dùng thêm, thay, xóa ảnh, đặt ảnh đại diện hoặc đổi thứ tự.<br>3. Hệ thống kiểm tra, lưu và thông báo kết quả. |
 | Alternative Flows | 3a. Tệp ảnh không hợp lệ: từ chối và thông báo (giới hạn TBC). |
@@ -1001,10 +1004,10 @@ Tài liệu còn 16 use case; các mã và tên còn lại được giữ nguyê
 | Điểm TBC | Trường lưu đường dẫn ảnh, thứ tự hiển thị, dịch vụ lưu ảnh (OI-013, OI-018). |
  
 #### UC-14 – Quản lý giá sản phẩm *(Sơ bộ; được UC-11 bao gồm)*
- 
+
 | Thuộc tính | Nội dung |
 |---|---|
-| Primary Actor | Theo quyền (OI-004) |
+| Primary Actor | Admin |
 | Điều kiện tiên quyết | Đã đăng nhập; có quyền; sản phẩm tồn tại. |
 | Main Success Scenario | 1. Người dùng mở phần giá của sản phẩm.<br>2. Người dùng nhập giá mới.<br>3. Hệ thống kiểm tra, lưu và thông báo kết quả. |
 | Alternative Flows | 3a. Giá không hợp lệ: từ chối và thông báo (quy tắc TBC). |
@@ -1015,12 +1018,12 @@ Tài liệu còn 16 use case; các mã và tên còn lại được giữ nguyê
  
 | Thuộc tính | Nội dung |
 |---|---|
-| Primary Actor | Admin; Staff theo quyền được cấp (OI-004) |
+| Primary Actor | Admin, Staff (EDITOR) |
 | Điều kiện tiên quyết | Đã đăng nhập (UC-10) và có quyền quản lý Blog. |
 | Main Success Scenario | 1. Người dùng xem danh sách bài viết quản trị (FR-028).<br>2. Người dùng chọn thao tác: thêm (FR-029), cập nhật tiêu đề/nội dung (FR-030), xóa/ẩn (FR-031) hoặc quản lý hình ảnh (FR-032).<br>3. Hệ thống kiểm tra và lưu dữ liệu.<br>4. Hệ thống thông báo kết quả. |
 | Alternative Flows | 1a. Người dùng không có quyền: hệ thống từ chối thao tác (NFR-008). |
 | Postconditions | Dữ liệu bài viết được thay đổi. Điều chỉnh trạng thái hiển thị chỉ áp dụng nếu được xác nhận. |
-| Điểm TBC | Trạng thái bài viết và ai được xuất bản (OI-006); cấu trúc Blog chưa có ngày đăng, trạng thái, cờ xóa mềm (OI-024); số lượng ảnh mỗi bài (OI-018). |
+| Điểm TBC | Trạng thái bài viết và quyền xuất bản: đã chốt Admin và Staff (EDITOR) tại mục 3.3; cấu trúc Blog chưa có ngày đăng, trạng thái, cờ xóa mềm (OI-024); số lượng ảnh mỗi bài (OI-018). |
  
 #### UC-19 – Quản lý tài khoản nội bộ
  
@@ -1039,10 +1042,10 @@ Tài liệu còn 16 use case; các mã và tên còn lại được giữ nguyê
 |---|---|
 | Primary Actor | Admin |
 | Điều kiện tiên quyết | Như UC-19. |
-| Main Success Scenario | 1. Admin thiết lập quyền truy cập theo vai trò (FR-036).<br>2. Hệ thống áp dụng giới hạn chức năng theo quyền của tài khoản đăng nhập. |
+| Main Success Scenario | 1. Admin gán vai trò `ADMIN` hoặc `EDITOR` cho tài khoản nội bộ (FR-035).<br>2. Hệ thống áp dụng giới hạn chức năng theo quyền của vai trò khi người dùng thao tác. |
 | Alternative Flows | 1a. Người dùng không phải Admin: từ chối truy cập. |
-| Postconditions | Quyền được cập nhật và có hiệu lực cho các phiên làm việc sau đó (thời điểm hiệu lực cho phiên đang mở: TBC). |
-| Điểm TBC | Ma trận quyền Admin/Staff (OI-004). |
+| Postconditions | Vai trò được cập nhật và có hiệu lực từ request kế tiếp. |
+| Điểm TBC | Cơ chế xác thực chi tiết (OI-021). |
 
 ---
 ## 8. Yêu cầu dữ liệu
@@ -1060,7 +1063,7 @@ Phần này tổng hợp mô hình dữ liệu **logic** từ SAD (Phụ lục A
 | Category (Danh mục) | Chưa có cấu trúc | Danh mục kinh doanh | MOD-02, MOD-06 | TBC (OI-009) |
 | Blog | `blog` | Bài viết giới thiệu, chia sẻ | MOD-03, MOD-07 | Cấu trúc cần xem xét; TBC (OI-024) |
 | Staff (Nhân viên) | `staff` | Thông tin nhân viên | MOD-08 | Theo cấu trúc rà soát; TBC (OI-021) |
-| User / Role (Tài khoản, vai trò) | Chưa có cấu trúc | Tài khoản Admin/Staff và phân quyền | MOD-08 | TBC (OI-004, OI-021) |
+| User / Role (Tài khoản, vai trò) | Chưa có cấu trúc | Tài khoản Admin/Staff và phân quyền | MOD-08 | Quyền đã chốt (OI-004); cấu trúc lưu tài khoản TBC (OI-021) |
  
 ### 8.2. Thuộc tính dữ liệu quan trọng
  
@@ -1221,7 +1224,7 @@ erDiagram
  
 ### 9.1. Sitemap và giao diện người dùng (User Interface)
 
-Sitemap dưới đây chốt route cho Storefront và khu vực Admin. Cột **Màn Figma** đối chiếu với 6 màn thiết kế hiện có; các trang không xuất hiện trong Figma được ghi "—". Ma trận quyền chi tiết vẫn theo OI-004; bảng chỉ ghi role được truy cập ở mức route.
+Sitemap dưới đây chốt route cho Storefront và khu vực Admin. Cột **Màn Figma** đối chiếu với 6 màn thiết kế hiện có; các trang không xuất hiện trong Figma được ghi "—". Ma trận quyền chi tiết theo mục 3.3; bảng chỉ ghi role được truy cập ở mức route.
 
 | Route | Màn Figma | Các khối chính | Quyền truy cập |
 |---|---|---|---|
@@ -1236,16 +1239,16 @@ Sitemap dưới đây chốt route cho Storefront và khu vực Admin. Cột **M
 | `/shipping-and-return` | — | Vận chuyển và Đổi trả | Công khai |
 | `/jewelry-care` | — | Chăm sóc trang sức | Công khai |
 | `/admin/login` | — | Đăng nhập quản trị; nhập thông tin xác thực; thông báo lỗi | Công khai (chưa xác thực) |
-| `/admin/products/*` | — | Danh sách; biểu mẫu thêm/sửa; hình ảnh; giá; xác nhận xóa/ẩn | ADMIN, EDITOR |
-| `/admin/categories/*` | — | Danh sách; biểu mẫu thêm/sửa/xóa danh mục | ADMIN, EDITOR |
+| `/admin/products/*` | — | Danh sách; biểu mẫu thêm/sửa; hình ảnh; giá; xác nhận xóa/ẩn | ADMIN; EDITOR (chỉ xem) |
+| `/admin/categories/*` | — | Danh sách; biểu mẫu thêm/sửa/xóa danh mục | ADMIN |
 | `/admin/blog/*` | — | Danh sách; biểu mẫu thêm/sửa bài viết; trạng thái `DRAFT`/`PUBLISHED` | ADMIN, EDITOR |
-| `/admin/hero-slides/*` | — | Danh sách; biểu mẫu thêm/sửa/xóa hero slide | ADMIN, EDITOR |
+| `/admin/hero-slides/*` | — | Danh sách; biểu mẫu thêm/sửa/xóa hero slide | ADMIN |
 | `/admin/settings` | — | Cấu hình website: thông tin cửa hàng, số điện thoại, link Facebook/Instagram | ADMIN |
 | `/admin/users/*` | — | Danh sách tài khoản; gán role `ADMIN`/`EDITOR` | ADMIN |
 
 **Contact popover:** không phải route riêng; mở từ nút "ORDER NOW" trên `/p/[slug]` dưới dạng overlay, chỉ hiển thị số điện thoại và link Facebook/Instagram, không có form gửi liên hệ (BR-003).
 
-**Phân quyền route Admin:** `ADMIN` có toàn quyền; `EDITOR` được truy cập các module nội dung (products, categories, blog, hero slides) nhưng không được quản lý settings hoặc users. Việc ánh xạ role `EDITOR` với actor Staff của SAD và ma trận quyền chi tiết vẫn theo OI-004.
+**Phân quyền route Admin:** `ADMIN` có toàn quyền. `EDITOR` chỉ được xem sản phẩm (read-only, kể cả giá) và quản lý Blog; không được truy cập/quản lý products (thao tác ghi), categories, hero slides, Settings hoặc Users. Quyền được kiểm tra ở phía máy chủ; chi tiết theo ma trận tại mục 3.3.
 
 **Đối chiếu Figma:** sitemap phủ đủ 6 màn: Home (`/`), Category (`/c/[slug]`), Product (`/p/[slug]`), Product + Contact popover (overlay trên `/p/[slug]`), Blog list (`/blog`), Blog detail (`/blog/[slug]`).
 
@@ -1294,7 +1297,7 @@ Toàn bộ đặc tả API trong SAD Chương 7 là **đề xuất**; không có
  
 Trang chủ (UC-01) và thông tin liên hệ (UC-08): chưa xác định nội dung là tĩnh trên Frontend hay lấy từ API (OI-026).
  
-**API quản trị (25 endpoint, yêu cầu xác thực và kiểm tra quyền – NFR-007, NFR-008).** Chưa đặc tả request/response chi tiết vì phụ thuộc OI-004, OI-005, OI-006, OI-008 và OI-021.
+**API quản trị (25 endpoint, yêu cầu xác thực và kiểm tra quyền – NFR-007, NFR-008).** Ma trận quyền đã chốt (OI-004, mục 3.3); đặc tả request/response chi tiết còn phụ thuộc OI-005, OI-006, OI-008 và OI-021.
  
 | Nhóm | ID | Endpoint (Method đường dẫn) | Yêu cầu | Trạng thái |
 |---|---|---|---|---|
@@ -1304,7 +1307,7 @@ Trang chủ (UC-01) và thông tin liên hệ (UC-08): chưa xác định nội 
 | Giá sản phẩm | API-A12 | POST `…/products/{product_id}/prices` | FR-026 | TBC (OI-008) |
 | Danh mục | API-A13 đến A16 | GET, POST `/api/admin/categories`; PATCH, DELETE `…/categories/{category_id}` | FR-027 | TBC (OI-009) |
 | Blog | API-A17 đến A21 | GET, POST `/api/admin/blogs`; PATCH, DELETE `…/blogs/{blog_id}`; PATCH `…/{blog_id}/status` | FR-028 đến FR-032 | TBC; A21: Đề xuất |
-| Tài khoản và quyền | API-A25 đến A28 | GET, POST `/api/admin/users`; PATCH `…/users/{user_id}`; GET `/api/admin/roles` | FR-035, FR-036 | TBC (OI-004, OI-021) |
+| Tài khoản và quyền | API-A25 đến A28 | GET, POST `/api/admin/users`; PATCH `…/users/{user_id}`; GET `/api/admin/roles` | FR-035, FR-036 | Quyền đã chốt (OI-004); cấu trúc tài khoản TBC (OI-021) |
 
 Không có endpoint cho giỏ hàng, đặt hàng, thanh toán hoặc thiết kế riêng (BR-003 đến BR-005).
  
@@ -1347,7 +1350,7 @@ Không có endpoint cho giỏ hàng, đặt hàng, thanh toán hoặc thiết k�
 |---|---|---|
 | ASM-001 | Hệ thống phục vụ hoạt động giới thiệu sản phẩm trang sức trên môi trường trực tuyến | Đã xác nhận (SAD); cách diễn đạt "giới thiệu" hay "kinh doanh trực tuyến" cần BA xác nhận (OI-014) |
 | ASM-002 | Khách hàng xem thông tin sản phẩm và liên hệ trực tiếp với cửa hàng qua số điện thoại hoặc liên kết Facebook, Instagram | Đã xác nhận theo yêu cầu cập nhật |
-| ASM-003 | Hệ thống có các role nội bộ `ADMIN` và `EDITOR`; `EDITOR` ánh xạ actor Staff của SAD | Đã chốt (role); ma trận quyền chi tiết TBC (OI-004) |
+| ASM-003 | Hệ thống có các role nội bộ `ADMIN` và `EDITOR`; `EDITOR` ánh xạ actor Staff của SAD | Đã chốt (role và ma trận quyền tại mục 3.3) |
 | ASM-004 | Khách hàng không đặt hàng và không thanh toán trực tuyến | Đã xác nhận theo làm rõ mới (SAD) |
 | ASM-005 | Website không hỗ trợ giao dịch trực tuyến | Đã xác nhận theo làm rõ mới (SAD) |
 | ASM-006 | Không có chức năng sản phẩm thiết kế riêng | Đã xác nhận theo làm rõ mới (SAD) |
@@ -1545,7 +1548,7 @@ Danh sách giữ nguyên mã của các vấn đề cần xác nhận còn hiệ
  
 | ID | Nội dung cần xác nhận | Mức độ | Yêu cầu liên quan | Nguồn |
 |---|---|---|---|---|
-| OI-004 | Ma trận quyền Admin/Staff (kể cả nhu cầu có vai trò quản lý trung gian) | Cao | FR-036; UC-20; toàn bộ MOD-06 đến MOD-08 | SAD |
+| OI-004 | Ma trận quyền Admin/Staff (kể cả nhu cầu có vai trò quản lý trung gian). **Đã chốt:** `ADMIN` toàn quyền; `EDITOR` (Staff) chỉ xem sản phẩm (read-only, kể cả giá) và quản lý Blog; không quản lý sản phẩm/danh mục/hero slide/Settings/Users (mục 3.3) | Cao | FR-036; UC-20; toàn bộ MOD-06 đến MOD-08 | SAD |
 | OI-005 | Các thao tác quản trị sản phẩm được hỗ trợ; xóa mềm hay ẩn | Cao | FR-020 đến FR-024; UC-11 | SAD |
 | OI-006 | Các thao tác quản trị Blog và trạng thái xuất bản | Trung bình | FR-028 đến FR-032; UC-15 | SAD |
 | OI-008 | Cấu trúc giá, đơn vị tiền và lịch sử thay đổi giá | Cao (đề xuất) | FR-026; UC-14 | SAD |
@@ -1612,7 +1615,7 @@ Danh sách giữ nguyên mã của các vấn đề cần xác nhận còn hiệ
 | Tiêu chí | Phân bố |
 |---|---|
 | Ưu tiên (do BA đề xuất) | High: 16; Medium: 12; Low: 0 |
-| Hiện trạng triển khai | Đã triển khai (quan sát công khai): 11 (FR-001 đến FR-011); Chưa xác minh: 17 |
+| Hiện trạng triển khai | Đã triển khai (quan sát công khai): 11 (FR-001 đến FR-011); Đã triển khai (kiểm thử nội bộ): FR-036; Chưa xác minh: 16 |
 | Trạng thái yêu cầu | FR-001 đến FR-011 đã quan sát; yêu cầu quản trị giữ trạng thái theo từng yêu cầu (TBC/Đề xuất) |
  
 **Phân bố yêu cầu phi chức năng theo ưu tiên (đề xuất):** High: 7; Medium: 15.
