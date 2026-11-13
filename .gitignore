@@ -52,6 +52,26 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# python (skill scripts/tests)
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+desktop.ini
 # opencode / github prompt tooling
 .opencode/
 .github/prompts/
