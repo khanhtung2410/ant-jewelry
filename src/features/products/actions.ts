@@ -112,16 +112,13 @@ export async function saveProduct(
     return stateWithErrors(values, { form: ['This product no longer exists.'] });
   }
 
-  if (
-    productId &&
-    existingProduct &&
-    !canEditPrice(session.role) &&
-    parsed.data.price !== existingProduct.price
-  ) {
-    return stateWithErrors(values, {
-      form: ['You do not have permission to edit product prices.'],
-    });
+  if (!productId && !canEditPrice(session.role)) {
+    return stateWithErrors(values, { form: ['Only an ADMIN can set a product price.'] });
   }
+
+  // EDITORs may manage products but cannot change prices; keep the stored price.
+  const price =
+    existingProduct && !canEditPrice(session.role) ? existingProduct.price : parsed.data.price;
 
   const data = {
     categoryId: category.id,
@@ -129,7 +126,7 @@ export async function saveProduct(
     slug: parsed.data.slug,
     type: parsed.data.type,
     brand: parsed.data.brand,
-    price: parsed.data.price,
+    price,
     description: parsed.data.description,
     details: parseProductDetails(parsed.data.details),
     status: parsed.data.published ? visibilityStatus.VISIBLE : visibilityStatus.HIDDEN,
