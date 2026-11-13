@@ -10,6 +10,51 @@ Mỗi mục PR/công việc gồm đủ 3 phần:
 
 ---
 
+## 2026-11-13 - Admin dashboard: products overview and activity log
+
+### Prompt nguyên văn đã dùng
+
+> read ui/ux admin page, create or change the admin page of ant jewlery - the page that show product and log
+> use the ui ux pro max tool installed in .opencodde
+> 
+> read the hold files
+> create new branch,commit
+> adđ the changes in main to the new branch
+> some missmach about uppercase vs lower case letter
+> recreate admin page if ui/ũ promax tool see better layout
+> 
+> add to ai_log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện**
+
+- Đọc và rà soát các trang/admin components hiện có: `src/app/admin/(dashboard)/page.tsx`, `src/app/admin/(dashboard)/products/page.tsx`, `src/app/admin/(dashboard)/layout.tsx`, `src/features/admin/components/admin-shell.tsx`, `src/features/admin/components/admin-page-header.tsx`, `src/features/admin/components/admin-table-section.tsx`, `src/features/admin/components/status-badge.tsx`, `src/features/products/components/product-management.tsx`, và `prisma/schema.prisma` (không có model audit/log riêng).
+- Sử dụng công cụ UI/UX Pro Max trong `.opencode/skills/ui-ux-pro-max`:
+  - `python .opencode/skills/ui-ux-pro-max/scripts/search.py "jewelry admin dashboard products activity log management" --design-system -p "Ant Jewelry Admin" -f markdown`
+  - `python .opencode/skills/ui-ux-pro-max/scripts/search.py "admin dashboard products activity log table cards" --domain ux`
+  - `python .opencode/skills/ui-ux-pro-max/scripts/search.py "data table status cards activity feed" --domain ux`
+  - Áp dụng gợi ý phù hợp (thống kê tổng quan, bảng sản phẩm, activity/log, bảng có `overflow-x-auto`, phân cấp rõ ràng) nhưng giữ nhất quán với style/token/pattern hiện có của admin Ant Jewelry thay vì áp dụng palette dark/glassmorphism không phù hợp.
+- Cập nhật trang admin dashboard `src/app/admin/(dashboard)/page.tsx` để hiển thị cả **sản phẩm** và **log**:
+  - Thêm header mô tả, thẻ thống kê theo quyền (Products, Categories, Blog Posts, Hero Slides, Users).
+  - Thêm bảng **Recent Products** (tên/brand/slug, danh mục, giá, trạng thái, thời gian cập nhật, link xem tất cả).
+  - Thêm panel **Activity Log** (nhật ký hoạt động gần đây) tổng hợp từ bản ghi có `updatedAt`/trạng thái (product, blog post, category, user) theo quyền truy cập, kèm thời gian và liên kết.
+  - Do chưa có bảng audit/log trong database, "log" được triển khai dưới dạng **activity log suy ra từ dữ liệu hiện có** (không thay đổi schema).
+- Chuẩn hóa một số khác biệt chữ hoa/thường trong nhãn hiển thị dashboard (ví dụ `Blog Posts`, `Hero Slides`, `Blog Post` trong activity type) để nhất quán với cách đặt tên hiện có.
+- Cập nhật `.gitignore` để bỏ qua các file không cần commit: Python artifacts/cache (`__pycache__/`, `*.py[cod]`, `*$py.class`, `.pytest_cache/`, `.mypy_cache/`, `.ruff_cache/`, `.venv/`, `venv/`), IDE/editor (`.vscode/`, `.idea/`, `*.swp`, `*.swo`, `*~`), và OS (`Thumbs.db`, `desktop.ini`).
+
+**Kết quả kiểm chứng**
+
+- Đã kiểm tra diff/code các file chỉnh sửa (`.gitignore`, `src/app/admin/(dashboard)/page.tsx`, `AI_LOG.md`) và kết quả lệnh UI/UX Pro Max ở trên. Chưa chạy `npm run lint`/`npm run typecheck`/`npm test`/`npm run build` trong lượt này; trang dashboard mới giữ nguyên cấu trúc server component, component và helper hiện có của dự án.
+
+**So sánh Figma:** chưa ghi nhận trong log này.
+
+### AI sai ở đâu
+
+- "Log" được hiểu là activity log suy ra từ các bản ghi hiện có (`updatedAt`, trạng thái, vai trò) vì hệ thống chưa có audit log/database log chuyên biệt; nếu cần log đăng nhập hoặc audit trail lưu vĩnh viễn, cần bổ sung schema và luồng ghi log riêng.
+
+---
+
 ## 2026-11-13 - Store product images on local filesystem
 
 ### Prompt nguyên văn đã dùng
