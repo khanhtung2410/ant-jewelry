@@ -184,7 +184,7 @@ Repository chưa có file `LICENSE`. Loại license (MIT, Apache-2.0, GPL-3.0 ho
 - [`PERFORMANCE.md`](./PERFORMANCE.md) — Mục tiêu SEO, hiệu năng và số liệu Lighthouse.
 - [`DEPLOY.md`](./DEPLOY.md) — Hướng dẫn deploy, migration, secrets, backup và khôi phục.
 - [`HUONG_DAN_VAN_HANH.md`](./HUONG_DAN_VAN_HANH.md) — Hướng dẫn chủ cửa hàng thêm sản phẩm, viết Blog và cập nhật liên hệ.
-- [`AI_LOGS.md`](./AI_LOGS.md) — Nhật ký thay đổi do AI thực hiện.
+- [`AI_LOG.md`](../AI_LOG.md) — Nhật ký thay đổi do AI thực hiện.
 - `ANT_JEWELRY_SAD_v1.1.docx` — Tài liệu nguồn System Analysis and Design (không có trong work tree hiện tại).
 
 `ARCHITECTURE.md` được xây dựng dựa trên SAD v1.1. Những công nghệ và thiết kế chưa được xác nhận trong tài liệu kiến trúc không được xem là implementation đã hoàn thành.
