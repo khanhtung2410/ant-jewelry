@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
+import { AdminConfirmForm } from '@/features/admin/components/admin-confirm-form';
 import {
   assignProductImageColor,
   deleteProduct,
@@ -98,18 +99,14 @@ export function ProductImageManagement({
             JPEG, PNG, or WebP; up to 5 MB per file.
           </p>
         </div>
-        <form
+        <AdminConfirmForm
           action={deleteProduct.bind(null, productId)}
-          onSubmit={(event) => {
-            if (!window.confirm(`Delete "${productName}" and all its images?`)) {
-              event.preventDefault();
-            }
-          }}
+          confirmMessage={`Delete "${productName}" and all its images?`}
         >
           <button type="submit" className="text-xs text-red-700 underline underline-offset-2">
             Delete product
           </button>
-        </form>
+        </AdminConfirmForm>
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row">
@@ -228,18 +225,14 @@ export function ProductImageManagement({
                       Set as hover
                     </button>
                   </form>
-                  <form
+                  <AdminConfirmForm
                     action={deleteProductImage.bind(null, productId, image.id)}
-                    onSubmit={(event) => {
-                      if (!window.confirm('Delete this product image?')) {
-                        event.preventDefault();
-                      }
-                    }}
+                    confirmMessage="Delete this product image?"
                   >
                     <button type="submit" className="text-red-700 underline">
                       Delete
                     </button>
-                  </form>
+                  </AdminConfirmForm>
                 </div>
               </div>
             </li>

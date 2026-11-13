@@ -8,6 +8,11 @@ import {
   AdminActionLink,
   AdminTableActions,
 } from '@/features/admin/components/admin-table-actions';
+import {
+  AdminTableEmpty,
+  AdminTableSection,
+} from '@/features/admin/components/admin-table-section';
+import { StatusBadge } from '@/features/admin/components/status-badge';
 import { formatPrice } from '@/features/shared/lib/format-price';
 import { toggleProductVisibility, type ProductFormValues } from '../actions';
 import {
@@ -120,16 +125,10 @@ export function ProductManagement({
         </form>
       </div>
 
-      <section className="overflow-hidden rounded-lg border border-[var(--line)]">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] px-4 py-3">
-          <h2 className="font-heading text-sm tracking-[0.08em]">PRODUCTS ({totalProducts})</h2>
-          {totalPages > 1 ? (
-            <p className="text-xs text-[var(--font-color)]">
-              Page {currentPage} of {totalPages}
-            </p>
-          ) : null}
-        </div>
-
+      <AdminTableSection
+        title={`PRODUCTS (${totalProducts})`}
+        meta={totalPages > 1 ? `Page ${currentPage} of ${totalPages}` : null}
+      >
         {products.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-left text-sm">
@@ -139,8 +138,8 @@ export function ProductManagement({
                   <th className="px-4 py-3 font-medium">Category</th>
                   <th className="px-4 py-3 font-medium">Brand</th>
                   <th className="px-4 py-3 font-medium">Price</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 text-center font-medium">Actions</th>
+                  <th className="w-[7rem] px-4 py-3 font-medium">Status</th>
+                  <th className="w-[12rem] px-4 py-3 text-center font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,18 +160,13 @@ export function ProductManagement({
                         {formatPrice(product.price)} ₫
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className="rounded-full px-2 py-1 text-xs"
-                          style={{
-                            backgroundColor: VISIBILITY_STATUS[product.status].bg,
-                            color: VISIBILITY_STATUS[product.status].color,
-                          }}
-                        >
-                          {VISIBILITY_STATUS[product.status].label}
-                        </span>
+                        <StatusBadge
+                          config={VISIBILITY_STATUS[product.status]}
+                          className="min-w-[5rem]"
+                        />
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <AdminTableActions>
+                        <AdminTableActions wrap={false}>
                           {editorView ? (
                             <AdminActionLink href={selectedHref} aria-haspopup="dialog">
                               View
@@ -183,7 +177,10 @@ export function ProductManagement({
                                 Edit
                               </AdminActionLink>
                               <form action={toggleProductVisibility.bind(null, product.id)}>
-                                <AdminActionButton type="submit">
+                                <AdminActionButton
+                                  type="submit"
+                                  className="w-[6rem] whitespace-nowrap"
+                                >
                                   {product.status === visibilityStatus.VISIBLE ? 'Ẩn' : 'Hiển thị'}
                                 </AdminActionButton>
                               </form>
@@ -198,9 +195,7 @@ export function ProductManagement({
             </table>
           </div>
         ) : (
-          <p className="px-4 py-8 text-sm text-[var(--font-color)]">
-            No products match this filter.
-          </p>
+          <AdminTableEmpty>No products match this filter.</AdminTableEmpty>
         )}
 
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[var(--line)] px-4 py-3 text-sm">
@@ -245,7 +240,7 @@ export function ProductManagement({
             </nav>
           ) : null}
         </div>
-      </section>
+      </AdminTableSection>
 
       {saved ? (
         <SavedNotice message="Product saved." dismissHref={buildAdminProductsHref(listQuery)} />

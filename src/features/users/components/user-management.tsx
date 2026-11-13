@@ -5,6 +5,11 @@ import { ROLE_CONFIG, ROLE_OPTIONS } from '@/constants/roles';
 import { getAccountStatusConfig } from '@/constants/statuses';
 import { SavedNotice } from '@/features/admin/components/form-controls';
 import { AdminActionButton } from '@/features/admin/components/admin-table-actions';
+import {
+  AdminTableEmpty,
+  AdminTableSection,
+} from '@/features/admin/components/admin-table-section';
+import { StatusBadge } from '@/features/admin/components/status-badge';
 import type { Role } from '@/features/shared/domain/domain';
 import { saveUserAccess, type UserAccessFormState } from '../actions';
 import { UserFormDialog } from './user-form-dialog';
@@ -32,15 +37,12 @@ export function UserManagement({
 
   return (
     <div>
-      <section className="overflow-hidden rounded-lg border border-[var(--line)]">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] px-4 py-3">
-          <h2 className="font-heading text-sm tracking-[0.08em]">USERS ({users.length})</h2>
-          <p className="text-xs text-[var(--font-color)]">
-            {activeCount} {getAccountStatusConfig(false).label.toLowerCase()} ·{' '}
-            {users.length - activeCount} {getAccountStatusConfig(true).label.toLowerCase()}
-          </p>
-        </div>
-
+      <AdminTableSection
+        title={`USERS (${users.length})`}
+        meta={`${activeCount} ${getAccountStatusConfig(false).label.toLowerCase()} · ${
+          users.length - activeCount
+        } ${getAccountStatusConfig(true).label.toLowerCase()}`}
+      >
         {users.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[820px] border-collapse text-left text-sm">
@@ -59,9 +61,9 @@ export function UserManagement({
             </table>
           </div>
         ) : (
-          <p className="px-4 py-8 text-sm text-[var(--font-color)]">No users yet.</p>
+          <AdminTableEmpty>No users yet.</AdminTableEmpty>
         )}
-      </section>
+      </AdminTableSection>
 
       {saved ? <SavedNotice message="User saved." dismissHref="/admin/users" /> : null}
 
@@ -93,17 +95,7 @@ function UserRow({ user, isCurrentUser }: { user: AdminUserRow; isCurrentUser: b
       </td>
 
       <td className="px-4 py-3">
-        {(() => {
-          const status = getAccountStatusConfig(user.locked);
-          return (
-            <span
-              className="rounded-full px-2 py-1 text-xs"
-              style={{ backgroundColor: status.bg, color: status.color }}
-            >
-              {status.label}
-            </span>
-          );
-        })()}
+        <StatusBadge config={getAccountStatusConfig(user.locked)} />
         <p className="mt-2 text-xs text-[var(--font-color)]">
           {ROLE_CONFIG[user.role]?.label ?? user.role}
         </p>

@@ -1,7 +1,12 @@
 'use client';
 
-import { useActionState, useState, type ReactNode } from 'react';
+import { useActionState, useId, useState } from 'react';
 import { AdminDialog } from '@/features/admin/components/admin-dialog';
+import {
+  AdminTabButton,
+  AdminTabList,
+  AdminTabPanel,
+} from '@/features/admin/components/admin-tabs';
 import {
   FormActions,
   FormAlert,
@@ -46,32 +51,21 @@ export function ProductFormDialog({
   closeHref: string;
   images?: ProductImage[];
 }) {
+  const [tab, setTab] = useState<ProductDialogTab>('details');
+  const tabsId = useId();
+  const detailsTabId = `${tabsId}-details-tab`;
+  const detailsPanelId = `${tabsId}-details-panel`;
+  const imagesTabId = `${tabsId}-images-tab`;
+  const imagesPanelId = `${tabsId}-images-panel`;
+  const canManageImages = !editorView;
+  const imagesTabLabel =
+    values.productId && images.length > 0 ? `Images (${images.length})` : 'Images';
+
   const title = editorView
     ? (productName ?? 'Product details')
     : values.productId
       ? `Edit ${productName ?? 'product'}`
       : 'New product';
-
-  const imageSection = !editorView && values.productId ? (
-    <ProductImageManagement
-      productId={values.productId}
-      productName={productName ?? values.name}
-      images={images}
-      colors={values.colors.filter(
-        (color): color is { id: string; name: string; hex: string } => Boolean(color.id),
-      )}
-      className="border-b border-[var(--line)] pb-5"
-    />
-  ) : !editorView ? (
-    <section className="mt-6 border-t border-[var(--line)] pt-5">
-      <h3 className="font-heading text-sm tracking-[0.08em]">PRODUCT IMAGES</h3>
-      <p className="mt-2 text-sm text-[var(--font-color)]">
-        Save this product first to upload and manage images (JPG, PNG, or WebP; up to 5 MB each).
-        After saving, open Edit to reorder images, choose cover and hover images, assign images to
-        colors, and delete images with storage cleanup.
-      </p>
-    </section>
-  ) : null;
 
   return (
     <AdminDialog
@@ -84,31 +78,84 @@ export function ProductFormDialog({
       closeHref={closeHref}
       size="lg"
     >
-      {!editorView && values.productId ? <div className="mb-6">{imageSection}</div> : null}
-      <ProductForm
-        key={values.productId ?? `new-${values.categoryId}`}
-        values={values}
-        categories={categories}
-        readOnly={editorView}
-        closeHref={closeHref}
-        imageSection={!editorView && !values.productId ? imageSection : null}
-      />
+      {canManageImages ? (
+        <AdminTabList label="Product editor sections" className="mb-5">
+          <AdminTabButton
+            id={detailsTabId}
+            panelId={detailsPanelId}
+            active={tab === 'details'}
+            onClick={() => setTab('details')}
+            grow
+          >
+            Details
+          </AdminTabButton>
+          <AdminTabButton
+            id={imagesTabId}
+            panelId={imagesPanelId}
+            active={tab === 'images'}
+            onClick={() => setTab('images')}
+            grow
+          >
+            {imagesTabLabel}
+          </AdminTabButton>
+        </AdminTabList>
+      ) : null}
+
+      <AdminTabPanel
+        id={canManageImages ? detailsPanelId : undefined}
+        labelledBy={canManageImages ? detailsTabId : undefined}
+        active={canManageImages ? tab === 'details' : undefined}
+      >
+        <ProductForm
+          key={values.productId ?? `new-${values.categoryId}`}
+          values={values}
+          categories={categories}
+          readOnly={editorView}
+          closeHref={closeHref}
+        />
+      </AdminTabPanel>
+
+      {canManageImages ? (
+        <AdminTabPanel id={imagesPanelId} labelledBy={imagesTabId} active={tab === 'images'}>
+          {values.productId ? (
+            <ProductImageManagement
+              productId={values.productId}
+              productName={productName ?? values.name}
+              images={images}
+              colors={values.colors.filter(
+                (color): color is { id: string; name: string; hex: string } => Boolean(color.id),
+              )}
+              className="pt-1"
+            />
+          ) : (
+            <section>
+              <h3 className="font-heading text-sm tracking-[0.08em]">PRODUCT IMAGES</h3>
+              <p className="mt-2 text-sm text-[var(--font-color)]">
+                Save this product first to upload and manage images (JPG, PNG, or WebP; up to 5 MB
+                each). After saving, open Edit and switch to the Images tab to reorder images,
+                choose cover and hover images, assign images to colors, and delete images with
+                storage cleanup.
+              </p>
+            </section>
+          )}
+        </AdminTabPanel>
+      ) : null}
     </AdminDialog>
   );
 }
+
+type ProductDialogTab = 'details' | 'images';
 
 function ProductForm({
   values,
   categories,
   readOnly,
   closeHref,
-  imageSection,
 }: {
   values: ProductFormValues;
   categories: ProductCategoryOption[];
   readOnly: boolean;
   closeHref: string;
-  imageSection?: ReactNode;
 }) {
   const initialState: ProductFormState = {
     values,
@@ -128,7 +175,6 @@ function ProductForm({
       readOnly={readOnly}
       pending={pending}
       returnTo={closeHref}
-      imageSection={imageSection}
     />
   );
 }
@@ -142,7 +188,6 @@ function ProductFormFields({
   readOnly,
   pending,
   returnTo,
-  imageSection,
 }: {
   action: (formData: FormData) => void;
   values: ProductFormValues;
@@ -152,7 +197,6 @@ function ProductFormFields({
   readOnly: boolean;
   pending: boolean;
   returnTo: string;
-  imageSection?: ReactNode;
 }) {
   const [categoryId, setCategoryId] = useState(values.categoryId);
   const selectedCategory = categories.find((category) => category.id === categoryId);
@@ -248,8 +292,6 @@ function ProductFormFields({
           Published on storefront
         </label>
       </fieldset>
-
-      {imageSection}
 
       <FormAlert message={message} />
       {errors.form?.map((error) => (

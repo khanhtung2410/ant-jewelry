@@ -39,6 +39,14 @@ describe('statuses constants', () => {
     warn.mockRestore();
   });
 
+  it('stays quiet when Fast Refresh inspects the config objects', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(VISIBILITY_STATUS['$$typeof' as never]).toBeUndefined();
+    expect(VISIBILITY_STATUS['then' as never]).toBeUndefined();
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('keeps role values distinct from status constants context', () => {
     expect(isVisibilityStatus(adminRole.ADMIN)).toBe(false);
   });

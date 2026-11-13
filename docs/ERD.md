@@ -8,7 +8,9 @@ erDiagram
         String id PK
         String email UK
         String name "nullable"
+        String passwordHash
         Role role "ADMIN | EDITOR"
+        Boolean locked
         DateTime createdAt
         DateTime updatedAt
     }
@@ -52,12 +54,20 @@ erDiagram
         String id PK
         String productId FK
         String productColorId FK "nullable, shared image when null"
+        String storageKey UK "nullable, object-storage key"
         String url
         String alt
         Boolean isFront
+        Boolean isHover
         Int sortOrder
         DateTime createdAt
         DateTime updatedAt
+    }
+
+    PENDING_IMAGE_DELETION {
+        String id PK
+        String storageKey UK
+        DateTime createdAt
     }
 
     BLOG_POST {
@@ -122,11 +132,13 @@ erDiagram
 - **Product images:** `PRODUCT_IMAGE` always belongs to a `PRODUCT` (`productId`) and may optionally belong to a `PRODUCT_COLOR` (`productColorId`).
   - `productColorId = null`: shared/common image for the product.
   - `productColorId != null`: image attached to a specific color.
-  - `sortOrder` defines image order; `isFront` marks the front/primary image.
+  - `sortOrder` defines image order; `isFront` marks the front/primary image and `isHover` marks the image shown on card hover.
+  - `storageKey` is nullable and unique; it identifies the uploaded object in S3-compatible storage. Seed/demo images may use an external `url` without a storage key.
+- **Pending image deletions:** `PENDING_IMAGE_DELETION` queues object-storage keys whose database rows were removed, so cleanup can retry until the object is deleted. It has no relation to `PRODUCT_IMAGE`; `storageKey` matches the removed image key.
 - **Delete behavior:**
   - Deleting a `PRODUCT` cascades to its `PRODUCT_COLOR` and `PRODUCT_IMAGE` records.
   - Deleting a `PRODUCT_COLOR` cascades to its color-specific `PRODUCT_IMAGE` records.
   - A `CATEGORY` cannot be deleted while related `PRODUCT` records exist (`onDelete: Restrict` on `PRODUCT.categoryId`).
 - **Blog images:** `BLOG_POST` can have multiple images via `BLOG_IMAGE` records (ordered by `sortOrder`, deleted when the blog post is deleted). `coverImageUrl` remains on `BLOG_POST` for the cover/primary image reference.
-- **Roles:** `USER.role` is `ADMIN` or `EDITOR`.
-- **Schema file:** Prisma schema is defined in `prisma/schema.prisma`.
+- **Roles:** `USER.role` is `ADMIN` or `EDITOR`; `USER.locked` disables sign-in and invalidates an existing session on its next request.
+- **Schema file:** Prisma schema is defined in `prisma/schema.prisma`. Production PostgreSQL mirrors it in `prisma/postgresql/schema.prisma`.

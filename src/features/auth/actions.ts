@@ -3,11 +3,7 @@
 import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/features/shared/db/prisma';
-import {
-  handleAuthActionError,
-  invalidCredentialsState,
-  type AuthActionState,
-} from './errors';
+import { handleAuthActionError, invalidCredentialsState, type AuthActionState } from './errors';
 import { clearAdminSessionCookie, setAdminSessionCookie } from './session';
 
 export type LoginState = AuthActionState;

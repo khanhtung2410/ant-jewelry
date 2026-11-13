@@ -12,12 +12,18 @@ const actionVariantClassNames = {
 export function AdminTableActions({
   children,
   className = '',
+  wrap = true,
 }: {
   children: ReactNode;
   className?: string;
+  wrap?: boolean;
 }) {
   return (
-    <div className={`flex flex-wrap items-center justify-center gap-2 ${className}`}>
+    <div
+      className={`flex ${
+        wrap ? 'flex-wrap' : 'flex-nowrap'
+      } items-center justify-center gap-2 ${className}`}
+    >
       {children}
     </div>
   );

@@ -8,7 +8,13 @@ import {
   AdminActionLink,
   AdminTableActions,
 } from '@/features/admin/components/admin-table-actions';
+import { AdminConfirmForm } from '@/features/admin/components/admin-confirm-form';
+import {
+  AdminTableEmpty,
+  AdminTableSection,
+} from '@/features/admin/components/admin-table-section';
 import { ReorderButtons } from '@/features/admin/components/reorder-buttons';
+import { StatusBadge } from '@/features/admin/components/status-badge';
 import {
   deleteCategory,
   moveCategory,
@@ -41,16 +47,10 @@ export function CategoryManagement({
 
   return (
     <div>
-      <section className="overflow-hidden rounded-lg border border-[var(--line)]">
-        <div className="border-b border-[var(--line)] px-4 py-3">
-          <h2 className="font-heading text-sm tracking-[0.08em]">
-            CATEGORIES ({categories.length})
-          </h2>
-          <p className="mt-1 text-xs text-[var(--font-color)]">
-            Use the arrows to change the order shown on the home page and in navigation.
-          </p>
-        </div>
-
+      <AdminTableSection
+        title={`CATEGORIES (${categories.length})`}
+        meta="Use the arrows to change the order shown on the home page and in navigation."
+      >
         {categories.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[820px] border-collapse text-left text-sm">
@@ -84,15 +84,7 @@ export function CategoryManagement({
                     <td className="px-4 py-3">{category.type}</td>
                     <td className="px-4 py-3">{category.productCount}</td>
                     <td className="px-4 py-3">
-                      <span
-                        className="rounded-full px-2 py-1 text-xs"
-                        style={{
-                          backgroundColor: VISIBILITY_STATUS[category.status].bg,
-                          color: VISIBILITY_STATUS[category.status].color,
-                        }}
-                      >
-                        {VISIBILITY_STATUS[category.status].label}
-                      </span>
+                      <StatusBadge config={VISIBILITY_STATUS[category.status]} />
                     </td>
                     <td className="px-4 py-3 text-center">
                       <AdminTableActions>
@@ -111,9 +103,9 @@ export function CategoryManagement({
             </table>
           </div>
         ) : (
-          <p className="px-4 py-8 text-sm text-[var(--font-color)]">No categories yet.</p>
+          <AdminTableEmpty>No categories yet.</AdminTableEmpty>
         )}
-      </section>
+      </AdminTableSection>
 
       {saved ? <SavedNotice message="Category saved." dismissHref={returnTo} /> : null}
 
@@ -140,14 +132,7 @@ function CategoryDeleteForm({
 
   return (
     <div className="space-y-1">
-      <form
-        action={formAction}
-        onSubmit={(event) => {
-          if (!window.confirm(`Delete “${category.name}”?`)) {
-            event.preventDefault();
-          }
-        }}
-      >
+      <AdminConfirmForm action={formAction} confirmMessage={`Delete “${category.name}”?`}>
         <input type="hidden" name="categoryId" value={category.id} />
         <input type="hidden" name="returnTo" value={returnTo} />
         <AdminActionButton
@@ -159,7 +144,7 @@ function CategoryDeleteForm({
         >
           Delete
         </AdminActionButton>
-      </form>
+      </AdminConfirmForm>
       {blockedReason ? (
         <p className="max-w-48 text-xs text-[var(--font-color)]">{blockedReason}</p>
       ) : state.message ? (
