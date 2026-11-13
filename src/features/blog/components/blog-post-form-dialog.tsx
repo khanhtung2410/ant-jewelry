@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react';
 import { BLOG_POST_STATUS_OPTIONS } from '@/constants/statuses';
 import { AdminDialog } from '@/features/admin/components/admin-dialog';
+import { AdminTabButton, AdminTabList } from '@/features/admin/components/admin-tabs';
 import {
   FormActions,
   FormAlert,
@@ -125,18 +126,14 @@ function BodyEditor({ initialValue, error }: { initialValue: string; error?: str
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-medium">Body (Markdown)</p>
-        <div
-          role="tablist"
-          aria-label="Body editor mode"
-          className="flex rounded-md border border-[var(--line)] p-0.5"
-        >
-          <TabButton active={tab === 'write'} onClick={() => setTab('write')}>
+        <AdminTabList label="Body editor mode">
+          <AdminTabButton active={tab === 'write'} onClick={() => setTab('write')}>
             Write
-          </TabButton>
-          <TabButton active={tab === 'preview'} onClick={() => setTab('preview')}>
+          </AdminTabButton>
+          <AdminTabButton active={tab === 'preview'} onClick={() => setTab('preview')}>
             Preview
-          </TabButton>
-        </div>
+          </AdminTabButton>
+        </AdminTabList>
       </div>
 
       <textarea
@@ -162,29 +159,5 @@ function BodyEditor({ initialValue, error }: { initialValue: string; error?: str
 
       {error ? <p className="text-xs text-red-700">{error}</p> : null}
     </div>
-  );
-}
-
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: string;
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={`rounded px-3 py-1 text-xs font-medium transition ${
-        active ? 'bg-foreground text-background' : 'text-[var(--font-color)] hover:text-foreground'
-      }`}
-    >
-      {children}
-    </button>
   );
 }
