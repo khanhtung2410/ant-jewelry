@@ -10,6 +10,32 @@ Mỗi mục PR/công việc gồm đủ 3 phần:
 
 ---
 
+## 2026-11-13 - Remove create product permission from EDITOR
+
+### Prompt nguyên văn đã dùng
+
+> r1.1 and r1.2 is in conflict, remove create product permission of editor
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện**
+
+- `src/features/shared/lib/permissions.ts`: removed `products:create` from `EDITOR_PERMISSIONS`; EDITOR now only has `products:view`, `products:update`, `categories:manage`, `blog:manage`, `hero_slides:manage`.
+- `src/features/shared/lib/permissions.test.ts` + `docs/PERMISSIONS.md`: matrix updated so EDITOR cannot create products (creation requires `products:edit_price`, ADMIN-only).
+
+**Kết quả kiểm chứng**
+
+- `npx vitest run src/features/shared/lib/permissions.test.ts src/features/shared/lib/action-authorization.test.ts` → 2 files passed, 8 tests passed.
+
+**So sánh Figma:** chưa ghi nhận trong log này.
+
+### AI sai ở đâu
+
+- Xung đột R1.1 (EDITOR được tạo sản phẩm) và R1.2 (EDITOR tạo bị từ chối vì không đặt được giá) được giải quyết bằng cách bỏ quyền `products:create` của EDITOR.
+
+---
+
 ## 2026-11-13 - EDITOR manages products except price
 
 ### Prompt nguyên văn đã dùng
