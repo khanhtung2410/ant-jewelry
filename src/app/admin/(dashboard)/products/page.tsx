@@ -3,7 +3,6 @@ import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { AccessDenied } from '@/features/admin/components/access-denied';
 import { firstSearchParam, type SearchParam } from '@/features/admin/lib/admin-search-params';
 import { getAdminSession } from '@/features/auth/session';
-import { adminRole } from '@/constants/roles';
 import { visibilityStatus } from '@/constants/statuses';
 import {
   ProductManagement,
@@ -17,7 +16,11 @@ import {
 } from '@/features/products/lib/admin-product-list';
 import { formatPrice } from '@/features/shared/lib/format-price';
 import { prisma } from '@/features/shared/db/prisma';
-import { canViewProducts } from '@/features/shared/lib/permissions';
+import {
+  canEditPrice,
+  canManageProducts,
+  canViewProducts,
+} from '@/features/shared/lib/permissions';
 
 export const instant = false;
 
@@ -37,8 +40,10 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
   const params = await searchParams;
   const search = firstSearchParam(params.search).trim();
   const categoryFilter = firstSearchParam(params.category);
-  const editorView = session.role === adminRole.EDITOR;
-  const createRequested = !editorView && firstSearchParam(params.new) === '1';
+  const canManageProductsAccess = canManageProducts(session.role);
+  const canEditProductPrice = canEditPrice(session.role);
+  const editorView = !canManageProductsAccess;
+  const createRequested = canManageProductsAccess && firstSearchParam(params.new) === '1';
   const selectedProductId = createRequested
     ? ''
     : firstSearchParam(editorView ? params.view : params.edit);
@@ -165,6 +170,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         search={search}
         categoryFilter={categoryFilter}
         editorView={editorView}
+        canEditPrice={canEditProductPrice}
         saved={firstSearchParam(params.saved) === '1'}
         dialog={
           values

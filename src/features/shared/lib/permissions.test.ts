@@ -26,21 +26,21 @@ describe('permissions', () => {
     expect(canManageUsers('ADMIN')).toBe(true);
   });
 
-  it('limits EDITOR to read-only products and blog management', () => {
+  it('lets EDITOR manage products except price and manage content sections', () => {
     expect(canAccessAdmin('EDITOR')).toBe(true);
     expect(canViewProducts('EDITOR')).toBe(true);
-    expect(canManageProducts('EDITOR')).toBe(false);
+    expect(canManageProducts('EDITOR')).toBe(true);
     expect(canEditPrice('EDITOR')).toBe(false);
-    expect(canManageCategories('EDITOR')).toBe(false);
+    expect(canManageCategories('EDITOR')).toBe(true);
     expect(canManageBlog('EDITOR')).toBe(true);
-    expect(canManageHeroSlides('EDITOR')).toBe(false);
+    expect(canManageHeroSlides('EDITOR')).toBe(true);
     expect(canManageSettings('EDITOR')).toBe(false);
     expect(canManageUsers('EDITOR')).toBe(false);
   });
 
   it('maps role permissions consistently via hasPermission', () => {
     expect(hasPermission('EDITOR', 'products:view')).toBe(true);
-    expect(hasPermission('EDITOR', 'products:update')).toBe(false);
+    expect(hasPermission('EDITOR', 'products:update')).toBe(true);
     expect(hasPermission('EDITOR', 'products:edit_price')).toBe(false);
     expect(hasPermission('EDITOR', 'settings:manage')).toBe(false);
     expect(hasPermission('EDITOR', 'users:manage')).toBe(false);
@@ -52,8 +52,12 @@ describe('permissions', () => {
     expect(getPermissionsForRole('ADMIN')).toContain('products:edit_price');
     expect(getPermissionsForRole('ADMIN')).toContain('users:manage');
     expect(getPermissionsForRole('EDITOR')).not.toContain('products:edit_price');
-    expect(getPermissionsForRole('EDITOR')).not.toContain('products:update');
+    expect(getPermissionsForRole('EDITOR')).not.toContain('products:delete');
     expect(getPermissionsForRole('EDITOR')).not.toContain('users:manage');
     expect(getPermissionsForRole('EDITOR')).not.toContain('settings:manage');
+    expect(getPermissionsForRole('EDITOR')).toContain('products:update');
+    expect(getPermissionsForRole('EDITOR')).toContain('categories:manage');
+    expect(getPermissionsForRole('EDITOR')).toContain('blog:manage');
+    expect(getPermissionsForRole('EDITOR')).toContain('hero_slides:manage');
   });
 });

@@ -25,7 +25,14 @@ const ADMIN_PERMISSIONS = new Set<AdminPermission>([
   'users:manage',
 ]);
 
-const EDITOR_PERMISSIONS = new Set<AdminPermission>(['products:view', 'blog:manage']);
+const EDITOR_PERMISSIONS = new Set<AdminPermission>([
+  'products:view',
+  'products:create',
+  'products:update',
+  'categories:manage',
+  'blog:manage',
+  'hero_slides:manage',
+]);
 
 export const ROLE_PERMISSIONS: Record<Role, readonly AdminPermission[]> = {
   ADMIN: [...ADMIN_PERMISSIONS],

@@ -51,6 +51,7 @@ type Props = {
   search: string;
   categoryFilter: string;
   editorView: boolean;
+  canEditPrice: boolean;
   saved: boolean;
   dialog: {
     values: ProductFormValues;
@@ -69,6 +70,7 @@ export function ProductManagement({
   search,
   categoryFilter,
   editorView,
+  canEditPrice,
   saved,
   dialog,
 }: Props) {
@@ -252,6 +254,7 @@ export function ProductManagement({
           categories={categories}
           productName={dialog.productName}
           editorView={editorView}
+          canEditPrice={canEditPrice}
           closeHref={dialog.closeHref}
           images={dialog.images}
         />

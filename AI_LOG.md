@@ -10,6 +10,36 @@ Mỗi mục PR/công việc gồm đủ 3 phần:
 
 ---
 
+## 2026-11-13 - EDITOR manages products except price
+
+### Prompt nguyên văn đã dùng
+
+> EDITOR quản lý sản phẩm (trừ giá), danh mục, blog, hero slide. Hiện tại EDITOR_PERMISSIONS chỉ có products:view + blog:manage. R1.1 — Quyền EDITOR: thêm quyền sửa sản phẩm, danh mục, hero slide cho EDITOR; cập nhật docs/PERMISSIONS.md và unit test ma trận quyền. Đăng nhập EDITOR: tạo / sửa / ẩn sản phẩm, sửa danh mục, hero slide được; không vào Settings / Users. Add to AI_LOG.
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện**
+
+- `src/features/shared/lib/permissions.ts`: `EDITOR_PERMISSIONS` now grants `products:view`, `products:create`, `products:update`, `categories:manage`, `blog:manage`, and `hero_slides:manage`. It no longer grants `products:delete` or `products:edit_price`, and still excludes `settings:manage` / `users:manage`.
+- `src/features/products/actions.ts`: `saveProduct` now rejects price changes for roles without `products:edit_price` (server-side enforcement); `deleteProduct` is now gated on the dedicated `products:delete` permission instead of product management.
+- `src/app/admin/(dashboard)/products/page.tsx`: product admin UI is now derived from permissions (`canManageProducts` / `canEditPrice`) instead of hard-coded role equality, so EDITOR gets create/edit/hide flows.
+- `src/features/products/components/product-management.tsx` + `product-form-dialog.tsx`: dialog receives `canEditPrice` and renders the price field read-only when the role cannot edit price.
+- `docs/PERMISSIONS.md` and `src/features/shared/lib/permissions.test.ts` + `action-authorization.test.ts` updated for the new EDITOR matrix.
+
+**Kết quả kiểm chứng**
+
+- `npx vitest run src/features/shared/lib/permissions.test.ts src/features/shared/lib/action-authorization.test.ts` → 2 files passed, 7 tests passed.
+
+---
+
+**So sánh Figma:** chưa ghi nhận trong log này.
+
+### AI sai ở đâu
+
+- Quyết định bổ sung: EDITOR không được phép xóa sản phẩm (`products:delete` vẫn ADMIN-only), trong khi EDITOR được phép ẩn/hiện sản phẩm qua `products:update`.
+
+---
+
 ## 2026-11-13 - Store product images on local filesystem
 
 ### Prompt nguyên văn đã dùng
