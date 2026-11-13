@@ -19,7 +19,7 @@ Nếu không đăng nhập được, không tạo tài khoản mới hoặc sử
 4. Kiểm tra giá và chính tả. Để sản phẩm ở trạng thái hiển thị khi nội dung sẵn sàng; dùng **Ẩn** nếu cần tạm gỡ sản phẩm khỏi storefront.
 5. Lưu và mở trang sản phẩm công khai để kiểm tra ảnh, màu, thông tin và nút liên hệ.
 
-Không tải lên ảnh mà cửa hàng không có quyền sử dụng. Nếu ảnh tải lên lỗi, thử lại một lần; nếu tiếp tục lỗi, báo người quản trị kỹ thuật kiểm tra object storage, không gửi ảnh qua kênh công khai.
+Không tải lên ảnh mà cửa hàng không có quyền sử dụng. Nếu ảnh tải lên lỗi, thử lại một lần; nếu tiếp tục lỗi, báo người quản trị kỹ thuật kiểm tra thư mục lưu ảnh và quyền ghi trên máy chủ, không gửi ảnh qua kênh công khai.
 
 ## 3. Viết và xuất bản Blog
 

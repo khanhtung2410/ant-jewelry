@@ -6,13 +6,13 @@ Website giới thiệu sản phẩm trang sức; khách hàng liên hệ trực 
 
 ANT JEWELRY là website dành cho khách hàng có nhu cầu tìm hiểu các sản phẩm trang sức và liên hệ trực tiếp với cửa hàng.
 
-**Trạng thái hiện tại:** repository có ứng dụng Next.js 16.4.5 (App Router), Prisma, PostgreSQL production schema, SQLite local/test schema, authentication ADMIN/EDITOR, quản trị nội dung, và object storage S3-compatible cho ảnh sản phẩm. Production infrastructure chưa được provision và website tại domain ANT JEWELRY chưa được xác nhận là bản deploy của repository này. Xem [`DEPLOY.md`](./DEPLOY.md) để biết trạng thái và các bước go-live.
+**Trạng thái hiện tại:** repository có ứng dụng Next.js 16.4.5 (App Router), Prisma, PostgreSQL production schema, SQLite local/test schema, authentication ADMIN/EDITOR, quản trị nội dung, và lưu ảnh sản phẩm trên local filesystem (`/uploads`). Production infrastructure chưa được provision và website tại domain ANT JEWELRY chưa được xác nhận là bản deploy của repository này. Xem [`DEPLOY.md`](./DEPLOY.md) để biết trạng thái và các bước go-live.
 
 Chức năng hiện có:
 
 - Storefront danh mục/sản phẩm, lọc và sắp xếp, trang chi tiết, Blog và thông tin liên hệ.
 - Admin quản lý sản phẩm, ảnh, danh mục, Blog, hero slides, Settings và người dùng theo quyền ADMIN/EDITOR.
-- Upload ảnh sản phẩm lên S3-compatible storage; production cần bucket và credentials riêng.
+- Upload ảnh sản phẩm vào thư mục local của server (`/uploads`); production cần filesystem bền vững và quyền ghi.
 
 **Phạm vi hiện tại:** Website giới thiệu sản phẩm; khách hàng liên hệ trực tiếp qua số điện thoại và các liên kết Facebook, Instagram được công bố. Hệ thống không bao gồm Shopping Cart, Online Ordering, Online Payment hoặc Custom Jewelry Design. Không có biểu mẫu liên hệ hoặc luồng tiếp nhận/gửi yêu cầu liên hệ.
 
@@ -35,7 +35,7 @@ Các thành phần đang có trong work tree:
 | Database / ORM | SQLite (dev/test), PostgreSQL (production); Prisma | Đã triển khai; production DB chưa provision |
 | Validation | Zod | Đã cài đặt |
 | Authentication | JWT trong secure cookie | Đã triển khai; production secret chưa cấu hình |
-| Image Storage | S3-compatible object storage | Đã triển khai; production bucket chưa provision |
+| Image Storage | Local filesystem (`/uploads`) | Đã triển khai; production cần storage bền vững có quyền ghi |
 
 Kiến trúc là **một Next.js application duy nhất**: Server Components cho read, Server Actions cho mutation, Route Handlers chỉ dùng cho upload. Không có NestJS hoặc tầng REST API riêng.
 
@@ -45,7 +45,7 @@ Kiến trúc là **một Next.js application duy nhất**: Server Components cho
 - **npm** (repository dùng `package-lock.json`).
 - **Git** để clone và quản lý phiên bản.
 - Local dev/test dùng SQLite; production dùng PostgreSQL và cần cấu hình environment variables theo [`DEPLOY.md`](./DEPLOY.md).
-- Product-image uploads cần S3-compatible storage được cấu hình; không lưu ảnh trên filesystem của Vercel.
+- Product-image uploads được lưu trên filesystem local của server và phục vụ qua `/uploads`. Trên môi trường serverless/ephemeral (ví dụ Vercel), filesystem có thể không bền vững giữa các lần deploy/instance.
 
 ## 4. Bắt đầu sử dụng
 
@@ -118,7 +118,7 @@ Luồng khách hàng và quản trị:
 
 1. Khách hàng duyệt danh mục, lọc/sắp xếp sản phẩm, xem chi tiết và liên hệ cửa hàng trực tiếp.
 2. ADMIN quản lý nội dung và thông tin liên hệ tại `/admin/*`; EDITOR có quyền giới hạn theo [`PERMISSIONS.md`](./PERMISSIONS.md).
-3. Vercel/PostgreSQL/object storage production chưa được provision. Xem [`DEPLOY.md`](./DEPLOY.md) trước khi thực hiện go-live.
+3. Vercel/PostgreSQL production chưa được provision. Ảnh sản phẩm lưu local cần storage bền vững khi deploy. Xem [`DEPLOY.md`](./DEPLOY.md) trước khi thực hiện go-live.
 
 Chưa có khu vực Admin/Staff, API nghiệp vụ hoặc dữ liệu sản phẩm/Blog trong work tree.
 

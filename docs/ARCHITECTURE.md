@@ -174,7 +174,7 @@ SAD v1.1 nêu định hướng sử dụng Next.js. Kiến trúc đã chốt dù
 | ORM | Prisma | Truy vấn và quản lý dữ liệu | Đã chốt, chưa cấu hình |
 | Validation | Zod | Validate input tại server boundary | Đã chốt, chưa cài đặt |
 | Authentication | JWT | Xác thực người dùng nội bộ | Đề xuất, chưa cấu hình |
-| Image Storage | S3-compatible object storage | Lưu trữ hình ảnh sản phẩm | Đã chọn; Blog chưa xác định |
+| Image Storage | Local filesystem (`/uploads`) | Lưu trữ hình ảnh sản phẩm | Đã triển khai; Blog chưa xác định |
 | Version Control | Git / GitHub | Quản lý mã nguồn và cộng tác | Đang sử dụng |
 
 Cần tiếp tục xác nhận phương thức Authentication và chính sách lưu ảnh Blog.
@@ -213,7 +213,7 @@ Trong work tree hiện tại, trang chủ public đã được triển khai; cá
 - Không thay thế việc kiểm tra quyền truy cập ở server-side.
 - Cần xác định thêm token expiration, refresh token, logout và thu hồi token trước khi triển khai.
 
-**S3-compatible object storage**
+**Local filesystem image storage**
 
 - Lưu trữ bền vững product image assets bên ngoài application server filesystem.
 - Route Handler tải ảnh lên và Server Actions quản lý thứ tự, ảnh cover/hover, gán màu và xóa ảnh.
@@ -269,7 +269,7 @@ ant-jewelry/
 - Ảnh sản phẩm mock dùng `public/mock/products/ring-*.webp`; `ring-2-1` và `ring-5-2` là ảnh phụ (góc chụp thứ hai) của `ring-2` và `ring-5`. Sản phẩm chưa có ảnh riêng dùng SVG placeholder theo `ProductType`.
 - `src/lib/queries/` là tầng truy cập dữ liệu duy nhất cho page; query trả bản clone, lọc danh mục bằng `ProductType` và loại bản ghi hidden/draft khỏi storefront.
 - ESLint chặn `src/app/**` import trực tiếp `@/lib/mock`.
-- Upload và lưu trữ ảnh sản phẩm đã triển khai bằng object storage tương thích S3; chính sách lưu ảnh Blog chưa được xác định.
+- Upload và lưu trữ ảnh sản phẩm đã triển khai trên local filesystem (`/uploads`); chính sách lưu ảnh Blog chưa được xác định.
 - Các script hiện có: `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `test`, `test:watch`.
 
 ### 5.2. Kiến trúc đề xuất
@@ -281,7 +281,7 @@ Hệ thống được tổ chức trong **một Next.js application duy nhất**
 3. **Domain / Module Layer:** các module nghiệp vụ TypeScript.
 4. **Data Access Layer:** Prisma.
 5. **Data Layer:** SQLite cho dev; PostgreSQL cho production.
-6. **External Service:** S3-compatible object storage cho product images; Blog image storage cần được xác nhận.
+6. **File storage:** Local filesystem cho product images (`/uploads`); Blog image storage cần được xác nhận.
 
 Sơ đồ dưới đây thể hiện kiến trúc logic; product image storage đã được triển khai:
 
@@ -322,7 +322,7 @@ flowchart TB
     subgraph DATA[Data and External Services]
         Prisma[Prisma ORM]
         DB[(SQLite dev / PostgreSQL prod)]
-        S3Storage[S3-compatible object storage]
+        LocalStorage[Local filesystem /uploads]
     end
 
     Browser --> UI
@@ -336,7 +336,7 @@ flowchart TB
     User --> Prisma
 
     Prisma --> DB
-    ProductImage -->|Product assets| S3Storage
+    ProductImage -->|Product assets| LocalStorage
 ```
 
 ### 5.3. Presentation Layer
@@ -433,7 +433,7 @@ Data entity: product_images.
 
 SAD cho biết một sản phẩm có thể có nhiều hình ảnh và có trường front_image để nhận diện hình đại diện.
 
-ProductImage lưu URL, object key, thứ tự, ảnh cover/hover và liên kết màu. Upload kiểm tra chữ ký file ở server; xóa ảnh/sản phẩm sẽ dọn object storage hoặc giữ yêu cầu xóa trong cleanup queue để thử lại. Chính sách ảnh Blog vẫn cần xác nhận.
+ProductImage lưu URL, storage key, thứ tự, ảnh cover/hover và liên kết màu. Upload kiểm tra chữ ký file ở server; xóa ảnh/sản phẩm sẽ dọn file local hoặc giữ yêu cầu xóa trong cleanup queue để thử lại. Chính sách ảnh Blog vẫn cần xác nhận.
 ### 6.4. Product Price Module
 Mục đích: Quản lý thông tin giá sản phẩm.
 
@@ -685,7 +685,7 @@ Cần xác nhận trường số tiền, kiểu dữ liệu, precision, scale v�
 
 Product image
 
-ProductImage đã lưu URL, object key, thứ tự, trạng thái cover/hover và liên kết màu; việc dọn object storage được xử lý qua cleanup queue.
+ProductImage đã lưu URL, storage key, thứ tự, trạng thái cover/hover và liên kết màu; việc dọn file local được xử lý qua cleanup queue.
 
 Blog
 
@@ -746,7 +746,7 @@ Các trường dữ liệu chi tiết (price, image URL, description, specificat
 |---|---|---|
 | Login / logout | Server Action | Tạo hoặc hủy session cookie; kiểm tra role |
 | Product CRUD | Server Action | Validate input, authorization, `revalidatePath` |
-| Product image upload | Route Handler | `multipart/form-data`; kiểm tra chữ ký JPG/PNG/WebP và upload S3-compatible storage |
+| Product image upload | Route Handler | `multipart/form-data`; kiểm tra chữ ký JPG/PNG/WebP và lưu trên local filesystem (`/uploads`) |
 | Product price | Server Action | Validate số tiền và quyền |
 | Category CRUD | Server Action | Chỉ sau khi Category model được xác nhận |
 | Blog CRUD và publish | Server Action | Validate trạng thái `DRAFT` / `PUBLISHED` |
@@ -818,20 +818,20 @@ Không đưa ra thiết kế chi tiết cho các nội dung này như thể đã
 ## 11. Image Storage Architecture
 
 ### 11.1. Implemented storage
-Product images are uploaded through an authenticated Next.js Route Handler and stored in S3-compatible object storage (for example AWS S3 or Cloudflare R2). The application server filesystem is not used, so image assets persist across deployments.
+Product images are uploaded through an authenticated Next.js Route Handler and stored on the local filesystem. Files are written under `PRODUCT_IMAGE_UPLOAD_DIR` (default `./uploads`) and served by the application at `/uploads/<storageKey>`.
 
-Phân chia trách nhiệm dự kiến:
+Phân chia trách nhiệm:
 
 | Thành phần | Trách nhiệm |
 |---|---|
-| S3-compatible object storage | Persist and serve uploaded product image assets |
-| Prisma database | Store image URL, object key, product/color assignment, order, cover, and hover metadata |
+| Local filesystem | Persist uploaded product image files |
+| Prisma database | Store image URL, storage key, product/color assignment, order, cover, and hover metadata |
 | Next.js Route Handler / Server Actions | Authenticate and authorize uploads and image management; validate file content and coordinate cleanup |
 | Next.js storefront | Render image URLs read from the database |
 
-The server validates JPEG, PNG, and WebP signatures from file bytes and enforces a 5 MiB per-file limit. `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, and `S3_PUBLIC_URL` must be configured; `S3_ENDPOINT` is optional for AWS S3 and is used for compatible services such as R2. Never commit credentials.
+The server validates JPEG, PNG, and WebP signatures from file bytes and enforces a 5 MiB per-file limit. Storage keys are validated before reading/serving to prevent path traversal.
 
-Deletion records are queued transactionally with database deletion and processed against object storage. Failed cleanup remains queued and is reported instead of being silently discarded.
+Deletion records are queued transactionally with database deletion and processed against the local filesystem. Failed cleanup remains queued and is reported instead of being silently discarded. On serverless/ephemeral hosts, uploaded files may not persist across deploys or instance restarts.
 
 ## 12. Non-functional Architecture
 SAD đề cập các vấn đề phi chức năng nhưng chưa có dữ liệu khảo sát quy mô sản phẩm, số lượng người dùng đồng thời và lưu lượng truy cập. Vì vậy, chưa có cơ sở để đưa ra các chỉ tiêu hiệu năng định lượng chính thức.
@@ -923,7 +923,7 @@ Cấu trúc cuối cùng có thể thay đổi khi các module được triển 
 
 ## 14. Environment và Deployment
 
-Deployment target đã được chọn: Next.js trên Vercel, PostgreSQL cho production và S3-compatible object storage cho ảnh sản phẩm. Các tài khoản/tài nguyên production vẫn cần được provision; xem [`DEPLOY.md`](./DEPLOY.md) để thực hiện thiết lập an toàn.
+Deployment target: Next.js, PostgreSQL cho production, và local filesystem cho ảnh sản phẩm (`/uploads`). Các tài khoản/tài nguyên production vẫn cần được provision; xem [`DEPLOY.md`](./DEPLOY.md) để thực hiện thiết lập an toàn. Nếu deploy lên môi trường serverless/ephemeral (ví dụ Vercel), cần storage bền vững có quyền ghi cho thư mục upload.
 
 ### 14.1. Environment variables
 
@@ -931,8 +931,7 @@ Deployment target đã được chọn: Next.js trên Vercel, PostgreSQL cho pro
 - `DIRECT_URL`: direct PostgreSQL connection cho Prisma migrations; tách khỏi connection pool của application.
 - `AUTH_SECRET`: secret ngẫu nhiên dùng ký session cookie.
 - `SITE_URL`: canonical HTTPS origin của website.
-- `S3_REGION`, `S3_BUCKET`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_URL`.
-- `S3_ENDPOINT`: tùy chọn với AWS S3; bắt buộc theo endpoint của dịch vụ S3-compatible như Cloudflare R2.
+- `PRODUCT_IMAGE_UPLOAD_DIR`: (tùy chọn) đường dẫn thư mục lưu ảnh sản phẩm; mặc định `./uploads`. Phải có quyền ghi và bền vững ở production nếu cần giữ ảnh đã upload.
 
 Không commit credentials, passwords, tokens hoặc secrets vào Git repository. Lưu production values trong Vercel Environment Variables hoặc secret manager.
 
@@ -1080,7 +1079,7 @@ Bảng này dùng để theo dõi các quyết định đã có trong work tree 
 | ADR-003 | Database | SQLite cho dev; PostgreSQL cho production | Đã chốt, chưa cấu hình |
 | ADR-004 | ORM | Prisma | Đã chốt, chưa cấu hình |
 | ADR-005 | Internal Authentication | JWT | Đề xuất, cần thiết kế chi tiết |
-| ADR-006 | Product Image Storage | S3-compatible object storage | Đã chốt; credentials cấu hình theo deployment |
+| ADR-006 | Product Image Storage | Local filesystem (`/uploads`, served by app) | Đã triển khai; cần storage bền vững khi deploy |
 | ADR-007 | Data access và mutation | Server Components cho read; Server Actions / Route Handlers cho mutation | Đã chốt |
 | ADR-008 | Repository structure | Một Next.js app trong `src/`; không tách frontend/backend | Đã chốt |
 | ADR-010 | Category model | Tách khỏi Product Type nếu nghiệp vụ cần | Cần xác nhận |

@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { prisma } from '@/features/shared/db/prisma';
-import { deleteStoredProductImage } from './object-storage';
+import { deleteStoredProductImage } from './local-image-storage';
 
 export async function enqueueProductImageDeletions(storageKeys: string[]): Promise<void> {
   if (storageKeys.length === 0) {

@@ -10,10 +10,7 @@ import {
   enqueueProductImageDeletions,
   getProductRevalidationPaths,
 } from '@/features/products/server/product-image-cleanup';
-import {
-  ObjectStorageConfigurationError,
-  uploadProductImage,
-} from '@/features/products/server/object-storage';
+import { uploadProductImage } from '@/features/products/server/local-image-storage';
 
 type ValidatedFile = {
   bytes: Uint8Array;
@@ -118,10 +115,7 @@ export async function POST(
       }
     }
 
-    if (error instanceof ObjectStorageConfigurationError) {
-      return jsonError('Image object storage is not configured on this server.', 503);
-    }
-    return jsonError('Image object storage upload failed. Please retry.', 502);
+    return jsonError('Image upload failed. Please retry.', 500);
   }
 
   let images;

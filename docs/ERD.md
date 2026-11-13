@@ -54,7 +54,7 @@ erDiagram
         String id PK
         String productId FK
         String productColorId FK "nullable, shared image when null"
-        String storageKey UK "nullable, object-storage key"
+        String storageKey UK "nullable, local storage key/path"
         String url
         String alt
         Boolean isFront
@@ -133,8 +133,8 @@ erDiagram
   - `productColorId = null`: shared/common image for the product.
   - `productColorId != null`: image attached to a specific color.
   - `sortOrder` defines image order; `isFront` marks the front/primary image and `isHover` marks the image shown on card hover.
-  - `storageKey` is nullable and unique; it identifies the uploaded object in S3-compatible storage. Seed/demo images may use an external `url` without a storage key.
-- **Pending image deletions:** `PENDING_IMAGE_DELETION` queues object-storage keys whose database rows were removed, so cleanup can retry until the object is deleted. It has no relation to `PRODUCT_IMAGE`; `storageKey` matches the removed image key.
+  - `storageKey` is nullable and unique; for uploaded images it stores the local storage key (served from `/uploads/<storageKey>`). Seed/demo images may use an external `url` without a storage key.
+- **Pending image deletions:** `PENDING_IMAGE_DELETION` queues local image storage keys whose database rows were removed, so file cleanup can retry until the file is deleted. It has no relation to `PRODUCT_IMAGE`; `storageKey` matches the removed image key.
 - **Delete behavior:**
   - Deleting a `PRODUCT` cascades to its `PRODUCT_COLOR` and `PRODUCT_IMAGE` records.
   - Deleting a `PRODUCT_COLOR` cascades to its color-specific `PRODUCT_IMAGE` records.

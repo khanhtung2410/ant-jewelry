@@ -1,5 +1,25 @@
 ﻿# AI Change Log
 
+## 2026-11-13 - Store product images on local filesystem
+
+### User prompt
+
+> remove all of s3 work flow, save image on local
+
+### Changes made
+
+- Replaced S3 object storage with local filesystem storage in `src/features/products/server/local-image-storage.ts`: uploads are saved under `PRODUCT_IMAGE_UPLOAD_DIR` (default `./uploads`) as `products/<productId>/<uuid>.<ext>`, served at `/uploads/<storageKey>`, and deleted from disk. Storage keys are validated to prevent path traversal.
+- Added `src/app/uploads/[...path]/route.ts` to serve stored images with immutable caching headers.
+- Updated the product image upload route and cleanup queue to use local storage and return a generic 500 on upload failure instead of S3-specific errors. Removed `src/features/products/server/object-storage.ts`.
+- Removed S3 environment variables from `.env.example`, ignored `/uploads/*`, and updated deployment/architecture/requirements/ERD/README/operations docs to describe local storage and its persistence implications.
+- Kept `storageKey` and `PendingImageDeletion` for local file keys and retryable cleanup. Added `src/features/products/server/local-image-storage.test.ts`.
+
+### Output summary
+
+`npm run lint`, `npm run typecheck`, `npm run format:check`, `npm test` (38 files, 157 tests), `npm run build`, and `npm run test:e2e` (3/3) passed. Build output includes the dynamic `/uploads/[...path]` route. No storefront/admin UI layout changed; image files are now served from local `/uploads` paths instead of object storage URLs.
+
+---
+
 ## 2026-11-13 09:54:56 +07:00 - Share one skeleton for the not-found pages
 
 ### User prompt

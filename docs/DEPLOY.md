@@ -2,7 +2,7 @@
 
 ## Status and go-live gate
 
-**Status on 2026-11-12:** Vercel, PostgreSQL, and object-storage resources have not been provisioned for this repository. No production deployment or first ADMIN account was created by this change.
+**Status on 2026-11-13:** Vercel and PostgreSQL resources have not been provisioned for this repository. Product images are stored on the local filesystem (`/uploads`) and served by the application. No production deployment or first ADMIN account was created by this change.
 
 The supplied production URL, [https://antjewelry.vn/](https://antjewelry.vn/), responds, but its homepage links product pages such as `/facert-ring`; this repository uses `/p/[slug]`. The URL is therefore not verified as a deployment of this Next.js application. Confirm the existing site's ownership and cutover plan before changing DNS or replacing it.
 
@@ -21,12 +21,12 @@ After go-live, replace each result with the exact Figma frame, production URL, v
 
 ## Prerequisites
 
-- Vercel project connected to this repository with permission to configure its production environment.
+- Vercel project connected to this repository with permission to configure its production environment (or another host with a persistent writable filesystem for uploads).
 - PostgreSQL database and its pooled application URL plus direct migration URL.
-- S3-compatible bucket (AWS S3 or Cloudflare R2) and HTTPS public base URL/CDN for product images.
+- Persistent, writable storage for uploaded product images if deploying to a serverless/ephemeral environment. Uploaded images are saved under `PRODUCT_IMAGE_UPLOAD_DIR` (default `./uploads`) and served from `/uploads/...`; files written to an ephemeral filesystem will be lost on redeploy/instance restart.
 - Approval to cut `antjewelry.vn` over from its current site, or a separately approved production domain.
 - A real, monitored owner email for the first ADMIN. Do not use the local sample address `admin@antjewelry.local`.
-- Decide whether production starts empty or needs an approved data migration. No SQLite database or existing image objects are copied by this release.
+- Decide whether production starts empty or needs an approved data migration. No SQLite database or existing image files are copied by this release.
 
 ## Environment variables
 
@@ -38,20 +38,13 @@ Set these in Vercel **Production** environment variables; use separate values fo
 | `DIRECT_URL` | Yes | Direct PostgreSQL connection for Prisma migrations; must target the same database/schema as `DATABASE_URL` |
 | `AUTH_SECRET` | Yes | Random signing key for admin sessions; generate with `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"` and store directly in Vercel |
 | `SITE_URL` | Yes | Canonical HTTPS origin, for example the approved production domain |
-| `S3_REGION` | Yes | AWS region or `auto` for a compatible service that requires it |
-| `S3_BUCKET` | Yes | Bucket name |
-| `S3_ACCESS_KEY_ID` | Yes | Server-side object-storage access key |
-| `S3_SECRET_ACCESS_KEY` | Yes | Server-side object-storage secret |
-| `S3_PUBLIC_URL` | Yes | HTTPS public base URL/CDN used to display uploaded images |
-| `S3_ENDPOINT` | No for AWS | HTTPS S3-compatible API origin, e.g. the provider's R2 endpoint; do not include a path |
-
-Use a bucket key with only the access needed to upload and delete objects in this bucket; configure public object reads through the provider/CDN. These variables are server-only and must not use a `NEXT_PUBLIC_` prefix.
+| `PRODUCT_IMAGE_UPLOAD_DIR` | No | Absolute/relative path for uploaded product images. Defaults to `./uploads`. Must be writable and persistent in production. |
 
 `.env.example` contains placeholders only. Local SQLite uses `prisma/schema.prisma`; production uses `prisma/postgresql/schema.prisma`. `vercel.json` selects `npm run build:production`, which generates the PostgreSQL Prisma Client before the Next.js build.
 
 ## Initial deployment sequence
 
-1. Provision the services above and configure all variables in Vercel. Confirm storage can serve a test image over HTTPS and the domain owner approved the cutover.
+1. Provision the services above and configure all variables. Confirm the upload directory is writable and persists across deploys/restarts if you need to keep uploaded images.
 2. Take a database snapshot before running migrations. From a trusted terminal, set both `DATABASE_URL` (pooled) and `DIRECT_URL` (direct) securely to the same production database, then run:
 
    ```powershell
@@ -86,21 +79,22 @@ The supplied `admin@antjewelry.local` is a local-only example, not a production 
   pg_dump "$env:DIRECT_URL" --format=custom --file=ant-jewelry-production.dump
   ```
 
-  Store backup files in protected backup storage, not in this repository or the deployment artifact.
-- **Restore test:** restore the dump to a separate staging database first, then verify row counts, login, storefront pages, and image URLs. Never restore over production without owner approval because writes after the backup point will be lost.
+  Store backup files in protected backup storage, not in this repository or the deployment artifact. Back up the upload directory (`PRODUCT_IMAGE_UPLOAD_DIR`) separately if uploaded images must be preserved.
+- **Restore test:** restore the dump to a separate staging database first, then verify row counts, login, storefront pages, and image URLs/files. Never restore over production without owner approval because writes after the backup point will be lost.
 
   ```powershell
   pg_restore --clean --if-exists --no-owner --dbname="$env:DIRECT_URL" ant-jewelry-production.dump
   ```
 
-- **Application rollback:** redeploy the previous Vercel deployment if its schema remains compatible. If a migration is not backward-compatible or data is corrupted, stop writes and use the provider's point-in-time restore after the owner approves the recovery point. Do not attempt to reverse an applied migration by editing its SQL.
+- **Application rollback:** redeploy the previous Vercel deployment if its schema and uploaded files remain compatible. If a migration is not backward-compatible or data is corrupted, stop writes and use the provider's point-in-time restore after the owner approves the recovery point. Do not attempt to reverse an applied migration by editing its SQL.
 
 ## Production readiness checklist
 
-- [ ] Vercel, PostgreSQL, and S3-compatible storage provisioned; production variables verified without exposing them.
+- [ ] Vercel and PostgreSQL provisioned; production variables verified without exposing them.
+- [ ] Persistent writable storage for `/uploads` (or `PRODUCT_IMAGE_UPLOAD_DIR`) confirmed if product image uploads are needed.
 - [ ] Approved production domain and cutover plan recorded.
 - [ ] PostgreSQL migrations applied and status clean.
 - [ ] First ADMIN created using a real owner email; sign-in verified.
 - [ ] Store Settings, products, Blog, and image upload verified.
-- [ ] Backup and restore procedure tested outside production.
+- [ ] Database and upload-directory backup/restore procedure tested outside production.
 - [ ] Figma ↔ production comparison completed for mobile and desktop.
