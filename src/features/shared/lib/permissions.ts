@@ -27,7 +27,6 @@ const ADMIN_PERMISSIONS = new Set<AdminPermission>([
 
 const EDITOR_PERMISSIONS = new Set<AdminPermission>([
   'products:view',
-  'products:create',
   'products:update',
   'categories:manage',
   'blog:manage',

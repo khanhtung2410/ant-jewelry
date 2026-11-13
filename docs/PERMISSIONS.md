@@ -7,7 +7,7 @@ This document defines the current admin roles and permissions for Ant Jewelry (G
 | Role | Description |
 |---|---|
 | `ADMIN` | Full access to all admin features. |
-| `EDITOR` | Can manage products (create, update, hide) except product prices, and manage categories, blog posts, and hero slides. Cannot access Settings or Users. |
+| `EDITOR` | Can manage products (update, hide) except product prices, and manage categories, blog posts, and hero slides. Cannot create products, or access Settings or Users. |
 
 ## Permission Matrix
 
@@ -15,10 +15,10 @@ This document defines the current admin roles and permissions for Ant Jewelry (G
 |---|---:|---:|---|
 | Access admin area (`/admin/*`) | Yes | Yes | Unauthenticated requests are redirected to `/admin/login`. |
 | View products | Yes | Yes | Product listing/detail screens; EDITOR can manage products but not prices. |
-| Create products | Yes | Yes | EDITOR can create products (a new product starts with an initial price). Enforced in the server action. |
+| Create products | Yes | No | EDITOR cannot create products; only ADMIN can set an initial price. |
 | Update products | Yes | Yes | EDITOR can update products via `products:update`; hiding is allowed through the same permission. |
 | Delete/hide products | Yes | Yes | Delete is ADMIN-only via `products:delete`; hiding is allowed via `products:update`. |
-| Edit product price | Yes | No | `products:edit_price` is ADMIN-only; the server rejects price changes from EDITOR. |
+| Edit product price | Yes | No | `products:edit_price` is ADMIN-only; EDITOR saves keep the stored price. |
 | Manage categories | Yes | Yes | EDITOR can create/update/delete/reorder as implemented. |
 | Manage blog posts | Yes | Yes | Write permission granted to EDITOR. |
 | Manage hero slides | Yes | Yes | EDITOR can create/update/delete/reorder/visibility as implemented. |
