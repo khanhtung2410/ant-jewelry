@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ROLE_CONFIG,
-  ROLE_OPTIONS,
-  adminRole,
-  getRoleLabel,
-  isAdminRole,
-} from './roles';
+import { ROLE_CONFIG, ROLE_OPTIONS, adminRole, getRoleLabel, isAdminRole } from './roles';
 
 describe('roles constants', () => {
   it('guards admin roles', () => {
