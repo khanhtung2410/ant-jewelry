@@ -12,10 +12,34 @@ vi.mock('@/features/auth/session', () => ({
     exp: 9_999_999_999,
   })),
 }));
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+const { productUpdateMock } = vi.hoisted(() => ({
+  productUpdateMock: vi.fn(async () => ({})),
+}));
+
+vi.mock('next/cache', () => ({
+  revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
+  updateTag: vi.fn(),
+}));
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }));
+vi.mock('@/features/products/server/product-image-cleanup', () => ({
+  getProductRevalidationPaths: vi.fn(() => []),
+  processPendingProductImageDeletions: vi.fn(async () => {}),
+}));
 vi.mock('@/features/shared/db/prisma', () => ({
   prisma: {
+    $transaction: vi.fn(async (fn: (tx: unknown) => Promise<unknown>) =>
+      fn({
+        product: { update: productUpdateMock, create: vi.fn(async () => ({})) },
+        productColor: {
+          findFirst: vi.fn(),
+          findMany: vi.fn(async () => []),
+          create: vi.fn(),
+          deleteMany: vi.fn(),
+        },
+        pendingImageDeletion: { upsert: vi.fn() },
+      }),
+    ),
     category: {
       findUnique: vi.fn(async () => ({ id: 'category-1', type: 'WEDDING RING' })),
     },
@@ -70,7 +94,7 @@ const createUserState: CreateUserFormState = {
 };
 
 describe('server action authorization', () => {
-  it('rejects an EDITOR calling the product price update action directly', async () => {
+  it('keeps the stored price when an EDITOR saves a product with a different price', async () => {
     const formData = new FormData();
     formData.set('productId', 'product-1');
     formData.set('name', 'Gold ring');
@@ -81,9 +105,29 @@ describe('server action authorization', () => {
     formData.set('price', '9999999');
     formData.set('description', 'A ring');
 
+    await saveProduct(productState, formData);
+
+    expect(productUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'product-1' },
+        data: expect.objectContaining({ price: 1000000 }),
+      }),
+    );
+  });
+
+  it('rejects an EDITOR creating a product because only an ADMIN can set the price', async () => {
+    const formData = new FormData();
+    formData.set('name', 'Gold ring');
+    formData.set('slug', 'gold-ring');
+    formData.set('categoryId', 'category-1');
+    formData.set('type', 'WEDDING RING');
+    formData.set('brand', 'ANT');
+    formData.set('price', '1000000');
+    formData.set('description', 'A ring');
+
     const state = await saveProduct(productState, formData);
 
-    expect(state.fieldErrors.form?.[0]).toMatch(/permission/i);
+    expect(state.fieldErrors.form?.[0]).toMatch(/ADMIN/);
   });
 
   it('rejects an EDITOR calling the settings action directly', async () => {

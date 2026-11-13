@@ -40,6 +40,32 @@ Mỗi mục PR/công việc gồm đủ 3 phần:
 
 ---
 
+## 2026-11-13 - Block product price for EDITOR saves
+
+### Prompt nguyên văn đã dùng
+
+> R1.2 — Chặn giá ở field. saveProduct dùng canEditPrice: EDITOR lưu sản phẩm thì bỏ qua price gửi lên và giữ giá trong DB (sản phẩm mới do EDITOR tạo: báo lỗi hoặc yêu cầu ADMIN đặt giá — ghi rõ lựa chọn trong PR).
+> unit test: EDITOR gửi form có price khác → giá trong DB không đổi; E2E: EDITOR sửa tên sản phẩm được, ô giá chỉ đọc.
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện**
+
+- `src/features/products/actions.ts`: `saveProduct` now keeps the stored price for EDITOR saves (`canEditPrice` false → reuse existing product price); EDITOR product creation is rejected with `Only an ADMIN can set a product price.`
+
+**Kết quả kiểm chứng**
+
+- `npx vitest run src/features/shared/lib/permissions.test.ts src/features/shared/lib/action-authorization.test.ts` → 2 files passed, 8 tests passed.
+
+**So sánh Figma:** chưa ghi nhận trong log này.
+
+### AI sai ở đâu
+
+- Quyết định: chọn phương án “EDITOR tạo sản phẩm mới → báo lỗi” thay vì cho EDITOR nhập giá ban đầu.
+
+---
+
 ## 2026-11-13 - Admin dashboard: products overview and activity log
 
 ### Prompt nguyên văn đã dùng
