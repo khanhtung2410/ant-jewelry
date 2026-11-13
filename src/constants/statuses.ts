@@ -39,9 +39,18 @@ export const VISIBILITY_STATUS_CONFIG: Record<VisibilityStatusType, StatusConfig
   [visibilityStatus.HIDDEN]: { label: 'Ẩn', bg: '#F1F5F9', color: '#334155' },
 };
 
-export const PRODUCT_STATUS_CONFIG = VISIBILITY_STATUS_CONFIG as Record<ProductStatus, StatusConfig>;
-export const CATEGORY_STATUS_CONFIG = VISIBILITY_STATUS_CONFIG as Record<CategoryStatus, StatusConfig>;
-export const HERO_SLIDE_STATUS_CONFIG = VISIBILITY_STATUS_CONFIG as Record<HeroSlideStatus, StatusConfig>;
+export const PRODUCT_STATUS_CONFIG = VISIBILITY_STATUS_CONFIG as Record<
+  ProductStatus,
+  StatusConfig
+>;
+export const CATEGORY_STATUS_CONFIG = VISIBILITY_STATUS_CONFIG as Record<
+  CategoryStatus,
+  StatusConfig
+>;
+export const HERO_SLIDE_STATUS_CONFIG = VISIBILITY_STATUS_CONFIG as Record<
+  HeroSlideStatus,
+  StatusConfig
+>;
 
 export const BLOG_POST_STATUS_CONFIG: Record<BlogPostStatus, StatusConfig> = {
   [publishStatus.DRAFT]: { label: 'Bản nháp', bg: '#FEF3C7', color: '#92400E' },
@@ -53,22 +62,37 @@ export const ACCOUNT_STATUS_CONFIG: Record<AccountStatusType, StatusConfig> = {
   [accountStatus.LOCKED]: { label: 'Đã khóa', bg: '#FEE2E2', color: '#B91C1C' },
 };
 
-export const VISIBILITY_STATUS_OPTIONS: ReadonlyArray<{ value: VisibilityStatusType; label: string }> = [
-  { value: visibilityStatus.VISIBLE, label: VISIBILITY_STATUS_CONFIG[visibilityStatus.VISIBLE].label },
-  { value: visibilityStatus.HIDDEN, label: VISIBILITY_STATUS_CONFIG[visibilityStatus.HIDDEN].label },
+export const VISIBILITY_STATUS_OPTIONS: ReadonlyArray<{
+  value: VisibilityStatusType;
+  label: string;
+}> = [
+  {
+    value: visibilityStatus.VISIBLE,
+    label: VISIBILITY_STATUS_CONFIG[visibilityStatus.VISIBLE].label,
+  },
+  {
+    value: visibilityStatus.HIDDEN,
+    label: VISIBILITY_STATUS_CONFIG[visibilityStatus.HIDDEN].label,
+  },
 ];
 
-export const BLOG_POST_STATUS_OPTIONS: ReadonlyArray<{ value: PublishStatusType; label: string }> = [
-  { value: publishStatus.DRAFT, label: BLOG_POST_STATUS_CONFIG[publishStatus.DRAFT].label },
-  { value: publishStatus.PUBLISHED, label: BLOG_POST_STATUS_CONFIG[publishStatus.PUBLISHED].label },
-];
+export const BLOG_POST_STATUS_OPTIONS: ReadonlyArray<{ value: PublishStatusType; label: string }> =
+  [
+    { value: publishStatus.DRAFT, label: BLOG_POST_STATUS_CONFIG[publishStatus.DRAFT].label },
+    {
+      value: publishStatus.PUBLISHED,
+      label: BLOG_POST_STATUS_CONFIG[publishStatus.PUBLISHED].label,
+    },
+  ];
 
-function withFallback<K extends string>(
-  config: Record<K, StatusConfig>,
-): Record<K, StatusConfig> {
+const INSPECTION_KEYS = new Set(['$$typeof', 'then']);
+
+function withFallback<K extends string>(config: Record<K, StatusConfig>): Record<K, StatusConfig> {
   return new Proxy(config, {
     get(target, prop, receiver) {
-      if (typeof prop === 'symbol') return Reflect.get(target, prop, receiver);
+      if (typeof prop === 'symbol' || INSPECTION_KEYS.has(prop)) {
+        return Reflect.get(target, prop, receiver);
+      }
       const value = (target as Record<string, StatusConfig>)[prop as string];
       if (value === undefined) {
         if (process.env.NODE_ENV !== 'production') {
@@ -94,7 +118,9 @@ export function getBlogPostStatusConfig(status: string): StatusConfig {
 }
 
 export function getAccountStatusConfig(locked: boolean): StatusConfig {
-  return locked ? ACCOUNT_STATUS_CONFIG[accountStatus.LOCKED] : ACCOUNT_STATUS_CONFIG[accountStatus.ACTIVE];
+  return locked
+    ? ACCOUNT_STATUS_CONFIG[accountStatus.LOCKED]
+    : ACCOUNT_STATUS_CONFIG[accountStatus.ACTIVE];
 }
 
 export function isVisibilityStatus(value: unknown): value is VisibilityStatusType {

@@ -7,6 +7,12 @@ import {
   AdminActionLink,
   AdminTableActions,
 } from '@/features/admin/components/admin-table-actions';
+import { AdminConfirmForm } from '@/features/admin/components/admin-confirm-form';
+import {
+  AdminTableEmpty,
+  AdminTableSection,
+} from '@/features/admin/components/admin-table-section';
+import { StatusBadge } from '@/features/admin/components/status-badge';
 import { formatPublishedDate } from '@/features/shared/lib/format-date';
 import type { BlogPostFormValues } from '../actions';
 import { deleteBlogPost } from '../actions';
@@ -36,14 +42,10 @@ export function BlogManagement({
 
   return (
     <div>
-      <section className="overflow-hidden rounded-lg border border-[var(--line)]">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--line)] px-4 py-3">
-          <h2 className="font-heading text-sm tracking-[0.08em]">BLOG POSTS ({posts.length})</h2>
-          <p className="text-xs text-[var(--font-color)]">
-            {publishedCount} published · {draftCount} draft
-          </p>
-        </div>
-
+      <AdminTableSection
+        title={`BLOG POSTS (${posts.length})`}
+        meta={`${publishedCount} published · ${draftCount} draft`}
+      >
         {posts.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-left text-sm">
@@ -66,15 +68,7 @@ export function BlogManagement({
                       {formatPublishedDate(post.publishedAt)}
                     </td>
                     <td className="px-4 py-3">
-                      <span
-                        className="rounded-full px-2 py-1 text-xs"
-                        style={{
-                          backgroundColor: BLOG_POST_STATUS[post.status].bg,
-                          color: BLOG_POST_STATUS[post.status].color,
-                        }}
-                      >
-                        {BLOG_POST_STATUS[post.status].label}
-                      </span>
+                      <StatusBadge config={BLOG_POST_STATUS[post.status]} />
                     </td>
                     <td className="px-4 py-3 text-center">
                       <AdminTableActions>
@@ -84,18 +78,14 @@ export function BlogManagement({
                         >
                           Edit
                         </AdminActionLink>
-                        <form
+                        <AdminConfirmForm
                           action={deleteBlogPost.bind(null, post.id)}
-                          onSubmit={(event) => {
-                            if (!window.confirm(`Delete “${post.title}”?`)) {
-                              event.preventDefault();
-                            }
-                          }}
+                          confirmMessage={`Delete “${post.title}”?`}
                         >
                           <AdminActionButton type="submit" variant="danger">
                             Delete
                           </AdminActionButton>
-                        </form>
+                        </AdminConfirmForm>
                       </AdminTableActions>
                     </td>
                   </tr>
@@ -104,9 +94,9 @@ export function BlogManagement({
             </table>
           </div>
         ) : (
-          <p className="px-4 py-8 text-sm text-[var(--font-color)]">No blog posts yet.</p>
+          <AdminTableEmpty>No blog posts yet.</AdminTableEmpty>
         )}
-      </section>
+      </AdminTableSection>
 
       {saved ? <SavedNotice message="Blog post saved." dismissHref={returnTo} /> : null}
 
