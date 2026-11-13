@@ -47,7 +47,7 @@ export function FormAlert({ message }: { message: string | null }) {
 
 export function FormActions({ children }: { children: ReactNode }) {
   return (
-    <div className="sticky bottom-0 -mx-5 flex flex-col-reverse gap-2 border-t border-[var(--line)] bg-background px-5 py-3 sm:flex-row sm:justify-end">
+    <div className="sticky bottom-0 -mx-5 -mb-4 flex flex-col-reverse gap-2 border-t border-[var(--line)] bg-background px-5 py-3 sm:flex-row sm:justify-end">
       {children}
     </div>
   );
