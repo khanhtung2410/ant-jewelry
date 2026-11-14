@@ -10,6 +10,47 @@ Mỗi mục PR/công việc gồm đủ 3 phần:
 
 ---
 
+## 2026-11-14 10:10:59 +07:00 - Hide products in hidden categories (R2.2)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> R2.2 — Danh mục bị ẩn. getProductBySlug, sản phẩm liên quan, sitemap, generateStaticParams loại sản phẩm thuộc danh mục HIDDEN.
+> ẩn một danh mục → /p/<slug> của sản phẩm trong đó trả 404 và không có trong sitemap.xml.
+>
+> domain.ts type, if appropiate put to constant.ts
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện**
+
+- `src/features/products/queries/products.ts`: added `visibleCategoryWhere()` and applied it to `getProducts`, `getProductBySlug`, `getProductById`, `getRelatedProducts` and `getProductsByCategoryIds`. Storefront queries now join `category.status = VISIBLE`; admin screens keep `includeHidden` to read every product regardless of its category.
+- Because `/p/[slug]`, `/c/[slug]`, the Home carousel, related products, `sitemap.xml` and `generateStaticParams` all read through those queries, products of a HIDDEN category now return 404, are not listed, and are absent from the sitemap and prerendered product paths.
+- `src/features/products/actions/categories.ts`: `revalidateCategoryPages()` now calls `revalidateTag('products', 'max')`, so hiding/showing/deleting a category invalidates the cached product results immediately instead of waiting for the cache lifetime.
+- Moved the status union types (`ProductStatus`, `CategoryStatus`, `BlogPostStatus`, `HeroSlideStatus`) from `src/features/shared/domain/domain.ts` to `src/constants/statuses.ts`, defined from the existing `visibilityStatus` / `publishStatus` constants; `domain.ts` re-exports them so existing imports stay valid.
+- `docs/ARCHITECTURE.md`: documented the R2.2 visibility rule.
+- `src/features/shared/queries/queries.test.ts`: added an integration test that creates a product inside a HIDDEN category and asserts: storefront lookup → `null` (404), admin lookup with `includeHidden` → found, absent from `getProducts`, Home sections and `getRelatedProducts`, and no `/p/<slug>` entry in `sitemap()`.
+
+**Kết quả kiểm chứng**
+
+- `npx vitest run src/features/shared/queries/queries.test.ts` → 24 tests passed.
+- `npm test` → 38 files / 160 tests passed.
+- `npm run typecheck` → passed.
+- `npm run build` → passed (53/53 static pages generated; `/sitemap.xml` and `/p/[slug]` built from the filtered queries).
+- `npx eslint` on touched files → clean; `npx prettier --check` → clean after formatting the test file.
+- Playwright E2E was not re-run in this pass: it starts a second dev server on port 3100 while the existing dev server on port 3000 keeps the shared `.next` directory busy (same limitation recorded in earlier entries).
+
+**So sánh Figma:** chưa ghi nhận trong log này.
+
+### AI sai ở đâu
+
+- First working assumption was to filter only on `Product.status`; that does not cover the requirement, because a product can stay VISIBLE while its category is HIDDEN. The fix filters on the related `category.status` in the product queries themselves so every storefront consumer inherits the rule.
+- Category mutations originally did not invalidate the `products` cache tag, so hiding a category could keep serving cached product pages/sitemap until revalidation; `revalidateTag('products', 'max')` was added to the category revalidation helper.
+
+---
+
 ## 2026-11-14 - Link products to categories by categoryId (R2.1)
 
 ### Prompt nguyên văn đã dùng

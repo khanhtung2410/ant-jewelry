@@ -460,6 +460,8 @@ SAD phân biệt:
 
 **Cập nhật 2026-11-14 (R2.1):** `Product` liên kết `Category` bằng `categoryId` — đây là nguồn dữ liệu duy nhất. Cột `Product.type` đã bị bỏ khỏi schema; `Product.type` trong domain được suy ra từ `Category.type`. Trang danh mục, carousel Home và sản phẩm liên quan lọc theo `categoryId`, nên khi ADMIN đổi `Category.type` thì sản phẩm vẫn thuộc danh mục đó và carousel vẫn đủ sản phẩm.
 
+**Cập nhật 2026-11-14 (R2.2):** Sản phẩm kế thừa trạng thái hiển thị của danh mục. Khi một danh mục bị ẩn (`Category.status = HIDDEN`), mọi sản phẩm thuộc danh mục đó bị loại khỏi query storefront: `/p/<slug>` trả 404, không xuất hiện trong danh sách/carousel/sản phẩm liên quan, không có trong `sitemap.xml` và không được sinh bởi `generateStaticParams`. Query admin vẫn đọc được bằng `includeHidden`. `saveCategory`/`deleteCategory` gọi `revalidateTag('products')` để làm mới cache sản phẩm sau khi đổi trạng thái danh mục.
+
 Tuy nhiên, Category entity và quan hệ giữa Category với Product chưa có trong cấu trúc dữ liệu được rà soát. Do đó, Category Module chỉ là module dự kiến, chưa phải thành phần đã được chốt.
 ### 6.6. Blog Module
 Mục đích: Cung cấp nội dung Blog công khai và hỗ trợ quản trị bài viết.

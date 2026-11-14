@@ -1,10 +1,3 @@
-import type {
-  BlogPostStatus,
-  CategoryStatus,
-  HeroSlideStatus,
-  ProductStatus,
-} from '@/features/shared/domain/domain';
-
 export type StatusConfig = { label: string; bg: string; color: string };
 
 export const visibilityStatus = {
@@ -13,6 +6,9 @@ export const visibilityStatus = {
 } as const;
 
 export type VisibilityStatusType = (typeof visibilityStatus)[keyof typeof visibilityStatus];
+export type ProductStatus = VisibilityStatusType;
+export type CategoryStatus = VisibilityStatusType;
+export type HeroSlideStatus = VisibilityStatusType;
 
 export const publishStatus = {
   DRAFT: 'DRAFT',
@@ -20,6 +16,7 @@ export const publishStatus = {
 } as const;
 
 export type PublishStatusType = (typeof publishStatus)[keyof typeof publishStatus];
+export type BlogPostStatus = PublishStatusType;
 
 export const accountStatus = {
   ACTIVE: 'ACTIVE',
