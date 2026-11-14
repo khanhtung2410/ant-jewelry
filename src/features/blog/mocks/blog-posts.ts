@@ -88,6 +88,8 @@ Nên kiểm tra chấu giữ đá định kỳ và đưa đến cửa hàng đ�
 
 ![Phối nhẫn stacking](/mock/blog/cover-stacking.svg)
 
+![Chi tiết phối nhẫn](/mock/blog/cover-metal-colors.svg)
+
 Đừng quên đặt nhẫn cưới ở vị trí cân đối để tổng thể vẫn có điểm nhấn rõ ràng.`,
     coverImageUrl: '/mock/blog/cover-stacking.svg',
     images: [],

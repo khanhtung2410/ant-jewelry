@@ -35,6 +35,7 @@ export function BlogPostFormDialog({
 
   const [body, setBody] = useState(values.body);
   const [coverUrl, setCoverUrl] = useState(values.coverImageUrl);
+  const [additionalImages, setAdditionalImages] = useState('');
 
   const titleRef = useRef<HTMLInputElement>(null);
   const slugRef = useRef<HTMLInputElement>(null);
@@ -154,11 +155,25 @@ export function BlogPostFormDialog({
           previewAlt="Cover preview"
         />
 
+        <FormField
+          label="Additional images"
+          hint="One image URL per line. These are added to the post body when saving."
+        >
+          <textarea
+            name="additionalImages"
+            value={additionalImages}
+            onChange={(event) => setAdditionalImages(event.target.value)}
+            rows={3}
+            className={inputClassName}
+          />
+        </FormField>
+
         <BodyEditor
           body={body}
           setBody={setBody}
           error={state.fieldErrors.body?.[0]}
           buildPreviewPost={buildPreviewPost}
+          additionalImages={additionalImages}
         />
 
         <FormAlert message={state.message} />
@@ -184,13 +199,22 @@ function BodyEditor({
   setBody,
   error,
   buildPreviewPost,
+  additionalImages,
 }: {
   body: string;
   setBody: (value: string) => void;
   error?: string;
   buildPreviewPost: () => BlogPost;
+  additionalImages?: string;
 }) {
   const [tab, setTab] = useState<EditorTab>('write');
+
+  const extraImageBlocks = (additionalImages ?? '')
+    .split(/\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((url) => `![Image](${url})`);
+  const previewBody = [body, ...extraImageBlocks].filter(Boolean).join('\n\n');
 
   return (
     <div className="space-y-2">
@@ -217,8 +241,8 @@ function BodyEditor({
 
       {tab === 'preview' ? (
         <div className="min-h-72 rounded-md border border-[var(--line)] px-4 py-2">
-          {body.trim() ? (
-            <BlogDetail post={buildPreviewPost()} otherPosts={[]} />
+          {previewBody.trim() ? (
+            <BlogDetail post={{ ...buildPreviewPost(), body: previewBody }} otherPosts={[]} />
           ) : (
             <p className="py-6 text-sm text-[var(--font-color)]">
               Nothing to preview yet. Add Markdown in the Write tab.
