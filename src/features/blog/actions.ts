@@ -94,10 +94,6 @@ export async function saveBlogPost(
   formData: FormData,
 ): Promise<BlogPostFormState> {
   const values = readBlogPostFormValues(formData);
-  const additionalImages = readFormString(formData, 'additionalImages')
-    .split(/\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
   const session = await getAdminSession();
   if (!session || !canManageBlog(session.role)) {
     return stateWithErrors(values, {
@@ -126,15 +122,11 @@ export async function saveBlogPost(
     return stateWithErrors(values, { form: ['This blog post no longer exists.'] });
   }
 
-  const bodyWithImages = [parsed.data.body, ...additionalImages.map((url) => `![Image](${url})`)]
-    .join('\n\n')
-    .trim();
-
   const data = {
     title: parsed.data.title,
     slug: parsed.data.slug,
     summary: parsed.data.summary,
-    body: bodyWithImages,
+    body: parsed.data.body,
     coverImageUrl: parsed.data.coverImageUrl,
     publishedAt: new Date(`${parsed.data.publishedAt}T00:00:00+07:00`),
     status: parsed.data.status,
@@ -155,7 +147,7 @@ export async function saveBlogPost(
     await syncBlogPostImages(
       savedPost.id,
       parsed.data.coverImageUrl,
-      bodyWithImages,
+      parsed.data.body,
       parsed.data.title,
     );
 
