@@ -10,6 +10,53 @@ Mỗi mục PR/công việc gồm đủ 3 phần:
 
 ---
 
+## 2026-11-14 11:00:40 +07:00 - Stable storefront ordering (R2.4)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules
+>
+> R2.4 — Thứ tự ổn định. getProductsByCategoryTypes có orderBy + take (products.ts:275); getBlogPosts sort phụ theo id.
+> carousel Home và danh sách blog cho cùng thứ tự trên SQLite và PostgreSQL.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Đối chiếu với code hiện tại:** prompt nhắc `getProductsByCategoryTypes` tại `products.ts:275`, nhưng sau R2.1 hàm này đã đổi thành `getProductsByCategoryIds` và line 275 hiện là doc comment của `getProducts`. Hàm cũ nhận danh sách `categoryId`, gom sản phẩm của mọi danh mục vào một query rồi group bằng `Map` — không có `orderBy`, nên thứ tự phụ thuộc engine. Đã áp dụng yêu cầu R2.4 cho đúng hàm đang phục vụ carousel Home.
+
+**Thay đổi đã thực hiện (R2.4)**
+
+- `src/features/products/queries/products.ts`: thêm `getStorefrontProductOrderBy()` trả `[{ createdAt: 'asc' }, { id: 'asc' }]`; dùng cho `getRelatedProducts`. Thay `getProductsByCategoryIds(categoryIds)` bằng `getProductsByCategoryId(categoryId, { limit })` — query một danh mục với `orderBy` cố định và `take` giới hạn số row của riêng section đó.
+- `src/features/products/lib/carousel-products.ts`: `CAROUSEL_PRODUCT_LIMIT = 10` cho mỗi section carousel Home.
+- `src/features/products/queries/categories.ts`: `getStorefrontCategorySections()` chạy song song `getProductsByCategoryId` cho từng danh mục, bỏ việc gom bằng `Map` và bỏ query gộp không giới hạn.
+- `src/features/blog/queries/blog-posts.ts`: thêm `getBlogPostOrderBy()` trả `[{ publishedAt: 'desc' }, { id: 'asc' }]` và dùng trong `getBlogPosts`, nên bài cùng `publishedAt` không còn phụ thuộc thứ tự engine.
+- `src/features/shared/queries/index.ts`: export `getStorefrontProductOrderBy` và `getBlogPostOrderBy` để test được.
+- Test `queries.test.ts`: tạo 12 sản phẩm cùng danh mục (6 `createdAt` cũ, 6 mới) và kiểm tra section Home trả đúng 10 sản phẩm theo `createdAt` rồi `id`; tạo 3 bài blog cùng `publishedAt` và kiểm tra thứ tự `id ASC`; kiểm tra `getBlogPosts({ limit })` là prefix của danh sách đầy đủ; kiểm tra khóa phụ `id` của cả hai helper.
+- `docs/ARCHITECTURE.md`: ghi quyết định R2.4 ở Category Module và Blog Module.
+
+**Kết quả kiểm chứng**
+
+- `npx vitest run src/features/shared/queries/queries.test.ts` → 1 file / 32 tests passed.
+- `npm run typecheck` → passed.
+- `npm run lint` → passed.
+- `npm test` → 39 files / 167 tests passed.
+- `npm run format:check` → passed.
+- `npm run build` → passed, 53/53 static pages.
+- Playwright E2E không chạy lại vì bộ test cần dev server cổng 3100 trong khi dev server hiện tại giữ cổng 3000 và dùng chung thư mục `.next` (giới hạn đã ghi trong các mục trước).
+
+**So sánh Figma:** không thay đổi giao diện; chỉ thứ tự dữ liệu và giới hạn query.
+
+### AI sai ở đâu
+
+- Prompt ghi `getProductsByCategoryTypes`/`products.ts:275` nhưng code hiện tại là `getProductsByCategoryIds` ở cuối file; đã đọc lại toàn bộ `products.ts` và `categories.ts` để sửa đúng hàm thay vì tạo hàm mới trùng lặp.
+- Cách đầu tiên nghĩ tới là thêm `take` vào query gộp nhiều danh mục, nhưng `take` khi đó cắt tổng số row nên một danh mục nhiều sản phẩm có thể làm mất section khác. Đã đổi sang query từng danh mục để `take` giới hạn đúng từng carousel.
+- Chưa có lỗi type/lint/test phải sửa trong lần này.
+
+---
+
 ## 2026-11-14 10:44:39 +07:00 - Product-card-only category pages with server pagination (R2.3)
 
 ### Prompt nguyên văn đã dùng

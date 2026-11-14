@@ -91,6 +91,15 @@ export function getProductOrderBy(sort: ProductSort): Prisma.ProductOrderByWithR
   }
 }
 
+/**
+ * Storefront order for curated lists such as the Home carousel. `createdAt` is
+ * the visible order and `id` breaks ties, so SQLite and PostgreSQL return the
+ * same rows in the same order for identical data.
+ */
+export function getStorefrontProductOrderBy(): Prisma.ProductOrderByWithRelationInput[] {
+  return [{ createdAt: 'asc' }, { id: 'asc' }];
+}
+
 const productInclude = {
   category: {
     select: {
@@ -376,29 +385,32 @@ export async function getRelatedProducts(productId: string, limit = 4): Promise<
     },
     include: productInclude,
     take: limit,
-    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    orderBy: getStorefrontProductOrderBy(),
   });
 
   return records.map((record) => mapProduct(record as unknown as DbProduct));
 }
 
-export async function getProductsByCategoryIds(
-  categoryIds: string[],
-  options: { includeHidden?: boolean } = {},
+/**
+ * Returns the leading products of one category in the storefront order. Home
+ * carousels ask for one category at a time so `take` limits the rows of each
+ * section instead of truncating the combined result.
+ */
+export async function getProductsByCategoryId(
+  categoryId: string,
+  options: { includeHidden?: boolean; limit?: number } = {},
 ): Promise<Product[]> {
   'use cache';
   cacheTag('products');
-  if (categoryIds.length === 0) {
-    return [];
-  }
-
   const records = await prisma.product.findMany({
     where: {
-      categoryId: { in: categoryIds },
+      categoryId,
       ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
       ...visibleCategoryWhere(options.includeHidden),
     },
     select: productCardSelect,
+    orderBy: getStorefrontProductOrderBy(),
+    ...(typeof options.limit === 'number' ? { take: options.limit } : {}),
   });
 
   return records.map((record) => mapProduct(record as unknown as DbProduct));

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   getBlogPostBySlug,
+  getBlogPostOrderBy,
   getBlogPosts,
   getCategories,
   getCategoryBySlug,
@@ -14,10 +15,12 @@ import {
   getRelatedProducts,
   getSettings,
   getStorefrontCategorySections,
+  getStorefrontProductOrderBy,
   parseProductSort,
   sortProducts,
   PRODUCT_SORTS,
 } from '@/features/shared/queries';
+import { CAROUSEL_PRODUCT_LIMIT } from '@/features/products/lib/carousel-products';
 import { createVndPrice, type ProductType } from '@/features/shared/domain/domain';
 import prisma from '@/features/shared/db/prisma';
 import sitemap from '@/app/sitemap';
@@ -206,6 +209,72 @@ describe('product queries', () => {
     }
   });
 
+  it('orders each home carousel section by createdAt then id', async () => {
+    const category = await prisma.category.create({
+      data: {
+        name: 'Carousel Order Test',
+        slug: 'carousel-order-test',
+        type: 'OTHER JEWELRY',
+        sortOrder: 99,
+        status: 'VISIBLE',
+      },
+    });
+    const older: string[] = [];
+    const newer: string[] = [];
+
+    try {
+      for (const index of [1, 2, 3, 4, 5, 6]) {
+        const product = await prisma.product.create({
+          data: {
+            categoryId: category.id,
+            name: `Older Product ${index}`,
+            slug: `carousel-older-${index}`,
+            brand: 'ANT JEWELRY',
+            description: '',
+            price: 1_000_000 + index,
+            status: 'VISIBLE',
+            createdAt: new Date('2026-01-01T00:00:00.000Z'),
+          },
+        });
+        older.push(product.id);
+      }
+
+      for (const index of [1, 2, 3, 4, 5, 6]) {
+        const product = await prisma.product.create({
+          data: {
+            categoryId: category.id,
+            name: `Newer Product ${index}`,
+            slug: `carousel-newer-${index}`,
+            brand: 'ANT JEWELRY',
+            description: '',
+            price: 2_000_000 + index,
+            status: 'VISIBLE',
+            createdAt: new Date('2026-01-02T00:00:00.000Z'),
+          },
+        });
+        newer.push(product.id);
+      }
+
+      const section = (await getStorefrontCategorySections()).find(
+        (item) => item.category.category_id === category.id,
+      );
+
+      expect(section).toBeDefined();
+      expect(section!.products).toHaveLength(CAROUSEL_PRODUCT_LIMIT);
+      expect(section!.products.map((product) => product.product_id)).toEqual([
+        ...[...older].sort(),
+        ...[...newer].sort().slice(0, CAROUSEL_PRODUCT_LIMIT - older.length),
+      ]);
+    } finally {
+      await prisma.product.deleteMany({ where: { categoryId: category.id } });
+      await prisma.category.delete({ where: { id: category.id } });
+    }
+  });
+
+  it('adds id as the secondary key for products shared by the Home carousel', () => {
+    expect(getStorefrontProductOrderBy().at(-1)).toEqual({ id: 'asc' });
+  });
+
   it('sorts by price in both directions', async () => {
     const ascending = (await getProducts({ sort: 'price_asc' })).map((product) => product.price);
     const descending = (await getProducts({ sort: 'price_desc' })).map((product) => product.price);
@@ -389,7 +458,43 @@ describe('blog queries', () => {
 
   it('can include drafts and limit results', async () => {
     expect(await getBlogPosts({ includeDrafts: true })).toHaveLength(6);
-    expect((await getBlogPosts({ limit: 2 })).length).toBe(2);
+
+    const all = (await getBlogPosts()).map((post) => post.blog_id);
+    const limited = (await getBlogPosts({ limit: 3 })).map((post) => post.blog_id);
+    expect(limited).toEqual(all.slice(0, 3));
+  });
+
+  it('adds id as the secondary key so the blog order is stable across databases', () => {
+    expect(getBlogPostOrderBy()).toEqual([{ publishedAt: 'desc' }, { id: 'asc' }]);
+  });
+
+  it('breaks publishedAt ties by id and keeps the same order in every query', async () => {
+    const publishedAt = new Date('2026-11-01T09:00:00.000Z');
+    const createdIds: string[] = [];
+
+    try {
+      for (const index of [1, 2, 3]) {
+        const post = await prisma.blogPost.create({
+          data: {
+            title: `Stable Blog Post ${index}`,
+            slug: `stable-blog-post-${index}`,
+            summary: 'Stable ordering test post.',
+            body: 'Stable ordering test body.',
+            coverImageUrl: '/mock/blog/cover-stacking.svg',
+            publishedAt,
+            status: 'PUBLISHED',
+          },
+        });
+        createdIds.push(post.id);
+      }
+
+      const posts = (await getBlogPosts()).filter((post) => createdIds.includes(post.blog_id));
+
+      expect(posts).toHaveLength(createdIds.length);
+      expect(posts.map((post) => post.blog_id)).toEqual([...createdIds].sort());
+    } finally {
+      await prisma.blogPost.deleteMany({ where: { id: { in: createdIds } } });
+    }
   });
 
   it('does not expose a draft by slug on the storefront', async () => {

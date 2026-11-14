@@ -1,6 +1,15 @@
+import type { Prisma } from '@prisma/client';
 import type { BlogPost } from '@/features/shared/domain/domain';
 import { publishStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
+
+/**
+ * Newest first, with `id` as the tie-breaker so posts that share a
+ * `publishedAt` value keep the same order on SQLite and PostgreSQL.
+ */
+export function getBlogPostOrderBy(): Prisma.BlogPostOrderByWithRelationInput[] {
+  return [{ publishedAt: 'desc' }, { id: 'asc' }];
+}
 
 function mapBlogPost(record: {
   id: string;
@@ -34,7 +43,7 @@ export async function getBlogPosts(
   'use cache';
   const records = await prisma.blogPost.findMany({
     where: options.includeDrafts ? {} : { status: publishStatus.PUBLISHED },
-    orderBy: { publishedAt: 'desc' },
+    orderBy: getBlogPostOrderBy(),
     ...(typeof options.limit === 'number' ? { take: options.limit } : {}),
   });
 
