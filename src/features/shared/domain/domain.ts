@@ -72,6 +72,20 @@ export interface Product {
   status: ProductStatus;
 }
 
+/**
+ * The subset of product fields needed to render a storefront product card.
+ * Category listing pages use this shape so long fields such as `description`
+ * and `details` are never selected from the database or sent to the client.
+ */
+export interface ProductCardData {
+  product_id: string;
+  name: string;
+  slug: string;
+  price: VndPrice;
+  colors: ProductColor[];
+  images: ProductImage[];
+}
+
 export interface Category {
   category_id: string;
   type: ProductType;

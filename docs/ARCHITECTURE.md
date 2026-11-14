@@ -460,6 +460,8 @@ SAD phân biệt:
 
 **Cập nhật 2026-11-14 (R2.1):** `Product` liên kết `Category` bằng `categoryId` — đây là nguồn dữ liệu duy nhất. Cột `Product.type` đã bị bỏ khỏi schema; `Product.type` trong domain được suy ra từ `Category.type`. Trang danh mục, carousel Home và sản phẩm liên quan lọc theo `categoryId`, nên khi ADMIN đổi `Category.type` thì sản phẩm vẫn thuộc danh mục đó và carousel vẫn đủ sản phẩm.
 
+**Cập nhật 2026-11-14 (R2.3):** Trang danh mục chỉ đọc các cột cần cho `ProductCard` qua `getProductCardPage` (`productCardSelect`, map sang `ProductCardData`): `description`/`details` không được select và không gửi xuống client. Sắp xếp (`orderBy`) và phân trang (`skip`/`take`) chạy trong database; mọi thứ tự đều có khóa phụ `id ASC` nên các sản phẩm cùng giá không bị trùng hoặc sót giữa các trang. Trang tải 10 sản phẩm đầu; nút SEE MORE gọi Server Action `loadMoreCategoryProducts` (validate bằng Zod) để lấy thêm 10 sản phẩm từ server.
+
 **Cập nhật 2026-11-14 (R2.2):** Sản phẩm kế thừa trạng thái hiển thị của danh mục. Khi một danh mục bị ẩn (`Category.status = HIDDEN`), mọi sản phẩm thuộc danh mục đó bị loại khỏi query storefront: `/p/<slug>` trả 404, không xuất hiện trong danh sách/carousel/sản phẩm liên quan, không có trong `sitemap.xml` và không được sinh bởi `generateStaticParams`. Query admin vẫn đọc được bằng `includeHidden`. `saveCategory`/`deleteCategory` gọi `revalidateTag('products')` để làm mới cache sản phẩm sau khi đổi trạng thái danh mục.
 
 Tuy nhiên, Category entity và quan hệ giữa Category với Product chưa có trong cấu trúc dữ liệu được rà soát. Do đó, Category Module chỉ là module dự kiến, chưa phải thành phần đã được chốt.

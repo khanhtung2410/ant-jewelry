@@ -2,7 +2,12 @@ import { cacheTag } from 'next/cache';
 import type { Category, Product, ProductType } from '@/features/shared/domain/domain';
 import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
-import { getProducts, getProductsByCategoryIds, type GetProductsQuery } from './products';
+import {
+  getProductCardPage,
+  getProductsByCategoryIds,
+  type ProductCardPage,
+  type ProductSort,
+} from './products';
 
 function mapCategory(record: {
   id: string;
@@ -85,16 +90,20 @@ export async function getCategoryByType(
 
 /**
  * Category pages filter products by `categoryId`, so changing a category's
- * type keeps every product assigned to that category.
+ * type keeps every product assigned to that category. Only the columns needed
+ * by `ProductCard` are read, and sorting/pagination are handled by the
+ * database (see `getProductCardPage`).
  */
 export async function getProductsByCategorySlug(
   slug: string,
-  query: Omit<GetProductsQuery, 'categoryId'> = {},
-): Promise<Product[]> {
+  query: { sort?: ProductSort; offset?: number; limit?: number } = {},
+): Promise<ProductCardPage> {
   'use cache';
   cacheTag('products');
   const category = await getCategoryBySlug(slug);
-  return category ? getProducts({ ...query, categoryId: category.category_id }) : [];
+  return category
+    ? getProductCardPage({ categoryId: category.category_id, ...query })
+    : { products: [], hasMore: false };
 }
 
 export async function getStorefrontCategorySections(): Promise<

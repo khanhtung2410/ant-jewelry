@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { getNextVisibleProductCount, CategoryProductListing } from './category-product-listing';
+import { CategoryProductListing } from './category-product-listing';
 import { getProducts, getProductsByCategorySlug } from '@/features/shared/queries';
 
 vi.mock('next/image', () => ({
@@ -20,14 +20,19 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
+vi.mock('@/features/products/actions/category-products', () => ({
+  loadMoreCategoryProducts: vi.fn(),
+}));
+
 describe('CategoryProductListing', () => {
-  it('renders the first ten products in a grid and offers another batch', async () => {
-    const products = await getProducts({ sort: 'price_asc' });
+  it('renders the first server batch and offers another batch', async () => {
+    const products = (await getProducts({ sort: 'price_asc' })).slice(0, 10);
     const html = renderToStaticMarkup(
       <CategoryProductListing
         categoryName="Wedding Ring"
         categorySlug="wedding-ring"
         products={products}
+        hasMore
         sort="price_asc"
       />,
     );
@@ -39,27 +44,36 @@ describe('CategoryProductListing', () => {
     expect(html).toContain('grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-5');
     expect(html.match(/<article/g)).toHaveLength(10);
     expect(html).toContain('>SEE MORE</button>');
-    expect(html).not.toContain(`href="/p/${products[10].slug}"`);
   });
 
-  it('hides SEE MORE when all products fit in the initial batch', async () => {
-    const products = await getProductsByCategorySlug('necklace');
+  it('hides SEE MORE when the server reports no more products', async () => {
+    const page = await getProductsByCategorySlug('necklace');
     const html = renderToStaticMarkup(
       <CategoryProductListing
         categoryName="Necklace"
         categorySlug="necklace"
-        products={products}
+        products={page.products}
+        hasMore={page.hasMore}
         sort="price_asc"
       />,
     );
 
-    expect(html.match(/<article/g)).toHaveLength(products.length);
+    expect(html.match(/<article/g)).toHaveLength(page.products.length);
     expect(html).not.toContain('SEE MORE');
   });
 
-  it('adds ten products at a time and clamps the final partial batch', () => {
-    expect(getNextVisibleProductCount(10, 25)).toBe(20);
-    expect(getNextVisibleProductCount(20, 25)).toBe(25);
-    expect(getNextVisibleProductCount(25, 25)).toBe(25);
+  it('renders an empty state when the category has no products', () => {
+    const html = renderToStaticMarkup(
+      <CategoryProductListing
+        categoryName="Empty"
+        categorySlug="empty"
+        products={[]}
+        hasMore={false}
+        sort="price_asc"
+      />,
+    );
+
+    expect(html).toContain('No products in this category yet.');
+    expect(html).not.toContain('SEE MORE');
   });
 });

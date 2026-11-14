@@ -1,6 +1,8 @@
 import { cacheTag } from 'next/cache';
+import type { Prisma } from '@prisma/client';
 import type {
   Product,
+  ProductCardData,
   ProductColor,
   ProductImage,
   ProductStatus,
@@ -9,8 +11,11 @@ import type {
 import { createVndPrice } from '@/features/shared/domain/domain';
 import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
+import { MAX_PRODUCT_CARD_PAGE_SIZE, PRODUCT_CARD_PAGE_SIZE } from '../lib/product-card-page';
 
-export type ProductSort = 'price_asc' | 'price_desc' | 'name_asc' | 'name_desc';
+export const PRODUCT_SORTS = ['price_asc', 'price_desc', 'name_asc', 'name_desc'] as const;
+
+export type ProductSort = (typeof PRODUCT_SORTS)[number];
 export const DEFAULT_PRODUCT_SORT: ProductSort = 'price_asc';
 
 export function parseProductSort(value: string | string[] | undefined): ProductSort {
@@ -36,6 +41,18 @@ export interface GetProductsQuery {
   sort?: ProductSort;
 }
 
+export interface GetProductCardPageQuery {
+  categoryId: string;
+  sort?: ProductSort;
+  offset?: number;
+  limit?: number;
+}
+
+export interface ProductCardPage {
+  products: ProductCardData[];
+  hasMore: boolean;
+}
+
 function compareProducts(sort: ProductSort | undefined): (a: Product, b: Product) => number {
   const compareById = (a: Product, b: Product) => a.product_id.localeCompare(b.product_id);
 
@@ -55,6 +72,23 @@ function compareProducts(sort: ProductSort | undefined): (a: Product, b: Product
 
 export function sortProducts(products: Product[], sort: ProductSort): Product[] {
   return [...products].sort(compareProducts(sort));
+}
+
+/**
+ * Database ordering for product lists. `id` is always the secondary key, so
+ * pagination never repeats or skips products that share the same price or name.
+ */
+export function getProductOrderBy(sort: ProductSort): Prisma.ProductOrderByWithRelationInput[] {
+  switch (sort) {
+    case 'price_asc':
+      return [{ price: 'asc' }, { id: 'asc' }];
+    case 'price_desc':
+      return [{ price: 'desc' }, { id: 'asc' }];
+    case 'name_asc':
+      return [{ name: 'asc' }, { id: 'asc' }];
+    case 'name_desc':
+      return [{ name: 'desc' }, { id: 'asc' }];
+  }
 }
 
 const productInclude = {
@@ -190,6 +224,28 @@ function mapProduct(record: DbProduct): Product {
   };
 }
 
+type DbProductCard = {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  colors: DbProductColor[];
+  images: DbProductImage[];
+};
+
+function mapProductCard(record: DbProductCard): ProductCardData {
+  return {
+    product_id: record.id,
+    name: record.name,
+    slug: record.slug,
+    price: createVndPrice(record.price),
+    colors: record.colors.map((color) => mapColor(color as DbProductColor)),
+    images: record.images
+      .filter((image) => image.productColorId == null)
+      .map((image) => mapImage(image)),
+  };
+}
+
 /**
  * Products inherit the visibility of their category: hiding a category removes
  * its products from every storefront query without changing the product rows.
@@ -227,6 +283,40 @@ export async function getProducts(query: GetProductsQuery = {}): Promise<Product
 
   const mapped = records.map((record) => mapProduct(record as unknown as DbProduct));
   return query.sort ? sortProducts(mapped, query.sort) : mapped;
+}
+
+/**
+ * Returns one product-card page for a category. Sorting and pagination run in
+ * the database, and only the columns needed by `ProductCard` are selected and
+ * mapped, so descriptions and details never leave the server.
+ */
+export async function getProductCardPage(query: GetProductCardPageQuery): Promise<ProductCardPage> {
+  'use cache';
+  cacheTag('products');
+  const limit = Math.min(
+    Math.max(query.limit ?? PRODUCT_CARD_PAGE_SIZE, 1),
+    MAX_PRODUCT_CARD_PAGE_SIZE,
+  );
+  const offset = Math.max(query.offset ?? 0, 0);
+
+  const records = await prisma.product.findMany({
+    where: {
+      categoryId: query.categoryId,
+      status: visibilityStatus.VISIBLE,
+      category: { status: visibilityStatus.VISIBLE },
+    },
+    select: productCardSelect,
+    orderBy: getProductOrderBy(query.sort ?? DEFAULT_PRODUCT_SORT),
+    skip: offset,
+    take: limit + 1,
+  });
+
+  return {
+    products: records
+      .slice(0, limit)
+      .map((record) => mapProductCard(record as unknown as DbProductCard)),
+    hasMore: records.length > limit,
+  };
 }
 
 export async function getProductBySlug(

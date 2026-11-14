@@ -8,6 +8,7 @@ import {
   getHeroSlides,
   getProductById,
   getProductBySlug,
+  getProductOrderBy,
   getProducts,
   getProductsByCategorySlug,
   getRelatedProducts,
@@ -15,6 +16,7 @@ import {
   getStorefrontCategorySections,
   parseProductSort,
   sortProducts,
+  PRODUCT_SORTS,
 } from '@/features/shared/queries';
 import { createVndPrice, type ProductType } from '@/features/shared/domain/domain';
 import prisma from '@/features/shared/db/prisma';
@@ -59,18 +61,139 @@ describe('product queries', () => {
   it('filters products by category slug using categoryId, not the type text', async () => {
     const weddingCategory = await getCategoryBySlug('wedding-ring');
     const otherCategory = await getCategoryBySlug('other-jewelry');
-    const wedding = await getProductsByCategorySlug('wedding-ring');
-    const other = await getProductsByCategorySlug('other-jewelry');
+    const wedding = (await getProductsByCategorySlug('wedding-ring')).products;
+    const other = (await getProductsByCategorySlug('other-jewelry')).products;
 
     expect(weddingCategory).not.toBeNull();
     expect(otherCategory).not.toBeNull();
-    expect(wedding.length).toBeGreaterThan(0);
-    expect(wedding.every((product) => product.categoryId === weddingCategory!.category_id)).toBe(
-      true,
+
+    const weddingIds = new Set(
+      (await getProducts({ categoryId: weddingCategory!.category_id })).map(
+        (product) => product.product_id,
+      ),
     );
+    const otherIds = new Set(
+      (await getProducts({ categoryId: otherCategory!.category_id })).map(
+        (product) => product.product_id,
+      ),
+    );
+
+    expect(wedding.length).toBeGreaterThan(0);
+    expect(wedding.every((product) => weddingIds.has(product.product_id))).toBe(true);
     expect(other.length).toBeGreaterThan(0);
-    expect(other.every((product) => product.categoryId === otherCategory!.category_id)).toBe(true);
-    expect(await getProductsByCategorySlug('missing')).toEqual([]);
+    expect(other.every((product) => otherIds.has(product.product_id))).toBe(true);
+    expect(await getProductsByCategorySlug('missing')).toEqual({ products: [], hasMore: false });
+  });
+
+  it('selects only the product card columns for category pages', async () => {
+    const page = await getProductsByCategorySlug('wedding-ring', { limit: 1 });
+    const product = page.products[0];
+
+    expect(product).toBeDefined();
+    expect(Object.keys(product).sort()).toEqual([
+      'colors',
+      'images',
+      'name',
+      'price',
+      'product_id',
+      'slug',
+    ]);
+    expect(product).not.toHaveProperty('description');
+    expect(product).not.toHaveProperty('details');
+  });
+
+  it('paginates and sorts in the database without repeating or skipping products', async () => {
+    const category = await getCategoryBySlug('other-jewelry');
+    expect(category).not.toBeNull();
+    const expectedCount = (await getProducts({ categoryId: category!.category_id })).length;
+    const first = await getProductsByCategorySlug('other-jewelry', {
+      sort: 'price_asc',
+      limit: 3,
+      offset: 0,
+    });
+    const second = await getProductsByCategorySlug('other-jewelry', {
+      sort: 'price_asc',
+      limit: 3,
+      offset: 3,
+    });
+    const third = await getProductsByCategorySlug('other-jewelry', {
+      sort: 'price_asc',
+      limit: 3,
+      offset: 6,
+    });
+    const products = [...first.products, ...second.products, ...third.products];
+    const ids = products.map((product) => product.product_id);
+    const prices = products.map((product) => product.price);
+
+    expect(ids).toHaveLength(expectedCount);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(prices).toEqual([...prices].sort((a, b) => a - b));
+    expect(first.hasMore).toBe(true);
+    expect(second.hasMore).toBe(true);
+    expect(third.hasMore).toBe(false);
+  });
+
+  it('uses id as the secondary sort key when prices tie', async () => {
+    const category = await prisma.category.create({
+      data: {
+        name: 'Pagination Tie Test',
+        slug: 'pagination-tie-test',
+        type: 'OTHER JEWELRY',
+        sortOrder: 99,
+        status: 'VISIBLE',
+      },
+    });
+    const createdIds: string[] = [];
+
+    try {
+      for (const index of [1, 2, 3, 4, 5]) {
+        const product = await prisma.product.create({
+          data: {
+            categoryId: category.id,
+            name: `Tie Product ${index}`,
+            slug: `tie-product-${index}`,
+            brand: 'ANT JEWELRY',
+            description: '',
+            price: 2_000_000,
+            status: 'VISIBLE',
+          },
+        });
+        createdIds.push(product.id);
+      }
+
+      const first = await getProductsByCategorySlug('pagination-tie-test', {
+        sort: 'price_asc',
+        limit: 2,
+        offset: 0,
+      });
+      const second = await getProductsByCategorySlug('pagination-tie-test', {
+        sort: 'price_asc',
+        limit: 2,
+        offset: 2,
+      });
+      const third = await getProductsByCategorySlug('pagination-tie-test', {
+        sort: 'price_asc',
+        limit: 2,
+        offset: 4,
+      });
+      const ids = [...first.products, ...second.products, ...third.products].map(
+        (product) => product.product_id,
+      );
+
+      expect(ids).toHaveLength(5);
+      expect(new Set(ids).size).toBe(5);
+      expect(ids).toEqual([...createdIds].sort());
+      expect(third.hasMore).toBe(false);
+    } finally {
+      await prisma.product.deleteMany({ where: { categoryId: category.id } });
+      await prisma.category.delete({ where: { id: category.id } });
+    }
+  });
+
+  it('adds id as the secondary database sort key for every sort order', () => {
+    for (const sort of PRODUCT_SORTS) {
+      expect(getProductOrderBy(sort).at(-1)).toEqual({ id: 'asc' });
+    }
   });
 
   it('groups the home carousel by categoryId so every category keeps its products', async () => {
@@ -164,7 +287,8 @@ describe('product queries', () => {
   });
 
   it('returns product card data with required fields for storefront cards', async () => {
-    const wedding = await getProductsByCategorySlug('wedding-ring', { sort: 'price_asc' });
+    const wedding = (await getProductsByCategorySlug('wedding-ring', { sort: 'price_asc' }))
+      .products;
     expect(wedding.length).toBeGreaterThan(0);
     for (const product of wedding) {
       expect(typeof product.product_id).toBe('string');

@@ -1,12 +1,17 @@
 export {
   getProductById,
   getProductBySlug,
+  getProductCardPage,
+  getProductOrderBy,
   getProducts,
   getRelatedProducts,
   parseProductSort,
   sortProducts,
   DEFAULT_PRODUCT_SORT,
+  PRODUCT_SORTS,
+  type GetProductCardPageQuery,
   type GetProductsQuery,
+  type ProductCardPage,
   type ProductSort,
 } from '@/features/products/queries/products';
 export {
