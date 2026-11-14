@@ -41,6 +41,14 @@ const imageByType: Record<ProductType, string> = {
   'OTHER JEWELRY': '/mock/products/ready-to-ship.svg',
 };
 
+/** Mock category ids mirror `mocks/categories.ts`. */
+const categoryIdByType: Record<ProductType, string> = {
+  'WEDDING RING': 'cat-wedding-ring',
+  'ENGAGEMENT RING': 'cat-engagement-ring',
+  NECKLACE: 'cat-necklace',
+  'OTHER JEWELRY': 'cat-other-jewelry',
+};
+
 /** `ring-5-2` is the second photo of the `ring-5` product. */
 const productPhoto = (name: string) => `/mock/products/${name}.webp`;
 
@@ -141,6 +149,7 @@ function buildColorImages(seed: ProductSeed, color: ProductColor): ProductImage[
 function buildProduct(seed: ProductSeed): Product {
   return {
     product_id: seed.product_id,
+    categoryId: categoryIdByType[seed.type],
     name: seed.name,
     slug: seed.slug,
     brand: 'Ant Jewelry',

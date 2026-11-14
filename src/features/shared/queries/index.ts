@@ -11,6 +11,7 @@ export {
 } from '@/features/products/queries/products';
 export {
   getCategories,
+  getCategoryById,
   getCategoryBySlug,
   getCategoryByType,
   getProductsByCategorySlug,

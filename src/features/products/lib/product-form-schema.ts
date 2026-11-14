@@ -11,7 +11,6 @@ export const productFormSchema = z.object({
   name: requiredText('Product name'),
   slug: slugSchema,
   categoryId: z.string().min(1, 'Choose a category.'),
-  type: z.string().min(1, 'Choose a category.'),
   brand: requiredText('Brand'),
   price: z
     .string()

@@ -69,6 +69,7 @@ const silver: ProductColor = {
 function makeProduct(overrides: Partial<Product> = {}): Product {
   return {
     product_id: 'prd-aurora-band',
+    categoryId: 'cat-wedding-ring',
     name: 'Aurora Band',
     slug: 'aurora-band',
     brand: 'Ant Jewelry',

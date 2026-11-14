@@ -247,13 +247,8 @@ function ProductFormFields({
             ))}
           </select>
         </FormField>
-        <FormField label="Type" error={errors.type?.[0]}>
-          <input type="hidden" name="type" value={selectedCategory?.type ?? values.type} />
-          <input
-            value={selectedCategory?.type ?? values.type}
-            readOnly
-            className={readOnlyInputClassName}
-          />
+        <FormField label="Type" hint="Derived from the selected category.">
+          <input value={selectedCategory?.type ?? ''} readOnly className={readOnlyInputClassName} />
         </FormField>
         <FormField label="Brand" error={errors.brand?.[0]}>
           <input

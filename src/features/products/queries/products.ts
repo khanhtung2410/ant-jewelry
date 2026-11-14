@@ -30,7 +30,7 @@ export function parseProductSort(value: string | string[] | undefined): ProductS
 }
 
 export interface GetProductsQuery {
-  type?: ProductType;
+  categoryId?: string;
   status?: ProductStatus;
   includeHidden?: boolean;
   sort?: ProductSort;
@@ -58,6 +58,13 @@ export function sortProducts(products: Product[], sort: ProductSort): Product[] 
 }
 
 const productInclude = {
+  category: {
+    select: {
+      id: true,
+      name: true,
+      type: true,
+    },
+  },
   colors: {
     include: {
       images: {
@@ -73,11 +80,18 @@ const productInclude = {
 
 const productCardSelect = {
   id: true,
+  categoryId: true,
   name: true,
   slug: true,
   price: true,
   status: true,
-  type: true,
+  category: {
+    select: {
+      id: true,
+      name: true,
+      type: true,
+    },
+  },
   colors: {
     select: {
       id: true,
@@ -119,10 +133,11 @@ type DbProductColor = {
 
 type DbProduct = {
   id: string;
+  categoryId: string;
   name: string;
   slug: string;
   brand?: string;
-  type: string;
+  category: { id: string; name: string; type: string };
   description?: string;
   details?: unknown;
   price: number;
@@ -161,10 +176,11 @@ function mapProduct(record: DbProduct): Product {
 
   return {
     product_id: record.id,
+    categoryId: record.categoryId,
     name: record.name,
     slug: record.slug,
     brand: record.brand ?? '',
-    type: record.type as ProductType,
+    type: record.category.type as ProductType,
     description: record.description ?? '',
     details,
     colors: record.colors.map((color) => mapColor(color as DbProductColor)),
@@ -176,7 +192,7 @@ function mapProduct(record: DbProduct): Product {
 
 function toWhere(query: GetProductsQuery) {
   return {
-    ...(query.type ? { type: query.type } : {}),
+    ...(query.categoryId ? { categoryId: query.categoryId } : {}),
     ...(query.status
       ? { status: query.status }
       : query.includeHidden
@@ -186,9 +202,10 @@ function toWhere(query: GetProductsQuery) {
 }
 
 /**
- * Returns products for storefront pages. `type` is also the category filter
- * because ProductType and Category are one concept. Hidden products are
- * excluded unless `includeHidden` is set explicitly for an admin screen.
+ * Returns products for storefront pages. Products link to their category by
+ * `categoryId`; the product type is derived from that category.
+ * Hidden products are excluded unless `includeHidden` is set explicitly for an
+ * admin screen.
  */
 export async function getProducts(query: GetProductsQuery = {}): Promise<Product[]> {
   'use cache';
@@ -241,7 +258,7 @@ export async function getRelatedProducts(productId: string, limit = 4): Promise<
   cacheTag('products');
   const current = await prisma.product.findUnique({
     where: { id: productId },
-    select: { id: true, type: true },
+    select: { id: true, categoryId: true },
   });
 
   if (!current) {
@@ -250,7 +267,7 @@ export async function getRelatedProducts(productId: string, limit = 4): Promise<
 
   const records = await prisma.product.findMany({
     where: {
-      type: current.type,
+      categoryId: current.categoryId,
       id: { not: productId },
       status: visibilityStatus.VISIBLE,
     },
@@ -262,19 +279,19 @@ export async function getRelatedProducts(productId: string, limit = 4): Promise<
   return records.map((record) => mapProduct(record as unknown as DbProduct));
 }
 
-export async function getProductsByCategoryTypes(
-  types: ProductType[],
+export async function getProductsByCategoryIds(
+  categoryIds: string[],
   options: { includeHidden?: boolean } = {},
 ): Promise<Product[]> {
   'use cache';
   cacheTag('products');
-  if (types.length === 0) {
+  if (categoryIds.length === 0) {
     return [];
   }
 
   const records = await prisma.product.findMany({
     where: {
-      type: { in: types },
+      categoryId: { in: categoryIds },
       ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
     },
     select: productCardSelect,

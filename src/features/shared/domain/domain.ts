@@ -53,9 +53,12 @@ export type ProductDetails = Record<string, string>;
 
 export interface Product {
   product_id: string;
+  /** The category owns the product type; products link to it by id only. */
+  categoryId: string;
   name: string;
   slug: string;
   brand: string;
+  /** Derived from the linked category's `type`. */
   type: ProductType;
   description: string;
   details: ProductDetails;

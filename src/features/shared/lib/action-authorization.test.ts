@@ -59,7 +59,6 @@ const productValues: ProductFormValues = {
   name: 'Gold ring',
   slug: 'gold-ring',
   categoryId: 'category-1',
-  type: 'WEDDING RING',
   brand: 'ANT',
   price: '1000000',
   description: 'A ring',
@@ -100,7 +99,6 @@ describe('server action authorization', () => {
     formData.set('name', 'Gold ring');
     formData.set('slug', 'gold-ring');
     formData.set('categoryId', 'category-1');
-    formData.set('type', 'WEDDING RING');
     formData.set('brand', 'ANT');
     formData.set('price', '9999999');
     formData.set('description', 'A ring');
@@ -120,7 +118,6 @@ describe('server action authorization', () => {
     formData.set('name', 'Gold ring');
     formData.set('slug', 'gold-ring');
     formData.set('categoryId', 'category-1');
-    formData.set('type', 'WEDDING RING');
     formData.set('brand', 'ANT');
     formData.set('price', '1000000');
     formData.set('description', 'A ring');

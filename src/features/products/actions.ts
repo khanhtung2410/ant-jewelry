@@ -50,7 +50,6 @@ function readFormValues(formData: FormData): ProductFormValues {
     name: readFormString(formData, 'name'),
     slug: readFormString(formData, 'slug'),
     categoryId: readFormString(formData, 'categoryId'),
-    type: readFormString(formData, 'type'),
     brand: readFormString(formData, 'brand'),
     price: readFormString(formData, 'price'),
     description: readFormString(formData, 'description'),
@@ -86,11 +85,11 @@ export async function saveProduct(
 
   const category = await prisma.category.findUnique({
     where: { id: parsed.data.categoryId },
-    select: { id: true, type: true },
+    select: { id: true },
   });
-  if (!category || category.type !== parsed.data.type) {
+  if (!category) {
     return stateWithErrors(values, {
-      categoryId: ['Choose a valid category and its matching product type.'],
+      categoryId: ['Choose a valid category.'],
     });
   }
 
@@ -124,7 +123,6 @@ export async function saveProduct(
     categoryId: category.id,
     name: parsed.data.name,
     slug: parsed.data.slug,
-    type: parsed.data.type,
     brand: parsed.data.brand,
     price,
     description: parsed.data.description,

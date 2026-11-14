@@ -52,6 +52,7 @@ const whiteGold: ProductColor = {
 function makeProduct(): Product {
   return {
     product_id: 'prd-aurora-band',
+    categoryId: 'cat-wedding-ring',
     name: 'Aurora Band',
     slug: 'aurora-band',
     brand: 'Ant Jewelry',
