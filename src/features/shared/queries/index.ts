@@ -5,6 +5,7 @@ export {
   getProductOrderBy,
   getProducts,
   getRelatedProducts,
+  getStorefrontProductOrderBy,
   parseProductSort,
   sortProducts,
   DEFAULT_PRODUCT_SORT,
@@ -22,6 +23,10 @@ export {
   getProductsByCategorySlug,
   getStorefrontCategorySections,
 } from '@/features/products/queries/categories';
-export { getBlogPostBySlug, getBlogPosts } from '@/features/blog/queries/blog-posts';
+export {
+  getBlogPostBySlug,
+  getBlogPostOrderBy,
+  getBlogPosts,
+} from '@/features/blog/queries/blog-posts';
 export { getHeroSlides } from '@/features/layout/queries/hero-slides';
 export { getSettings } from '@/features/layout/queries/settings';

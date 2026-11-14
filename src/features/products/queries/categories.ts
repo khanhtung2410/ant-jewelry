@@ -4,10 +4,11 @@ import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
 import {
   getProductCardPage,
-  getProductsByCategoryIds,
+  getProductsByCategoryId,
   type ProductCardPage,
   type ProductSort,
 } from './products';
+import { CAROUSEL_PRODUCT_LIMIT } from '../lib/carousel-products';
 
 function mapCategory(record: {
   id: string;
@@ -112,19 +113,13 @@ export async function getStorefrontCategorySections(): Promise<
   'use cache';
   cacheTag('products');
   const categories = await getCategories();
-  const products = await getProductsByCategoryIds(
-    categories.map((category) => category.category_id),
+
+  return Promise.all(
+    categories.map(async (category) => ({
+      category,
+      products: await getProductsByCategoryId(category.category_id, {
+        limit: CAROUSEL_PRODUCT_LIMIT,
+      }),
+    })),
   );
-  const productsByCategoryId = new Map<string, Product[]>();
-
-  for (const product of products) {
-    const list = productsByCategoryId.get(product.categoryId) ?? [];
-    list.push(product);
-    productsByCategoryId.set(product.categoryId, list);
-  }
-
-  return categories.map((category) => ({
-    category,
-    products: productsByCategoryId.get(category.category_id) ?? [],
-  }));
 }
