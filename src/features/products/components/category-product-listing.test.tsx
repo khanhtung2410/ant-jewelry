@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { getNextVisibleProductCount, CategoryProductListing } from './category-product-listing';
-import { getProducts } from '@/features/shared/queries';
+import { getProducts, getProductsByCategorySlug } from '@/features/shared/queries';
 
 vi.mock('next/image', () => ({
   default: ({ src, alt }: { src: string; alt: string }) => (
@@ -43,7 +43,7 @@ describe('CategoryProductListing', () => {
   });
 
   it('hides SEE MORE when all products fit in the initial batch', async () => {
-    const products = await getProducts({ type: 'NECKLACE' });
+    const products = await getProductsByCategorySlug('necklace');
     const html = renderToStaticMarkup(
       <CategoryProductListing
         categoryName="Necklace"

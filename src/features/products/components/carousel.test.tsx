@@ -41,6 +41,7 @@ vi.mock('next/link', () => ({
 function makeProduct(index: number): Product {
   return {
     product_id: `prd-${index}`,
+    categoryId: 'cat-wedding-ring',
     name: `Product ${index}`,
     slug: `product-${index}`,
     brand: 'Ant Jewelry',

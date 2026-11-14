@@ -458,6 +458,8 @@ SAD phân biệt:
 
 **Quyết định triển khai 2026-11-09:** hai khái niệm được hợp nhất. Mỗi sản phẩm có một `ProductType` đóng vai trò danh mục; Category record giữ `type: ProductType` để điều hướng và sắp thứ tự, còn bộ lọc danh mục dùng `ProductType`.
 
+**Cập nhật 2026-11-14 (R2.1):** `Product` liên kết `Category` bằng `categoryId` — đây là nguồn dữ liệu duy nhất. Cột `Product.type` đã bị bỏ khỏi schema; `Product.type` trong domain được suy ra từ `Category.type`. Trang danh mục, carousel Home và sản phẩm liên quan lọc theo `categoryId`, nên khi ADMIN đổi `Category.type` thì sản phẩm vẫn thuộc danh mục đó và carousel vẫn đủ sản phẩm.
+
 Tuy nhiên, Category entity và quan hệ giữa Category với Product chưa có trong cấu trúc dữ liệu được rà soát. Do đó, Category Module chỉ là module dự kiến, chưa phải thành phần đã được chốt.
 ### 6.6. Blog Module
 Mục đích: Cung cấp nội dung Blog công khai và hỗ trợ quản trị bài viết.

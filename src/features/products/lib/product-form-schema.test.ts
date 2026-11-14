@@ -5,7 +5,6 @@ const validProduct = {
   name: 'Aurora Ring',
   slug: 'aurora-ring',
   categoryId: 'category-id',
-  type: 'WEDDING RING',
   brand: 'ANT JEWELRY',
   price: '10.000.000',
   description: 'A gold ring.',

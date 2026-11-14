@@ -62,7 +62,6 @@ model Product {
   name        String
   slug        String         @unique
   brand       String
-  type        String
   description String
   details     Json?
   price       Int

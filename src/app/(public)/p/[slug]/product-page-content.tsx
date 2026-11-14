@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { Carousel } from '@/features/products/components/carousel';
 import { ProductDetail } from '@/features/products/components/product-detail';
 import {
-  getCategoryByType,
+  getCategoryById,
   getProductBySlug,
   getRelatedProducts,
   getSettings,
@@ -19,7 +19,7 @@ export async function ProductPageContent({ params }: ProductPageContentProps) {
   }
 
   const [category, relatedProducts, settings] = await Promise.all([
-    getCategoryByType(product.type),
+    getCategoryById(product.categoryId),
     getRelatedProducts(product.product_id),
     getSettings(),
   ]);

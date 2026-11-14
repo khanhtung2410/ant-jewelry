@@ -2,7 +2,7 @@ import { cacheTag } from 'next/cache';
 import type { Category, Product, ProductType } from '@/features/shared/domain/domain';
 import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
-import { getProducts, getProductsByCategoryTypes, type GetProductsQuery } from './products';
+import { getProducts, getProductsByCategoryIds, type GetProductsQuery } from './products';
 
 function mapCategory(record: {
   id: string;
@@ -53,6 +53,21 @@ export async function getCategoryBySlug(
   return record ? mapCategory(record) : null;
 }
 
+export async function getCategoryById(
+  categoryId: string,
+  options: { includeHidden?: boolean } = {},
+): Promise<Category | null> {
+  'use cache';
+  const record = await prisma.category.findFirst({
+    where: {
+      id: categoryId,
+      ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
+    },
+  });
+
+  return record ? mapCategory(record) : null;
+}
+
 export async function getCategoryByType(
   type: ProductType,
   options: { includeHidden?: boolean } = {},
@@ -69,17 +84,17 @@ export async function getCategoryByType(
 }
 
 /**
- * Category pages filter products by the category's ProductType, because
- * ProductType and Category are one concept.
+ * Category pages filter products by `categoryId`, so changing a category's
+ * type keeps every product assigned to that category.
  */
 export async function getProductsByCategorySlug(
   slug: string,
-  query: Omit<GetProductsQuery, 'type'> = {},
+  query: Omit<GetProductsQuery, 'categoryId'> = {},
 ): Promise<Product[]> {
   'use cache';
   cacheTag('products');
   const category = await getCategoryBySlug(slug);
-  return category ? getProducts({ ...query, type: category.type }) : [];
+  return category ? getProducts({ ...query, categoryId: category.category_id }) : [];
 }
 
 export async function getStorefrontCategorySections(): Promise<
@@ -88,17 +103,19 @@ export async function getStorefrontCategorySections(): Promise<
   'use cache';
   cacheTag('products');
   const categories = await getCategories();
-  const products = await getProductsByCategoryTypes(categories.map((category) => category.type));
-  const productsByType = new Map<ProductType, Product[]>();
+  const products = await getProductsByCategoryIds(
+    categories.map((category) => category.category_id),
+  );
+  const productsByCategoryId = new Map<string, Product[]>();
 
   for (const product of products) {
-    const list = productsByType.get(product.type) ?? [];
+    const list = productsByCategoryId.get(product.categoryId) ?? [];
     list.push(product);
-    productsByType.set(product.type, list);
+    productsByCategoryId.set(product.categoryId, list);
   }
 
   return categories.map((category) => ({
     category,
-    products: productsByType.get(category.type) ?? [],
+    products: productsByCategoryId.get(category.category_id) ?? [],
   }));
 }

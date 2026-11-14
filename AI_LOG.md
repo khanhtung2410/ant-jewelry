@@ -10,6 +10,51 @@ Mỗi mục PR/công việc gồm đủ 3 phần:
 
 ---
 
+## 2026-11-14 - Link products to categories by categoryId (R2.1)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> R2.1 — Nối sản phẩm với danh mục bằng categoryId. Query danh mục, carousel Home, sản phẩm liên quan lọc theo categoryId, không theo text type (categories.ts:82, products.ts:179, 253). Bổ sung categoryId vào Product trong domain.ts.
+> admin đổi type của danh mục → trang danh mục và carousel Home vẫn đủ sản phẩm.
+>
+> now currently type and category are slipt
+> the type PRODUCT_TYPES in domain.ts is correct
+> essentialy, those 2 are 1, merge them and use only 1
+> in /p/[slug] the is a type line whaat ever you choose category or type keep that line as type: (category/type)
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện**
+
+- `src/features/shared/domain/domain.ts`: `Product` now carries `categoryId`; `type` stays as a derived value read from the linked category.
+- `src/features/products/queries/products.ts`: `GetProductsQuery` filters by `categoryId`; product queries join `category` and map `type` from `category.type`; `getRelatedProducts` filters by `categoryId`; `getProductsByCategoryTypes` replaced by `getProductsByCategoryIds`.
+- `src/features/products/queries/categories.ts`: category page products and the Home carousel filter/group by `categoryId`; added `getCategoryById`.
+- `src/features/products/actions.ts`, `product-form-schema.ts`, `product-form-dialog.tsx`: the product form no longer submits `type`; the Type field is display-only and derived from the selected category.
+- `prisma/schema.prisma`, `prisma/postgresql/schema.prisma`, `prisma/seed.ts`: removed the redundant `Product.type` column and added migration `20261114100000_link_products_to_categories` (SQLite + PostgreSQL).
+- `src/features/products/mocks/products.ts`: mock products now include `categoryId`.
+- `docs/ARCHITECTURE.md`: documented the R2.1 decision.
+- `src/features/shared/queries/queries.test.ts` + product component tests: fixtures and assertions updated for `categoryId`; added a Home carousel grouping test.
+
+**Kết quả kiểm chứng**
+
+- `npx vitest run` → 38 files / 159 tests passed.
+- `npm run typecheck` → passed.
+- `npx eslint` on touched files → clean; `npx prettier --write` → unchanged.
+- `npx prisma migrate deploy` on a temporary SQLite database → all 4 migrations applied successfully.
+- Query verification: each category returns products with `product.categoryId === category.category_id` and `product.type === category.type`; Home carousel sections keep every category's products.
+
+**So sánh Figma:** chưa ghi nhận trong log này.
+
+### AI sai ở đâu
+
+- First pass omitted `categoryId: true` from `productCardSelect`, so products loaded for the Home carousel had no `categoryId` and their sections were empty; fixed by selecting the scalar key.
+- The earlier 2026-11-09 decision removed `Product.categoryId` and keyed products by `Product.type`; that broke the “ADMIN changes category type → products remain” requirement. R2.1 reverses it: keep `categoryId` as the only stored link and derive `type` from the category.
+
+---
+
 ## 2026-11-13 - Remove create product permission from EDITOR
 
 ### Prompt nguyên văn đã dùng

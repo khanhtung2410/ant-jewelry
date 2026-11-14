@@ -12,6 +12,7 @@ import {
   getProductsByCategorySlug,
   getRelatedProducts,
   getSettings,
+  getStorefrontCategorySections,
   parseProductSort,
   sortProducts,
 } from '@/features/shared/queries';
@@ -41,23 +42,43 @@ describe('product queries', () => {
     expect(hidden.length).toBeGreaterThan(0);
   });
 
-  it('filters by ProductType, which is also the category filter', async () => {
-    for (const type of productTypes) {
-      const products = await getProducts({ type });
+  it('filters by categoryId, the single link between products and categories', async () => {
+    const categories = await getCategories();
+    expect(categories.length).toBeGreaterThan(0);
+
+    for (const category of categories) {
+      const products = await getProducts({ categoryId: category.category_id });
       expect(products.length).toBeGreaterThan(0);
-      expect(products.every((product) => product.type === type)).toBe(true);
+      expect(products.every((product) => product.categoryId === category.category_id)).toBe(true);
+      expect(products.every((product) => product.type === category.type)).toBe(true);
     }
   });
 
-  it('filters products by category slug using the category ProductType', async () => {
+  it('filters products by category slug using categoryId, not the type text', async () => {
+    const weddingCategory = await getCategoryBySlug('wedding-ring');
+    const otherCategory = await getCategoryBySlug('other-jewelry');
     const wedding = await getProductsByCategorySlug('wedding-ring');
     const other = await getProductsByCategorySlug('other-jewelry');
 
+    expect(weddingCategory).not.toBeNull();
+    expect(otherCategory).not.toBeNull();
     expect(wedding.length).toBeGreaterThan(0);
-    expect(wedding.every((product) => product.type === 'WEDDING RING')).toBe(true);
+    expect(wedding.every((product) => product.categoryId === weddingCategory!.category_id)).toBe(
+      true,
+    );
     expect(other.length).toBeGreaterThan(0);
-    expect(other.every((product) => product.type === 'OTHER JEWELRY')).toBe(true);
+    expect(other.every((product) => product.categoryId === otherCategory!.category_id)).toBe(true);
     expect(await getProductsByCategorySlug('missing')).toEqual([]);
+  });
+
+  it('groups the home carousel by categoryId so every category keeps its products', async () => {
+    const sections = await getStorefrontCategorySections();
+    expect(sections.length).toBeGreaterThan(0);
+
+    for (const { category, products } of sections) {
+      expect(products.length).toBeGreaterThan(0);
+      expect(products.every((product) => product.categoryId === category.category_id)).toBe(true);
+    }
   });
 
   it('sorts by price in both directions', async () => {
@@ -95,6 +116,7 @@ describe('product queries', () => {
   it('uses product id as a stable price tie-breaker without dropping tied products', () => {
     const first = {
       product_id: 'a',
+      categoryId: 'cat-a',
       name: 'A',
       slug: 'a',
       brand: 'B',
@@ -128,11 +150,12 @@ describe('product queries', () => {
     });
   });
 
-  it('returns related products of the same ProductType excluding current product', async () => {
+  it('returns related products of the same category excluding current product', async () => {
     const aurora = await getProductBySlug('aurora-band');
     expect(aurora).not.toBeNull();
     const related = await getRelatedProducts(aurora!.product_id);
     expect(related.length).toBeGreaterThan(0);
+    expect(related.every((product) => product.categoryId === aurora!.categoryId)).toBe(true);
     expect(related.every((product) => product.type === aurora!.type)).toBe(true);
     expect(related.some((product) => product.product_id === aurora!.product_id)).toBe(false);
     expect(related.every((product) => product.status === 'VISIBLE')).toBe(true);
