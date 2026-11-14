@@ -486,7 +486,7 @@ Các điểm cần xác nhận:
 - Blog có một ảnh hay nhiều ảnh.
 - Quy tắc hiển thị bài viết đã xóa hoặc chưa xuất bản.
 
-**Cập nhật 2026-11-14 (R2.4):** `getBlogPosts` luôn sắp xếp trong database theo `publishedAt DESC, id ASC` để danh sách blog và hai bài mới nhất trên Home giữ nguyên thứ tự trên SQLite và PostgreSQL, kể cả khi nhiều bài có cùng `publishedAt`.
+**Cập nhật 2026-11-14 (R2.5):** Bài viết blog hỗ trợ nhiều ảnh xen giữa nội dung, không chỉ ảnh bìa. `BlogPost` có `images: BlogPostImage[]` (id, url, alt, sortOrder); query `getBlogPosts`/`getBlogPostBySlug` include `BlogImage` sắp theo `sortOrder`. Khi lưu bài, Server Action đồng bộ `BlogImage` từ ảnh bìa và mọi ảnh inline `![alt](url)` trong Markdown, giống logic seed. Trang chi tiết render ảnh bìa và nội dung (Markdown, gồm ảnh inline). Admin preview render cả bài viết như storefront (`BlogDetail`) thay vì chỉ phần body, nên có thể xem trước toàn bộ bài viết trước khi lưu.
 ### 6.7. Authentication / User / Role Module
 Mục đích: Xác thực người dùng nội bộ và quản lý quyền truy cập.
 

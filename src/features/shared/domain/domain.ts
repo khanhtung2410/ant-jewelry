@@ -95,6 +95,13 @@ export interface Category {
   status: CategoryStatus;
 }
 
+export interface BlogPostImage {
+  imageId: string;
+  url: string;
+  alt: string;
+  sortOrder: number;
+}
+
 export interface BlogPost {
   blog_id: string;
   title: string;
@@ -102,6 +109,7 @@ export interface BlogPost {
   summary: string;
   body: string;
   coverImageUrl: string;
+  images: BlogPostImage[];
   publishedAt: string;
   status: BlogPostStatus;
 }

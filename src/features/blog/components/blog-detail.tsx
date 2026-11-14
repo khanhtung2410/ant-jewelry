@@ -21,6 +21,18 @@ export function BlogDetail({ post, otherPosts }: BlogDetailProps) {
         <p className="mt-4 text-sm text-muted">Published {formatPublishedDate(post.publishedAt)}</p>
       </header>
 
+      {post.coverImageUrl ? (
+        <div className="mx-auto mt-8 max-w-3xl overflow-hidden rounded-sm">
+          {/* eslint-disable-next-line @next/next/no-img-element -- blog content image */}
+          <img
+            src={post.coverImageUrl}
+            alt={post.title}
+            className="h-auto w-full object-cover"
+            loading="lazy"
+          />
+        </div>
+      ) : null}
+
       <div className="mx-auto mt-10 max-w-3xl">{renderMarkdown(post.body)}</div>
 
       {limitedPosts.length > 0 ? (
