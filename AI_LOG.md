@@ -32,13 +32,15 @@ Mỗi mục PR/công việc gồm đủ 3 phần:
 - Moved the status union types (`ProductStatus`, `CategoryStatus`, `BlogPostStatus`, `HeroSlideStatus`) from `src/features/shared/domain/domain.ts` to `src/constants/statuses.ts`, defined from the existing `visibilityStatus` / `publishStatus` constants; `domain.ts` re-exports them so existing imports stay valid.
 - `docs/ARCHITECTURE.md`: documented the R2.2 visibility rule.
 - `src/features/shared/queries/queries.test.ts`: added an integration test that creates a product inside a HIDDEN category and asserts: storefront lookup → `null` (404), admin lookup with `includeHidden` → found, absent from `getProducts`, Home sections and `getRelatedProducts`, and no `/p/<slug>` entry in `sitemap()`.
+- `src/features/products/server/local-image-storage.ts`: marked the runtime upload-root `path.resolve()` call with `/*turbopackIgnore: true*/` (per the Turbopack warning's guidance) so the build no longer traces the whole project into the server bundle.
+- `src/app/admin/(dashboard)/page.tsx`: Prettier-only formatting fix so the repository-wide `format:check` passes.
 
 **Kết quả kiểm chứng**
 
 - `npx vitest run src/features/shared/queries/queries.test.ts` → 24 tests passed.
 - `npm test` → 38 files / 160 tests passed.
 - `npm run typecheck` → passed.
-- `npm run build` → passed (53/53 static pages generated; `/sitemap.xml` and `/p/[slug]` built from the filtered queries).
+- `npm run build` → passed with no warnings (53/53 static pages generated; `/sitemap.xml` and `/p/[slug]` built from the filtered queries).
 - `npx eslint` on touched files → clean; `npx prettier --check` → clean after formatting the test file.
 - Playwright E2E was not re-run in this pass: it starts a second dev server on port 3100 while the existing dev server on port 3000 keeps the shared `.next` directory busy (same limitation recorded in earlier entries).
 

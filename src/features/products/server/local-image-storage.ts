@@ -18,7 +18,10 @@ export class StoredProductImageNotFoundError extends Error {}
 
 export function getProductImageUploadRoot(): string {
   const configured = process.env.PRODUCT_IMAGE_UPLOAD_DIR?.trim();
-  return path.resolve(configured || path.join(process.cwd(), 'uploads'));
+  // The upload directory only exists at runtime, so it must not be resolved by
+  // Turbopack's static file tracing (which would otherwise trace the whole
+  // project into the server bundle).
+  return path.resolve(/*turbopackIgnore: true*/ configured || path.join(process.cwd(), 'uploads'));
 }
 
 function resolveStoredImagePath(storageKey: string): string {
