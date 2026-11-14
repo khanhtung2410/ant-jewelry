@@ -10,6 +10,52 @@ Mỗi mục PR/công việc gồm đủ 3 phần:
 
 ---
 
+## 2026-11-14 11:38:32 +07:00 - Blog posts with multiple images and full preview (R2.5)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules
+>
+> currently, blog only have 1 picture that is cover image
+> blog can have multiple image between text, not only 1 cover image
+> implement it, make sure when preview can see whole blog post like store front show
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện (R2.5)**
+
+- `src/features/shared/domain/domain.ts`: thêm `BlogPostImage` và trường `images: BlogPostImage[]` trong `BlogPost`.
+- `src/features/blog/queries/blog-posts.ts`: `getBlogPosts` và `getBlogPostBySlug` include `BlogImage` sắp theo `sortOrder` và map sang `BlogPostImage`.
+- `src/features/blog/actions.ts`: `saveBlogPost` đồng bộ `BlogImage` từ ảnh bìa và mọi ảnh inline `![alt](url)` trong body (xóa rồi tạo lại), giống logic seed ở `prisma/seed.ts`.
+- `src/features/blog/components/blog-detail.tsx`: render ảnh bìa ở đầu bài viết.
+- `src/features/blog/components/blog-post-form-dialog.tsx`: preview render cả bài viết qua `BlogDetail` (tiêu đề, ngày đăng, ảnh bìa, nội dung) thay vì chỉ phần body; form controlled theo refs để xem trước trực tiếp.
+- `src/features/admin/components/form-controls.tsx`: `ImageUrlField` hỗ trợ controlled mode (`value`/`onChange`) để preview bìa cập nhật trực tiếp.
+- `src/features/blog/mocks/blog-posts.ts`: thêm `images: []` để khớp domain mới.
+- `docs/ARCHITECTURE.md`: ghi quyết định R2.5.
+
+**Kết quả kiểm chứng**
+
+- `npm run typecheck` → passed.
+- `npm run lint` → passed.
+- `npm test` → 39 files / 171 tests passed.
+- `npm run format:check` → passed.
+- `npm run build` → passed, 53/53 static pages.
+- Playwright E2E không chạy lại vì bộ test cần dev server cổng 3100 trong khi dev server hiện tại giữ cổng 3000 và dùng chung thư mục `.next` (giới hạn đã ghi trong các mục trước).
+
+**So sánh Figma:** chưa ghi nhận trong log này; giao diện bài viết thêm ảnh bìa ở đầu bài, còn lại giữ nguyên.
+
+### AI sai ở đâu
+
+- Ban đầu ghi nhầm nội dung form dialog vào `form-controls.tsx` (dùng nhầm `write` thay vì `read`) và phải `git checkout` để khôi phục file.
+- Lint báo `react-hooks/set-state-in-effect` khi đồng bộ state trong `useEffect`; đã bỏ effect và dùng ref + controlled state cho các trường còn lại để preview vẫn cập nhật trực tiếp.
+- `ImageUrlField` ban đầu chỉ uncontrolled; đã thêm controlled mode để preview ảnh bìa theo dõi input.
+
+---
+
 ## 2026-11-14 11:00:40 +07:00 - Stable storefront ordering (R2.4)
 
 ### Prompt nguyên văn đã dùng

@@ -56,7 +56,9 @@ export function FormActions({ children }: { children: ReactNode }) {
 export function ImageUrlField({
   label,
   name,
-  defaultValue,
+  defaultValue = '',
+  value,
+  onChange,
   error,
   hint,
   previewAlt,
@@ -64,22 +66,34 @@ export function ImageUrlField({
 }: {
   label: string;
   name: string;
-  defaultValue: string;
+  defaultValue?: string;
+  value?: string;
+  onChange?: (value: string) => void;
   error?: string;
   hint?: string;
   previewAlt?: string;
   previewClassName?: string;
 }) {
-  const [value, setValue] = useState(defaultValue);
-  const preview = value.trim();
+  const [internalValue, setInternalValue] = useState(defaultValue);
+  const isControlled = value !== undefined;
+  const currentValue = isControlled ? (value as string) : internalValue;
+
+  function handleChange(nextValue: string) {
+    if (!isControlled) {
+      setInternalValue(nextValue);
+    }
+    onChange?.(nextValue);
+  }
+
+  const preview = currentValue.trim();
 
   return (
     <div className="space-y-2">
       <FormField label={label} hint={hint} error={error}>
         <input
           name={name}
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
+          value={currentValue}
+          onChange={(event) => handleChange(event.target.value)}
           className={inputClassName}
         />
       </FormField>

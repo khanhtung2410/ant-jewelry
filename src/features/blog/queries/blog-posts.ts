@@ -1,5 +1,5 @@
 import type { Prisma } from '@prisma/client';
-import type { BlogPost } from '@/features/shared/domain/domain';
+import type { BlogPost, BlogPostImage } from '@/features/shared/domain/domain';
 import { publishStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
 
@@ -20,6 +20,7 @@ function mapBlogPost(record: {
   coverImageUrl: string;
   publishedAt: Date;
   status: 'DRAFT' | 'PUBLISHED';
+  images: { id: string; url: string; alt: string; sortOrder: number }[];
 }): BlogPost {
   return {
     blog_id: record.id,
@@ -28,6 +29,12 @@ function mapBlogPost(record: {
     summary: record.summary,
     body: record.body,
     coverImageUrl: record.coverImageUrl,
+    images: record.images.map((image): BlogPostImage => ({
+      imageId: image.id,
+      url: image.url,
+      alt: image.alt,
+      sortOrder: image.sortOrder,
+    })),
     publishedAt: record.publishedAt.toISOString(),
     status: record.status,
   };
@@ -44,6 +51,7 @@ export async function getBlogPosts(
   const records = await prisma.blogPost.findMany({
     where: options.includeDrafts ? {} : { status: publishStatus.PUBLISHED },
     orderBy: getBlogPostOrderBy(),
+    include: { images: { orderBy: { sortOrder: 'asc' } } },
     ...(typeof options.limit === 'number' ? { take: options.limit } : {}),
   });
 
@@ -60,6 +68,7 @@ export async function getBlogPostBySlug(
       slug,
       ...(options.includeDrafts ? {} : { status: publishStatus.PUBLISHED }),
     },
+    include: { images: { orderBy: { sortOrder: 'asc' } } },
   });
 
   return record ? mapBlogPost(record) : null;

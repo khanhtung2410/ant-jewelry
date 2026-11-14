@@ -23,6 +23,7 @@ Vàng 18K giữ được độ sáng ổn định và đủ cứng để sử d�
 
 Cuối cùng, hãy đeo thử cùng nhẫn đính hôn để hai chiếc nhẫn nằm cạnh nhau hài hòa và thoải mái khi cử động.`,
     coverImageUrl: '/mock/blog/cover-wedding-band.svg',
+    images: [],
     publishedAt: '2026-10-28T09:00:00+07:00',
     status: 'PUBLISHED',
   },
@@ -45,6 +46,7 @@ Cuối cùng, hãy đeo thử cùng nhẫn đính hôn để hai chiếc nhẫn 
 
 Khi chọn, hãy cân nhắc tỷ lệ, độ tinh khiết và ngân sách thay vì chỉ nhìn vào kích thước.`,
     coverImageUrl: '/mock/blog/cover-diamond-cut.svg',
+    images: [],
     publishedAt: '2026-10-15T10:30:00+07:00',
     status: 'PUBLISHED',
   },
@@ -66,6 +68,7 @@ Khi chọn, hãy cân nhắc tỷ lệ, độ tinh khiết và ngân sách thay 
 
 Nên kiểm tra chấu giữ đá định kỳ và đưa đến cửa hàng để làm sạch chuyên sâu mỗi sáu tháng.`,
     coverImageUrl: '/mock/blog/cover-jewelry-care.svg',
+    images: [],
     publishedAt: '2026-09-30T08:15:00+07:00',
     status: 'PUBLISHED',
   },
@@ -87,6 +90,7 @@ Nên kiểm tra chấu giữ đá định kỳ và đưa đến cửa hàng đ�
 
 Đừng quên đặt nhẫn cưới ở vị trí cân đối để tổng thể vẫn có điểm nhấn rõ ràng.`,
     coverImageUrl: '/mock/blog/cover-stacking.svg',
+    images: [],
     publishedAt: '2026-09-12T14:00:00+07:00',
     status: 'PUBLISHED',
   },
@@ -108,6 +112,7 @@ Nên kiểm tra chấu giữ đá định kỳ và đưa đến cửa hàng đ�
 
 Nếu mua để đeo lâu dài, hãy thử dưới ánh sáng ban ngày thay vì chỉ xem trong tủ kính. Có thể phối nhiều tông trong cùng một bộ trang sức miễn là tổng thể giữ được sự cân bằng.`,
     coverImageUrl: '/mock/blog/cover-metal-colors.svg',
+    images: [],
     publishedAt: '2026-08-20T11:00:00+07:00',
     status: 'PUBLISHED',
   },
@@ -123,6 +128,7 @@ Nên đo vào cuối ngày khi ngón tay ở kích thước lớn nhất và tr�
 
 Bài viết này đang được hoàn thiện và sẽ bổ sung bảng size chi tiết.`,
     coverImageUrl: '/mock/blog/cover-ring-size.svg',
+    images: [],
     publishedAt: '2026-12-01T09:00:00+07:00',
     status: 'DRAFT',
   },

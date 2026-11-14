@@ -57,6 +57,38 @@ function revalidateBlogPages() {
   revalidatePath('/blog/[slug]', 'page');
 }
 
+async function syncBlogPostImages(
+  blogPostId: string,
+  coverImageUrl: string,
+  body: string,
+  title: string,
+) {
+  const imageMatches = [...body.matchAll(/!\[(.*?)\]\((.*?)\)/g)].map((match) => ({
+    alt: match[1] || title,
+    url: match[2],
+  }));
+  const uniqueImages = Array.from(
+    new Map(
+      [coverImageUrl, ...imageMatches.map((image) => image.url)].filter(Boolean).map((url) => {
+        const match = imageMatches.find((image) => image.url === url);
+        return [url, { url, alt: match?.alt || title }];
+      }),
+    ).values(),
+  );
+
+  await prisma.blogImage.deleteMany({ where: { blogPostId } });
+  if (uniqueImages.length > 0) {
+    await prisma.blogImage.createMany({
+      data: uniqueImages.map((image, index) => ({
+        blogPostId,
+        url: image.url,
+        alt: image.alt,
+        sortOrder: index + 1,
+      })),
+    });
+  }
+}
+
 export async function saveBlogPost(
   _previousState: BlogPostFormState,
   formData: FormData,
@@ -101,11 +133,23 @@ export async function saveBlogPost(
   };
 
   try {
-    if (blogId) {
-      await prisma.blogPost.update({ where: { id: blogId }, data });
-    } else {
-      await prisma.blogPost.create({ data });
-    }
+    const savedPost = blogId
+      ? await prisma.blogPost.update({
+          where: { id: blogId },
+          data,
+          select: { id: true },
+        })
+      : await prisma.blogPost.create({
+          data,
+          select: { id: true },
+        });
+
+    await syncBlogPostImages(
+      savedPost.id,
+      parsed.data.coverImageUrl,
+      parsed.data.body,
+      parsed.data.title,
+    );
 
     revalidateBlogPages();
     redirect(savedBlogRedirect(readFormString(formData, 'returnTo')));
