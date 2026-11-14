@@ -1,3 +1,31 @@
+﻿## 2026-11-14 12:17:30 +07:00 - Tests for blog images and inline insertion
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules
+>
+> with the changes you just made, create or adjust test arcordingly
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- src/features/shared/queries/queries.test.ts: thêm 4 test trong describe('blog queries') kiểm tra ảnh blog và images array.
+- 
+pm test → 39 files / 174 tests passed.
+- 
+pm run typecheck, 
+pm run lint, 
+pm run format:check, 
+pm run build → passed.
+
+### AI sai ở đâu
+
+- Lần đầu chèn test quên đóng describe('blog queries'), gây lỗi parse; đã thêm });.
+
+---
 # AI Change Log
 
 ## Định dạng mỗi mục

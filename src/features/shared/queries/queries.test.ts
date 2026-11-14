@@ -505,6 +505,48 @@ describe('blog queries', () => {
       status: 'DRAFT',
     });
   });
+
+  it('loads blog post images in sortOrder, including multiple images per post', async () => {
+    const post = await getBlogPostBySlug('cach-phoi-nhan-stacking');
+
+    expect(post).not.toBeNull();
+    expect(post!.images).toHaveLength(2);
+    expect(post!.images.map((image) => image.sortOrder)).toEqual([1, 2]);
+    expect(post!.images.map((image) => image.url)).toEqual([
+      '/mock/blog/cover-stacking.svg',
+      '/mock/blog/cover-metal-colors.svg',
+    ]);
+  });
+
+  it('returns an empty image list when a post has no BlogImage records', async () => {
+    const created = await prisma.blogPost.create({
+      data: {
+        title: 'No Image Post',
+        slug: 'no-image-post-test',
+        summary: 'Summary without images.',
+        body: 'Just text, no images.',
+        coverImageUrl: '/mock/blog/cover-stacking.svg',
+        publishedAt: new Date('2026-09-01T00:00:00.000Z'),
+        status: 'PUBLISHED',
+      },
+    });
+
+    try {
+      const post = await getBlogPostBySlug('no-image-post-test');
+      expect(post).not.toBeNull();
+      expect(post!.images).toEqual([]);
+    } finally {
+      await prisma.blogPost.delete({ where: { id: created.id } });
+    }
+  });
+
+  it('includes images for every post returned by getBlogPosts', async () => {
+    const posts = await getBlogPosts();
+    expect(posts.every((post) => Array.isArray(post.images))).toBe(true);
+
+    const stackingPost = posts.find((post) => post.slug === 'cach-phoi-nhan-stacking');
+    expect(stackingPost?.images).toHaveLength(2);
+  });
 });
 
 describe('hero slide queries', () => {
