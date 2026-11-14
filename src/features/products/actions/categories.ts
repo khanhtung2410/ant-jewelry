@@ -1,7 +1,7 @@
 'use server';
 
 import { Prisma } from '@prisma/client';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { visibilityStatus } from '@/constants/statuses';
 import { getAdminSession } from '@/features/auth/session';
@@ -52,6 +52,9 @@ function stateWithErrors(
 }
 
 function revalidateCategoryPages() {
+  // Product storefront queries filter by category visibility, so hiding or
+  // deleting a category must also invalidate the cached product results.
+  revalidateTag('products', 'max');
   revalidatePath('/admin/categories');
   // Categories are read by the public layout (navigation/menu) as well as the
   // home page, so the layout scope is required to refresh the shared cache entry.

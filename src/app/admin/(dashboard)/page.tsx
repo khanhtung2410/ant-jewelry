@@ -141,7 +141,9 @@ export default async function AdminDashboardPage() {
           label: 'Products',
           value: String(productCount ?? 0),
           detail:
-            visibleProductCount != null ? `${visibleProductCount} visible in storefront` : undefined,
+            visibleProductCount != null
+              ? `${visibleProductCount} visible in storefront`
+              : undefined,
           href: '/admin/products',
         }
       : null,
@@ -186,7 +188,13 @@ export default async function AdminDashboardPage() {
         <section aria-label="Recent products">
           <AdminTableSection
             title={`RECENT PRODUCTS${productCount != null ? ` (${productCount})` : ''}`}
-            meta={canProducts ? <Link href="/admin/products" className="hover:text-[var(--underline-color)]">View all</Link> : null}
+            meta={
+              canProducts ? (
+                <Link href="/admin/products" className="hover:text-[var(--underline-color)]">
+                  View all
+                </Link>
+              ) : null
+            }
           >
             {!canProducts ? (
               <AdminTableEmpty>You do not have permission to view products.</AdminTableEmpty>
@@ -211,8 +219,12 @@ export default async function AdminDashboardPage() {
                             {product.brand} · /{product.slug}
                           </p>
                         </td>
-                        <td className="px-4 py-3 text-[var(--font-color)]">{product.category.name}</td>
-                        <td className="whitespace-nowrap px-4 py-3">{formatPrice(product.price)} ₫</td>
+                        <td className="px-4 py-3 text-[var(--font-color)]">
+                          {product.category.name}
+                        </td>
+                        <td className="whitespace-nowrap px-4 py-3">
+                          {formatPrice(product.price)} ₫
+                        </td>
                         <td className="px-4 py-3">
                           <StatusBadge
                             config={VISIBILITY_STATUS[product.status]}
@@ -261,7 +273,9 @@ export default async function AdminDashboardPage() {
                             {item.title}
                           </p>
                         )}
-                        <p className="mt-0.5 truncate text-xs text-[var(--font-color)]">{item.detail}</p>
+                        <p className="mt-0.5 truncate text-xs text-[var(--font-color)]">
+                          {item.detail}
+                        </p>
                       </div>
                       <time
                         dateTime={item.at.toISOString()}
@@ -308,7 +322,9 @@ export default async function AdminDashboardPage() {
           <h2 className="font-heading text-sm tracking-[0.08em] text-foreground">
             Granted permissions
           </h2>
-          <p className="mt-1 text-xs text-[var(--font-color)]">{permissions.length} permissions for {session.role}</p>
+          <p className="mt-1 text-xs text-[var(--font-color)]">
+            {permissions.length} permissions for {session.role}
+          </p>
           <ul className="mt-3 grid max-h-48 gap-1 overflow-auto pr-1 text-sm text-[var(--font-color)] sm:grid-cols-2">
             {permissions.map((permission) => (
               <li

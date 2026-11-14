@@ -17,6 +17,8 @@ import {
   sortProducts,
 } from '@/features/shared/queries';
 import { createVndPrice, type ProductType } from '@/features/shared/domain/domain';
+import prisma from '@/features/shared/db/prisma';
+import sitemap from '@/app/sitemap';
 
 const productTypes: ProductType[] = [
   'WEDDING RING',
@@ -171,6 +173,58 @@ describe('product queries', () => {
       expect(typeof product.price).toBe('number');
       expect(Array.isArray(product.images)).toBe(true);
       expect(Array.isArray(product.colors)).toBe(true);
+    }
+  });
+});
+
+describe('hidden category visibility', () => {
+  it('hides products of a hidden category from storefront, sitemap and static params', async () => {
+    const category = await prisma.category.create({
+      data: {
+        name: 'Hidden Category',
+        slug: 'hidden-category-test',
+        type: 'OTHER JEWELRY',
+        sortOrder: 99,
+        status: 'HIDDEN',
+      },
+    });
+    const product = await prisma.product.create({
+      data: {
+        categoryId: category.id,
+        name: 'Hidden Category Product',
+        slug: 'hidden-category-product',
+        brand: 'ANT JEWELRY',
+        description: 'Product that belongs to a hidden category.',
+        price: 1_000_000,
+        status: 'VISIBLE',
+      },
+    });
+
+    try {
+      // The product URL resolves to 404, but admin screens can still load it.
+      expect(await getProductBySlug('hidden-category-product')).toBeNull();
+      expect(
+        await getProductBySlug('hidden-category-product', { includeHidden: true }),
+      ).toMatchObject({ product_id: product.id, status: 'VISIBLE' });
+
+      // Excluded from lists, the Home carousel and related products.
+      expect((await getProducts()).some((item) => item.product_id === product.id)).toBe(false);
+      expect(
+        (await getStorefrontCategorySections()).some((section) =>
+          section.products.some((item) => item.product_id === product.id),
+        ),
+      ).toBe(false);
+      expect(await getRelatedProducts(product.id)).toEqual([]);
+
+      // Excluded from /sitemap.xml and the /p/[slug] static params.
+      const urls = (await sitemap()).map((entry) => entry.url);
+      expect(urls.some((url) => url.endsWith('/p/hidden-category-product'))).toBe(false);
+      expect((await getProducts()).some((item) => item.slug === 'hidden-category-product')).toBe(
+        false,
+      );
+    } finally {
+      await prisma.product.delete({ where: { id: product.id } });
+      await prisma.category.delete({ where: { id: category.id } });
     }
   });
 });

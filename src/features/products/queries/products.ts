@@ -190,6 +190,15 @@ function mapProduct(record: DbProduct): Product {
   };
 }
 
+/**
+ * Products inherit the visibility of their category: hiding a category removes
+ * its products from every storefront query without changing the product rows.
+ * Admin screens opt out with `includeHidden`.
+ */
+function visibleCategoryWhere(includeHidden?: boolean) {
+  return includeHidden ? {} : { category: { status: visibilityStatus.VISIBLE } };
+}
+
 function toWhere(query: GetProductsQuery) {
   return {
     ...(query.categoryId ? { categoryId: query.categoryId } : {}),
@@ -198,6 +207,7 @@ function toWhere(query: GetProductsQuery) {
       : query.includeHidden
         ? {}
         : { status: visibilityStatus.VISIBLE }),
+    ...visibleCategoryWhere(query.includeHidden),
   };
 }
 
@@ -229,6 +239,7 @@ export async function getProductBySlug(
     where: {
       slug,
       ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
+      ...visibleCategoryWhere(options.includeHidden),
     },
     include: productInclude,
   });
@@ -246,6 +257,7 @@ export async function getProductById(
     where: {
       id: productId,
       ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
+      ...visibleCategoryWhere(options.includeHidden),
     },
     include: productInclude,
   });
@@ -270,6 +282,7 @@ export async function getRelatedProducts(productId: string, limit = 4): Promise<
       categoryId: current.categoryId,
       id: { not: productId },
       status: visibilityStatus.VISIBLE,
+      category: { status: visibilityStatus.VISIBLE },
     },
     include: productInclude,
     take: limit,
@@ -293,6 +306,7 @@ export async function getProductsByCategoryIds(
     where: {
       categoryId: { in: categoryIds },
       ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
+      ...visibleCategoryWhere(options.includeHidden),
     },
     select: productCardSelect,
   });

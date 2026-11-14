@@ -1,3 +1,12 @@
+import type {
+  BlogPostStatus,
+  CategoryStatus,
+  HeroSlideStatus,
+  ProductStatus,
+} from '@/constants/statuses';
+
+export type { BlogPostStatus, CategoryStatus, HeroSlideStatus, ProductStatus };
+
 declare const vndPriceBrand: unique symbol;
 
 export type VndPrice = number & {
@@ -15,11 +24,6 @@ export function createVndPrice(amount: number): VndPrice {
 
   return amount as VndPrice;
 }
-
-export type ProductStatus = 'VISIBLE' | 'HIDDEN';
-export type CategoryStatus = 'VISIBLE' | 'HIDDEN';
-export type BlogPostStatus = 'DRAFT' | 'PUBLISHED';
-export type HeroSlideStatus = 'VISIBLE' | 'HIDDEN';
 
 export const PRODUCT_TYPES = [
   'WEDDING RING',
