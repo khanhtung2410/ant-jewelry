@@ -10,6 +10,67 @@ Mỗi mục PR/công việc gồm đủ 3 phần:
 
 ---
 
+## 2026-11-14 10:44:39 +07:00 - Product-card-only category pages with server pagination (R2.3)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> R2.1 — Nối sản phẩm với danh mục bằng categoryId. Query danh mục, carousel Home, sản phẩm liên quan lọc theo categoryId, không theo text type (categories.ts:82, products.ts:179, 253). Bổ sung categoryId vào Product trong domain.ts.
+> admin đổi type của danh mục → trang danh mục và carousel Home vẫn đủ sản phẩm.
+>
+> now currently type and category are slipt
+> the type PRODUCT_TYPES in domain.ts is correct
+> essentialy, those 2 are 1, merge them and use only 1
+> in /p/[slug] the is a type line whaat ever you choose category or type keep that line as type: (category/type)
+> add to ai log
+>
+> read the whole files
+> create new branch, commit current changes
+>
+> R2.3 — Trang danh mục chỉ select cột cho ProductCard. getProductsByCategorySlug dùng productCardSelect thay productInclude; sort + phân trang chạy trong DB (orderBy + take/skip hoặc cursor), SEE MORE tải thêm 10 từ server.
+> trang danh mục không gửi description/details xuống client; không trùng / sót khi cùng giá (sort phụ theo id).
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**R2.1:** đã được triển khai và merge trước nhánh này (commit `befe122`). Đọc lại `prisma/schema.prisma`, `domain.ts`, `categories.ts`, `products.ts`, form danh mục và xác nhận không còn tách type/category: `Product` không còn cột `type` trong schema; `Product.categoryId` là liên kết duy nhất; `Product.type` được suy ra từ `Category.type`; `PRODUCT_TYPES` chỉ còn dùng cho form danh mục. Không cần thay đổi thêm cho R2.1.
+
+**Thay đổi đã thực hiện (R2.3)**
+
+- `src/features/shared/domain/domain.ts`: thêm `ProductCardData` (product_id, name, slug, price, colors, images) — shape tối thiểu để render card, không có `description`/`details`.
+- `src/features/products/lib/product-card-page.ts`: hằng số `PRODUCT_CARD_PAGE_SIZE = 10` và `MAX_PRODUCT_CARD_PAGE_SIZE = 50`.
+- `src/features/products/queries/products.ts`: thêm `PRODUCT_SORTS`, `GetProductCardPageQuery`, `ProductCardPage`, `getProductOrderBy()` (mọi sort có khóa phụ `id ASC`), `mapProductCard()` và `getProductCardPage()` — dùng `productCardSelect`, `orderBy` + `skip`/`take` trong DB, lấy `limit + 1` để biết `hasMore`.
+- `src/features/products/queries/categories.ts`: `getProductsByCategorySlug()` trả `ProductCardPage` và gọi `getProductCardPage()`; danh mục không tồn tại trả `{ products: [], hasMore: false }`.
+- `src/features/products/actions/category-products.ts`: Server Action `loadMoreCategoryProducts()` cho SEE MORE, validate input bằng Zod (slug, sort, offset, limit) trước khi query.
+- `src/features/products/components/category-product-listing.tsx`: bỏ slice phía client; nhận batch đầu + `hasMore` từ server, SEE MORE gọi Server Action lấy thêm 10 sản phẩm, có trạng thái loading, disable nút khi đang tải và thông báo lỗi.
+- `src/app/(public)/c/[slug]/category-page-content.tsx`: tải batch đầu 10 sản phẩm và truyền `hasMore`.
+- `src/features/products/components/product-card.tsx`: nhận `ProductCardData` (Product đầy đủ vẫn gán được).
+- `src/features/shared/queries/index.ts`: export thêm `getProductCardPage`, `getProductOrderBy`, `PRODUCT_SORTS`, các type mới.
+- Test: cập nhật `queries.test.ts` (API trả trang, chỉ có cột card, phân trang DB không trùng/sót, tie-break theo id khi cùng giá), `category-product-listing.test.tsx` (SEE MORE theo `hasMore`), thêm `category-products.test.ts` cho Server Action.
+- `docs/ARCHITECTURE.md`: ghi quyết định R2.3.
+
+**Kết quả kiểm chứng**
+
+- `npm test` → 39 files / 167 tests passed.
+- `npm run typecheck` → passed.
+- `npm run lint` → passed.
+- `npm run format:check` → passed.
+- `npm run build` → passed, không còn cảnh báo Turbopack; 53/53 static pages generated.
+- Test query xác nhận object card chỉ có `colors`, `images`, `name`, `price`, `product_id`, `slug` (không có `description`/`details`); phân trang 3+3+... không trùng, không sót; 5 sản phẩm cùng giá được sắp ổn định theo `id`.
+- Playwright E2E không chạy lại vì bộ test cần dev server cổng 3100 trong khi dev server hiện tại giữ cổng 3000 và dùng chung thư mục `.next` (giới hạn đã ghi trong các mục trước).
+
+**So sánh Figma:** chưa ghi nhận trong log này.
+
+### AI sai ở đâu
+
+- Test phân trang giả định `other-jewelry` có 8 sản phẩm storefront, nhưng một sản phẩm trong mock có `status: HIDDEN` nên chỉ còn 7; đã sửa test để tính số lượng kỳ vọng từ query visible thay vì hard-code.
+- Lần đầu export Zod schema từ file `'use server'`; Next.js yêu cầu module Server Action chỉ export async function, nên đã bỏ export schema trước khi build.
+- Cách cũ tải toàn bộ sản phẩm của danh mục xuống client rồi slice 10; đã thay bằng batch đầu từ server + Server Action cho các batch sau, đồng thời đổi payload sang `ProductCardData` để không gửi `description`/`details`.
+
+---
+
 ## 2026-11-14 10:10:59 +07:00 - Hide products in hidden categories (R2.2)
 
 ### Prompt nguyên văn đã dùng

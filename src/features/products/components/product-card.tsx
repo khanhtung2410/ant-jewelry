@@ -1,11 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { formatPrice } from '@/features/shared/lib/format-price';
-import type { Product } from '@/features/shared/domain/domain';
+import type { ProductCardData } from '@/features/shared/domain/domain';
 import { isExternalImageUrl } from '@/features/products/lib/product-gallery';
 
 interface ProductCardProps {
-  product: Product;
+  product: ProductCardData;
   className?: string;
 }
 

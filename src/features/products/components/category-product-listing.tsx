@@ -1,24 +1,20 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { ProductSort } from '@/features/shared/queries';
-import type { Product } from '@/features/shared/domain/domain';
+import type { ProductCardData } from '@/features/shared/domain/domain';
 import { ChevronDownIcon } from '@/features/layout/components/icons';
+import { loadMoreCategoryProducts } from '@/features/products/actions/category-products';
+import { PRODUCT_CARD_PAGE_SIZE } from '@/features/products/lib/product-card-page';
 import { ProductCard } from './product-card';
 import { ActionButton } from '@/features/layout/components/action-button';
-
-const INITIAL_PRODUCT_COUNT = 10;
-const PRODUCT_BATCH_SIZE = 10;
-
-export function getNextVisibleProductCount(currentCount: number, totalCount: number): number {
-  return Math.min(currentCount + PRODUCT_BATCH_SIZE, totalCount);
-}
 
 interface CategoryProductListingProps {
   categoryName: string;
   categorySlug: string;
-  products: Product[];
+  products: ProductCardData[];
+  hasMore: boolean;
   sort: ProductSort;
 }
 
@@ -32,16 +28,37 @@ const sortOptions: { value: ProductSort; label: string }[] = [
 export function CategoryProductListing({
   categoryName,
   categorySlug,
-  products,
+  products: initialProducts,
+  hasMore: initialHasMore,
   sort,
 }: CategoryProductListingProps) {
   const router = useRouter();
   const sortId = useId();
-  const [visibleCount, setVisibleCount] = useState(INITIAL_PRODUCT_COUNT);
-  const visibleProducts = products.slice(0, visibleCount);
+  const [products, setProducts] = useState(initialProducts);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isLoading, startTransition] = useTransition();
 
   function handleSortChange(value: ProductSort) {
     router.push(`/c/${encodeURIComponent(categorySlug)}?sort=${value}`, { scroll: false });
+  }
+
+  function handleSeeMore() {
+    setLoadError(null);
+    startTransition(async () => {
+      try {
+        const nextPage = await loadMoreCategoryProducts({
+          categorySlug,
+          sort,
+          offset: products.length,
+          limit: PRODUCT_CARD_PAGE_SIZE,
+        });
+        setProducts((current) => [...current, ...nextPage.products]);
+        setHasMore(nextPage.hasMore);
+      } catch {
+        setLoadError('Could not load more products. Please try again.');
+      }
+    });
   }
 
   return (
@@ -83,9 +100,9 @@ export function CategoryProductListing({
         </div>
       </div>
 
-      {visibleProducts.length > 0 ? (
+      {products.length > 0 ? (
         <ul className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-5">
-          {visibleProducts.map((product) => (
+          {products.map((product) => (
             <li key={product.product_id}>
               <ProductCard product={product} />
             </li>
@@ -95,16 +112,20 @@ export function CategoryProductListing({
         <p className="text-sm text-muted">No products in this category yet.</p>
       )}
 
-      {visibleCount < products.length ? (
+      {loadError ? (
+        <p role="alert" className="mt-6 text-center text-sm text-red-700">
+          {loadError}
+        </p>
+      ) : null}
+
+      {hasMore ? (
         <div className="mt-10 flex justify-center">
           <ActionButton
-            onClick={() =>
-              setVisibleCount((currentCount) =>
-                getNextVisibleProductCount(currentCount, products.length),
-              )
-            }
+            onClick={handleSeeMore}
+            disabled={isLoading}
+            ariaLabel={isLoading ? 'Loading more products' : 'See more products'}
           >
-            SEE MORE
+            {isLoading ? 'LOADING...' : 'SEE MORE'}
           </ActionButton>
         </div>
       ) : null}

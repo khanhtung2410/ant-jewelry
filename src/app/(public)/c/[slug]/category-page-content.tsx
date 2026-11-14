@@ -5,6 +5,7 @@ import {
   getProductsByCategorySlug,
   parseProductSort,
 } from '@/features/shared/queries';
+import { PRODUCT_CARD_PAGE_SIZE } from '@/features/products/lib/product-card-page';
 
 type CategoryPageContentProps = Pick<PageProps<'/c/[slug]'>, 'params' | 'searchParams'>;
 
@@ -21,7 +22,10 @@ export async function CategoryPageContent({ params, searchParams }: CategoryPage
     redirect(`/c/${encodeURIComponent(slug)}?sort=${sort}`);
   }
 
-  const products = await getProductsByCategorySlug(slug, { sort });
+  const page = await getProductsByCategorySlug(slug, {
+    sort,
+    limit: PRODUCT_CARD_PAGE_SIZE,
+  });
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
@@ -29,7 +33,8 @@ export async function CategoryPageContent({ params, searchParams }: CategoryPage
         key={`${category.slug}:${sort}`}
         categoryName={category.name}
         categorySlug={category.slug}
-        products={products}
+        products={page.products}
+        hasMore={page.hasMore}
         sort={sort}
       />
     </main>
