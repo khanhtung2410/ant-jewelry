@@ -68,14 +68,17 @@ test('ADMIN price changes are reflected on the storefront', async ({ page }) => 
   await expect(page.getByText('12.345.678', { exact: true })).toBeVisible();
 });
 
-test('EDITOR can view but cannot edit a product price', async ({ page }) => {
+test('EDITOR can edit product details but cannot edit a product price', async ({ page }) => {
   await signIn(page, 'editor@antjewelry.local', 'Editor@123');
   await page.goto('/admin/products?search=Aurora');
 
   const productRow = page.getByRole('row').filter({ hasText: 'Aurora Band' });
-  await productRow.getByRole('link', { name: 'View' }).click();
+  await productRow.getByRole('link', { name: 'Edit' }).click();
 
   const productDialog = page.getByRole('dialog');
   await expect(productDialog.getByLabel('Price (VND)')).toHaveAttribute('readonly', '');
-  await expect(productDialog.getByRole('button', { name: 'Save product' })).toHaveCount(0);
+  await expect(
+    productDialog.getByRole('textbox', { name: 'Name', exact: true }),
+  ).not.toHaveAttribute('readonly', '');
+  await expect(productDialog.getByRole('button', { name: 'Save product' })).toBeVisible();
 });
