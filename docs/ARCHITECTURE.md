@@ -489,6 +489,8 @@ Các điểm cần xác nhận:
 - Blog có một ảnh hay nhiều ảnh.
 - Quy tắc hiển thị bài viết đã xóa hoặc chưa xuất bản.
 
+**Cập nhật 2026-11-15 (R3.5):** Trang `/blog` dùng một `<h1>` cho tiêu đề BLOG và mỗi `BlogRow` dùng `<h2>`; trang chi tiết chỉ còn một `<h1>` là tiêu đề bài viết (nhãn BLOG chuyển thành đoạn văn), khối OTHER BLOGS dùng `<h2>` và chỉ hiển thị một bài liên quan với tiêu đề `<h3>`. Nội dung `/blog/[slug]` được tách sang `blog-post-page-content.tsx` và bọc trong `Suspense` giống `/p/[slug]` và `/c/[slug]` để không truy cập `params` ngoài boundary. Markdown sanitizer chỉ cho phép link `http(s)://`, đường dẫn gốc `/...` và fragment `#...`; URL bắt đầu `//` hoặc scheme lạ như `javascript:` không được render thành link, ảnh có nguồn không an toàn chỉ còn alt text.
+
 **Cập nhật 2026-11-14 (R2.5):** Bài viết blog hỗ trợ nhiều ảnh xen giữa nội dung, không chỉ ảnh bìa. `BlogPost` có `images: BlogPostImage[]` (id, url, alt, sortOrder); query `getBlogPosts`/`getBlogPostBySlug` include `BlogImage` sắp theo `sortOrder`. Khi lưu bài, Server Action đồng bộ `BlogImage` từ ảnh bìa và mọi ảnh inline `![alt](url)` trong Markdown, giống logic seed. Trang chi tiết render ảnh bìa và nội dung (Markdown, gồm ảnh inline). Admin preview render cả bài viết như storefront (`BlogDetail`) thay vì chỉ phần body, nên có thể xem trước toàn bộ bài viết trước khi lưu.
 ### 6.7. Authentication / User / Role Module
 Mục đích: Xác thực người dùng nội bộ và quản lý quyền truy cập.

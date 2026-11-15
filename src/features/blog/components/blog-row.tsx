@@ -6,9 +6,12 @@ import { ActionButton } from '@/features/layout/components/action-button';
 interface BlogRowProps {
   post: BlogPost;
   className?: string;
+  headingLevel?: 2 | 3;
 }
 
-export function BlogRow({ post, className = '' }: BlogRowProps) {
+export function BlogRow({ post, className = '', headingLevel = 3 }: BlogRowProps) {
+  const Heading = headingLevel === 2 ? 'h2' : 'h3';
+
   return (
     <article
       className={`group grid gap-4 pb-6 sm:grid-cols-[320px_minmax(0,1fr)] sm:gap-6 ${className}`}
@@ -27,14 +30,14 @@ export function BlogRow({ post, className = '' }: BlogRowProps) {
       </Link>
 
       <div className="relative flex min-w-0 flex-col pb-10 sm:justify-center">
-        <h3 className="font-heading text-lg leading-snug">
+        <Heading className="font-heading text-lg leading-snug">
           <Link
             href={`/blog/${post.slug}`}
             className="transition-colors hover:text-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-line"
           >
             {post.title}
           </Link>
-        </h3>
+        </Heading>
 
         <p className="mt-4 text-sm leading-6 text-muted">{post.summary}</p>
 
