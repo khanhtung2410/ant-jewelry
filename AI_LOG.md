@@ -1,3 +1,63 @@
+## 2026-11-15 21:05:00 +07:00 - No horizontal overflow, external images, contact a11y, fixed home H1 (R3.6–R3.9)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+>
+> R3.6 — Tràn ngang. Bỏ overflow-x: hidden trên html/body (globals.css:35), sửa phần tử gây tràn; header vẫn sticky.
+> 375 / 768 / 1280 / 1920px không có thanh cuộn ngang khi chưa che; header dính trên đầu khi cuộn.
+> R3.7 — Ảnh từ URL ngoài + card. Hero và ảnh bìa blog xử lý URL https:// admin nhập (remotePatterns hoặc giới hạn chỉ nhận ảnh đã upload); ProductCard dùng ảnh của màu đầu tiên khi không có ảnh chung (product-card.tsx:13).
+> R3.8 — ContactPopover a11y. aria-controls trỏ đúng id dialog đang render (contact-popover.tsx:343); chỉ nút vừa bấm có aria-expanded="true".
+> R3.9 — H1 trang Home. H1 cố định, không đổi theo slide (hero-slider.tsx:42).
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện (R3.6–R3.9)**
+
+- `src/app/globals.css`: xoá hẳn block `html, body { overflow-x: hidden }`. Đây cũng là nguyên nhân header không sticky: `overflow-x: hidden` trên ancestor tạo scroll container khiến `position: sticky` bám vào container đó. Sau khi xoá, không trang nào tràn ngang nên không cần che.
+- `src/features/shared/lib/image-url.ts` (mới): `isExternalImageUrl` dùng chung cho ảnh do ADMIN nhập bằng URL tuyệt đối.
+- `src/features/products/lib/product-gallery.ts`: re-export helper từ `shared/lib/image-url` để import cũ của product vẫn chạy.
+- `src/features/layout/components/hero-slider.tsx`: ảnh slide có `unoptimized={isExternalImageUrl(...)}`; H1 cố định `ANT JEWELRY` qua `homeHeading`, tiêu đề/phụ đề của slide chuyển thành hai `<p>` trong khối `sr-only`.
+- `src/features/blog/components/blog-row.tsx`: ảnh bìa blog có `unoptimized` cho URL `http(s)://`.
+- Không thêm `images.remotePatterns`: host do ADMIN nhập không biết trước, mở pattern rộng sẽ đưa host lạ vào image optimizer. Các schema admin đã chấp nhận `https://` qua `requiredPathOrUrl`, nên chỉ cần bỏ optimizer cho ảnh ngoài.
+- `src/features/products/components/product-card.tsx`: dựng một pool ảnh = ảnh chung nếu có, ngược lại `product.colors[0]?.images`; front/hover đều lấy từ pool đó.
+- `src/features/products/queries/products.ts`: `productCardSelect` select kèm gallery của từng màu (id, url, alt, isFront, isHover, sortOrder, productColorId) để card có dữ liệu fallback mà không phải query thêm.
+- `src/features/layout/components/contact-popover.tsx`: context chia sẻ `dialogId` và `activeTriggerId`; mỗi trigger có `useId` riêng, chỉ trigger vừa bấm có `aria-expanded="true"` và `aria-controls` trỏ đúng id dialog provider đang render. `closeDialog` xoá trigger; Escape và click ngoài đều đi qua `closeDialog`.
+- Test mới/cập nhật: `product-card.test.tsx` (fallback gallery màu đầu, ưu tiên ảnh chung, không có ảnh nào), `hero-slider.test.tsx` (một H1 cố định, slide title là `<p>`, `unoptimized` theo URL), `blog-row.test.tsx` (mới, ảnh bìa ngoài bỏ optimizer), `e2e/storefront-admin.spec.ts` (aria-controls/aria-expanded của header và footer, H1 không đổi khi Next slide, không tràn ngang + header sticky ở 4 breakpoint).
+- `docs/ARCHITECTURE.md`: thêm mục R3.6–R3.9.
+
+**Kết quả kiểm chứng**
+
+- Đo bằng Playwright trên dev server: `/`, `/blog`, `/blog/cach-chon-nhan-cuoi-phu-hop`, `/p/aurora-band`, `/c/wedding-ring` ở 375/768/1280/1920px đều có `htmlScrollWidth === innerWidth`, không phần tử nào vượt viewport.
+- Đo thêm khi mở mobile menu (375px), PRODUCTS dropdown (768/1280/1920px), contact dialog (cả 4 width) và `/admin/login` (cả 4 width): không state nào tràn ngang.
+- Sticky sau khi xoá block CSS: `scrollY=700`, `headerTop=0`, `position=sticky` ở cả 4 width.
+- A11y đo trực tiếp: dialog id `_R_55rlb_`; header trigger có `aria-controls` đúng id, `aria-expanded="true"`; footer trigger `aria-expanded="false"` và không có `aria-controls`; sau Escape header về `false`; bấm footer thì footer `true`, header `false`, cùng một dialog id.
+- H1 trước/sau khi bấm Next slide đều là `ANT JEWELRY`.
+- `npx vitest run` 4 file liên quan → 22 tests passed.
+- `npm run typecheck` → passed, exit 0.
+- `npm run lint` → passed, exit 0.
+- `npm test` → 43 files / 190 tests passed.
+- `npm run format:check` → `All matched files use Prettier code style!`.
+- `npm run build` → `✓ Compiled successfully in 4.3s`, `✓ Generating static pages (53/53)`, exit 0.
+- `npm run test:e2e` → 8/8 passed, gồm 2 test mới.
+
+**So sánh Figma**
+
+- Không đổi màu sắc, typography hay bố cục. Header vẫn cao và dính như thiết kế; hero và ảnh bìa blog chỉ khác cách Next.js phục vụ ảnh ngoài. H1 trang chủ vẫn là chữ `ANT JEWELRY` đã có trong thiết kế thay vì tên collection của slide.
+
+### AI sai ở đâu
+
+- Ban đầu giữ `overflow-x: hidden` và chỉ đi tìm phần tử tràn; số đo cho thấy không có phần tử nào tràn nhưng sticky vẫn hỏng (`headerTop: -600`). Phải xoá hẳn block CSS mới đúng yêu cầu, và chính nó là nguyên nhân.
+- Lần đầu so `aria-expanded` bằng cách so `context.activeTrigger` với `localTriggerRef.current` ngay trong render; ESLint `react-hooks/refs` bắt lỗi "Cannot access refs during render". Đã đổi sang id ổn định (`useId`) cho từng trigger và `activeTriggerId` trong context.
+- Test `blog-row.test.tsx` đầu tiên dùng `status: 'VISIBLE'`; typecheck bắt được vì `BlogPostStatus` là `DRAFT | PUBLISHED`, đã sửa thành `PUBLISHED`.
+- Script đo Playwright chọn `getByRole('button', { name: 'CONTACT' })` bị strict mode vì header và footer cùng có nút; đã giới hạn theo navigation/footer.
+- Cân nhắc `remotePatterns` như prompt gợi ý nhưng không chọn vì phải biết trước hostname của ảnh admin nhập; `unoptimized` giữ đúng hành vi và tránh cấu hình mở rộng không cần thiết.
+
+---
+
 ## 2026-11-15 20:35:59 +07:00 - Blog heading hierarchy, single OTHER BLOGS post, safe Markdown URLs (R3.5)
 
 ### Prompt nguyên văn đã dùng

@@ -2,9 +2,7 @@ import type { Product, ProductImage } from '@/features/shared/domain/domain';
 
 export const GALLERY_THUMBNAIL_COUNT = 3;
 
-export function isExternalImageUrl(url: string): boolean {
-  return url.startsWith('https://') || url.startsWith('http://');
-}
+export { isExternalImageUrl } from '@/features/shared/lib/image-url';
 
 /**
  * Returns the gallery for a colour. Colours without their own photos share the

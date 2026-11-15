@@ -35,11 +35,6 @@
   --font-heading: var(--font-heading-family);
 }
 
-html,
-body {
-  overflow-x: hidden;
-}
-
 body {
   background-color: var(--background);
   color: var(--foreground);

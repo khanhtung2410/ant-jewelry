@@ -3,8 +3,11 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import type { HeroSlide } from '@/features/shared/domain/domain';
+import { isExternalImageUrl } from '@/features/shared/lib/image-url';
 import { ActionButton } from './action-button';
 import { ArrowButton } from './arrow-button';
+
+const homeHeading = 'ANT JEWELRY';
 
 interface HeroSliderProps {
   slides: HeroSlide[];
@@ -33,6 +36,7 @@ export function HeroSlider({ slides }: HeroSliderProps) {
           src={activeSlide.imageUrl}
           alt={activeSlide.alt}
           fill
+          unoptimized={isExternalImageUrl(activeSlide.imageUrl)}
           sizes="100vw"
           loading="eager"
           fetchPriority="high"
@@ -40,7 +44,8 @@ export function HeroSlider({ slides }: HeroSliderProps) {
         />
 
         <div className="sr-only">
-          <h1>{activeSlide.title}</h1>
+          <h1>{homeHeading}</h1>
+          <p>{activeSlide.title}</p>
           <p>{activeSlide.subtitle}</p>
         </div>
 

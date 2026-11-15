@@ -10,12 +10,15 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, className = '' }: ProductCardProps) {
-  const frontImage = product.images.find((image) => image.isFront) ?? product.images[0];
+  // Colour-only galleries are common, so fall back to the first colour's photos
+  // when the product has no shared images.
+  const images = product.images.length > 0 ? product.images : (product.colors[0]?.images ?? []);
+  const frontImage = images.find((image) => image.isFront) ?? images[0];
   // Compare URLs so placeholder products that reuse the same file do not fade
   // into an identical image.
   const hoverImage =
-    product.images.find((image) => image.isHover) ??
-    (frontImage ? product.images.find((image) => image.url !== frontImage.url) : undefined);
+    images.find((image) => image.isHover) ??
+    (frontImage ? images.find((image) => image.url !== frontImage.url) : undefined);
 
   return (
     <article className={className}>

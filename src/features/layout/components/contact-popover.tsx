@@ -24,9 +24,11 @@ const dialogPanelClass =
 
 interface ContactDialogContextValue {
   settings: ContactSettings;
-  openDialog: (trigger?: HTMLElement | null) => void;
+  openDialog: (triggerId: string, trigger?: HTMLElement | null) => void;
   closeDialog: () => void;
   isOpen: boolean;
+  dialogId: string;
+  activeTriggerId: string | null;
 }
 
 const ContactDialogContext = createContext<ContactDialogContextValue | null>(null);
@@ -136,6 +138,7 @@ export function ContactDialogProvider({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [activeTriggerId, setActiveTriggerId] = useState<string | null>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const wasOpen = useRef(false);
@@ -144,10 +147,12 @@ export function ContactDialogProvider({
 
   const closeDialog = useCallback(() => {
     setOpen(false);
+    setActiveTriggerId(null);
   }, []);
 
-  const openDialog = useCallback((trigger?: HTMLElement | null) => {
+  const openDialog = useCallback((triggerId: string, trigger?: HTMLElement | null) => {
     triggerRef.current = trigger ?? null;
+    setActiveTriggerId(triggerId);
     setOpen(true);
   }, []);
 
@@ -176,7 +181,7 @@ export function ContactDialogProvider({
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.preventDefault();
-        setOpen(false);
+        closeDialog();
         return;
       }
 
@@ -201,7 +206,7 @@ export function ContactDialogProvider({
         return;
       }
 
-      setOpen(false);
+      closeDialog();
     }
 
     document.addEventListener('keydown', handleKeyDown);
@@ -211,10 +216,12 @@ export function ContactDialogProvider({
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('pointerdown', handlePointerDown);
     };
-  }, [open]);
+  }, [open, closeDialog]);
 
   return (
-    <ContactDialogContext.Provider value={{ settings, openDialog, closeDialog, isOpen: open }}>
+    <ContactDialogContext.Provider
+      value={{ settings, openDialog, closeDialog, isOpen: open, dialogId, activeTriggerId }}
+    >
       {children}
       {open ? (
         <div className={dialogBackdropClass}>
@@ -257,6 +264,7 @@ export function ContactPopover({
   const wasOpen = useRef(false);
   const popoverId = useId();
   const titleId = useId();
+  const localTriggerId = useId();
 
   const effectiveSettings = context?.settings ?? settings;
 
@@ -325,11 +333,14 @@ export function ContactPopover({
     return null;
   }
 
-  const isOpen = context ? context.isOpen : localOpen;
+  // The provider renders one shared dialog, so only the trigger that opened it
+  // may claim aria-expanded/aria-controls.
+  const isOpen = context ? context.isOpen && context.activeTriggerId === localTriggerId : localOpen;
+  const controlsId = context ? context.dialogId : popoverId;
 
   function handleClick() {
     if (context) {
-      context.openDialog(localTriggerRef.current);
+      context.openDialog(localTriggerId, localTriggerRef.current);
       return;
     }
     setLocalOpen((current) => !current);
@@ -340,7 +351,7 @@ export function ContactPopover({
     type: 'button' as const,
     'aria-haspopup': 'dialog' as const,
     'aria-expanded': isOpen,
-    'aria-controls': isOpen ? popoverId : undefined,
+    'aria-controls': isOpen ? controlsId : undefined,
     onClick: handleClick,
   };
 
