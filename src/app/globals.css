@@ -11,10 +11,12 @@
   --control-outline: #24453c;
   --button-bg-hover: #bbbab6;
   --button-bg-normal: #6d6c6b;
+  --surface-muted: #f4f6f2;
+  --admin-background: #f6f7f4;
 
-  /* Geist Sans/Mono are loaded in src/app/layout.tsx. */
-  --font-body-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
-  --font-heading-family: var(--font-geist-mono), 'Courier New', monospace;
+  /* Montserrat (content) and Roboto Mono (headings/nav) are loaded in src/app/layout.tsx. */
+  --font-body-family: var(--font-montserrat), 'Montserrat', Arial, Helvetica, sans-serif;
+  --font-heading-family: var(--font-roboto-mono), 'Roboto Mono', 'Courier New', monospace;
 }
 
 @theme inline {
@@ -25,6 +27,8 @@
   --color-muted: var(--font-color);
   --button-bg-hover: var(--button-bg-hover);
   --button-bg-normal: var(--button-bg-normal);
+  --color-surface-muted: var(--surface-muted);
+  --color-admin-background: var(--admin-background);
   --font-sans: var(--font-body-family);
   --font-mono: var(--font-heading-family);
   --font-body: var(--font-body-family);

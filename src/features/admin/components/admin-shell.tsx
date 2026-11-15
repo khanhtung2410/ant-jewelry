@@ -88,7 +88,7 @@ export function AdminShell({ session, children }: { session: AdminSession; child
     href === '/admin' ? pathname === '/admin' : pathname.startsWith(href);
 
   return (
-    <div className="min-h-screen bg-[#f6f7f4] text-foreground">
+    <div className="min-h-screen bg-admin-background text-foreground">
       {sidebarOpen ? (
         <button
           type="button"

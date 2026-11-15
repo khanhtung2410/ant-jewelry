@@ -93,8 +93,8 @@ Bảng dưới ghi các quyết định đã được chốt cho phiên bản tr
 | Nền ảnh sản phẩm | `#EFEEEC` | khung ảnh vuông của card và gallery |
 | Đường kẻ | `#93AAA0` | viền dưới header, viền trên footer, divider trang sản phẩm |
 | Chữ chính | `#000000` | tên sản phẩm, giá, đoạn văn |
-| Font heading / nav | Monospace, VIẾT HOA | tiêu đề section, menu, nút; đối chiếu tên font chính xác trong Figma |
-| Font nội dung | Sans-serif | mô tả, Blog, footer |
+| Font heading / nav | Roboto Mono, VIẾT HOA | tiêu đề section, menu, nút |
+| Font nội dung | Montserrat | mô tả, Blog, footer |
  
 ### 1.4. Đối tượng sử dụng tài liệu
  

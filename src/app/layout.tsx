@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Montserrat, Roboto_Mono } from 'next/font/google';
 import { getSiteUrl } from '@/features/shared/lib/site-url';
 import './globals.css';
 
@@ -11,14 +11,14 @@ const defaultSocialImage = {
   alt: 'Bộ sưu tập trang sức ANT JEWELRY',
 };
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
-  subsets: ['latin'],
+const montserrat = Montserrat({
+  variable: '--font-montserrat',
+  subsets: ['latin', 'vietnamese'],
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
-  subsets: ['latin'],
+const robotoMono = Roboto_Mono({
+  variable: '--font-roboto-mono',
+  subsets: ['latin', 'vietnamese'],
 });
 
 export const metadata: Metadata = {
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="vi" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="vi" className={`${montserrat.variable} ${robotoMono.variable} h-full antialiased`}>
       <body className="min-h-full bg-background text-foreground">{children}</body>
     </html>
   );

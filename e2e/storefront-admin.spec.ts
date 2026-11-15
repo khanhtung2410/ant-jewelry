@@ -63,6 +63,16 @@ test('storefront visitors can sort, choose a color, and contact the store', asyn
   );
 });
 
+test('footer PRODUCTS opens a real category page', async ({ page }) => {
+  await page.goto('/');
+
+  const footer = page.getByRole('contentinfo');
+  await footer.getByRole('link', { name: 'PRODUCTS' }).click();
+
+  await expect(page).toHaveURL(/\/c\/[^/]+$/);
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+});
+
 test('keyboard users can open the PRODUCTS menu and reach every category link', async ({
   page,
 }) => {

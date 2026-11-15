@@ -11,7 +11,9 @@ interface SiteFooterProps {
   settings: Settings;
 }
 
-export function SiteFooter({ settings }: SiteFooterProps) {
+export function SiteFooter({ categories, settings }: SiteFooterProps) {
+  const productsHref = categories[0] ? `/c/${categories[0].slug}` : '/';
+
   return (
     <footer className="border-t border-line bg-background">
       <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-y-8 px-4 py-8 text-muted sm:grid-cols-2 sm:px-6 md:grid-cols-12 md:gap-x-6 lg:px-8">
@@ -40,7 +42,7 @@ export function SiteFooter({ settings }: SiteFooterProps) {
 
         <div className="md:col-span-2">
           <FooterColumn title="HOME" titleHref="/">
-            <FooterLink href="/c">PRODUCTS</FooterLink>
+            <FooterLink href={productsHref}>PRODUCTS</FooterLink>
             <FooterLink href="/blog">BLOG</FooterLink>
             <li>
               <ContactPopover

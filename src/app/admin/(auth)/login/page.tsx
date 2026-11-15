@@ -40,7 +40,7 @@ async function AdminLoginContent({ searchParams }: LoginPageProps) {
   const nextPath = resolveNextPath(params.next);
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#fefdf8_0%,#f4f6f2_100%)] px-4 py-10">
+    <main className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,var(--background)_0%,var(--surface-muted)_100%)] px-4 py-10">
       <div className="w-full max-w-md rounded-xl border border-[var(--line)] bg-background/95 p-6 shadow-sm sm:p-8">
         <div className="mb-6 space-y-2">
           <p className="font-heading text-xs tracking-[0.2em] text-[var(--font-color)]">
@@ -59,7 +59,7 @@ async function AdminLoginContent({ searchParams }: LoginPageProps) {
 
 function AdminLoginFallback() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,#fefdf8_0%,#f4f6f2_100%)] px-4 py-10">
+    <main className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,var(--background)_0%,var(--surface-muted)_100%)] px-4 py-10">
       <div
         aria-busy="true"
         className="w-full max-w-md rounded-xl border border-[var(--line)] bg-background/95 p-6 shadow-sm sm:p-8"

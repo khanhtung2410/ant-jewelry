@@ -33,7 +33,7 @@ export async function ProductPageContent({ params }: ProductPageContentProps) {
           <Carousel
             title="YOU MIGHT ALSO LIKE"
             products={relatedProducts}
-            viewAllHref={category ? `/c/${category.slug}` : '/c'}
+            viewAllHref={category ? `/c/${category.slug}` : '/'}
           />
         </div>
       ) : null}
