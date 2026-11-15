@@ -1,3 +1,44 @@
+## 2026-11-15 18:56:08 +07:00 - Keyboard-friendly PRODUCTS dropdown (R3.1)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+>
+> R3.1 — Dropdown PRODUCTS bằng bàn phím. Tab trên nút PRODUCTS đang đóng menu (header.tsx:230). Enter mở → Tab đi qua 4 link danh mục → Tab ra ngoài mới đóng; Esc đóng và focus về nút.
+> E2E chỉ dùng bàn phím: Tab tới PRODUCTS, Enter, Tab vào được link danh mục đầu tiên.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện (R3.1)**
+
+- `src/features/layout/components/header.tsx`: bỏ nhánh `event.key === 'Tab' && event.target === buttonRef.current` trong `handleKeyDown` của `ProductsMenu`. Trước đây Tab ngay trên nút PRODUCTS gọi `setOpen(false)` nên menu đóng trước khi focus kịp vào link đầu tiên.
+- Giữ nguyên các hành vi còn lại: Enter/click mở-đóng menu, `onBlur` chỉ đóng khi focus rời khỏi container (nên Tab đi hết 4 link rồi ra ngoài mới đóng), Esc đóng và trả focus về nút, ArrowUp/ArrowDown di chuyển giữa các link.
+- `e2e/storefront-admin.spec.ts`: thêm test chỉ dùng bàn phím — Tab tới nút PRODUCTS (helper `tabTo` lặp Tab tối đa 20 lần), Enter mở (`aria-expanded="true"`), Tab lần lượt qua đủ 4 link danh mục, Tab ra ngoài thì menu đóng và focus sang BLOG, Shift+Tab về nút, mở lại, Esc đóng và focus về nút.
+- `docs/ARCHITECTURE.md`: ghi hành vi bàn phím của dropdown PRODUCTS và tên test E2E.
+
+**Kết quả kiểm chứng**
+
+- `npm run test:e2e` → 4/4 Playwright journeys passed, gồm test mới `keyboard users can open the PRODUCTS menu and reach every category link` (1.9s).
+- Kiểm tra ngược: `git stash push` riêng `header.tsx` rồi chạy `npx playwright test -g "keyboard users"` → test fail đúng chỗ `expect(categoryLinks.first()).toBeFocused()`; `git stash pop` khôi phục fix và test pass. Chứng minh test bắt đúng regression.
+- `npm test` → 41 files / 177 tests passed.
+- `npm run typecheck` → passed.
+- `npm run lint` → passed.
+- `npm run format:check` → passed (đã chạy Prettier cho spec E2E).
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+
+**So sánh Figma:** không thay đổi giao diện; chỉ thay đổi thứ tự focus khi dùng bàn phím.
+
+### AI sai ở đâu
+
+- Ban đầu chỉ định bỏ điều kiện Tab trong `handleKeyDown` nhưng chưa chắc Tab có tự vào link đầu tiên; đã đọc lại JSX để xác nhận `<ul>` nằm ngay sau `<button>` trong cùng container nên thứ tự tab tự nhiên đi vào link đầu, và `onBlur` của container xử lý việc đóng khi Tab ra ngoài.
+- E2E dùng `getByRole('link', { name: 'BLOG' })` được scope trong `navigation` tên `Main navigation` ngay từ đầu để không phụ thuộc link BLOG ở footer; không có lỗi test nào phải sửa ngoài việc Prettier format lại spec.
+
+---
+
 ## 2026-11-15 18:33:27 +07:00 - Image upload revalidates the product cache (R2.6)
 
 ### Prompt nguyên văn đã dùng
