@@ -1,4 +1,48 @@
-﻿## 2026-11-14 12:17:30 +07:00 - Tests for blog images and inline insertion
+## 2026-11-15 18:33:27 +07:00 - Image upload revalidates the product cache (R2.6)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules
+>
+> R2.6 — Upload ảnh làm mới cache. Route upload gọi cùng hàm revalidate như Server Action (cả revalidateTag('products')).
+> upload ảnh xong mở /p/<slug> thấy ảnh mới ngay.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện (R2.6)**
+
+- `src/features/products/server/product-revalidation.ts` (mới): một helper dùng chung `revalidateProductPages({ immediate? })` — gọi `revalidateTag('products', ...)` rồi `revalidatePath` cho các path của `getProductRevalidationPaths()`. Server Action dùng mặc định `'max'`; Route Handler truyền `{ immediate: true }` để `revalidateTag('products', { expire: 0 })` vì `updateTag` chỉ dùng được trong Server Action.
+- `src/features/products/actions.ts`: bỏ bản `revalidateProductPages()` cục bộ và import helper dùng chung; vẫn giữ `updateTag('products')` trong `saveProduct` cho read-your-own-writes. Không còn `revalidatePath`/`revalidateTag` import trực tiếp trong file này.
+- `src/app/api/admin/products/[productId]/images/route.ts`: bỏ helper chỉ revalidate path; gọi `revalidateProductPages({ immediate: true })` sau khi lưu ProductImage, nên upload cũng làm mới tag `products` mà các query `'use cache'` của storefront đang dùng.
+- Test: `src/features/products/server/product-revalidation.test.ts` kiểm tra `'max'` + đủ 4 path cho action và `{ expire: 0 }` cho route; `src/app/api/admin/products/[productId]/images/route.test.ts` giả lập upload PNG hợp lệ, kiểm tra response 201, ảnh đầu tiên thành `isFront`, và `revalidateTag('products', { expire: 0 })` + `revalidatePath('/p/[slug]', 'page')` được gọi.
+- `docs/ARCHITECTURE.md`: ghi quyết định R2.6 ở Product Image Module và mục 11.1.
+
+**Kết quả kiểm chứng**
+
+- `npx vitest run "src/app/api/admin/products/[productId]/images/route.test.ts" src/features/products/server/product-revalidation.test.ts src/features/shared/lib/action-authorization.test.ts` → 3 files / 7 tests passed.
+- `npm test` → 41 files / 177 tests passed.
+- `npm run typecheck` → passed (lần đầu lỗi `Uint8Array<ArrayBufferLike>` không gán được vào `BlobPart`, đã sửa kiểu).
+- `npm run lint` → passed.
+- `npm run format:check` → passed.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+- `npm run test:e2e` → 3/3 Playwright journeys passed (storefront sort/color/contact, ADMIN price, EDITOR price read-only).
+- Chưa kiểm tra thủ công bằng trình duyệt luồng upload → mở `/p/<slug>`; cơ chế được xác nhận bằng route test (tag `products` hết hạn ngay) và E2E hiện có.
+
+**So sánh Figma:** không thay đổi giao diện.
+
+### AI sai ở đâu
+
+- Route upload cũ tự viết `revalidateProductPages()` chỉ gọi `revalidatePath`; các query storefront dùng `'use cache'` + `cacheTag('products')` nên path invalidation không làm mới dữ liệu, ảnh mới chỉ xuất hiện khi cache hết hạn. Đã đọc lại `queries/products.ts` để xác nhận tag là nguyên nhân.
+- Nếu route chỉ gọi helper mặc định `'max'`, request đầu tiên sau upload vẫn phục vụ dữ liệu cũ (stale-while-revalidate), không đạt yêu cầu "thấy ảnh mới ngay". Đã đọc `node_modules/next/dist/docs/.../updateTag.md` và `revalidateTag.md`: route không được dùng `updateTag`, nên thêm tùy chọn `immediate` dùng `{ expire: 0 }`.
+- Nhánh R2.5 (`fix/products-storage-independent-save`) chưa merge vào `main`; R2.6 tạo từ `main` nên PR này không chứa thay đổi R2.5 và `actions.ts` ở đây vẫn gọi `processPendingProductImageDeletions()` như cũ. Khi merge lần lượt sẽ có conflict nhỏ ở import của `actions.ts`, cần giữ cả hai thay đổi.
+
+---
+
+## 2026-11-14 12:17:30 +07:00 - Tests for blog images and inline insertion
 
 ### Prompt nguyên văn đã dùng
 
@@ -25,7 +69,6 @@ pm run build → passed.
 
 - Lần đầu chèn test quên đóng describe('blog queries'), gây lỗi parse; đã thêm });.
 
----
 # AI Change Log
 
 ## Định dạng mỗi mục

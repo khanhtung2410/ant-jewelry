@@ -1,4 +1,3 @@
-import { revalidatePath } from 'next/cache';
 import { getAdminSession } from '@/features/auth/session';
 import { prisma } from '@/features/shared/db/prisma';
 import { canManageProducts } from '@/features/shared/lib/permissions';
@@ -6,11 +5,9 @@ import {
   MAX_PRODUCT_IMAGE_SIZE,
   detectProductImageType,
 } from '@/features/products/lib/product-image-validation';
-import {
-  enqueueProductImageDeletions,
-  getProductRevalidationPaths,
-} from '@/features/products/server/product-image-cleanup';
+import { enqueueProductImageDeletions } from '@/features/products/server/product-image-cleanup';
 import { uploadProductImage } from '@/features/products/server/local-image-storage';
+import { revalidateProductPages } from '@/features/products/server/product-revalidation';
 
 type ValidatedFile = {
   bytes: Uint8Array;
@@ -19,16 +16,6 @@ type ValidatedFile = {
 
 function jsonError(message: string, status: number): Response {
   return Response.json({ error: message }, { status });
-}
-
-function revalidateProductPages(): void {
-  for (const [path, type] of getProductRevalidationPaths()) {
-    if (type) {
-      revalidatePath(path, type);
-    } else {
-      revalidatePath(path);
-    }
-  }
 }
 
 export async function POST(
@@ -156,6 +143,8 @@ export async function POST(
     return jsonError('Image metadata could not be saved. Please retry.', 500);
   }
 
-  revalidateProductPages();
+  // A Route Handler cannot use updateTag, so expire the products tag
+  // immediately: the next /p/<slug> visit must show the uploaded images.
+  revalidateProductPages({ immediate: true });
   return Response.json({ images }, { status: 201 });
 }
