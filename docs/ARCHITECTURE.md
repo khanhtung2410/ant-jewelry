@@ -434,6 +434,8 @@ Data entity: product_images.
 SAD cho biết một sản phẩm có thể có nhiều hình ảnh và có trường front_image để nhận diện hình đại diện.
 
 ProductImage lưu URL, storage key, thứ tự, ảnh cover/hover và liên kết màu. Upload kiểm tra chữ ký file ở server; xóa ảnh/sản phẩm sẽ dọn file local hoặc giữ yêu cầu xóa trong cleanup queue để thử lại. Chính sách ảnh Blog vẫn cần xác nhận.
+
+**Cập nhật 2026-11-15 (R2.6):** Upload ảnh dùng chung `revalidateProductPages()` với Server Action, nên route upload cũng gọi `revalidateTag('products')` chứ không chỉ `revalidatePath`. `updateTag` chỉ dùng được trong Server Action, nên Route Handler truyền `{ immediate: true }` để `revalidateTag('products', { expire: 0 })`: request kế tiếp tới `/p/<slug>` chờ dữ liệu mới thay vì trả ảnh cũ trong lúc revalidate nền. Server Action giữ `revalidateTag('products', 'max')` và gọi thêm `updateTag('products')` cho read-your-own-writes.
 ### 6.4. Product Price Module
 Mục đích: Quản lý thông tin giá sản phẩm.
 
@@ -841,7 +843,7 @@ Phân chia trách nhiệm:
 
 The server validates JPEG, PNG, and WebP signatures from file bytes and enforces a 5 MiB per-file limit. Storage keys are validated before reading/serving to prevent path traversal.
 
-Deletion records are queued transactionally with database deletion and processed against the local filesystem. Failed cleanup remains queued and is reported instead of being silently discarded. On serverless/ephemeral hosts, uploaded files may not persist across deploys or instance restarts.
+Deletion records are queued transactionally with database deletion and processed against the local filesystem. Failed cleanup remains queued and is reported instead of being silently discarded. Image uploads invalidate the `products` cache tag through the same `revalidateProductPages()` helper as the Server Actions, so `/p/<slug>` serves the new images on its next request. On serverless/ephemeral hosts, uploaded files may not persist across deploys or instance restarts.
 
 ## 12. Non-functional Architecture
 SAD đề cập các vấn đề phi chức năng nhưng chưa có dữ liệu khảo sát quy mô sản phẩm, số lượng người dùng đồng thời và lưu lượng truy cập. Vì vậy, chưa có cơ sở để đưa ra các chỉ tiêu hiệu năng định lượng chính thức.

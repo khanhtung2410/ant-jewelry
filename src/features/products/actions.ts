@@ -1,7 +1,7 @@
 'use server';
 
 import { Prisma } from '@prisma/client';
-import { revalidatePath, revalidateTag, updateTag } from 'next/cache';
+import { updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { visibilityStatus } from '@/constants/statuses';
 import { getAdminSession } from '@/features/auth/session';
@@ -14,10 +14,8 @@ import {
   type FormState,
 } from '@/features/shared/lib/form-validation';
 import { canEditPrice, canManageProducts, hasPermission } from '@/features/shared/lib/permissions';
-import {
-  getProductRevalidationPaths,
-  processPendingProductImageDeletions,
-} from './server/product-image-cleanup';
+import { processPendingProductImageDeletions } from './server/product-image-cleanup';
+import { revalidateProductPages } from './server/product-revalidation';
 import {
   parseProductDetails,
   productFormSchema,
@@ -239,17 +237,6 @@ export async function toggleProductVisibility(productId: string, _formData: Form
   });
 
   revalidateProductPages();
-}
-
-function revalidateProductPages() {
-  revalidateTag('products', 'max');
-  for (const [path, type] of getProductRevalidationPaths()) {
-    if (type) {
-      revalidatePath(path, type);
-    } else {
-      revalidatePath(path);
-    }
-  }
 }
 
 export async function setProductImageHover(
