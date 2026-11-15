@@ -140,6 +140,18 @@ const productCardSelect = {
       id: true,
       name: true,
       hex: true,
+      images: {
+        select: {
+          id: true,
+          url: true,
+          alt: true,
+          isFront: true,
+          isHover: true,
+          sortOrder: true,
+          productColorId: true,
+        },
+        orderBy: { sortOrder: 'asc' as const },
+      },
     },
     orderBy: { createdAt: 'asc' as const },
   },

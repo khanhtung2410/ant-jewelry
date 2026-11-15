@@ -84,6 +84,64 @@ test('blog pages expose one h1 and one OTHER BLOGS post', async ({ page }) => {
   await expect(otherBlogs.getByRole('article')).toHaveCount(1);
 });
 
+test('header CONTACT trigger controls the shared dialog and the home h1 stays fixed', async ({
+  page,
+}) => {
+  await page.goto('/');
+
+  const heading = page.getByRole('heading', { level: 1 });
+  await expect(heading).toHaveText('ANT JEWELRY');
+  await page.getByRole('button', { name: 'Next slide' }).click();
+  await expect(heading).toHaveText('ANT JEWELRY');
+
+  const headerTrigger = page
+    .getByRole('navigation', { name: 'Main navigation' })
+    .getByRole('button', { name: 'CONTACT' });
+  const footerTrigger = page.getByRole('contentinfo').getByRole('button', { name: 'CONTACT' });
+
+  await headerTrigger.click();
+  const dialog = page.getByRole('dialog', { name: 'CONTACT US' });
+  await expect(dialog).toBeVisible();
+
+  const dialogId = await dialog.getAttribute('id');
+  expect(dialogId).toBeTruthy();
+  await expect(headerTrigger).toHaveAttribute('aria-expanded', 'true');
+  await expect(headerTrigger).toHaveAttribute('aria-controls', dialogId ?? '');
+  await expect(footerTrigger).toHaveAttribute('aria-expanded', 'false');
+  await expect(footerTrigger).not.toHaveAttribute('aria-controls', /.*/);
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(headerTrigger).toHaveAttribute('aria-expanded', 'false');
+
+  await footerTrigger.click();
+  await expect(page.getByRole('dialog', { name: 'CONTACT US' })).toHaveAttribute(
+    'id',
+    dialogId ?? '',
+  );
+  await expect(footerTrigger).toHaveAttribute('aria-expanded', 'true');
+  await expect(headerTrigger).toHaveAttribute('aria-expanded', 'false');
+});
+
+test('storefront pages do not scroll horizontally and keep the header sticky', async ({ page }) => {
+  for (const width of [375, 768, 1280, 1920]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto('/');
+
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+    );
+    expect(hasHorizontalOverflow, `no horizontal overflow at ${width}px`).toBe(false);
+
+    const headerTop = await page.evaluate(async () => {
+      window.scrollTo(0, 700);
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      return Math.round(document.querySelector('header')!.getBoundingClientRect().top);
+    });
+    expect(headerTop, `sticky header at ${width}px`).toBe(0);
+  }
+});
+
 test('keyboard users can open the PRODUCTS menu and reach every category link', async ({
   page,
 }) => {

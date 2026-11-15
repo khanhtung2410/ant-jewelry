@@ -4,9 +4,9 @@ import type { HeroSlide } from '@/features/shared/domain/domain';
 import { HeroSlider } from './hero-slider';
 
 vi.mock('next/image', () => ({
-  default: ({ src, alt }: { src: string; alt: string }) => (
+  default: ({ src, alt, unoptimized }: { src: string; alt: string; unoptimized?: boolean }) => (
     // eslint-disable-next-line @next/next/no-img-element -- next/image is mocked in this Node test.
-    <img src={src} alt={alt} />
+    <img src={src} alt={alt} data-unoptimized={String(Boolean(unoptimized))} />
   ),
 }));
 
@@ -59,6 +59,30 @@ describe('HeroSlider', () => {
     expect(html).not.toContain('aria-label="Previous slide" disabled=""');
     expect(html).toContain('aria-label="Next slide"');
     expect(html).not.toContain('aria-label="Next slide" disabled=""');
+  });
+
+  it('keeps a fixed ANT JEWELRY heading while slide copy stays per-slide', () => {
+    const html = renderToStaticMarkup(<HeroSlider slides={slides} />);
+
+    expect(html.match(/<h1/g)).toHaveLength(1);
+    expect(html).toContain('<h1>ANT JEWELRY</h1>');
+    expect(html).toContain('<p>Collection 1</p>');
+    expect(html).toContain('<p>Collection description 1</p>');
+    expect(html).not.toContain('<h1>Collection 1</h1>');
+  });
+
+  it('skips the image optimizer for admin-entered absolute URLs', () => {
+    const externalSlide = { ...slides[0], imageUrl: 'https://cdn.example.com/hero.jpg' };
+    const html = renderToStaticMarkup(<HeroSlider slides={[externalSlide]} />);
+
+    expect(html).toContain('src="https://cdn.example.com/hero.jpg"');
+    expect(html).toContain('data-unoptimized="true"');
+  });
+
+  it('keeps local hero images on the optimizer', () => {
+    const html = renderToStaticMarkup(<HeroSlider slides={[slides[0]]} />);
+
+    expect(html).toContain('data-unoptimized="false"');
   });
 
   it('shows an empty state without slide controls when no slides are provided', () => {

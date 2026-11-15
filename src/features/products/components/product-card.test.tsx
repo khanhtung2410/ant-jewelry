@@ -125,6 +125,60 @@ describe('ProductCard', () => {
     expect(html).not.toContain('/mock/products/ring-6-2.webp');
   });
 
+  it('falls back to the first colour gallery when the product has no shared images', () => {
+    const colorFront = { ...frontImage, imageId: 'color-front', url: '/uploads/gold-front.webp' };
+    const colorHover = { ...secondImage, imageId: 'color-hover', url: '/uploads/gold-hover.webp' };
+    const otherColor = {
+      ...frontImage,
+      imageId: 'other-color-front',
+      url: '/uploads/silver-front.webp',
+    };
+    const html = renderToStaticMarkup(
+      <ProductCard
+        product={makeProduct({
+          images: [],
+          colors: [
+            { ...gold, images: [colorFront, colorHover] },
+            { ...silver, images: [otherColor] },
+          ],
+        })}
+      />,
+    );
+
+    expect(countImages(html)).toBe(2);
+    expect(html).toContain('/uploads/gold-front.webp');
+    expect(html).toContain('/uploads/gold-hover.webp');
+    expect(html).not.toContain('/uploads/silver-front.webp');
+  });
+
+  it('prefers shared product images over colour galleries', () => {
+    const colorOnly = { ...frontImage, imageId: 'color-only', url: '/uploads/color-only.webp' };
+    const html = renderToStaticMarkup(
+      <ProductCard
+        product={makeProduct({
+          images: [frontImage],
+          colors: [{ ...gold, images: [colorOnly] }],
+        })}
+      />,
+    );
+
+    expect(html).toContain('/mock/products/ring-6.webp');
+    expect(html).not.toContain('/uploads/color-only.webp');
+  });
+
+  it('renders the placeholder background when neither shared nor colour photos exist', () => {
+    const html = renderToStaticMarkup(
+      <ProductCard
+        product={makeProduct({
+          images: [],
+          colors: [{ ...gold, images: [] }],
+        })}
+      />,
+    );
+
+    expect(countImages(html)).toBe(0);
+  });
+
   it('does not render the swatch list when the product has no colors', () => {
     const html = renderToStaticMarkup(<ProductCard product={makeProduct({ colors: [] })} />);
 
