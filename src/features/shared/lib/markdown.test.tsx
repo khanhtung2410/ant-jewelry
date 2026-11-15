@@ -30,6 +30,40 @@ describe('renderMarkdown', () => {
     expect(html).toContain('<strong>an toàn</strong>');
   });
 
+  it('keeps safe links but does not render protocol-relative links', () => {
+    const html = renderToStaticMarkup(
+      <div>
+        {renderMarkdown(
+          '[an toàn](https://example.com) [nội bộ](/blog/abc) [x](//evil.com) [y](javascript:alert(1))',
+        )}
+      </div>,
+    );
+
+    expect(html).toContain('href="https://example.com"');
+    expect(html).toContain('href="/blog/abc"');
+    expect(html).not.toContain('//evil.com');
+    expect(html).not.toContain('javascript:');
+    expect(html.match(/<a /g)).toHaveLength(2);
+    expect(html).toContain('x');
+    expect(html).toContain('y');
+  });
+
+  it('does not render images with an unsafe scheme', () => {
+    const html = renderToStaticMarkup(<div>{renderMarkdown('![x](javascript:alert(1))')}</div>);
+
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('javascript:');
+    expect(html).toContain('x');
+  });
+
+  it('does not render protocol-relative images', () => {
+    const html = renderToStaticMarkup(<div>{renderMarkdown('![x](//evil.com/a.png)')}</div>);
+
+    expect(html).not.toContain('<img');
+    expect(html).not.toContain('//evil.com');
+    expect(html).toContain('x');
+  });
+
   it('renders headings and bullet lists', () => {
     const html = renderToStaticMarkup(
       <div>{renderMarkdown('## Tiêu đề\n\n- Mục một\n- Mục hai')}</div>,

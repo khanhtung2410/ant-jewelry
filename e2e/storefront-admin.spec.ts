@@ -73,6 +73,17 @@ test('footer PRODUCTS opens a real category page', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
+test('blog pages expose one h1 and one OTHER BLOGS post', async ({ page }) => {
+  await page.goto('/blog');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+
+  await page.goto('/blog/cach-chon-nhan-cuoi-phu-hop');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+
+  const otherBlogs = page.getByRole('region', { name: 'OTHER BLOGS' });
+  await expect(otherBlogs.getByRole('article')).toHaveCount(1);
+});
+
 test('keyboard users can open the PRODUCTS menu and reach every category link', async ({
   page,
 }) => {

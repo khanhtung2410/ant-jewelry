@@ -21,7 +21,7 @@ export function BlogList({ posts }: BlogListProps) {
     <div>
       <div className="space-y-8 sm:space-y-10">
         {visiblePosts.map((post) => (
-          <BlogRow key={post.blog_id} post={post} />
+          <BlogRow key={post.blog_id} post={post} headingLevel={2} />
         ))}
       </div>
 

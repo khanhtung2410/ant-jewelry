@@ -12,7 +12,7 @@ export default async function BlogPage() {
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
-      <h2 className="mb-10 font-heading text-2xl tracking-[0.08em] sm:text-3xl">BLOG</h2>
+      <h1 className="mb-10 font-heading text-2xl tracking-[0.08em] sm:text-3xl">BLOG</h1>
       <BlogList posts={posts} />
     </main>
   );

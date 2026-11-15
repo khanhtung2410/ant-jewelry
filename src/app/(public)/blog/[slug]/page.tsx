@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { BlogDetail } from '@/features/blog/components/blog-detail';
+import { Suspense } from 'react';
 import { getBlogPostBySlug, getBlogPosts } from '@/features/shared/queries';
+import { BlogPostPageContent } from './blog-post-page-content';
 
 export async function generateStaticParams() {
   const posts = await getBlogPosts();
@@ -42,20 +43,27 @@ export async function generateMetadata(props: PageProps<'/blog/[slug]'>): Promis
   };
 }
 
-export default async function BlogPostPage(props: PageProps<'/blog/[slug]'>) {
-  const { slug } = await props.params;
-  const post = await getBlogPostBySlug(slug);
-
-  if (!post) {
-    notFound();
-  }
-
-  const otherPosts = (await getBlogPosts()).filter((item) => item.slug !== post.slug).slice(0, 4);
-
+export default function BlogPostPage(props: PageProps<'/blog/[slug]'>) {
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
-      <h1 className="mb-10 font-heading text-2xl tracking-[0.08em] sm:text-3xl">BLOG</h1>
-      <BlogDetail post={post} otherPosts={otherPosts} />
+    <Suspense fallback={<BlogPostPageFallback />}>
+      <BlogPostPageContent params={props.params} />
+    </Suspense>
+  );
+}
+
+function BlogPostPageFallback() {
+  return (
+    <main
+      aria-busy="true"
+      aria-label="Loading blog post"
+      className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8"
+    >
+      <div className="mb-10 h-8 w-32 animate-pulse bg-product-image" />
+      <div className="mx-auto max-w-3xl space-y-4">
+        <div className="mx-auto h-8 w-2/3 animate-pulse bg-product-image" />
+        <div className="mx-auto h-4 w-40 animate-pulse bg-product-image" />
+        <div className="aspect-[4/3] w-full animate-pulse bg-product-image" />
+      </div>
     </main>
   );
 }

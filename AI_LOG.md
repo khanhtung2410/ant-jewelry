@@ -1,3 +1,53 @@
+## 2026-11-15 20:35:59 +07:00 - Blog heading hierarchy, single OTHER BLOGS post, safe Markdown URLs (R3.5)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+>
+> R3.5 — Blog. Blog detail chỉ một <h1> (blog/[slug]/page.tsx:57 + blog-detail.tsx:18); blog list có <h1>; OTHER BLOGS hiện nhiều hơn 1 bài (blog-detail.tsx:13). Markdown: link bắt đầu // và ảnh có scheme lạ bị loại (markdown.tsx:35).
+> unit test markdown: [x](//evil.com) và ![x](javascript:…) không render thành link / ảnh.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện (R3.5)**
+
+- `src/app/(public)/blog/page.tsx`: đổi tiêu đề trang từ `<h2>BLOG</h2>` sang `<h1>`, để blog list có đúng một h1.
+- `src/app/(public)/blog/[slug]/page.tsx`: nhãn `<h1>BLOG</h1>` đổi thành `<p>` cùng class; tiêu đề bài viết trong `blog-detail.tsx` giữ vai trò h1 duy nhất. Tách phần đọc `params` + render sang `blog-post-page-content.tsx` và bọc trong `Suspense` giống `/p/[slug]` và `/c/[slug]`, vì E2E mới làm lộ cảnh báo Next về `params` ngoài boundary.
+- `src/features/blog/components/blog-row.tsx`: thêm prop `headingLevel?: 2 | 3` (mặc định 3) để tiêu đề bài viết đổi cấp theo ngữ cảnh.
+- `src/features/blog/components/blog-list.tsx`: truyền `headingLevel={2}`, nên list có h1 BLOG → h2 từng bài.
+- `src/features/blog/components/blog-detail.tsx`: thay `otherPosts.slice(0, 1)` bằng `const otherPost = otherPosts[0]` và render đúng một `BlogRow` với `headingLevel={3}`; section OTHER BLOGS vẫn dùng h2.
+- `src/features/shared/lib/markdown.tsx`: thêm `isSafeLinkHref` / `isSafeImageSrc`. Link chỉ nhận `http(s)://`, đường dẫn gốc `/...` (không nhận `//host`) và fragment `#...`; URL không an toàn chỉ còn phần chữ. Ảnh chỉ nhận `http(s)://` hoặc `/...`; nguồn lạ bị bỏ, chỉ còn alt text.
+- `src/features/shared/lib/markdown.test.tsx`: thêm test `[x](//evil.com)`, `[y](javascript:alert(1))`, `![x](javascript:alert(1))`, `![x](//evil.com/a.png)` không tạo `<a>` / `<img>`, đồng thời link an toàn vẫn render.
+- `src/features/blog/components/blog-detail.test.tsx` (mới): assert đúng một `<h1>`, OTHER BLOGS chỉ có một bài và một `LEARN MORE`, section có `aria-labelledby`.
+- `e2e/storefront-admin.spec.ts`: thêm test `blog pages expose one h1 and one OTHER BLOGS post` cho `/blog` và `/blog/cach-chon-nhan-cuoi-phu-hop`.
+- `docs/ARCHITECTURE.md`: ghi lại cấu trúc heading, giới hạn một bài OTHER BLOGS, Suspense boundary và quy tắc URL Markdown.
+
+**Kết quả kiểm chứng**
+
+- `npx vitest run src/features/shared/lib/markdown.test.tsx src/features/blog/components/blog-detail.test.tsx` → 2 files / 8 tests passed.
+- `npm run typecheck` → passed, exit 0.
+- `npm run lint` → passed, exit 0.
+- `npm test` → 42 files / 182 tests passed.
+- `npm run format:check` → `All matched files use Prettier code style!`.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+- `npm run test:e2e` → 6/6 passed, gồm test blog mới (4.6s); cảnh báo `params` ngoài Suspense của `/blog/[slug]` không còn xuất hiện trong log.
+
+**So sánh Figma**
+
+- Không đổi bố cục hay màu sắc; chỉ đổi cấp thẻ heading và giới hạn số bài OTHER BLOGS. Nhãn BLOG ở đầu trang chi tiết vẫn giữ nguyên kiểu chữ và vị trí, chỉ chuyển từ h1 sang p để tiêu đề bài viết là h1 duy nhất.
+
+### AI sai ở đâu
+
+- Prompt nói OTHER BLOGS "hiện nhiều hơn 1 bài" nhưng code đã có `slice(0, 1)` từ trước, nên không có bug hành vi để sửa. Đã siết lại thành `otherPosts[0]` cho rõ ý định và thêm test khoá hành vi, không tạo thay đổi hiển thị.
+- Lần đầu chỉ đổi h1 của trang chi tiết mà không xét thứ bậc heading của blog list: tiêu đề BLOG là h2 nhưng mỗi bài lại h3. Đã thêm `headingLevel` để list dùng h2 và giữ h3 cho OTHER BLOGS.
+- Test E2E mới vô tình làm lộ cảnh báo `params` ngoài Suspense ở `/blog/[slug]`; ban đầu định bỏ qua vì test vẫn pass, sau đó tách content và bọc Suspense theo pattern sẵn có để log sạch.
+
+---
+
 ## 2026-11-15 20:20:02 +07:00 - Dead /c links, hardcoded hex, and Figma fonts (R3.2–R3.4)
 
 ### Prompt nguyên văn đã dùng

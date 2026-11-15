@@ -1,5 +1,27 @@
 ﻿import type { ReactNode } from 'react';
 
+const safeRemoteUrl = /^https?:\/\//i;
+const safeRootPath = /^\/(?!\/)/;
+const safeFragment = /^#/;
+
+/**
+ * Allows absolute http(s) URLs, root-relative paths (`/blog`) and in-page
+ * fragments. Rejects protocol-relative URLs (`//evil.com`) and any other
+ * scheme such as `javascript:` or `data:`.
+ */
+export function isSafeLinkHref(href: string): boolean {
+  return safeRemoteUrl.test(href) || safeRootPath.test(href) || safeFragment.test(href);
+}
+
+/**
+ * Images only support http(s) sources and root-relative paths. Fragments
+ * make no sense for an image and protocol-relative URLs would leak the
+ * request to another host.
+ */
+export function isSafeImageSrc(src: string): boolean {
+  return safeRemoteUrl.test(src) || safeRootPath.test(src);
+}
+
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const pattern =
@@ -16,32 +38,41 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
     if (match[1] !== undefined || match[2] !== undefined) {
       const alt = match[1] ?? '';
       const src = match[2] ?? '';
-      nodes.push(
-        // eslint-disable-next-line @next/next/no-img-element -- markdown content may include arbitrary inline images
-        <img
-          key={`${keyPrefix}-img-${index}`}
-          src={src}
-          alt={alt}
-          className="my-6 h-auto w-full rounded-sm object-cover"
-          loading="lazy"
-        />,
-      );
+
+      if (isSafeImageSrc(src)) {
+        nodes.push(
+          // eslint-disable-next-line @next/next/no-img-element -- markdown content may include arbitrary inline images
+          <img
+            key={`${keyPrefix}-img-${index}`}
+            src={src}
+            alt={alt}
+            className="my-6 h-auto w-full rounded-sm object-cover"
+            loading="lazy"
+          />,
+        );
+      } else if (alt) {
+        nodes.push(alt);
+      }
     } else if (match[3] !== undefined) {
       nodes.push(<strong key={`${keyPrefix}-strong-${index}`}>{match[3]}</strong>);
     } else if (match[4] !== undefined) {
       nodes.push(<em key={`${keyPrefix}-em-${index}`}>{match[4]}</em>);
     } else if (match[5] !== undefined && match[6] !== undefined) {
       const href = match[6];
-      const safeHref = /^(https?:\/\/|\/|#)/.test(href) ? href : '#';
-      nodes.push(
-        <a
-          key={`${keyPrefix}-link-${index}`}
-          href={safeHref}
-          className="underline underline-offset-4 transition-colors hover:text-[var(--underline-color)]"
-        >
-          {match[5]}
-        </a>,
-      );
+
+      if (isSafeLinkHref(href)) {
+        nodes.push(
+          <a
+            key={`${keyPrefix}-link-${index}`}
+            href={href}
+            className="underline underline-offset-4 transition-colors hover:text-[var(--underline-color)]"
+          >
+            {match[5]}
+          </a>,
+        );
+      } else {
+        nodes.push(match[5]);
+      }
     }
 
     lastIndex = pattern.lastIndex;
