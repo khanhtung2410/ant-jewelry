@@ -225,10 +225,6 @@ function ProductsMenu({ categories, active }: ProductsMenuProps) {
     if (event.key === 'Escape') {
       event.stopPropagation();
       closeAndFocusButton();
-      return;
-    }
-    if (event.key === 'Tab' && event.target === buttonRef.current) {
-      setOpen(false);
     }
   }
 

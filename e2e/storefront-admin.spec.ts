@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 async function signIn(page: Page, email: string, password: string) {
   await page.goto('/admin/login');
@@ -6,6 +6,17 @@ async function signIn(page: Page, email: string, password: string) {
   await page.getByLabel('Password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL(/\/admin\/?$/);
+}
+
+async function tabTo(page: Page, target: Locator) {
+  for (let presses = 0; presses < 20; presses += 1) {
+    await page.keyboard.press('Tab');
+    if (await target.evaluate((element) => element === document.activeElement)) {
+      return;
+    }
+  }
+
+  throw new Error('Target was not reachable with the Tab key.');
 }
 
 test('storefront visitors can sort, choose a color, and contact the store', async ({ page }) => {
@@ -50,6 +61,43 @@ test('storefront visitors can sort, choose a color, and contact the store', asyn
     'href',
     'tel:0900000000',
   );
+});
+
+test('keyboard users can open the PRODUCTS menu and reach every category link', async ({
+  page,
+}) => {
+  await page.goto('/');
+
+  const mainNav = page.getByRole('navigation', { name: 'Main navigation' });
+  const productsButton = mainNav.getByRole('button', { name: 'PRODUCTS' });
+  const categoryLinks = page.getByRole('list', { name: 'Product categories' }).getByRole('link');
+
+  await tabTo(page, productsButton);
+  await page.keyboard.press('Enter');
+  await expect(productsButton).toHaveAttribute('aria-expanded', 'true');
+
+  await expect(categoryLinks).toHaveCount(4);
+  await page.keyboard.press('Tab');
+  await expect(categoryLinks.first()).toBeFocused();
+
+  for (let index = 1; index < 4; index += 1) {
+    await page.keyboard.press('Tab');
+    await expect(categoryLinks.nth(index)).toBeFocused();
+  }
+
+  await page.keyboard.press('Tab');
+  await expect(productsButton).toHaveAttribute('aria-expanded', 'false');
+  await expect(mainNav.getByRole('link', { name: 'BLOG' })).toBeFocused();
+
+  await page.keyboard.press('Shift+Tab');
+  await expect(productsButton).toBeFocused();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('Tab');
+  await expect(categoryLinks.first()).toBeFocused();
+
+  await page.keyboard.press('Escape');
+  await expect(productsButton).toHaveAttribute('aria-expanded', 'false');
+  await expect(productsButton).toBeFocused();
 });
 
 test('ADMIN price changes are reflected on the storefront', async ({ page }) => {
