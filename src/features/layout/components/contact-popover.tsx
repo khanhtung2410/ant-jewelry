@@ -95,12 +95,12 @@ export function ContactPopoverPanel({
         />
       </div>
 
-      <div className="flex flex-col gap-2 text-[14px] text-[#265649]">
+      <div className="flex flex-col gap-2 text-[14px] text-[var(--underline-color)]">
         <a
           href={settings.facebookUrl}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-3 text-[14px] text-[#265649] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
+          className="flex items-center gap-3 text-[14px] text-[var(--underline-color)] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
         >
           <FacebookIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-black p-1.5 text-black" />
           <span>{settings.siteName}</span>
@@ -110,7 +110,7 @@ export function ContactPopoverPanel({
           href={settings.instagramUrl}
           target="_blank"
           rel="noreferrer"
-          className="flex items-center gap-3 text-[14px] text-[#265649] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
+          className="flex items-center gap-3 text-[14px] text-[var(--underline-color)] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
         >
           <InstagramIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-black p-1.5 text-black" />
           <span>{settings.siteName}</span>
@@ -118,7 +118,7 @@ export function ContactPopoverPanel({
 
         <a
           href={`tel:${settings.phone.replace(/\s+/g, '')}`}
-          className="flex items-center gap-3 text-[14px] text-[#265649] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
+          className="flex items-center gap-3 text-[14px] text-[var(--underline-color)] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
         >
           <PhoneIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-black p-1.5 text-black [&_path]:origin-center [&_path]:scale-[0.8]" />
           <span>{settings.phone}</span>

@@ -262,7 +262,7 @@ ant-jewelry/
 ```
 
 - Chỉ có một Next.js application ở thư mục gốc, source code trong `src/`; chưa có thư mục `frontend/` hoặc `backend/`.
-- `src/app/layout.tsx` tải Geist Sans/Mono bằng `next/font`, đọc `getCategories()` và `getSettings()` rồi render `SiteHeader`/`SiteFooter` cho toàn bộ route.
+- `src/app/layout.tsx` tải Montserrat (nội dung) và Roboto Mono (heading/nav) bằng `next/font`, đọc `getCategories()` và `getSettings()` rồi render `SiteHeader`/`SiteFooter` cho toàn bộ route.
 - `src/components/` chứa UI dùng chung: `header.tsx` (menu HOME, PRODUCTS có dropdown 4 danh mục, BLOG, CONTACT; hỗ trợ bàn phím; dưới breakpoint `md` có nút MENU/CLOSE mở navigation và dropdown danh mục dạng accordion; link active và item dropdown dùng gạch chân 2px `--underline-color`), `footer.tsx` (địa chỉ, điện thoại, email, INFO, HELP, SOCIAL; dưới breakpoint `md` các cột HOME/INFO/HELP/SOCIAL thu gọn thành accordion có toggle), `icons.tsx` (SVG dùng `currentColor`), `product-card.tsx` (khung ảnh vuông, đổi ảnh khi hover, tên/giá/swatch), `carousel.tsx` (5 card mỗi trang, nút điều hướng và VIEW PRODUCTS) và `blog-row.tsx` (ảnh bìa, ngày, tiêu đề, tóm tắt).
 - Dropdown PRODUCTS ở header (R3.1) dùng được bằng bàn phím: Enter mở menu, Tab đi lần lượt qua các link danh mục, Tab ra khỏi dropdown mới đóng, Esc đóng và trả focus về nút; ArrowUp/ArrowDown di chuyển giữa các link. E2E `keyboard users can open the PRODUCTS menu and reach every category link` chỉ dùng phím.
 - `src/lib/format-price.ts` định dạng giá VND bằng dấu chấm phân cách, ví dụ `10000000` → `10.000.000`; component tự thêm đơn vị hiển thị.

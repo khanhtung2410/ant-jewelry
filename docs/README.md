@@ -103,7 +103,7 @@ Các file cấu hình hiện có:
 | `tsconfig.json` | Cấu hình TypeScript strict; alias `@/*` trỏ về `src/*` |
 | `.prettierrc`, `.prettierignore` | Cấu hình format mã nguồn; bỏ qua `docs/`, `public/`, Markdown và lockfile |
 | `vitest.config.mts` | Cấu hình Vitest cho test đặt cạnh code trong `src/` |
-| `src/app/globals.css` | Design tokens toàn cục từ Figma: nền `#FEFDF8`, nền ảnh sản phẩm `#EFEEEC`, đường kẻ `#93AAA0`, chữ `#000000`, font heading/nav monospace viết hoa và font nội dung sans-serif |
+| `src/app/globals.css` | Design tokens toàn cục từ Figma: nền `#FEFDF8`, nền ảnh sản phẩm `#EFEEEC`, đường kẻ `#93AAA0`, chữ `#000000`, font heading/nav Roboto Mono viết hoa và font nội dung Montserrat |
 | `package.json` | Dependencies, test/build scripts, PostgreSQL migration và ADMIN bootstrap |
 | `.github/pull_request_template.md` | Mẫu mô tả Pull Request |
 | `.gitignore` | Bỏ qua `node_modules`, `.next`, `out`, `build`, `.env*` (trừ `.env.example`), file SQLite local và file build của TypeScript |

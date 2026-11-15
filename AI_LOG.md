@@ -1,3 +1,65 @@
+## 2026-11-15 20:20:02 +07:00 - Dead /c links, hardcoded hex, and Figma fonts (R3.2–R3.4)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+>
+> R3.2 — Không còn link chết `/c`. Footer PRODUCTS phải mở được trang thật. Sửa `footer.tsx:43` và fallback `product-page-content.tsx:36`.
+> R3.3 — Bỏ hex cứng trong `contact-popover.tsx:98,103,113,121`, `src/app/global-error.tsx:29`, `src/app/admin/(auth)/login/page.tsx:43,62`; dùng token. Acceptance: `grep -rnE "#[0-9A-Fa-f]{6}" src --include=*.tsx` không còn kết quả.
+> R3.4 — Thay Geist bằng font Figma: monospace cho heading/nav (viết hoa) và sans-serif cho nội dung.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện (R3.2)**
+
+- `src/features/layout/components/footer.tsx`: `SiteFooter` nhận `categories`, tính `productsHref = categories[0] ? \`/c/${categories[0].slug}\` : '/'` và dùng cho link PRODUCTS thay vì `/c`.
+- `src/app/(public)/p/[slug]/product-page-content.tsx`: fallback "view all" từ `/c` đổi thành `/` khi sản phẩm không có category.
+- `e2e/storefront-admin.spec.ts`: thêm test `footer PRODUCTS opens a real category page` — bấm link PRODUCTS trong `contentinfo`, assert URL khớp `/c/<slug>` và heading cấp 1 hiển thị.
+
+**Thay đổi đã thực hiện (R3.3)**
+
+- `src/features/layout/components/contact-popover.tsx`: 4 chỗ `text-[#265649]` → `text-[var(--underline-color)]`.
+- `src/app/global-error.tsx`: nút dùng `bg-[var(--underline-color)]`; hai chỗ `text-[var(--font-color,#666)]` bỏ fallback hex thành `text-[var(--font-color)]`.
+- `src/app/admin/(auth)/login/page.tsx`: gradient 2 chỗ đổi sang `linear-gradient(180deg,var(--background)_0%,var(--surface-muted)_100%)`.
+- `src/app/globals.css`: thêm token `--surface-muted: #f4f6f2` và `--admin-background: #f6f7f4`, map sang `@theme` thành `--color-surface-muted`, `--color-admin-background`.
+- `src/features/admin/components/admin-shell.tsx`: `bg-[#f6f7f4]` → `bg-admin-background` (phát hiện thêm ngoài danh sách yêu cầu).
+- `src/features/products/components/product-detail.test.tsx`: fixture `hex` đổi sang `rgb(...)` để grep hex trên `*.tsx` sạch.
+
+**Thay đổi đã thực hiện (R3.4)**
+
+- `src/app/layout.tsx`: bỏ `Geist`/`Geist_Mono`, dùng `Montserrat` (nội dung) và `Roboto_Mono` (heading/nav) từ `next/font/google`, `subsets: ['latin', 'vietnamese']`, biến `--font-montserrat` và `--font-roboto-mono`.
+- `src/app/globals.css`: `--font-body-family` và `--font-heading-family` trỏ về hai biến mới, giữ fallback hệ thống; quy tắc heading/nav viết hoa không đổi.
+- `docs/REQUIREMENTS.md`, `docs/README.md`, `docs/ARCHITECTURE.md`: ghi rõ Roboto Mono / Montserrat thay cho mô tả chung "monospace/sans-serif" và Geist.
+
+**Kết quả kiểm chứng**
+
+- `grep -rnE "#[0-9A-Fa-f]{6}" src --include=*.tsx` → không còn kết quả.
+- `grep` cho link `'/c'` / `href="/c"` → không còn; chỉ còn `/c/<slug>` hợp lệ.
+- `npm run typecheck` → passed, exit 0.
+- `npm run lint` → passed, exit 0.
+- `npm test` → 41 files / 177 tests passed.
+- `npm run format:check` → `All matched files use Prettier code style!`.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+- `npm run test:e2e` → 5/5 passed, gồm test footer mới (1.8s).
+- Kiểm tra output build: CSS sinh `@font-face` cho Montserrat và Roboto Mono kèm unicode-range tiếng Việt, và biến `--font-montserrat` / `--font-roboto-mono` xuất hiện trong HTML/CSS.
+
+**So sánh Figma**
+
+- File `Jewelry website` (`tdTs89ynAQUSvUzAEnMhj8`) chỉ cho xem và chặn panel font khi chưa đăng nhập, nên không đọc được tên font trực tiếp trong UI.
+- Bằng chứng gián tiếp: request font của file tải `RobotoMono_wght`, `Montserrat`, `Merriweather`, `Inter`, `FigmaHand` từ `static.figma.com/font/*`. Chọn Roboto Mono cho heading/nav và Montserrat cho nội dung; `Inter`/`FigmaHand` coi là font UI Figma, `Merriweather` là serif accent nên không dùng cho body vì yêu cầu là sans-serif.
+
+### AI sai ở đâu
+
+- Chưa xác minh được tên font chính xác trong Figma do file ở chế độ view-only và bị chặn đăng nhập; kết luận dựa trên danh sách font file tải về, không phải panel font. Cần người có quyền mở file xác nhận lại.
+- Ban đầu chỉ sửa 6 vị trí hex được liệt kê, sau khi grep toàn bộ mới thấy thêm `admin-shell.tsx` và 2 fixture test; fixture đổi sang `rgb()` thay vì bịa token vì đó là dữ liệu test, không phải màu giao diện.
+- Grep hex ban đầu bỏ sót vì chỉ quét `src` bằng `Select-String` trên danh sách file; đã chạy lại bằng `grep` đúng biểu thức trong acceptance mới xác nhận sạch.
+
+---
+
 ## 2026-11-15 18:56:08 +07:00 - Keyboard-friendly PRODUCTS dropdown (R3.1)
 
 ### Prompt nguyên văn đã dùng
