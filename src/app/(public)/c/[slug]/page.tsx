@@ -6,10 +6,11 @@ import { CategoryPageContent } from './category-page-content';
 export async function generateStaticParams() {
   try {
     const categories = await getCategories();
-    return categories.map((category) => ({ slug: category.slug }));
+    const params = categories.map((category) => ({ slug: category.slug }));
+    return params.length > 0 ? params : [{ slug: '__empty__' }];
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
-      return [];
+      return [{ slug: '__empty__' }];
     }
     throw error;
   }

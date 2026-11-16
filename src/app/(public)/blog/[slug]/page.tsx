@@ -8,10 +8,11 @@ import { BlogPostPageContent } from './blog-post-page-content';
 export async function generateStaticParams() {
   try {
     const posts = await getBlogPosts();
-    return posts.map((post) => ({ slug: post.slug }));
+    const params = posts.map((post) => ({ slug: post.slug }));
+    return params.length > 0 ? params : [{ slug: '__empty__' }];
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
-      return [];
+      return [{ slug: '__empty__' }];
     }
     throw error;
   }

@@ -66,7 +66,7 @@ Các biến trong `.env.example`:
 | `AUTH_SECRET` | Có | Khóa ký session admin; không commit giá trị thật |
 | `SITE_URL` | Không | Mặc định `http://localhost:3000`; đặt origin thật khi deploy |
 | `PRODUCT_IMAGE_UPLOAD_DIR` | Không | Mặc định `./uploads`, nơi lưu ảnh sản phẩm upload |
-| `DIRECT_URL` | Production | URL PostgreSQL trực tiếp cho Prisma Migrate |
+| `DIRECT_URL` | Production (tùy chọn) | Không bắt buộc bởi schema/build hiện tại; có thể đặt nếu công cụ migration của bạn cần URL trực tiếp |
 
 `.env` và `.env.local` đã nằm trong `.gitignore`; chỉ `.env.example` được commit.
 
@@ -209,8 +209,8 @@ Production dùng Vercel + PostgreSQL (schema trong `prisma/postgresql/`). Ảnh 
 được lưu trên filesystem local (`PRODUCT_IMAGE_UPLOAD_DIR`, mặc định `./uploads`) và phục vụ
 qua `/uploads/...`.
 
-1. Provision PostgreSQL và cấu hình `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`,
-   `SITE_URL`, `PRODUCT_IMAGE_UPLOAD_DIR` trong môi trường production.
+1. Provision PostgreSQL và cấu hình `DATABASE_URL`, `AUTH_SECRET`,
+   `SITE_URL`, `PRODUCT_IMAGE_UPLOAD_DIR` trong môi trường production (`DIRECT_URL` không bắt buộc).
 2. Chạy migration: `npm run db:migrate:production` và
    `npm run db:migrate:status:production`.
 3. Deploy qua Vercel; `vercel.json` dùng `npm run build:production`.

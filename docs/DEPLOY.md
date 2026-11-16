@@ -9,7 +9,7 @@ Production target: **Vercel** (Next.js) + **PostgreSQL**. Product image uploads 
 ## Prerequisites
 
 - Vercel project connected to this repository (production environment).
-- PostgreSQL database with a pooled application URL (`DATABASE_URL`) and a direct URL (`DIRECT_URL`) pointing to the same database/schema.
+- PostgreSQL database with an application URL (`DATABASE_URL`). A separate direct URL (`DIRECT_URL`) is optional and not required by the current schema/build.
 - A real, monitored owner email for the first ADMIN (not `admin@antjewelry.local`).
 - Decide whether production starts empty or needs approved data migration. Do not run `db:seed` on production.
 
@@ -19,13 +19,13 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 
 | Variable | Required | Purpose |
 |---|---:|---|
-| `DATABASE_URL` | Yes | PostgreSQL pooled/runtime connection string |
-| `DIRECT_URL` | Yes | Direct PostgreSQL connection for Prisma migrations (same DB/schema as `DATABASE_URL`) |
+| `DATABASE_URL` | Yes | PostgreSQL connection string for runtime/build Prisma client generation |
 | `AUTH_SECRET` | Yes | Random signing key for admin sessions (`node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"`) |
 | `SITE_URL` | Yes | Canonical HTTPS origin for the deployment (e.g. `https://<project>.vercel.app`) |
+| `DIRECT_URL` | No | Optional; not required by the current PostgreSQL schema/build. Provide only if your migration/tooling setup needs it |
 | `PRODUCT_IMAGE_UPLOAD_DIR` | No | Filesystem path for uploaded product images (default `./uploads`, relative to app working directory) |
 
-`vercel.json` runs `npm run build:production` (`prisma generate --schema prisma/postgresql/schema.prisma && next build`). Local dev/test use SQLite and local uploads unless configured otherwise.
+`vercel.json` runs `npm run build:production` (`prisma generate --schema prisma/postgresql/schema.prisma && next build`). Migrations are **not** run during Vercel build; run them explicitly (see below). Local dev/test use SQLite and local uploads unless configured otherwise.
 
 ## Vercel deployment sequence
 
@@ -36,7 +36,7 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
    npm run db:migrate:production
    npm run db:migrate:status:production
    ```
-   Run from a trusted machine with `DATABASE_URL` and `DIRECT_URL` set to the production database. Do not use `prisma db push` on production.
+   Run from a trusted machine with `DATABASE_URL` set to the production database (and `DIRECT_URL` if your environment requires it). Do not use `prisma db push` on production.
 3. **Deploy** from Vercel (connected repo/branch). Build uses PostgreSQL Prisma client. `generateStaticParams` for blog/category/product slugs returns empty params if tables are missing (`P2021`) so a build can complete before data exists, but migrations should be applied for correct runtime data.
 4. **Create the first ADMIN** (after migrations):
    ```bash
@@ -57,7 +57,7 @@ If `next build` fails during page data collection with:
 
 **Cause:** the build queried PostgreSQL before migrations were applied (or pointed at the wrong/empty database). **Fix:**
 
-1. Confirm `DATABASE_URL`/`DIRECT_URL` point to the intended production database.
+1. Confirm `DATABASE_URL` points to the intended production database.
 2. Run `npm run db:migrate:production` and `npm run db:migrate:status:production`.
 3. Redeploy. The app also guards `generateStaticParams` for blog/category/product slugs against P2021 so builds are more resilient, but the database must be migrated for runtime pages and admin content to work.
 

@@ -958,7 +958,7 @@ Deployment target: Next.js, PostgreSQL cho production, và local filesystem cho 
 ### 14.1. Environment variables
 
 - `DATABASE_URL`: PostgreSQL connection string của production.
-- `DIRECT_URL`: direct PostgreSQL connection cho Prisma migrations; tách khỏi connection pool của application.
+- `DIRECT_URL`: tùy chọn; schema PostgreSQL hiện tại không yêu cầu trường này. Có thể cấu hình riêng nếu quy trình migration/tooling cần kết nối trực tiếp.
 - `AUTH_SECRET`: secret ngẫu nhiên dùng ký session cookie.
 - `SITE_URL`: canonical HTTPS origin của website.
 - `PRODUCT_IMAGE_UPLOAD_DIR`: (tùy chọn) đường dẫn thư mục lưu ảnh sản phẩm; mặc định `./uploads`. Phải có quyền ghi và bền vững ở production nếu cần giữ ảnh đã upload.

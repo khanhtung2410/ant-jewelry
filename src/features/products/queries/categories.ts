@@ -1,7 +1,12 @@
 import { cacheTag } from 'next/cache';
+import { Prisma } from '@prisma/client';
 import type { Category, Product, ProductType } from '@/features/shared/domain/domain';
 import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
+
+function isMissingTableError(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021';
+}
 import {
   getProductCardPage,
   getProductsByCategoryId,
@@ -36,12 +41,19 @@ export async function getCategories(
   options: { includeHidden?: boolean } = {},
 ): Promise<Category[]> {
   'use cache';
-  const records = await prisma.category.findMany({
-    where: options.includeHidden ? {} : { status: visibilityStatus.VISIBLE },
-    orderBy: { sortOrder: 'asc' },
-  });
+  try {
+    const records = await prisma.category.findMany({
+      where: options.includeHidden ? {} : { status: visibilityStatus.VISIBLE },
+      orderBy: { sortOrder: 'asc' },
+    });
 
-  return records.map(mapCategory);
+    return records.map(mapCategory);
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return [];
+    }
+    throw error;
+  }
 }
 
 export async function getCategoryBySlug(
@@ -49,14 +61,21 @@ export async function getCategoryBySlug(
   options: { includeHidden?: boolean } = {},
 ): Promise<Category | null> {
   'use cache';
-  const record = await prisma.category.findFirst({
-    where: {
-      slug,
-      ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
-    },
-  });
+  try {
+    const record = await prisma.category.findFirst({
+      where: {
+        slug,
+        ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
+      },
+    });
 
-  return record ? mapCategory(record) : null;
+    return record ? mapCategory(record) : null;
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function getCategoryById(
@@ -64,14 +83,21 @@ export async function getCategoryById(
   options: { includeHidden?: boolean } = {},
 ): Promise<Category | null> {
   'use cache';
-  const record = await prisma.category.findFirst({
-    where: {
-      id: categoryId,
-      ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
-    },
-  });
+  try {
+    const record = await prisma.category.findFirst({
+      where: {
+        id: categoryId,
+        ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
+      },
+    });
 
-  return record ? mapCategory(record) : null;
+    return record ? mapCategory(record) : null;
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function getCategoryByType(
@@ -79,14 +105,21 @@ export async function getCategoryByType(
   options: { includeHidden?: boolean } = {},
 ): Promise<Category | null> {
   'use cache';
-  const record = await prisma.category.findFirst({
-    where: {
-      type,
-      ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
-    },
-  });
+  try {
+    const record = await prisma.category.findFirst({
+      where: {
+        type,
+        ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
+      },
+    });
 
-  return record ? mapCategory(record) : null;
+    return record ? mapCategory(record) : null;
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 /**
@@ -101,10 +134,17 @@ export async function getProductsByCategorySlug(
 ): Promise<ProductCardPage> {
   'use cache';
   cacheTag('products');
-  const category = await getCategoryBySlug(slug);
-  return category
-    ? getProductCardPage({ categoryId: category.category_id, ...query })
-    : { products: [], hasMore: false };
+  try {
+    const category = await getCategoryBySlug(slug);
+    return category
+      ? getProductCardPage({ categoryId: category.category_id, ...query })
+      : { products: [], hasMore: false };
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return { products: [], hasMore: false };
+    }
+    throw error;
+  }
 }
 
 export async function getStorefrontCategorySections(): Promise<
@@ -112,14 +152,21 @@ export async function getStorefrontCategorySections(): Promise<
 > {
   'use cache';
   cacheTag('products');
-  const categories = await getCategories();
+  try {
+    const categories = await getCategories();
 
-  return Promise.all(
-    categories.map(async (category) => ({
-      category,
-      products: await getProductsByCategoryId(category.category_id, {
-        limit: CAROUSEL_PRODUCT_LIMIT,
-      }),
-    })),
-  );
+    return Promise.all(
+      categories.map(async (category) => ({
+        category,
+        products: await getProductsByCategoryId(category.category_id, {
+          limit: CAROUSEL_PRODUCT_LIMIT,
+        }),
+      })),
+    );
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return [];
+    }
+    throw error;
+  }
 }

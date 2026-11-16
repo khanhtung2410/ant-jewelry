@@ -1,3 +1,140 @@
+## 2026-11-16 15:05:00 +07:00 - Ensure generateStaticParams returns at least one param (Cache Components)
+
+### Prompt nguyên văn đã dùng
+
+> 14:05:17.292 Running build in Washington, D.C., USA (East) – iad1
+> 14:05:17.292 Build machine configuration: 2 cores, 8 GB
+> 14:05:17.452 Cloning github.com/khanhtung2410/ant-jewelry (Branch: chore/iron-out-terminal-warnings, Commit: 8cf430b)
+> ...
+> 14:06:09.056 prisma:error
+> 14:06:09.056 Invalid `prisma.blogPost.findMany()` invocation:
+> 14:06:09.056 The table `public.BlogPost` does not exist in the current database.
+> 14:06:09.097 Error: When using Cache Components, all `generateStaticParams` functions must return at least one result...
+> 14:06:09.098     at <unknown> (src/app/(public)/blog/[slug]/page.tsx:8:8)
+> 14:06:09.602 Error: Failed to collect page data for /blog/[slug]
+> 14:06:09.672 Error: [BUILD_UTILS_SPAWN_1] Command "npm run build:production" exited with 1
+
+### Đã tự kiểm chứng
+
+- Vercel build trên `8cf430b` ghi log `prisma:error` P2021 (Prisma logging) nhưng lỗi chặn build là Next.js Cache Components: `generateStaticParams` của `/blog/[slug]` trả về mảng rỗng khi không có dữ liệu/bảng, trong khi Cache Components yêu cầu trả về **ít nhất một kết quả**.
+- Cập nhật `generateStaticParams` để luôn trả về placeholder khi rỗng:
+  - `src/app/(public)/blog/[slug]/page.tsx` → `[{ slug: '__empty__' }]`
+  - `src/app/(public)/c/[slug]/page.tsx` → `[{ slug: '__empty__' }]`
+  - `src/app/(public)/p/[slug]/page.tsx` → `[{ slug: '__empty__' }]`
+- Slug placeholder không tồn tại trong DB nên metadata/content đã có logic `notFound()`/fallback phù hợp; mục tiêu là thỏa điều kiện build-time validation của Cache Components khi DB chưa migrate/không có dữ liệu.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8)
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm test` → 49 files / 225 tests passed (Vitest, `prisma/test.db`), exit 0.
+- `npm run format:check` → `All matched files use Prettier code style!`, exit 0.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+
+### AI sai ở đâu
+
+- Khi xử lý DB chưa migrate, đã trả `[]` từ `generateStaticParams`; với Cache Components (Next 16) điều này vi phạm yêu cầu “at least one result” và làm build fail dù query đã được guard.
+- Vẫn cần migrate DB production để có dữ liệu thật; placeholder chỉ giải quyết ràng buộc build.
+
+---
+
+## 2026-11-16 14:45:00 +07:00 - Guard cached public queries against missing tables (P2021)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> use current branch, commit
+>
+> 13:55:53.522 Running build in Washington, D.C., USA (East) – iad1
+> ...
+> 13:56:45.605 prisma:error
+> 13:56:45.606 Invalid `prisma.blogPost.findMany()` invocation:
+> 13:56:45.606 The table `public.BlogPost` does not exist in the current database.
+> 13:56:46.281 Error: Failed to collect page data for /blog/[slug]
+> 13:56:46.331 Error: [BUILD_UTILS_SPAWN_1] Command "npm run build:production" exited with 1
+>
+> resolve vercel or point out change if cant resolve using current aaavailaable tool
+>
+> (follow-up) "The build is still failing... build:production is missing the prisma migrate deploy step..." — "what do you think"
+
+### Đã tự kiểm chứng
+
+- Dù đã guard một số route/caller, Vercel build (commit `736fe39`) vẫn fail P2021 tại `src/features/blog/queries/blog-posts.ts:51` (`getBlogPosts`) khi collect page data `/blog/[slug]` vì DB production chưa có bảng/migration. Với `use cache`/prerender, lỗi từ query layer có thể thoát nếu query không tự xử lý `P2021`.
+- Bổ sung xử lý `P2021` trực tiếp trong các query public/cached:
+  - `src/features/blog/queries/blog-posts.ts` (`getBlogPosts` → `[]`, `getBlogPostBySlug` → `null`)
+  - `src/features/products/queries/products.ts` (`getProducts`/`getRelatedProducts`/`getProductsByCategoryId` → `[]`, `getProductCardPage` → `{products:[], hasMore:false}`, `getProductBySlug`/`getProductById` → `null`)
+  - `src/features/products/queries/categories.ts` (list/getters → `[]`/`null`, `getProductsByCategorySlug`/`getStorefrontCategorySections` → fallback rỗng)
+  - `src/features/layout/queries/hero-slides.ts` (`getHeroSlides` → `[]`)
+  - `src/features/layout/queries/settings.ts` (`getSettings` → defaults)
+- Điều này giúp `next build`/prerender resilient hơn khi bảng chưa tồn tại. **Vẫn cần chạy migration trên DB production** để app có dữ liệu/schema đúng khi runtime.
+
+**Đánh giá về `prisma migrate deploy` trong `build:production`**
+
+- Thêm vào build giúp tạo schema nếu build kết nối được DB, nhưng làm build phụ thuộc DB/env (quyền, pooler/direct URL, lock, độ tin cậy). Cách an toàn hơn: chạy `npm run db:migrate:production` như bước riêng, giữ build là `generate + next build`, và dùng guard `P2021` để build không vỡ khi migrate chưa chạy.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8)
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm test` → 49 files / 225 tests passed (Vitest, `prisma/test.db`), exit 0.
+- `npm run format:check` → `All matched files use Prettier code style!`, exit 0.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+
+### AI sai ở đâu
+
+- Trước đó chỉ guard ở route/page caller; chưa guard tại query layer dùng `use cache`, nên P2021 vẫn có thể thoát trong quá trình collect/prerender và làm Vercel build fail.
+- Không thể tự chạy migration hoặc thay đổi env Vercel; cần thao tác hạ tầng để DB production thực sự có bảng.
+
+---
+
+## 2026-11-16 14:20:00 +07:00 - Fix Vercel build: corrupted lockfile, DIRECT_URL env, and migrate-on-build
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> use current branch, commit
+>
+> 13:47:46.829 Error while parsing config file: "/vercel/path0/package-lock.json"
+> 13:47:46.838 Error while parsing config file: "/vercel/path0/package-lock.json"
+> 13:48:42.238 Error: Prisma schema validation - (get-config wasm)
+> 13:48:42.238 Error code: P1012
+> 13:48:42.238 error: Environment variable not found: DIRECT_URL.
+> 13:48:42.238   -->  prisma/postgresql/schema.prisma:8
+> 13:48:42.238    |
+> 13:48:42.238  7 |   url       = env("DATABASE_URL")
+> 13:48:42.239  8 |   directUrl = env("DIRECT_URL")
+> 13:48:42.239    |
+> 13:48:42.239 Validation Error Count: 1
+> 13:48:42.320 Error: [BUILD_UTILS_SPAWN_1] Command "npm run build:production" exited with 1
+> resolve vercel or point out change if cant resolve using current aaavailaable tool
+
+### Đã tự kiểm chứng
+
+**Nguyên nhân và xử lý**
+
+- **`package-lock.json` lỗi parse trên Vercel:** lockfile local bị hỏng (trùng dòng/thiếu dấu phẩy, `JSON.parse` fail). Đã tái tạo lockfile hợp lệ (`npm install --package-lock-only`) để Vercel đọc được.
+- **Prisma P1012 `DIRECT_URL` missing:** `prisma/postgresql/schema.prisma` yêu cầu `directUrl = env("DIRECT_URL")`; `build:production` trước đó chạy `prisma migrate deploy` trong build nên build phụ thuộc env DB/migration. Đã bỏ `directUrl` khỏi schema PostgreSQL (chỉ dùng `DATABASE_URL`) và đổi `build:production` thành `npm run db:generate:production && next build` (không chạy `migrate deploy` khi build). Migration tiếp tục thực hiện riêng bằng `npm run db:migrate:production`.
+- **Docs/config:** cập nhật `.env.example`, `README.md`, `docs/DEPLOY.md`, `docs/ARCHITECTURE.md` để phản ánh `DIRECT_URL` là tùy chọn/không bắt buộc với schema/build hiện tại và migrations chạy ngoài bước build Vercel.
+
+**Hạn chế / cần thao tác trên Vercel (ngoài công cụ hiện có)**
+
+- Vercel vẫn cần cấu hình `DATABASE_URL` hợp lệ cho production build/runtime (Prisma generate/schema và ứng dụng). Không thể đặt env hay redeploy từ môi trường hiện tại.
+- Sau khi merge/deploy code này, cần chạy `npm run db:migrate:production` (+ status) từ môi trường tin cậy trỏ đúng DB production, rồi kiểm tra deployment.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8)
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm run format:check` → `All matched files use Prettier code style!`, exit 0.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+
+### AI sai ở đâu
+
+- `package-lock.json` bị hỏng ở lần chỉnh sửa trước (trùng khóa/dòng), gây lỗi parse trên Vercel; đã phát hiện bằng `JSON.parse` local và tái tạo lockfile thay vì sửa tay mù.
+- Đưa `prisma migrate deploy` vào `build:production` và bắt buộc `DIRECT_URL` trong schema làm build phụ thuộc chặt vào hạ tầng/env; đã tách migration khỏi build và nới lỏng schema để build ổn định hơn khi env tối thiểu.
+
+---
+
 ## 2026-11-16 13:55:00 +07:00 - Vercel inspect (P2021) and build resilience fix
 
 ### Prompt nguyên văn đã dùng

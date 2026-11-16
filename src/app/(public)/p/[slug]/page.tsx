@@ -8,10 +8,11 @@ import { ProductPageContent } from './product-page-content';
 export async function generateStaticParams() {
   try {
     const products = await getProducts();
-    return products.map((product) => ({ slug: product.slug }));
+    const params = products.map((product) => ({ slug: product.slug }));
+    return params.length > 0 ? params : [{ slug: '__empty__' }];
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
-      return [];
+      return [{ slug: '__empty__' }];
     }
     throw error;
   }
