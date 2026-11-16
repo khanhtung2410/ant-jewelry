@@ -1,3 +1,51 @@
+## 2026-11-16 09:59:12 +07:00 - Constant-time login and email+IP rate limiting (R4.1)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+>
+> R4.1 — Đăng nhập. Email không tồn tại vẫn chạy bcrypt.compare với hash giả (auth/actions.ts:55); giới hạn số lần đăng nhập sai theo email + IP.
+> unit test: email sai và mật khẩu sai trả cùng thông báo; quá N lần sai bị chặn tạm thời.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện (R4.1)**
+
+- `src/features/auth/actions.ts`: luôn chạy `bcrypt.compare` kể cả khi không tìm thấy user, bằng cách so với `DUMMY_PASSWORD_HASH` (bcrypt cost 10, cùng cost với hash thật). Email sai, mật khẩu sai và tài khoản bị khoá vẫn trả cùng `Invalid email or password.`.
+- `src/features/auth/login-rate-limit.ts` (mới): giới hạn 5 lần sai trong cửa sổ 15 phút theo cặp `email` + `ip`; `recordFailedLogin` ghi một dòng và dọn các dòng cũ hơn cửa sổ trong cùng transaction; đăng nhập thành công xoá các lần sai của cặp đó. Quá ngưỡng trả `AUTH_MESSAGES.TOO_MANY_ATTEMPTS` trước khi tra user/bcrypt.
+- `src/features/auth/client-ip.ts` (mới): lấy hop đầu của `x-forwarded-for`, fallback `x-real-ip`, fallback `unknown`; cắt tối đa 64 ký tự. `getClientIp` trả `unknown` nếu không có request context (unit test).
+- `src/features/auth/messages.ts` + `errors.ts`: thêm thông báo và state riêng cho trường hợp bị chặn tạm thời.
+- `prisma/schema.prisma` + `prisma/postgresql/schema.prisma`: thêm model `LoginAttempt` với index `[email, ip, createdAt]` và `[createdAt]`; thêm migration SQLite và PostgreSQL `20261116100000_add_login_attempts`.
+- Test: `src/features/auth/actions.test.ts` mở rộng (cùng thông báo cho email sai/mật khẩu sai, spy `bcrypt.compare` xác nhận email không tồn tại vẫn hash, chặn sau 5 lần, hết cửa sổ đăng nhập lại được, khoá theo cặp email+IP) và `src/features/auth/client-ip.test.ts` (mới).
+- `docs/ARCHITECTURE.md`: ghi nhận auth đã triển khai, thêm mục 10.4 về dummy hash, rate limit, nguồn IP và lưu ý proxy tin cậy.
+
+**Kết quả kiểm chứng**
+
+- `npx vitest run src/features/auth/actions.test.ts src/features/auth/client-ip.test.ts` → 2 files / 10 tests passed.
+- `npm run typecheck` → passed, exit 0.
+- `npm run lint` → passed, exit 0.
+- `npm test` → 44 files / 199 tests passed.
+- `npm run format:check` → `All matched files use Prettier code style!`.
+- `npm run build` → `✓ Compiled successfully in 13.9s`, `✓ Generating static pages (53/53)`, exit 0.
+- `npm run test:e2e` → 8/8 passed; luồng đăng nhập admin/editor thật vẫn hoạt động sau khi thêm dummy hash và bảng `LoginAttempt`.
+
+**So sánh Figma**
+
+- Không đổi giao diện. Form đăng nhập chỉ có thêm khả năng hiển thị thông báo chặn tạm thời khi người dùng nhập sai quá ngưỡng; màu sắc, typography và bố cục giữ nguyên.
+
+### AI sai ở đâu
+
+- Prompt viết "Email không tồn tại vẫn chạy bcrypt.compare với hash giả", trong khi code hiện tại return sớm ở `if (!user)`. Đã hiểu đây là yêu cầu cần đạt (so dummy hash để cân bằng thời gian), không phải mô tả bug đang có, và thêm test spy để khoá hành vi.
+- Ban đầu chỉ nghĩ đến rate limit trong bộ nhớ cho nhanh, nhưng như vậy không dùng được khi chạy nhiều instance; đã chọn bảng `LoginAttempt` trong database và thêm migration cho cả SQLite/PostgreSQL.
+- Lần đầu viết test rate limit dùng chung email/IP sẽ bị ảnh hưởng lẫn nhau; đã thêm `beforeEach` xoá `LoginAttempt`, dùng email riêng và đổi IP qua mock `next/headers`.
+- `format:check` bắt `actions.ts` chưa đúng Prettier sau khi thêm import; đã chạy `prettier --write` trước khi kiểm tra lại.
+
+---
+
 ## 2026-11-15 21:05:00 +07:00 - No horizontal overflow, external images, contact a11y, fixed home H1 (R3.6–R3.9)
 
 ### Prompt nguyên văn đã dùng

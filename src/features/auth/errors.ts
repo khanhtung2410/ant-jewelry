@@ -12,6 +12,10 @@ export function invalidCredentialsState(): AuthActionState {
   return authErrorState(AUTH_MESSAGES.INVALID_CREDENTIALS);
 }
 
+export function loginRateLimitedState(): AuthActionState {
+  return authErrorState(AUTH_MESSAGES.TOO_MANY_ATTEMPTS);
+}
+
 export function loginUnavailableState(): AuthActionState {
   return authErrorState(AUTH_MESSAGES.LOGIN_UNAVAILABLE);
 }
