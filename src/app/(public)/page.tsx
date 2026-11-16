@@ -27,16 +27,27 @@ export default async function Home() {
       <HeroSlider slides={heroSlides} />
 
       <div className="mx-auto w-full max-w-7xl space-y-14 px-4 sm:px-6 lg:px-8">
-        {productSections.map(({ category, products }) => (
-          <Carousel
+        {productSections.map(({ category, products }, index) => (
+          <div
             key={category.category_id}
-            title={category.name}
-            products={products}
-            viewAllHref={`/c/${category.slug}`}
-          />
+            style={
+              index > 0
+                ? { contentVisibility: 'auto', containIntrinsicSize: '1px 420px' }
+                : undefined
+            }
+          >
+            <Carousel
+              title={category.name}
+              products={products}
+              viewAllHref={`/c/${category.slug}`}
+            />
+          </div>
         ))}
 
-        <section aria-labelledby="home-blog-heading">
+        <section
+          aria-labelledby="home-blog-heading"
+          style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 320px' }}
+        >
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <h2
               id="home-blog-heading"

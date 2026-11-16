@@ -261,10 +261,9 @@ describe('product queries', () => {
 
       expect(section).toBeDefined();
       expect(section!.products).toHaveLength(CAROUSEL_PRODUCT_LIMIT);
-      expect(section!.products.map((product) => product.product_id)).toEqual([
-        ...[...older].sort(),
-        ...[...newer].sort().slice(0, CAROUSEL_PRODUCT_LIMIT - older.length),
-      ]);
+      expect(section!.products.map((product) => product.product_id)).toEqual(
+        [...[...older].sort(), ...[...newer].sort()].slice(0, CAROUSEL_PRODUCT_LIMIT),
+      );
     } finally {
       await prisma.product.deleteMany({ where: { categoryId: category.id } });
       await prisma.category.delete({ where: { id: category.id } });

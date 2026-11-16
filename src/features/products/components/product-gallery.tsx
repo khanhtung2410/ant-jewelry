@@ -43,6 +43,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
           fill
           unoptimized={isExternalImageUrl(activeImage.url)}
           preload
+          fetchPriority="high"
           sizes="(max-width: 1024px) 100vw, 50vw"
           className="object-cover"
         />
@@ -83,6 +84,8 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
                     alt=""
                     aria-hidden="true"
                     fill
+                    loading="lazy"
+                    fetchPriority="low"
                     unoptimized={isExternalImageUrl(image.url)}
                     sizes="96px"
                     className="object-cover"
