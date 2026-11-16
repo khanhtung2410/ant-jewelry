@@ -1,3 +1,51 @@
+## 2026-11-16 14:20:00 +07:00 - Fix Vercel build: corrupted lockfile, DIRECT_URL env, and migrate-on-build
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> use current branch, commit
+>
+> 13:47:46.829 Error while parsing config file: "/vercel/path0/package-lock.json"
+> 13:47:46.838 Error while parsing config file: "/vercel/path0/package-lock.json"
+> 13:48:42.238 Error: Prisma schema validation - (get-config wasm)
+> 13:48:42.238 Error code: P1012
+> 13:48:42.238 error: Environment variable not found: DIRECT_URL.
+> 13:48:42.238   -->  prisma/postgresql/schema.prisma:8
+> 13:48:42.238    |
+> 13:48:42.238  7 |   url       = env("DATABASE_URL")
+> 13:48:42.239  8 |   directUrl = env("DIRECT_URL")
+> 13:48:42.239    |
+> 13:48:42.239 Validation Error Count: 1
+> 13:48:42.320 Error: [BUILD_UTILS_SPAWN_1] Command "npm run build:production" exited with 1
+> resolve vercel or point out change if cant resolve using current aaavailaable tool
+
+### Đã tự kiểm chứng
+
+**Nguyên nhân và xử lý**
+
+- **`package-lock.json` lỗi parse trên Vercel:** lockfile local bị hỏng (trùng dòng/thiếu dấu phẩy, `JSON.parse` fail). Đã tái tạo lockfile hợp lệ (`npm install --package-lock-only`) để Vercel đọc được.
+- **Prisma P1012 `DIRECT_URL` missing:** `prisma/postgresql/schema.prisma` yêu cầu `directUrl = env("DIRECT_URL")`; `build:production` trước đó chạy `prisma migrate deploy` trong build nên build phụ thuộc env DB/migration. Đã bỏ `directUrl` khỏi schema PostgreSQL (chỉ dùng `DATABASE_URL`) và đổi `build:production` thành `npm run db:generate:production && next build` (không chạy `migrate deploy` khi build). Migration tiếp tục thực hiện riêng bằng `npm run db:migrate:production`.
+- **Docs/config:** cập nhật `.env.example`, `README.md`, `docs/DEPLOY.md`, `docs/ARCHITECTURE.md` để phản ánh `DIRECT_URL` là tùy chọn/không bắt buộc với schema/build hiện tại và migrations chạy ngoài bước build Vercel.
+
+**Hạn chế / cần thao tác trên Vercel (ngoài công cụ hiện có)**
+
+- Vercel vẫn cần cấu hình `DATABASE_URL` hợp lệ cho production build/runtime (Prisma generate/schema và ứng dụng). Không thể đặt env hay redeploy từ môi trường hiện tại.
+- Sau khi merge/deploy code này, cần chạy `npm run db:migrate:production` (+ status) từ môi trường tin cậy trỏ đúng DB production, rồi kiểm tra deployment.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8)
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm run format:check` → `All matched files use Prettier code style!`, exit 0.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+
+### AI sai ở đâu
+
+- `package-lock.json` bị hỏng ở lần chỉnh sửa trước (trùng khóa/dòng), gây lỗi parse trên Vercel; đã phát hiện bằng `JSON.parse` local và tái tạo lockfile thay vì sửa tay mù.
+- Đưa `prisma migrate deploy` vào `build:production` và bắt buộc `DIRECT_URL` trong schema làm build phụ thuộc chặt vào hạ tầng/env; đã tách migration khỏi build và nới lỏng schema để build ổn định hơn khi env tối thiểu.
+
+---
+
 ## 2026-11-16 13:55:00 +07:00 - Vercel inspect (P2021) and build resilience fix
 
 ### Prompt nguyên văn đã dùng
