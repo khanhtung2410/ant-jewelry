@@ -1,12 +1,26 @@
 import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { categories } from '../src/features/products/mocks/categories';
 import { blogPosts } from '../src/features/blog/mocks/blog-posts';
 import { heroSlides } from '../src/features/layout/mocks/hero-slides';
 import { products } from '../src/features/products/mocks/products';
 import { settings } from '../src/features/layout/mocks/settings';
 
-const prisma = new PrismaClient();
+function createPrismaClient() {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+  if (url.startsWith('file:') || url.startsWith('sqlite:')) {
+    return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url }) });
+  }
+  return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
+}
+
+const prisma = createPrismaClient();
+
 
 function getSharedImages(product: (typeof products)[number]) {
   const colorImageIds = new Set(

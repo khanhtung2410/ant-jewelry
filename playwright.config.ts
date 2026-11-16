@@ -21,7 +21,8 @@ export default defineConfig({
     // Reset the dedicated E2E database, then exercise the production build so
     // `npm run test:e2e` never touches prisma/dev.db and always tests `next start`.
     command:
-      'npx prisma db push --force-reset --skip-generate && npx prisma db seed && npm run build && npm run start -- --hostname 127.0.0.1 --port 3100',
+      'npx prisma db push --force-reset && npx prisma db seed && npm run build && npm run start -- --hostname 127.0.0.1 --port 3100',
+
     url: baseURL,
     reuseExistingServer: false,
     timeout: 300_000,

@@ -1,10 +1,24 @@
 import bcrypt from 'bcryptjs';
 import { Prisma, PrismaClient } from '@prisma/client';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaPg } from '@prisma/adapter-pg';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { z } from 'zod';
 
-const prisma = new PrismaClient();
+function createPrismaClient() {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+  if (url.startsWith('file:') || url.startsWith('sqlite:')) {
+    return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url }) });
+  }
+  return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
+}
+
+const prisma = createPrismaClient();
+
 const emailSchema = z.string().email();
 
 function readHidden(prompt: string): Promise<string> {
