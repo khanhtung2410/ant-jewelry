@@ -1,10 +1,18 @@
+import { Prisma } from '@prisma/client';
 import { Suspense } from 'react';
 import { getCategories } from '@/features/shared/queries';
 import { CategoryPageContent } from './category-page-content';
 
 export async function generateStaticParams() {
-  const categories = await getCategories();
-  return categories.map((category) => ({ slug: category.slug }));
+  try {
+    const categories = await getCategories();
+    return categories.map((category) => ({ slug: category.slug }));
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+      return [];
+    }
+    throw error;
+  }
 }
 
 export default function CategoryPage(props: PageProps<'/c/[slug]'>) {

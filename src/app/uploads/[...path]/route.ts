@@ -2,7 +2,7 @@ import {
   InvalidProductImageStorageKeyError,
   StoredProductImageNotFoundError,
   readStoredProductImage,
-} from '@/features/products/server/local-image-storage';
+} from '@/features/products/server/product-image-storage';
 
 export async function GET(
   _request: Request,

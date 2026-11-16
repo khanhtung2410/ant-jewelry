@@ -1,3 +1,62 @@
+## 2026-11-16 12:05:00 +07:00 - Production deploy prep: Vercel + PostgreSQL + S3/R2 (R6.2)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+>
+> R6.2 — Production. Vercel + PostgreSQL + object storage (R2/S3); chạy migration; tạo ADMIN đầu tiên bằng db:create-admin:production. Dùng domain *.vercel.app, không đụng DNS antjewelry.vn.
+> link production mở được 6 màn + admin; upload ảnh xong redeploy ảnh vẫn còn.
+>
+> vercel deployment error
+> 11:45:05.458 Running build in Washington, D.C., USA (East) – iad1
+> ...
+> 11:45:51.683 prisma:error 
+> 11:45:51.683 Invalid `prisma.blogPost.findMany()` invocation:
+> 11:45:51.683 The table `public.BlogPost` does not exist in the current database.
+> 11:45:52.330 Error: Failed to collect page data for /blog/[slug]
+> 11:45:52.394 Error: [BUILD_UTILS_SPAWN_1] Command "npm run build:production" exited with 1
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Lỗi Vercel (P2021) — nguyên nhân và xử lý**
+
+- **Nguyên nhân:** `generateStaticParams` của `/blog/[slug]`, `/c/[slug]`, `/p/[slug]` truy vấn DB trong lúc `next build` (page data collection). Khi `DATABASE_URL` trỏ tới PostgreSQL production chưa chạy migration, Prisma trả `P2021: The table public.BlogPost does not exist`, làm build fail (`Failed to collect page data for /blog/[slug]`).
+- **Sửa trong code:** bọc `generateStaticParams` của 3 route trên bằng try/catch, nếu `Prisma.PrismaClientKnownRequestError` mã `P2021` thì trả `[]` để build không vỡ khi DB chưa có bảng; trang vẫn render theo dữ liệu runtime sau khi migration + deploy đúng DB.
+- **Hành động vận hành cần làm:** chạy `npm run db:migrate:production` và `npm run db:migrate:status:production` với `DATABASE_URL`/`DIRECT_URL` đúng DB production rồi redeploy.
+
+**R6.2 — thay đổi triển khai (Vercel + PostgreSQL + R2/S3)**
+
+- **Object storage S3-compatible (R2/S3):** thay `local-image-storage` bằng `product-image-storage` (`src/features/products/server/product-image-storage.ts`) hỗ trợ upload/xóa/đọc qua S3 khi có `S3_BUCKET` + `S3_PUBLIC_BASE_URL` (các biến: `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_FORCE_PATH_STYLE`, `S3_PUBLIC_BASE_URL`). Local dev vẫn dùng filesystem (`PRODUCT_IMAGE_UPLOAD_DIR`, mặc định `./uploads`) và phục vụ qua `/uploads/...`; production Vercel dùng URL public từ object storage để ảnh còn sau redeploy.
+- Cập nhật import: upload route, `/uploads/[...path]` route, `product-image-cleanup`, route test và storage test; xóa `local-image-storage.ts(.test.ts)`; thêm dependency `@aws-sdk/client-s3`.
+- **Cấu hình/tài liệu:** cập nhật `.env.example`, `README.md` (mục deploy R6.2, biến S3, ghi chú storage), `docs/DEPLOY.md` (Vercel + PostgreSQL + R2/S3, `*.vercel.app`, không đổi DNS `antjewelry.vn`, sequence migrate → deploy → `db:create-admin:production`, checklist 6 màn + admin + upload ảnh còn sau redeploy, xử lý P2021).
+- **`prisma/create-admin.ts`** và scripts `db:migrate:production`, `db:create-admin:production` đã có sẵn; không đổi logic ngoài tài liệu/hướng dẫn.
+
+**Kết quả kiểm chứng**
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm test` → 49 files / 225 tests passed (Vitest, `prisma/test.db`).
+- `npm run format:check` → `All matched files use Prettier code style!`.
+- `npm run build` → compiled successfully, exit 0.
+
+**Giới hạn (không thể tự hoàn tất từ môi trường agent)**
+
+- Không thể tự provision Vercel project, PostgreSQL, bucket R2/S3, đặt secrets, chạy migration trên DB production, tạo ADMIN thật, hay xác minh live `*.vercel.app` (“6 màn + admin; upload ảnh xong redeploy ảnh vẫn còn”). Các bước này cần hạ tầng/credentials và thao tác vận hành theo `docs/DEPLOY.md`.
+
+### AI sai ở đâu
+
+- Ban đầu storage chỉ hỗ trợ filesystem local (`/uploads`), không đáp ứng yêu cầu “redeploy ảnh vẫn còn” trên Vercel; đã thêm lớp S3-compatible nhưng cần cấu hình bucket + `S3_PUBLIC_BASE_URL` đúng thì mới hoạt động.
+- Lỗi build Vercel không phải do “thiếu migrate” trong build script mà do prerender/query DB khi bảng chưa tồn tại; chỉ thêm `migrate deploy` vào build có rủi ro (DIRECT_URL, quyền, môi trường). Đã chọn guard `P2021` trong `generateStaticParams` + tài liệu bắt buộc chạy migration.
+- Output kiểm tra tiếp tục được capture bằng Node `spawnSync` (UTF-8) để tránh mojibake `✓, ─, │, ·, —`.
+
+---
+
 ## 2026-11-16 11:28:00 +07:00 - Lighthouse Home mobile & product (R6.1)
 
 ### Prompt nguyên văn đã dùng
