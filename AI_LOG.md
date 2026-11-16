@@ -1,3 +1,44 @@
+## 2026-11-16 13:10:00 +07:00 - Address terminal errors/warnings and re-verify
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> iron out error and warn from terminal output
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Rà soát output terminal/lệnh**
+
+- `npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`, `npm run build` chạy lại trên nhánh hiện tại đều **exit 0** (capture UTF-8 bằng Node `spawnSync`, không có ký tự thay thế `�`).
+- Không thấy lỗi/warning từ lint, typecheck, Vitest, Prettier hay Next build trong output kiểm tra.
+- `npm audit` báo **11 vulnerabilities (8 moderate, 3 high)**; `npm audit fix` (không `--force`) đã áp dụng phần có thể sửa và cập nhật `package-lock.json`, nhưng các cảnh báo còn lại yêu cầu nâng cấp breaking (`prisma@7`, `eslint-config-next@15.5.x` theo gợi ý npm) nên không tự áp dụng để tránh thay đổi hành vi/stack ngoài phạm vi.
+
+**Thay đổi đã thực hiện**
+
+- Chạy `npm audit fix` (non-breaking) và cập nhật `package-lock.json`.
+- Không thay đổi mã nguồn ứng dụng; xác nhận storage đang ở chế độ local filesystem (`PRODUCT_IMAGE_UPLOAD_DIR`, `/uploads`) và không còn workflow S3/R2 trong code/docs.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8)
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm test` → 49 files / 225 tests passed (Vitest, `prisma/test.db`), exit 0.
+- `npm run format:check` → `All matched files use Prettier code style!`, exit 0.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+
+### AI sai ở đâu
+
+- Không thể “xóa sạch” toàn bộ cảnh báo `npm audit` mà không dùng `--force`/nâng cấp breaking; đã giới hạn ở fix an toàn và ghi rõ phần còn lại thay vì tự ý đổi major dependency.
+- Một số cảnh báo trước đó đến từ npm/git (ví dụ notice phiên bản npm, LF/CRLF) không phải lỗi runtime/build của dự án; đã ưu tiên xử lý và xác nhận các output kiểm tra thực tế.
+
+---
+
 ## 2026-11-16 12:12:00 +07:00 - Revert S3 storage workflow to local storage
 
 ### Prompt nguyên văn đã dùng
