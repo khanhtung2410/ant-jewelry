@@ -179,6 +179,22 @@ test('keyboard users can open the PRODUCTS menu and reach every category link', 
   await expect(productsButton).toBeFocused();
 });
 
+test('logout revokes the previous admin session cookie', async ({ page, context }) => {
+  await signIn(page, 'admin@antjewelry.local', 'Admin@123');
+
+  const sessionCookie = (await context.cookies()).find(
+    (cookie) => cookie.name === 'aj_admin_session',
+  );
+  expect(sessionCookie).toBeTruthy();
+
+  await page.getByRole('button', { name: 'Logout' }).click();
+  await expect(page).toHaveURL(/\/admin\/login/);
+
+  await context.addCookies([sessionCookie!]);
+  await page.goto('/admin');
+  await expect(page).toHaveURL(/\/admin\/login/);
+});
+
 test('ADMIN price changes are reflected on the storefront', async ({ page }) => {
   await signIn(page, 'admin@antjewelry.local', 'Admin@123');
   await page.goto('/admin/products?search=Aurora');

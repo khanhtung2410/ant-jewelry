@@ -58,4 +58,29 @@ describe('updateUserAccessSchema', () => {
       updateUserAccessSchema.safeParse({ userId: 'user-1', role: 'OWNER', locked: false }).success,
     ).toBe(false);
   });
+
+  it('accepts an empty password so access can change without a reset', () => {
+    const parsed = updateUserAccessSchema.parse({
+      userId: 'user-1',
+      role: 'EDITOR',
+      locked: false,
+      password: '   ',
+    });
+
+    expect(parsed.password).toBe('');
+  });
+
+  it('requires at least 8 characters when a new password is provided', () => {
+    const result = updateUserAccessSchema.safeParse({
+      userId: 'user-1',
+      role: 'EDITOR',
+      locked: false,
+      password: 'short',
+    });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toMatch(/at least 8/i);
+    }
+  });
 });

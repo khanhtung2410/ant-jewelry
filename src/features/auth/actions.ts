@@ -11,7 +11,7 @@ import {
   type AuthActionState,
 } from './errors';
 import { clearFailedLogins, isLoginRateLimited, recordFailedLogin } from './login-rate-limit';
-import { clearAdminSessionCookie, setAdminSessionCookie } from './session';
+import { revokeAdminSession, setAdminSessionCookie } from './session';
 
 export type LoginState = AuthActionState;
 
@@ -48,6 +48,7 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
     passwordHash: string;
     role: 'ADMIN' | 'EDITOR';
     locked: boolean;
+    sessionVersion: number;
   } | null = null;
 
   try {
@@ -64,6 +65,7 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
         passwordHash: true,
         role: true,
         locked: true,
+        sessionVersion: true,
       },
     });
   } catch (error) {
@@ -99,6 +101,7 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
       email: user.email,
       role: user.role,
       name: user.name,
+      sessionVersion: user.sessionVersion,
     });
   } catch (error) {
     return handleAuthActionError('Admin login could not create a session:', error);
@@ -108,6 +111,6 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
 }
 
 export async function logoutAction(): Promise<void> {
-  await clearAdminSessionCookie();
+  await revokeAdminSession();
   redirect('/admin/login');
 }

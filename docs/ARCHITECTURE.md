@@ -838,6 +838,7 @@ Không đưa ra thiết kế chi tiết cho các nội dung này như thể đã
 - Bảng `LoginAttempt` lưu từng lần đăng nhập sai theo cặp `email` + `ip`; sau 5 lần sai trong 15 phút, cặp đó nhận `AUTH_MESSAGES.TOO_MANY_ATTEMPTS` và bị chặn cho tới khi cửa sổ trượt qua. Đăng nhập thành công xoá các lần sai của cặp đó; mỗi lần ghi lỗi đồng thời dọn các bản ghi cũ hơn cửa sổ.
 - IP lấy từ hop đầu tiên của `x-forwarded-for`, fallback `x-real-ip`, rồi `unknown`; giá trị bị cắt còn 64 ký tự. Khi triển khai sau proxy, proxy tin cậy phải ghi đè các header này để client không tự giả mạo.
 - Khoá tài khoản (`User.locked`) vẫn được kiểm tra sau khi so mật khẩu và được kiểm tra lại ở mỗi request trong `getAdminSession`.
+- `User.sessionVersion` được nhúng vào token. `getAdminSession` so version trong token với database; lệch version thì session bị coi là thu hồi dù chữ ký còn hợp lệ. Logout tăng version rồi mới xoá cookie, nên token cũ đã bị sao chép cũng không vào được `/admin`. Đổi role, trạng thái khoá hoặc đặt mật khẩu mới trong `saveUserAccess` cũng tăng version trong cùng transaction, nên mọi phiên cũ của tài khoản bị đăng xuất.
 
 ## 11. Image Storage Architecture
 

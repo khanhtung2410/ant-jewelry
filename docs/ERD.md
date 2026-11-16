@@ -11,6 +11,7 @@ erDiagram
         String passwordHash
         Role role "ADMIN | EDITOR"
         Boolean locked
+        Int sessionVersion
         DateTime createdAt
         DateTime updatedAt
     }
