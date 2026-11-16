@@ -1,12 +1,20 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { Prisma } from '@prisma/client';
 import { Suspense } from 'react';
 import { getProductBySlug, getProducts } from '@/features/shared/queries';
 import { ProductPageContent } from './product-page-content';
 
 export async function generateStaticParams() {
-  const products = await getProducts();
-  return products.map((product) => ({ slug: product.slug }));
+  try {
+    const products = await getProducts();
+    return products.map((product) => ({ slug: product.slug }));
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+      return [];
+    }
+    throw error;
+  }
 }
 
 export async function generateMetadata(props: PageProps<'/p/[slug]'>): Promise<Metadata> {

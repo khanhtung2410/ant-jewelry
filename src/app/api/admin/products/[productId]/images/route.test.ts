@@ -31,7 +31,7 @@ vi.mock('@/features/auth/session', () => ({
   })),
 }));
 
-vi.mock('@/features/products/server/local-image-storage', () => ({
+vi.mock('@/features/products/server/product-image-storage', () => ({
   uploadProductImage: mocks.uploadProductImage,
 }));
 

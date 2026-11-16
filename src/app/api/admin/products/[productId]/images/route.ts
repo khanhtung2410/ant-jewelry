@@ -7,7 +7,7 @@ import {
   detectProductImageType,
 } from '@/features/products/lib/product-image-validation';
 import { enqueueProductImageDeletions } from '@/features/products/server/product-image-cleanup';
-import { uploadProductImage } from '@/features/products/server/local-image-storage';
+import { uploadProductImage } from '@/features/products/server/product-image-storage';
 import { revalidateProductPages } from '@/features/products/server/product-revalidation';
 
 type ValidatedFile = {

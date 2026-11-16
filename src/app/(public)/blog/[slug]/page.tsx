@@ -1,12 +1,20 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { Prisma } from '@prisma/client';
 import { Suspense } from 'react';
 import { getBlogPostBySlug, getBlogPosts } from '@/features/shared/queries';
 import { BlogPostPageContent } from './blog-post-page-content';
 
 export async function generateStaticParams() {
-  const posts = await getBlogPosts();
-  return posts.map((post) => ({ slug: post.slug }));
+  try {
+    const posts = await getBlogPosts();
+    return posts.map((post) => ({ slug: post.slug }));
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+      return [];
+    }
+    throw error;
+  }
 }
 
 export async function generateMetadata(props: PageProps<'/blog/[slug]'>): Promise<Metadata> {
