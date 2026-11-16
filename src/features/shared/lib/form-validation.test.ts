@@ -59,6 +59,9 @@ describe('shared schemas', () => {
     const schema = requiredPathOrUrl('Image URL');
     expect(schema.safeParse('/mock/blog/cover.svg').success).toBe(true);
     expect(schema.safeParse('https://example.com/cover.jpg').success).toBe(true);
+    expect(schema.safeParse('http://example.com/cover.jpg').success).toBe(true);
+    expect(schema.safeParse('//evil.example/cover.jpg').success).toBe(false);
+    expect(schema.safeParse('/\\evil.example/cover.jpg').success).toBe(false);
     expect(schema.safeParse('javascript:alert(1)').success).toBe(false);
     expect(schema.safeParse('').success).toBe(false);
   });

@@ -55,8 +55,13 @@ export const sortOrderInputSchema = z
     'Sort order must be zero or greater.',
   );
 
+const httpUrlPattern = /^https?:\/\//i;
+// A leading "//" is a protocol-relative URL, not a site path, and would leak
+// the request to another host. Browsers also treat "/\\" like "//".
+const rootPathPattern = /^\/(?![/\\])/;
+
 export function isPathOrUrl(value: string): boolean {
-  return value.startsWith('/') || /^https?:\/\//.test(value);
+  return rootPathPattern.test(value) || httpUrlPattern.test(value);
 }
 
 export function requiredPathOrUrl(label: string) {

@@ -3,6 +3,7 @@ import { prisma } from '@/features/shared/db/prisma';
 import { canManageProducts } from '@/features/shared/lib/permissions';
 import {
   MAX_PRODUCT_IMAGE_SIZE,
+  MAX_PRODUCT_IMAGES_PER_UPLOAD,
   detectProductImageType,
 } from '@/features/products/lib/product-image-validation';
 import { enqueueProductImageDeletions } from '@/features/products/server/product-image-cleanup';
@@ -58,6 +59,9 @@ export async function POST(
   const fileEntries = formData.getAll('files');
   if (fileEntries.length === 0 || fileEntries.some((entry) => !(entry instanceof File))) {
     return jsonError('Select one or more valid image files.', 400);
+  }
+  if (fileEntries.length > MAX_PRODUCT_IMAGES_PER_UPLOAD) {
+    return jsonError(`Upload at most ${MAX_PRODUCT_IMAGES_PER_UPLOAD} images at a time.`, 400);
   }
 
   const files = fileEntries.filter((entry): entry is File => entry instanceof File);

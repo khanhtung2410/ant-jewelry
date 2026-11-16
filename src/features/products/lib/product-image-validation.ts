@@ -1,4 +1,5 @@
 export const MAX_PRODUCT_IMAGE_SIZE = 5 * 1024 * 1024;
+export const MAX_PRODUCT_IMAGES_PER_UPLOAD = 10;
 
 export type SupportedProductImage = {
   contentType: 'image/jpeg' | 'image/png' | 'image/webp';

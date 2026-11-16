@@ -1,3 +1,54 @@
+## 2026-11-16 10:38:00 +07:00 - Last-ADMIN race and URL/upload limits (R4.3-R4.4)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R4.3 — ADMIN cuối cùng. Kiểm tra + cập nhật chạy trong transaction Serializable hoặc update có điều kiện (users/actions.ts:113).
+> R4.4 — URL trong form. isPathOrUrl không nhận //host (form-validation.ts:112); route upload giới hạn số file mỗi request.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện (R4.3-R4.4)**
+
+- `src/features/users/actions.ts`: thêm `runSerializableTransaction` chạy `prisma.$transaction` với `isolationLevel: Serializable`. `saveUserAccess` dùng helper này cho cả bước đọc `current`, đếm active ADMIN và update, nên hai request đồng thời không thể cùng thấy "còn ADMIN khác" rồi cùng hạ quyền/khoá hai ADMIN cuối.
+- Transaction Serializable có thể thua write conflict; helper retry tối đa 3 lần khi gặp `P2034`, write conflict, deadlock, `database is locked` hoặc `SQLITE_BUSY`, còn lỗi nghiệp vụ (`LastActiveAdminError`, `UserNotFoundError`) vẫn trả về ngay.
+- `src/features/shared/lib/form-validation.ts`: `isPathOrUrl` chỉ nhận path bắt đầu bằng đúng một `/` hoặc URL `http(s)://`. `//host` (protocol-relative) và `/\host` bị từ chối để không âm thầm trỏ sang host khác; pattern http(s) không phân biệt hoa/thường.
+- `src/features/products/lib/product-image-validation.ts`: thêm `MAX_PRODUCT_IMAGES_PER_UPLOAD = 10` dùng chung client/server.
+- `src/app/api/admin/products/[productId]/images/route.ts`: trả 400 khi request có hơn 10 file, trước khi đọc/ghi file nào.
+- `src/features/products/components/product-image-management.tsx`: chặn cùng ngưỡng ở client và cập nhật dòng hướng dẫn "up to 5 MB per file and 10 files per upload".
+- Test: `form-validation.test.ts` thêm `//evil.example` và `/\evil.example` bị từ chối, `http://` được nhận; `route.test.ts` thêm case 11 file trả 400 và không gọi upload/create; `users/actions.test.ts` spy `prisma.$transaction` để xác nhận `isolationLevel: 'Serializable'`.
+- `docs/ARCHITECTURE.md`: thêm mục 10.5 ghi nhận transaction Serializable + retry, quy tắc URL và giới hạn 10 file/request.
+
+**Kết quả kiểm chứng**
+
+- `npx vitest run src/features/users src/features/shared/lib/form-validation.test.ts src/app/api/admin/products/[productId]/images/route.test.ts` → 5 files / 26 tests passed.
+- `npm run typecheck` → passed, exit 0.
+- `npm run lint` → passed, exit 0.
+- `npm test` → 47 files / 217 tests passed.
+- `npm run format:check` → `All matched files use Prettier code style!`.
+- `npm run build` → compiled successfully, exit 0.
+- `npm run test:e2e` → 9/9 passed.
+
+**So sánh Figma**
+
+- Không đổi bố cục hay màu sắc. Trang quản lý ảnh chỉ cập nhật dòng hướng dẫn và thêm thông báo lỗi khi chọn quá 10 file.
+
+### AI sai ở đâu
+
+- Ban đầu chỉ định thêm giới hạn số file ở client cho nhanh, nhưng yêu cầu là bảo vệ route nên đã đặt hằng số dùng chung và kiểm tra ở cả server lẫn client.
+- `isPathOrUrl` cũ dùng `startsWith('/')` nên coi `//host` là path nội bộ; đã đổi sang regex giống `isSafeLinkHref`/`isSafeImageSrc` của markdown và bổ sung trường hợp `/\host`.
+- Cân nhắc update có điều kiện bằng raw SQL, nhưng phải xử lý khác nhau giữa SQLite/PostgreSQL; chọn Serializable + retry ít rủi ro hơn và vẫn kiểm chứng được bằng test.
+- `format:check` bắt 3 file chưa đúng Prettier sau khi sửa; đã chạy `prettier --write` và kiểm tra lại.
+- Để tránh lặp lại lỗi mojibake lần trước, lần này capture output bằng Node (`spawnSync`) với UTF-8 thay vì redirect của PowerShell.
+
+---
+
 ## 2026-11-16 10:20:00 +07:00 - Session revocation on logout, role/lock and password change (R4.2)
 
 ### Prompt nguyên văn đã dùng

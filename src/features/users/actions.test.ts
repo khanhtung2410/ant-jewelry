@@ -136,4 +136,17 @@ describe('saveUserAccess session version', () => {
     expect(user?.sessionVersion).toBe(0);
     await expect(bcrypt.compare(OLD_PASSWORD, user!.passwordHash)).resolves.toBe(true);
   });
+
+  it('runs the active-admin check and update in a serializable transaction', async () => {
+    const transactionSpy = vi.spyOn(prisma, '$transaction');
+    try {
+      await saveUserAccess(accessState(userId, 'EDITOR'), formDataFor(userId, 'ADMIN'));
+
+      expect(transactionSpy).toHaveBeenCalledWith(expect.any(Function), {
+        isolationLevel: 'Serializable',
+      });
+    } finally {
+      transactionSpy.mockRestore();
+    }
+  });
 });
