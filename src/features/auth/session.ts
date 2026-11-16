@@ -42,19 +42,27 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   if (!session) return null;
 
   // Tokens stay valid until they expire, so re-check the account on every request.
-  // This makes locking an account and changing its role take effect immediately.
+  // This makes locking an account, changing its role and logout take effect immediately.
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { id: true, email: true, name: true, role: true, locked: true },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      locked: true,
+      sessionVersion: true,
+    },
   });
 
-  if (!user || user.locked) return null;
+  if (!user || user.locked || user.sessionVersion !== session.sessionVersion) return null;
 
   return {
     userId: user.id,
     email: user.email,
     role: user.role,
     name: user.name,
+    sessionVersion: user.sessionVersion,
     exp: session.exp,
   };
 }
@@ -65,7 +73,24 @@ export async function setAdminSessionCookie(session: Omit<AdminSession, 'exp'>):
   cookieStore.set(SESSION_COOKIE_NAME, token, getSessionCookieOptions(SESSION_MAX_AGE_SECONDS));
 }
 
-export async function clearAdminSessionCookie(): Promise<void> {
+/**
+ * Bumps the user's session version before clearing the cookie. Clearing only
+ * the browser cookie would leave an already copied token valid until expiry.
+ */
+export async function revokeAdminSession(): Promise<void> {
   const cookieStore = await cookies();
+  const session = readValidatedSession(cookieStore);
+
+  if (session) {
+    try {
+      await prisma.user.updateMany({
+        where: { id: session.userId },
+        data: { sessionVersion: { increment: 1 } },
+      });
+    } catch (error) {
+      console.error('Admin logout could not revoke the session:', error);
+    }
+  }
+
   cookieStore.set(SESSION_COOKIE_NAME, '', getSessionCookieOptions(0));
 }

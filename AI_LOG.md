@@ -1,3 +1,55 @@
+## 2026-11-16 10:20:00 +07:00 - Session revocation on logout, role/lock and password change (R4.2)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+>
+> R4.2 — Đăng xuất thu hồi phiên. Thêm sessionVersion (hoặc tương đương) vào User và token; đăng xuất / đổi mật khẩu / đổi role tăng version (session.ts:68).
+> cookie cũ sau khi đăng xuất không vào được /admin.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện (R4.2)**
+
+- `prisma/schema.prisma` + `prisma/postgresql/schema.prisma`: thêm `User.sessionVersion Int @default(0)`; migration `20261116120000_add_user_session_version` cho cả SQLite và PostgreSQL.
+- `src/features/auth/session-token.ts`: `AdminSession.sessionVersion` được ký trong token; `verifySessionToken` từ chối token thiếu version, version âm hoặc không phải số nguyên. Token cũ trước R4.2 vì vậy bị coi là không hợp lệ thay vì bỏ qua kiểm tra.
+- `src/features/auth/session.ts`: `getAdminSession` đọc thêm `sessionVersion` từ database và trả `null` khi version trong token khác database. Thêm `revokeAdminSession()`: tăng `sessionVersion` rồi mới xoá cookie, nên token đã bị sao chép trước khi logout cũng không dùng lại được.
+- `src/features/auth/actions.ts`: login đưa `sessionVersion` hiện tại vào token; `logoutAction` gọi `revokeAdminSession` thay vì chỉ xoá cookie.
+- `src/features/users/actions.ts`: `saveUserAccess` tăng version khi role hoặc trạng thái khoá thay đổi; thêm ô mật khẩu mới tuỳ chọn, hash bằng bcrypt và tăng version khi đặt mật khẩu mới. Việc hash chạy ngoài transaction để transaction ngắn.
+- `src/features/users/lib/user-form-schema.ts`: `updateUserAccessSchema` nhận `password` tuỳ chọn; chuỗi rỗng được phép (không đổi mật khẩu), còn nếu có giá trị thì phải từ 8 đến 72 ký tự.
+- `src/features/users/components/user-management.tsx`: thêm input `Mật khẩu mới` (để trống nếu không đổi) và hiển thị lỗi validate của trường này.
+- Test: `session-token.test.ts` (round-trip version, token thiếu/sai version, chống sửa payload), `session.test.ts` (token cũ sau khi version tăng bị từ chối, tài khoản khoá, user không còn), `users/actions.test.ts` (role/khoá/mật khẩu tăng version, access không đổi thì không tăng, mật khẩu ngắn bị chặn và không đổi dữ liệu), cập nhật fixture `sessionVersion` ở `proxy.test.ts`, `action-authorization.test.ts`, `route.test.ts`, và E2E `logout revokes the previous admin session cookie`.
+- `docs/ARCHITECTURE.md` mục 10.4 + `docs/ERD.md`: ghi nhận `sessionVersion` và hành vi thu hồi phiên.
+
+**Kết quả kiểm chứng**
+
+- `npx vitest run src/features/auth src/features/users` → 7 files / 35 tests passed.
+- `npm run typecheck` → passed, exit 0.
+- `npm run lint` → passed, exit 0.
+- `npm test` → 47 files / 215 tests passed.
+- `npm run format:check` → `All matched files use Prettier code style!`.
+- `npm run build` → compiled successfully, exit 0.
+- `npm run test:e2e` → 9/9 passed, gồm test dùng lại cookie cũ sau logout và bị chuyển về `/admin/login`.
+
+**So sánh Figma**
+
+- Không đổi bố cục trang. Bảng người dùng chỉ thêm một input mật khẩu mới cùng kiểu border/typography với các control sẵn có; không thêm màu hay component mới.
+
+### AI sai ở đâu
+
+- Ban đầu chỉ định xoá cookie khi logout. Như vậy token đã bị sao chép vẫn dùng được tới khi hết hạn, nên phải thêm `sessionVersion` và tăng version trước khi xoá cookie.
+- Ban đầu chỉ tăng version khi đổi role; mở khoá tài khoản sẽ làm token cũ sống lại. Đã tính cả thay đổi trạng thái khoá.
+- Codebase chưa có luồng đổi mật khẩu riêng. Thay vì tự tạo trang mới ngoài yêu cầu, đã thêm ô mật khẩu tuỳ chọn vào form cấp quyền sẵn có và tăng version khi ghi `passwordHash`.
+- Test `users/actions.test.ts` lần đầu dùng sai role kỳ vọng và không reset dữ liệu giữa các test; đã reset `role`, `locked`, `sessionVersion`, `passwordHash` trong `beforeEach`.
+- Helper test token ban đầu khai báo `role` là `string` nên TypeScript báo lỗi; đã đổi sang `Partial<Omit<AdminSession, 'exp'>>`.
+- `format:check` bắt 3 file chưa đúng Prettier sau khi sửa; đã chạy `prettier --write` trước khi kiểm tra lại.
+
+---
+
 ## 2026-11-16 09:59:12 +07:00 - Constant-time login and email+IP rate limiting (R4.1)
 
 ### Prompt nguyên văn đã dùng

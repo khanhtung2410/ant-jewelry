@@ -58,6 +58,7 @@ describe('admin route proxy', () => {
         email: 'admin@antjewelry.local',
         role: 'ADMIN',
         name: 'Admin',
+        sessionVersion: 0,
       },
       'test-secret',
     );

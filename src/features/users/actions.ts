@@ -104,10 +104,16 @@ export async function saveUserAccess(
     return formState(values, { form: ['You do not have permission to manage users.'] });
   }
 
-  const parsed = updateUserAccessSchema.safeParse(values);
+  const parsed = updateUserAccessSchema.safeParse({
+    ...values,
+    password: readFormString(formData, 'password'),
+  });
   if (!parsed.success) {
     return formState(values, formatZodIssues(parsed.error.issues));
   }
+
+  // Hash outside the transaction so the interactive transaction stays short.
+  const passwordHash = parsed.data.password ? await bcrypt.hash(parsed.data.password, 10) : null;
 
   try {
     await prisma.$transaction(async (transaction) => {
@@ -134,9 +140,17 @@ export async function saveUserAccess(
         throw new LastActiveAdminError();
       }
 
+      // Role, lock or password changes must invalidate tokens issued under the old access.
+      const accessChanged =
+        current.role !== next.role || current.locked !== next.locked || passwordHash !== null;
+
       await transaction.user.update({
         where: { id: parsed.data.userId },
-        data: next,
+        data: {
+          ...next,
+          ...(passwordHash ? { passwordHash } : {}),
+          ...(accessChanged ? { sessionVersion: { increment: 1 } } : {}),
+        },
       });
     });
   } catch (error) {

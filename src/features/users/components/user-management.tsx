@@ -130,12 +130,29 @@ function UserRow({ user, isCurrentUser }: { user: AdminUserRow; isCurrentUser: b
             Khóa tài khoản
           </label>
 
+          <label className="flex items-center gap-2 text-xs text-[var(--font-color)]">
+            Mật khẩu mới
+            <input
+              type="password"
+              name="password"
+              autoComplete="new-password"
+              placeholder="Để trống nếu không đổi"
+              className="w-44 rounded-md border border-[var(--line)] bg-background px-2 py-1 text-sm text-foreground"
+            />
+          </label>
+
           <AdminActionButton type="submit" disabled={pending} className="disabled:opacity-60">
             {pending ? 'Saving…' : 'Save'}
           </AdminActionButton>
         </form>
 
         {state.fieldErrors.form?.map((error) => (
+          <p key={error} role="alert" className="mt-2 text-xs text-red-700">
+            {error}
+          </p>
+        ))}
+
+        {state.fieldErrors.password?.map((error) => (
           <p key={error} role="alert" className="mt-2 text-xs text-red-700">
             {error}
           </p>

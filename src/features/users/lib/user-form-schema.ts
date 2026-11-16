@@ -23,6 +23,12 @@ export const updateUserAccessSchema = z.object({
   userId: z.string().min(1, 'Choose a user.'),
   role: z.enum(ROLE_OPTIONS),
   locked: z.boolean(),
+  password: z
+    .string()
+    .trim()
+    .max(72, 'Password must be at most 72 characters.')
+    .refine((value) => value === '' || value.length >= 8, 'Password must be at least 8 characters.')
+    .optional(),
 });
 
 export type ValidatedCreateUser = z.output<typeof createUserSchema>;

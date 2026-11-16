@@ -9,6 +9,8 @@ export interface AdminSession {
   email: string;
   role: Role;
   name: string | null;
+  /** Mirrors User.sessionVersion; a mismatch means the session was revoked. */
+  sessionVersion: number;
   exp: number;
 }
 
@@ -45,6 +47,9 @@ function isValidSessionPayload(payload: Partial<SessionPayload>): payload is Ses
     payload.email.length > 0 &&
     isRole(payload.role) &&
     (payload.name === null || typeof payload.name === 'string') &&
+    typeof payload.sessionVersion === 'number' &&
+    Number.isInteger(payload.sessionVersion) &&
+    payload.sessionVersion >= 0 &&
     typeof payload.exp === 'number' &&
     Number.isInteger(payload.exp)
   );
@@ -92,6 +97,7 @@ export function verifySessionToken(
       email: payload.email,
       role: payload.role,
       name: payload.name,
+      sessionVersion: payload.sessionVersion,
       exp: payload.exp,
     };
   } catch {

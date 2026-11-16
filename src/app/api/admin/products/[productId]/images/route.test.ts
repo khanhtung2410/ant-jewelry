@@ -25,6 +25,7 @@ vi.mock('@/features/auth/session', () => ({
     email: 'admin@example.com',
     name: 'Admin',
     role: 'ADMIN',
+    sessionVersion: 0,
     exp: 9_999_999_999,
   })),
 }));
