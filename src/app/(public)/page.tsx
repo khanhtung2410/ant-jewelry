@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Prisma } from '@prisma/client';
 import { BlogRow } from '@/features/blog/components/blog-row';
 import { Carousel } from '@/features/products/components/carousel';
 import { ActionButton } from '@/features/layout/components/action-button';
@@ -15,11 +16,22 @@ export const metadata: Metadata = {
   },
 };
 
+async function getOrEmpty<T>(load: () => Promise<T[]>): Promise<T[]> {
+  try {
+    return await load();
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+      return [];
+    }
+    throw error;
+  }
+}
+
 export default async function Home() {
   const [productSections, latestPosts, heroSlides] = await Promise.all([
-    getStorefrontCategorySections(),
-    getBlogPosts({ limit: 2 }),
-    getHeroSlides(),
+    getOrEmpty(getStorefrontCategorySections),
+    getOrEmpty(() => getBlogPosts({ limit: 2 })),
+    getOrEmpty(getHeroSlides),
   ]);
 
   return (

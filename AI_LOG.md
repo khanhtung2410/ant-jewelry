@@ -1,3 +1,51 @@
+## 2026-11-16 13:55:00 +07:00 - Vercel inspect (P2021) and build resilience fix
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> use current branch, commit
+>
+> run npx vercel inspect dpl_GFQZtEbzBtYAtx5wq5Jwo2gRS1B9 --logs, resolve vercel or point out change if cant resolve using current aaavailaable tool
+
+### Đã tự kiểm chứng
+
+**Vercel inspect**
+
+- Chạy `npx --yes vercel@latest inspect dpl_GFQZtEbzBtYAtx5wq5Jwo2gRS1B9 --logs` (deployment trên `main`, commit `3a6373c`).
+- Build fail: `PrismaClientKnownRequestError` `P2021` (`The table public.BlogPost does not exist in the current database`) trong `prisma.blogPost.findMany()` tại `src/features/blog/queries/blog-posts.ts:51`, báo `Failed to collect page data for /blog/[slug]` và `Command "npm run build:production" exited with 1`.
+- Nguyên nhân: database production mà build kết nối tới chưa có bảng/migration (hoặc trỏ sai DB). Dù `generateStaticParams` của route slug đã guard P2021, các luồng khác (blog list `/blog`, `sitemap`, home query blog/sections, metadata/content slug) vẫn có thể truy vấn DB trong quá trình collect/prerender và làm build fail khi bảng chưa tồn tại.
+
+**Thay đổi đã thực hiện (code-side resilience)**
+
+- Bổ sung xử lý `P2021` để build có thể hoàn tất khi DB chưa migrate:
+  - `src/app/(public)/blog/page.tsx`: trả danh sách bài rỗng khi P2021.
+  - `src/app/sitemap.ts`: trả mảng rỗng cho categories/products/posts khi P2021.
+  - `src/app/(public)/page.tsx`: fallback mảng rỗng cho sections/posts/slides khi P2021.
+  - `src/app/(public)/blog/[slug]/page.tsx`, `blog-post-page-content.tsx`: `notFound()` khi P2021 trong metadata/content.
+  - `src/app/(public)/p/[slug]/page.tsx`: `notFound()` khi P2021 trong `generateMetadata`.
+- Không thay đổi hành vi khi DB/bảng đã có; chỉ tránh crash build do bảng thiếu.
+
+**Hạn chế / cần thao tác ngoài công cụ hiện có**
+
+- Không thể chạy migration trên DB production, thay đổi env Vercel, hay redeploy/xác minh deployment từ môi trường hiện tại (không có quyền/credentials hạ tầng).
+- Cần thực hiện trên hạ tầng: xác nhận `DATABASE_URL`/`DIRECT_URL` đúng DB production, chạy `npm run db:migrate:production` và `npm run db:migrate:status:production`, sau đó redeploy (để build mới có code resilience và runtime có schema đúng).
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8)
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm test` → 49 files / 225 tests passed (Vitest, `prisma/test.db`), exit 0.
+- `npm run format:check` → `All matched files use Prettier code style!`, exit 0.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+
+### AI sai ở đâu
+
+- Ban đầu chỉ guard `generateStaticParams` cho slug routes, nhưng Vercel build vẫn fail vì các trang/query khác (blog index, sitemap, home, metadata/content) chạm DB trong lúc collect/prerender; cần bao quát P2021 ở các điểm đọc dữ liệu công khai liên quan.
+- Khi sửa nhanh, lần đầu đặt JSX trong `try/catch` và dùng biến `let` khiến lint `react-hooks/error-boundaries` và typecheck báo lỗi; đã tách data-fetch khỏi JSX và sửa narrowing/format.
+- Không thể tự “resolve” hoàn toàn lỗi deployment vì nguyên nhân gốc (DB chưa migrate/cấu hình trên Vercel) nằm ngoài khả năng thay đổi hạ tầng của agent.
+
+---
+
 ## 2026-11-16 13:10:00 +07:00 - Address terminal errors/warnings and re-verify
 
 ### Prompt nguyên văn đã dùng

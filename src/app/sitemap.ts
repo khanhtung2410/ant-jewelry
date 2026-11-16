@@ -1,14 +1,26 @@
 import type { MetadataRoute } from 'next';
+import { Prisma } from '@prisma/client';
 import { getBlogPosts, getCategories, getProducts } from '@/features/shared/queries';
 import { getSiteUrl } from '@/features/shared/lib/site-url';
 
 const staticPaths = ['/blog', '/jewelry-care', '/privacy', '/ship', '/terms'];
 
+async function getCollectionOrEmpty<T>(load: () => Promise<T[]>): Promise<T[]> {
+  try {
+    return await load();
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+      return [];
+    }
+    throw error;
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [categories, products, posts] = await Promise.all([
-    getCategories(),
-    getProducts(),
-    getBlogPosts(),
+    getCollectionOrEmpty(getCategories),
+    getCollectionOrEmpty(getProducts),
+    getCollectionOrEmpty(getBlogPosts),
   ]);
   const siteUrl = getSiteUrl();
 
