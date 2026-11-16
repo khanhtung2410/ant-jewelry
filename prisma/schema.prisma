@@ -43,6 +43,16 @@ model User {
   updatedAt    DateTime @updatedAt
 }
 
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  ip        String
+  createdAt DateTime @default(now())
+
+  @@index([email, ip, createdAt])
+  @@index([createdAt])
+}
+
 model Category {
   id        String         @id @default(cuid())
   name      String

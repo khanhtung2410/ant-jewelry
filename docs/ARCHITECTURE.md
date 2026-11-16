@@ -796,7 +796,7 @@ Pagination, sorting, validation rules và error format vẫn cần chốt theo O
 
 ## 10. Authentication và Authorization
 
-> Work tree chưa có Authentication, Authorization hoặc User/Role model. Nội dung dưới đây là định hướng đề xuất.
+> Authentication nội bộ đã được triển khai bằng session cookie ký HMAC (`AUTH_SECRET`), mật khẩu bcrypt và bảng `LoginAttempt`. Các mục còn ghi "đề xuất" bên dưới chỉ áp dụng cho phần chưa được chốt.
 
 ### 10.1. Định hướng
 SAD đề xuất JWT để xác thực người dùng nội bộ. Tuy nhiên, cấu trúc User/Role và quan hệ với Staff chưa được xác định đầy đủ.
@@ -827,10 +827,17 @@ Bảng dưới đây là định hướng suy ra từ mô tả Actor trong SAD, 
 - JWT expiration.
 - Refresh token strategy.
 - Token revocation và logout.
-- Login rate limiting.
+- Login rate limiting (đã triển khai ở R4.1, xem 10.4).
 - Account lockout.
 - Audit log cho thao tác quản trị.
 Không đưa ra thiết kế chi tiết cho các nội dung này như thể đã được chủ dự án phê duyệt.
+
+### 10.4. Login protections (R4.1)
+- `loginAction` luôn chạy `bcrypt.compare`: khi email không tồn tại, mật khẩu được so với một dummy hash cố định để thời gian phản hồi không tiết lộ email có tồn tại hay không.
+- Email sai, mật khẩu sai và tài khoản bị khoá đều trả cùng `AUTH_MESSAGES.INVALID_CREDENTIALS`.
+- Bảng `LoginAttempt` lưu từng lần đăng nhập sai theo cặp `email` + `ip`; sau 5 lần sai trong 15 phút, cặp đó nhận `AUTH_MESSAGES.TOO_MANY_ATTEMPTS` và bị chặn cho tới khi cửa sổ trượt qua. Đăng nhập thành công xoá các lần sai của cặp đó; mỗi lần ghi lỗi đồng thời dọn các bản ghi cũ hơn cửa sổ.
+- IP lấy từ hop đầu tiên của `x-forwarded-for`, fallback `x-real-ip`, rồi `unknown`; giá trị bị cắt còn 64 ký tự. Khi triển khai sau proxy, proxy tin cậy phải ghi đè các header này để client không tự giả mạo.
+- Khoá tài khoản (`User.locked`) vẫn được kiểm tra sau khi so mật khẩu và được kiểm tra lại ở mỗi request trong `getAdminSession`.
 
 ## 11. Image Storage Architecture
 

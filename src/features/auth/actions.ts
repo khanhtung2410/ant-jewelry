@@ -3,10 +3,21 @@
 import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/features/shared/db/prisma';
-import { handleAuthActionError, invalidCredentialsState, type AuthActionState } from './errors';
+import { getClientIp } from './client-ip';
+import {
+  handleAuthActionError,
+  invalidCredentialsState,
+  loginRateLimitedState,
+  type AuthActionState,
+} from './errors';
+import { clearFailedLogins, isLoginRateLimited, recordFailedLogin } from './login-rate-limit';
 import { clearAdminSessionCookie, setAdminSessionCookie } from './session';
 
 export type LoginState = AuthActionState;
+
+// Compared when the email does not exist so both branches spend the same time
+// hashing. The password never matches because this hash is random.
+const DUMMY_PASSWORD_HASH = '$2b$10$RKKmelcNHmpPTiJTupzh3uVY10nt12zZvn4SxSwz2Dwf8jo13OiA2';
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
@@ -28,6 +39,8 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
     return invalidCredentialsState();
   }
 
+  const clientIp = await getClientIp();
+
   let user: {
     id: string;
     email: string;
@@ -36,7 +49,12 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
     role: 'ADMIN' | 'EDITOR';
     locked: boolean;
   } | null = null;
+
   try {
+    if (await isLoginRateLimited(email, clientIp)) {
+      return loginRateLimitedState();
+    }
+
     user = await prisma.user.findUnique({
       where: { email },
       select: {
@@ -52,13 +70,27 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
     return handleAuthActionError('Admin login could not load the user record:', error);
   }
 
-  if (!user) {
+  let valid: boolean;
+  try {
+    valid = await bcrypt.compare(password, user?.passwordHash ?? DUMMY_PASSWORD_HASH);
+  } catch (error) {
+    return handleAuthActionError('Admin login could not verify the password:', error);
+  }
+
+  if (!user || !valid || user.locked) {
+    try {
+      await recordFailedLogin(email, clientIp);
+    } catch (error) {
+      console.error('Admin login could not record a failed attempt:', error);
+    }
+
     return invalidCredentialsState();
   }
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid || user.locked) {
-    return invalidCredentialsState();
+  try {
+    await clearFailedLogins(email, clientIp);
+  } catch (error) {
+    console.error('Admin login could not clear failed attempts:', error);
   }
 
   try {
