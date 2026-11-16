@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { getAdminSession } from '@/features/auth/session';
 import type { CreateUserFormState } from '@/features/users/actions';
 import type { ProductFormState, ProductFormValues } from '@/features/products/actions';
 import type { SettingsFormState } from '@/features/settings/actions';
@@ -110,6 +111,36 @@ describe('server action authorization', () => {
       expect.objectContaining({
         where: { id: 'product-1' },
         data: expect.objectContaining({ price: 1000000 }),
+      }),
+    );
+  });
+
+  it('lets an ADMIN change the stored price', async () => {
+    vi.mocked(getAdminSession).mockResolvedValueOnce({
+      userId: 'admin-1',
+      email: 'admin@example.com',
+      name: 'Admin',
+      role: 'ADMIN',
+      sessionVersion: 0,
+      exp: 9_999_999_999,
+    });
+    productUpdateMock.mockClear();
+
+    const formData = new FormData();
+    formData.set('productId', 'product-1');
+    formData.set('name', 'Gold ring');
+    formData.set('slug', 'gold-ring');
+    formData.set('categoryId', 'category-1');
+    formData.set('brand', 'ANT');
+    formData.set('price', '9999999');
+    formData.set('description', 'A ring');
+
+    await saveProduct(productState, formData);
+
+    expect(productUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'product-1' },
+        data: expect.objectContaining({ price: 9999999 }),
       }),
     );
   });

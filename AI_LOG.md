@@ -1,3 +1,64 @@
+## 2026-11-16 11:02:00 +07:00 - Repo, README, test hardening (R5.1-R5.6)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R5. Repo, README, test (G0, G4.1)
+> R5.1 — README.md ở gốc repo. Viết lại theo code hiện tại (src/features/*, admin, Prisma, test, deploy); xoá phần mô tả src/components, src/lib/mock, “chưa có Admin”.
+> clone mới, chỉ làm theo README: npm install → tạo env → db:push → db:seed → npm run dev chạy được.
+> R5.2 — .env.example. Biến bắt buộc không comment; hướng dẫn tạo đúng file mà Prisma CLI đọc (.env), hoặc nạp .env.local cho Prisma.
+> R5.3 — Mẫu PR. .github/pull_request_template.md có ## Screenshots (so với Figma) và ## Verification với 4 lệnh như G0.1.
+> R5.4 — Test không đụng dev.db. vitest.global-setup.ts dùng database test riêng; playwright.config.ts tự reset DB E2E và chạy bản build production (next build && next start).
+> chạy npm test xong, dữ liệu trong dev.db giữ nguyên.
+> R5.5 — Prettier. npm run format:check không lỗi.
+> R5.6 — Test bổ sung. Unit test phân trang SEE MORE ở storefront; unit test cho R1.2, R2.5, R4.1; E2E bàn phím cho R3.1.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện (R5)**
+
+- **R5.1:** tạo `README.md` ở gốc theo code hiện tại (`src/features/*`, App Router public/admin/api, Prisma SQLite/PostgreSQL, Vitest/Playwright, deploy). Xóa `docs/README.md` cũ còn mô tả `src/components`, `src/lib/mock`, `components/` và “chưa có Admin”. README mới nêu luồng clone mới: `npm install` → tạo `.env` từ `.env.example` + `AUTH_SECRET` → `npm run db:push` → `npm run db:seed` → `npm run dev`, kèm tài khoản seed local và lưu ý `PRODUCT_IMAGE_UPLOAD_DIR`.
+- **R5.2:** viết lại `.env.example` với `DATABASE_URL="file:./dev.db"` và `AUTH_SECRET` không bị comment; hướng dẫn copy sang `.env` vì Prisma CLI chỉ đọc `.env` (Next.js mới đọc cả `.env.local`). Biến tùy chọn/production (`SITE_URL`, `PRODUCT_IMAGE_UPLOAD_DIR`, PostgreSQL URLs) được ghi chú rõ.
+- **R5.3:** cập nhật `.github/pull_request_template.md` giữ `## Screenshots (so với Figma)` và thêm `## Verification` với 4 lệnh `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` (yêu cầu dán output đầy đủ); giữ checklist `npm run format:check`.
+- **R5.4:** thêm `vitest.database.ts` (`file:./test.db`), `vitest.setup.ts` đặt `DATABASE_URL` cho worker, `vitest.global-setup.ts` reset+seed `prisma/test.db` bằng `--force-reset`; `vitest.config.mts` dùng `setupFiles`. `playwright.config.ts` chạy `prisma db push --force-reset --skip-generate && prisma db seed && npm run build && npm run start` với `DATABASE_URL=file:./e2e.db`; `test:e2e` đổi thành `playwright test`; xóa `e2e/run.ts`. SHA-256 của `prisma/dev.db` không đổi sau `npm test` (`3FD848...`).
+- **R5.5:** `npm run format:check` pass (`All matched files use Prettier code style!`).
+- **R5.6:** tách helper thuần `appendProductCardPage` (`src/features/products/lib/category-product-pagination.ts`) dùng trong `category-product-listing.tsx` và thêm unit test nối trang SEE MORE/loại trùng id; tách `collectBlogImages` (`src/features/blog/lib/blog-images.ts`) dùng trong `syncBlogPostImages` và thêm unit test cho R2.5 (cover + ảnh inline, dedupe, fallback alt/URL rỗng); bổ sung test R1.2 ADMIN đổi giá thành công trong `action-authorization.test.ts`; bổ sung test R4.1 xóa `LoginAttempt` sau đăng nhập thành công trong `auth/actions.test.ts`. E2E R3.1 (Tab tới PRODUCTS, Enter, Tab qua 4 link danh mục, Tab ra ngoài đóng, Shift+Tab, Esc trả focus) đã có và chạy pass trong suite.
+
+**Điều chỉnh kỹ thuật để E2E chạy đúng với production build (R5.4)**
+
+- `saveProduct`/các mutation sản phẩm trong `src/features/products/actions.ts` đổi sang `revalidateProductPages({ immediate: true })` để thay đổi (đặc biệt là giá) phản ánh ngay khi storefront chạy bằng `next start` với cache.
+- Test E2E `ADMIN price changes are reflected on the storefront` dùng `expect(...).toPass` + reload sau khi mở trang sản phẩm, chịu được độ trễ propagation cache nhỏ trong chế độ production build nhưng vẫn xác nhận giá mới hiển thị.
+
+**Kết quả kiểm chứng**
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm test` → 49 files / 225 tests passed (Vitest dùng `prisma/test.db`).
+- `npm run format:check` → `All matched files use Prettier code style!`.
+- `npm run build` → compiled successfully, exit 0.
+- `npm run test:e2e` → 9/9 passed (`next build && next start`, `prisma/e2e.db`).
+- `prisma/dev.db` giữ nguyên sau khi chạy unit test (SHA-256 trước/sau giống nhau).
+
+**So sánh Figma**
+
+- Không thay đổi giao diện storefront/admin ngoài hành vi đã có; không có screenshot UI mới.
+
+### AI sai ở đâu
+
+- Ban đầu chỉ tách logic SEE MORE trong component; do môi trường test không có jsdom/testing-library, đã tách helper thuần `appendProductCardPage` để unit test ổn định và component chỉ gọi helper.
+- Tương tự, R2.5 ban đầu kiểm tra qua logic trong action; đã tách `collectBlogImages` để test trực tiếp việc gom ảnh bìa/inline, dedupe và fallback alt.
+- `format:check` lần đầu báo 3 file test/helper mới chưa đúng Prettier; đã chạy `prettier --write` và kiểm tra lại. `.env.example` không parse được bởi Prettier nên không đưa vào `--write`.
+- Sau khi chuyển Playwright sang `next build && next start` (theo R5.4), test “ADMIN price changes are reflected on the storefront” bị stale cache và fail. Đã đổi revalidation sản phẩm sang `immediate: true` và làm assertion E2E resilient bằng `toPass` + reload, rồi chạy lại full suite 9/9.
+- Toàn bộ output kiểm tra được capture bằng Node `spawnSync` (UTF-8) để tránh lỗi PowerShell UTF-16/mojibake với `✓`, `─`, `│`, `·`, `—`.
+
+---
+
 ## 2026-11-16 10:38:00 +07:00 - Last-ADMIN race and URL/upload limits (R4.3-R4.4)
 
 ### Prompt nguyên văn đã dùng

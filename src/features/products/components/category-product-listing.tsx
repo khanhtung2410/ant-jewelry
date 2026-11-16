@@ -6,6 +6,7 @@ import type { ProductSort } from '@/features/shared/queries';
 import type { ProductCardData } from '@/features/shared/domain/domain';
 import { ChevronDownIcon } from '@/features/layout/components/icons';
 import { loadMoreCategoryProducts } from '@/features/products/actions/category-products';
+import { appendProductCardPage } from '@/features/products/lib/category-product-pagination';
 import { PRODUCT_CARD_PAGE_SIZE } from '@/features/products/lib/product-card-page';
 import { ProductCard } from './product-card';
 import { ActionButton } from '@/features/layout/components/action-button';
@@ -53,7 +54,7 @@ export function CategoryProductListing({
           offset: products.length,
           limit: PRODUCT_CARD_PAGE_SIZE,
         });
-        setProducts((current) => [...current, ...nextPage.products]);
+        setProducts((current) => appendProductCardPage(current, nextPage.products));
         setHasMore(nextPage.hasMore);
       } catch {
         setLoadError('Could not load more products. Please try again.');

@@ -18,10 +18,13 @@ export default defineConfig({
     headless: true,
   },
   webServer: {
-    command: 'npm run dev -- --hostname 127.0.0.1 --port 3100',
+    // Reset the dedicated E2E database, then exercise the production build so
+    // `npm run test:e2e` never touches prisma/dev.db and always tests `next start`.
+    command:
+      'npx prisma db push --force-reset --skip-generate && npx prisma db seed && npm run build && npm run start -- --hostname 127.0.0.1 --port 3100',
     url: baseURL,
     reuseExistingServer: false,
-    timeout: 120_000,
+    timeout: 300_000,
     env: {
       DATABASE_URL: E2E_DATABASE_URL,
       NEXT_TELEMETRY_DISABLED: '1',

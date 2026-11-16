@@ -136,6 +136,22 @@ describe('loginAction', () => {
     expect(await prisma.loginAttempt.count({ where: { email: RATE_EMAIL } })).toBe(0);
   });
 
+  it('clears failed attempts after a successful sign-in', async () => {
+    for (let attempt = 0; attempt < LOGIN_MAX_FAILED_ATTEMPTS - 1; attempt += 1) {
+      await signIn(RATE_EMAIL, 'WrongPassword@123');
+    }
+    expect(await prisma.loginAttempt.count({ where: { email: RATE_EMAIL } })).toBe(
+      LOGIN_MAX_FAILED_ATTEMPTS - 1,
+    );
+
+    await signIn(RATE_EMAIL, RATE_PASSWORD);
+
+    expect(vi.mocked(setAdminSessionCookie)).toHaveBeenCalledWith(
+      expect.objectContaining({ email: RATE_EMAIL }),
+    );
+    expect(await prisma.loginAttempt.count({ where: { email: RATE_EMAIL } })).toBe(0);
+  });
+
   it('tracks failures per email and IP combination', async () => {
     for (let attempt = 0; attempt < LOGIN_MAX_FAILED_ATTEMPTS; attempt += 1) {
       await signIn(RATE_EMAIL, 'WrongPassword@123');
