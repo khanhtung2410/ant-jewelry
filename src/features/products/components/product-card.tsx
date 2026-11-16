@@ -43,6 +43,8 @@ export function ProductCard({ product, className = '' }: ProductCardProps) {
               alt=""
               aria-hidden="true"
               fill
+              loading="lazy"
+              fetchPriority="low"
               unoptimized={isExternalImageUrl(hoverImage.url)}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
               className="object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"

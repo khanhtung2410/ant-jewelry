@@ -1,3 +1,61 @@
+## 2026-11-16 11:28:00 +07:00 - Lighthouse Home mobile & product (R6.1)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R6.1 — Lighthouse Home. Home mobile Performance ≥ 85 (hiện 68, khoảng 62–84). Ghi nguyên nhân chính (LCP / TBT / JS bundle) và thay đổi đã làm vào docs/PERFORMANCE.md, đo trên bản deploy.
+> trung vị 3 lần đo Home và trang sản phẩm: Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Nguyên nhân chính (Home, baseline median 68, range 62–84)**
+
+- **LCP cao (~3.5–4.0 s):** hero là LCP nhưng Home tải nhiều ảnh sản phẩm/Blog cùng lúc; mỗi `ProductCard` render ảnh chính + ảnh hover (ẩn) cho nhiều section, cạnh tranh băng thông với hero.
+- **TBT dao động (320–1740 ms):** nhiều section/card và ảnh below-the-fold được render/giải mã sớm trên mobile, tăng công việc main thread/JS hydration.
+- **Tải ảnh/JS bundle theo section:** Home nạp toàn bộ danh mục × số sản phẩm mỗi carousel và section Blog; carousel controls/interactive components vẫn cần JS.
+
+**Thay đổi đã làm**
+
+- Giảm `CAROUSEL_PRODUCT_LIMIT` cho section Home từ 10 xuống 5 sản phẩm/section (`src/features/products/lib/carousel-products.ts`) để giảm số card/ảnh trên Home.
+- `ProductCard`: ảnh hover đặt `loading="lazy"` và `fetchPriority="low"` (`src/features/products/components/product-card.tsx`).
+- Home: `content-visibility: auto` + `contain-intrinsic-size` cho các carousel section sau section đầu và section Blog (`src/app/(public)/page.tsx`); ảnh bìa Blog `loading="lazy"` (`src/features/blog/components/blog-row.tsx`).
+- Trang sản phẩm: defer section “YOU MIGHT ALSO LIKE” bằng `content-visibility` (`src/app/(public)/p/[slug]/product-page-content.tsx`); `ProductGallery` đặt `fetchPriority="high"` cho ảnh chính (LCP) và `loading="lazy"`/`fetchPriority="low"` cho thumbnail (`src/features/products/components/product-gallery.tsx`).
+- Cập nhật `docs/PERFORMANCE.md` với nguyên nhân, thay đổi, baseline, môi trường đo và bảng median/range 3 lần cho Home và `/p/aurora-band`.
+
+**Kết quả Lighthouse (3 lần/trang, median; range)**
+
+- Môi trường: Lighthouse 13.6.0, Chrome headless (Windows), mobile emulation, simulated throttling; production build local `next build && next start` (`http://localhost:3000`, `DATABASE_URL=file:./dev.db` seed). `docs/DEPLOY.md` chưa ghi nhận bản deploy production được xác minh của app này nên đo trên production build local (best effort) và ghi rõ trong `docs/PERFORMANCE.md`.
+- Home (`/`): Performance **92** (91–96), Accessibility **96**, SEO **100**; FCP 927 ms (919–930), LCP 3279 ms (2452–3329), TBT 126 ms (92–138).
+- Sản phẩm (`/p/aurora-band`): Performance **98** (92–99), Accessibility **100**, SEO **100**; FCP 765 ms (764–770), LCP 2311 ms (2220–3358), TBT 64 ms (52–68).
+- **Đạt mục tiêu trung vị:** Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95 cho cả hai trang.
+
+**Kết quả kiểm chứng**
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm test` → passed (Vitest).
+- `npm run format:check` → `All matched files use Prettier code style!`.
+- `npm run build` → compiled successfully, exit 0.
+
+**So sánh Figma**
+
+- Không thay đổi bố cục/màu sắc có chủ đích; giảm số sản phẩm hiển thị ban đầu mỗi section Home (5 thay vì 10) nhưng carousel/view products vẫn hoạt động như trước.
+
+### AI sai ở đâu
+
+- Yêu cầu nêu “đo trên bản deploy”, nhưng `docs/DEPLOY.md` cho thấy chưa có deployment production được xác minh của ứng dụng này. Đã đo trên production build local (`next start`) với 3 lần/trang và ghi rõ hạn chế/môi trường trong `docs/PERFORMANCE.md` thay vì báo cáo sai là deploy.
+- Điểm nghẽn ban đầu không chỉ ở hero: việc render ảnh hover cho mọi card và nhiều section below-the-fold làm tăng tải ảnh và work; đã ưu tiên giảm payload Home (limit 5/section), lazy/low-priority hover + Blog image, và `content-visibility` cho section dưới fold.
+- Sau thay đổi ban đầu, median trang sản phẩm còn 84; đã thêm ưu tiên `fetchPriority="high"` cho ảnh gallery chính, lazy thumbnail và defer related section rồi đo lại để đạt median ≥ 85.
+- Lighthouse dao động theo lần chạy; luôn lấy trung vị của 3 lần liên tiếp trên cùng build/cấu hình thay vì chọn lần tốt nhất.
+
+---
+
 ## 2026-11-16 11:02:00 +07:00 - Repo, README, test hardening (R5.1-R5.6)
 
 ### Prompt nguyên văn đã dùng

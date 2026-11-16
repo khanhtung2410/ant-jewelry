@@ -29,7 +29,10 @@ export async function ProductPageContent({ params }: ProductPageContentProps) {
       <ProductDetail product={product} categoryName={category?.name ?? null} settings={settings} />
 
       {relatedProducts.length > 0 ? (
-        <div className="mt-16 sm:mt-20">
+        <div
+          className="mt-16 sm:mt-20"
+          style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 420px' }}
+        >
           <Carousel
             title="YOU MIGHT ALSO LIKE"
             products={relatedProducts}

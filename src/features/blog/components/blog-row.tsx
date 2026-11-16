@@ -25,6 +25,7 @@ export function BlogRow({ post, className = '', headingLevel = 3 }: BlogRowProps
           src={post.coverImageUrl}
           alt={post.title}
           fill
+          loading="lazy"
           unoptimized={isExternalImageUrl(post.coverImageUrl)}
           sizes="(max-width: 640px) 100vw, 320px"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
