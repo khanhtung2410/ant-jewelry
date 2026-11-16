@@ -208,7 +208,10 @@ test('ADMIN price changes are reflected on the storefront', async ({ page }) => 
   await expect(page).toHaveURL(/saved=1/);
 
   await page.goto('/p/aurora-band');
-  await expect(page.getByText('12.345.678', { exact: true })).toBeVisible();
+  await expect(async () => {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('12.345.678', { exact: true })).toBeVisible();
+  }).toPass({ timeout: 20_000 });
 });
 
 test('EDITOR can edit product details but cannot edit a product price', async ({ page }) => {

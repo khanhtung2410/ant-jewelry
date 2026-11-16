@@ -195,7 +195,7 @@ export async function saveProduct(
       return product;
     });
     await processPendingProductImageDeletions();
-    revalidateProductPages();
+    revalidateProductPages({ immediate: true });
     updateTag('products');
     redirect(savedProductsRedirect(String(formData.get('returnTo') ?? '')));
   } catch (error) {
@@ -236,7 +236,7 @@ export async function toggleProductVisibility(productId: string, _formData: Form
     },
   });
 
-  revalidateProductPages();
+  revalidateProductPages({ immediate: true });
 }
 
 export async function setProductImageHover(
@@ -269,7 +269,7 @@ export async function setProductImageHover(
     });
   });
 
-  revalidateProductPages();
+  revalidateProductPages({ immediate: true });
 }
 
 export async function setProductImageFront(
@@ -306,7 +306,7 @@ export async function setProductImageFront(
     });
   });
 
-  revalidateProductPages();
+  revalidateProductPages({ immediate: true });
 }
 
 export async function assignProductImageColor(
@@ -335,7 +335,7 @@ export async function assignProductImageColor(
     throw new Error('Product image not found.');
   }
 
-  revalidateProductPages();
+  revalidateProductPages({ immediate: true });
 }
 
 export async function moveProductImage(
@@ -416,7 +416,7 @@ export async function deleteProductImage(productId: string, imageId: string, _fo
     }
   });
 
-  revalidateProductPages();
+  revalidateProductPages({ immediate: true });
   await processPendingProductImageDeletions();
 }
 
@@ -447,7 +447,7 @@ export async function deleteProduct(productId: string, _formData: FormData) {
     await transaction.product.delete({ where: { id: product.id } });
   });
 
-  revalidateProductPages();
+  revalidateProductPages({ immediate: true });
   await processPendingProductImageDeletions();
   redirect('/admin/products?deleted=1');
 }

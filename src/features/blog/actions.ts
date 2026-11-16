@@ -14,6 +14,7 @@ import {
 } from '@/features/shared/lib/form-validation';
 import { canManageBlog } from '@/features/shared/lib/permissions';
 import { savedBlogRedirect } from './lib/admin-blog-list';
+import { collectBlogImages } from './lib/blog-images';
 import { blogPostFormSchema } from './lib/blog-form-schema';
 
 export type BlogPostFormValues = {
@@ -63,23 +64,12 @@ async function syncBlogPostImages(
   body: string,
   title: string,
 ) {
-  const imageMatches = [...body.matchAll(/!\[(.*?)\]\((.*?)\)/g)].map((match) => ({
-    alt: match[1] || title,
-    url: match[2],
-  }));
-  const uniqueImages = Array.from(
-    new Map(
-      [coverImageUrl, ...imageMatches.map((image) => image.url)].filter(Boolean).map((url) => {
-        const match = imageMatches.find((image) => image.url === url);
-        return [url, { url, alt: match?.alt || title }];
-      }),
-    ).values(),
-  );
+  const images = collectBlogImages(coverImageUrl, body, title);
 
   await prisma.blogImage.deleteMany({ where: { blogPostId } });
-  if (uniqueImages.length > 0) {
+  if (images.length > 0) {
     await prisma.blogImage.createMany({
-      data: uniqueImages.map((image, index) => ({
+      data: images.map((image, index) => ({
         blogPostId,
         url: image.url,
         alt: image.alt,
