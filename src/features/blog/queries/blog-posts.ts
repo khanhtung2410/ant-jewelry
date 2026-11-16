@@ -1,7 +1,11 @@
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import type { BlogPost, BlogPostImage } from '@/features/shared/domain/domain';
 import { publishStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
+
+function isMissingTableError(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021';
+}
 
 /**
  * Newest first, with `id` as the tie-breaker so posts that share a
@@ -48,14 +52,21 @@ export async function getBlogPosts(
   options: { includeDrafts?: boolean; limit?: number } = {},
 ): Promise<BlogPost[]> {
   'use cache';
-  const records = await prisma.blogPost.findMany({
-    where: options.includeDrafts ? {} : { status: publishStatus.PUBLISHED },
-    orderBy: getBlogPostOrderBy(),
-    include: { images: { orderBy: { sortOrder: 'asc' } } },
-    ...(typeof options.limit === 'number' ? { take: options.limit } : {}),
-  });
+  try {
+    const records = await prisma.blogPost.findMany({
+      where: options.includeDrafts ? {} : { status: publishStatus.PUBLISHED },
+      orderBy: getBlogPostOrderBy(),
+      include: { images: { orderBy: { sortOrder: 'asc' } } },
+      ...(typeof options.limit === 'number' ? { take: options.limit } : {}),
+    });
 
-  return records.map(mapBlogPost);
+    return records.map(mapBlogPost);
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return [];
+    }
+    throw error;
+  }
 }
 
 export async function getBlogPostBySlug(
@@ -63,13 +74,20 @@ export async function getBlogPostBySlug(
   options: { includeDrafts?: boolean } = {},
 ): Promise<BlogPost | null> {
   'use cache';
-  const record = await prisma.blogPost.findFirst({
-    where: {
-      slug,
-      ...(options.includeDrafts ? {} : { status: publishStatus.PUBLISHED }),
-    },
-    include: { images: { orderBy: { sortOrder: 'asc' } } },
-  });
+  try {
+    const record = await prisma.blogPost.findFirst({
+      where: {
+        slug,
+        ...(options.includeDrafts ? {} : { status: publishStatus.PUBLISHED }),
+      },
+      include: { images: { orderBy: { sortOrder: 'asc' } } },
+    });
 
-  return record ? mapBlogPost(record) : null;
+    return record ? mapBlogPost(record) : null;
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return null;
+    }
+    throw error;
+  }
 }

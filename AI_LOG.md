@@ -1,3 +1,52 @@
+## 2026-11-16 14:45:00 +07:00 - Guard cached public queries against missing tables (P2021)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> use current branch, commit
+>
+> 13:55:53.522 Running build in Washington, D.C., USA (East) – iad1
+> ...
+> 13:56:45.605 prisma:error
+> 13:56:45.606 Invalid `prisma.blogPost.findMany()` invocation:
+> 13:56:45.606 The table `public.BlogPost` does not exist in the current database.
+> 13:56:46.281 Error: Failed to collect page data for /blog/[slug]
+> 13:56:46.331 Error: [BUILD_UTILS_SPAWN_1] Command "npm run build:production" exited with 1
+>
+> resolve vercel or point out change if cant resolve using current aaavailaable tool
+>
+> (follow-up) "The build is still failing... build:production is missing the prisma migrate deploy step..." — "what do you think"
+
+### Đã tự kiểm chứng
+
+- Dù đã guard một số route/caller, Vercel build (commit `736fe39`) vẫn fail P2021 tại `src/features/blog/queries/blog-posts.ts:51` (`getBlogPosts`) khi collect page data `/blog/[slug]` vì DB production chưa có bảng/migration. Với `use cache`/prerender, lỗi từ query layer có thể thoát nếu query không tự xử lý `P2021`.
+- Bổ sung xử lý `P2021` trực tiếp trong các query public/cached:
+  - `src/features/blog/queries/blog-posts.ts` (`getBlogPosts` → `[]`, `getBlogPostBySlug` → `null`)
+  - `src/features/products/queries/products.ts` (`getProducts`/`getRelatedProducts`/`getProductsByCategoryId` → `[]`, `getProductCardPage` → `{products:[], hasMore:false}`, `getProductBySlug`/`getProductById` → `null`)
+  - `src/features/products/queries/categories.ts` (list/getters → `[]`/`null`, `getProductsByCategorySlug`/`getStorefrontCategorySections` → fallback rỗng)
+  - `src/features/layout/queries/hero-slides.ts` (`getHeroSlides` → `[]`)
+  - `src/features/layout/queries/settings.ts` (`getSettings` → defaults)
+- Điều này giúp `next build`/prerender resilient hơn khi bảng chưa tồn tại. **Vẫn cần chạy migration trên DB production** để app có dữ liệu/schema đúng khi runtime.
+
+**Đánh giá về `prisma migrate deploy` trong `build:production`**
+
+- Thêm vào build giúp tạo schema nếu build kết nối được DB, nhưng làm build phụ thuộc DB/env (quyền, pooler/direct URL, lock, độ tin cậy). Cách an toàn hơn: chạy `npm run db:migrate:production` như bước riêng, giữ build là `generate + next build`, và dùng guard `P2021` để build không vỡ khi migrate chưa chạy.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8)
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm test` → 49 files / 225 tests passed (Vitest, `prisma/test.db`), exit 0.
+- `npm run format:check` → `All matched files use Prettier code style!`, exit 0.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+
+### AI sai ở đâu
+
+- Trước đó chỉ guard ở route/page caller; chưa guard tại query layer dùng `use cache`, nên P2021 vẫn có thể thoát trong quá trình collect/prerender và làm Vercel build fail.
+- Không thể tự chạy migration hoặc thay đổi env Vercel; cần thao tác hạ tầng để DB production thực sự có bảng.
+
+---
+
 ## 2026-11-16 14:20:00 +07:00 - Fix Vercel build: corrupted lockfile, DIRECT_URL env, and migrate-on-build
 
 ### Prompt nguyên văn đã dùng

@@ -1,5 +1,5 @@
 import { cacheTag } from 'next/cache';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import type {
   Product,
   ProductCardData,
@@ -8,6 +8,10 @@ import type {
   ProductStatus,
   ProductType,
 } from '@/features/shared/domain/domain';
+
+function isMissingTableError(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021';
+}
 import { createVndPrice } from '@/features/shared/domain/domain';
 import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
@@ -297,13 +301,20 @@ function toWhere(query: GetProductsQuery) {
 export async function getProducts(query: GetProductsQuery = {}): Promise<Product[]> {
   'use cache';
   cacheTag('products');
-  const records = await prisma.product.findMany({
-    where: toWhere(query),
-    include: productInclude,
-  });
+  try {
+    const records = await prisma.product.findMany({
+      where: toWhere(query),
+      include: productInclude,
+    });
 
-  const mapped = records.map((record) => mapProduct(record as unknown as DbProduct));
-  return query.sort ? sortProducts(mapped, query.sort) : mapped;
+    const mapped = records.map((record) => mapProduct(record as unknown as DbProduct));
+    return query.sort ? sortProducts(mapped, query.sort) : mapped;
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return [];
+    }
+    throw error;
+  }
 }
 
 /**
@@ -314,30 +325,37 @@ export async function getProducts(query: GetProductsQuery = {}): Promise<Product
 export async function getProductCardPage(query: GetProductCardPageQuery): Promise<ProductCardPage> {
   'use cache';
   cacheTag('products');
-  const limit = Math.min(
-    Math.max(query.limit ?? PRODUCT_CARD_PAGE_SIZE, 1),
-    MAX_PRODUCT_CARD_PAGE_SIZE,
-  );
-  const offset = Math.max(query.offset ?? 0, 0);
+  try {
+    const limit = Math.min(
+      Math.max(query.limit ?? PRODUCT_CARD_PAGE_SIZE, 1),
+      MAX_PRODUCT_CARD_PAGE_SIZE,
+    );
+    const offset = Math.max(query.offset ?? 0, 0);
 
-  const records = await prisma.product.findMany({
-    where: {
-      categoryId: query.categoryId,
-      status: visibilityStatus.VISIBLE,
-      category: { status: visibilityStatus.VISIBLE },
-    },
-    select: productCardSelect,
-    orderBy: getProductOrderBy(query.sort ?? DEFAULT_PRODUCT_SORT),
-    skip: offset,
-    take: limit + 1,
-  });
+    const records = await prisma.product.findMany({
+      where: {
+        categoryId: query.categoryId,
+        status: visibilityStatus.VISIBLE,
+        category: { status: visibilityStatus.VISIBLE },
+      },
+      select: productCardSelect,
+      orderBy: getProductOrderBy(query.sort ?? DEFAULT_PRODUCT_SORT),
+      skip: offset,
+      take: limit + 1,
+    });
 
-  return {
-    products: records
-      .slice(0, limit)
-      .map((record) => mapProductCard(record as unknown as DbProductCard)),
-    hasMore: records.length > limit,
-  };
+    return {
+      products: records
+        .slice(0, limit)
+        .map((record) => mapProductCard(record as unknown as DbProductCard)),
+      hasMore: records.length > limit,
+    };
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return { products: [], hasMore: false };
+    }
+    throw error;
+  }
 }
 
 export async function getProductBySlug(
@@ -346,16 +364,23 @@ export async function getProductBySlug(
 ): Promise<Product | null> {
   'use cache';
   cacheTag('products');
-  const record = await prisma.product.findFirst({
-    where: {
-      slug,
-      ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
-      ...visibleCategoryWhere(options.includeHidden),
-    },
-    include: productInclude,
-  });
+  try {
+    const record = await prisma.product.findFirst({
+      where: {
+        slug,
+        ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
+        ...visibleCategoryWhere(options.includeHidden),
+      },
+      include: productInclude,
+    });
 
-  return record ? mapProduct(record as unknown as DbProduct) : null;
+    return record ? mapProduct(record as unknown as DbProduct) : null;
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function getProductById(
@@ -364,43 +389,57 @@ export async function getProductById(
 ): Promise<Product | null> {
   'use cache';
   cacheTag('products');
-  const record = await prisma.product.findFirst({
-    where: {
-      id: productId,
-      ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
-      ...visibleCategoryWhere(options.includeHidden),
-    },
-    include: productInclude,
-  });
+  try {
+    const record = await prisma.product.findFirst({
+      where: {
+        id: productId,
+        ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
+        ...visibleCategoryWhere(options.includeHidden),
+      },
+      include: productInclude,
+    });
 
-  return record ? mapProduct(record as unknown as DbProduct) : null;
+    return record ? mapProduct(record as unknown as DbProduct) : null;
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function getRelatedProducts(productId: string, limit = 4): Promise<Product[]> {
   'use cache';
   cacheTag('products');
-  const current = await prisma.product.findUnique({
-    where: { id: productId },
-    select: { id: true, categoryId: true },
-  });
+  try {
+    const current = await prisma.product.findUnique({
+      where: { id: productId },
+      select: { id: true, categoryId: true },
+    });
 
-  if (!current) {
-    return [];
+    if (!current) {
+      return [];
+    }
+
+    const records = await prisma.product.findMany({
+      where: {
+        categoryId: current.categoryId,
+        id: { not: productId },
+        status: visibilityStatus.VISIBLE,
+        category: { status: visibilityStatus.VISIBLE },
+      },
+      include: productInclude,
+      take: limit,
+      orderBy: getStorefrontProductOrderBy(),
+    });
+
+    return records.map((record) => mapProduct(record as unknown as DbProduct));
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return [];
+    }
+    throw error;
   }
-
-  const records = await prisma.product.findMany({
-    where: {
-      categoryId: current.categoryId,
-      id: { not: productId },
-      status: visibilityStatus.VISIBLE,
-      category: { status: visibilityStatus.VISIBLE },
-    },
-    include: productInclude,
-    take: limit,
-    orderBy: getStorefrontProductOrderBy(),
-  });
-
-  return records.map((record) => mapProduct(record as unknown as DbProduct));
 }
 
 /**
@@ -414,16 +453,23 @@ export async function getProductsByCategoryId(
 ): Promise<Product[]> {
   'use cache';
   cacheTag('products');
-  const records = await prisma.product.findMany({
-    where: {
-      categoryId,
-      ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
-      ...visibleCategoryWhere(options.includeHidden),
-    },
-    select: productCardSelect,
-    orderBy: getStorefrontProductOrderBy(),
-    ...(typeof options.limit === 'number' ? { take: options.limit } : {}),
-  });
+  try {
+    const records = await prisma.product.findMany({
+      where: {
+        categoryId,
+        ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
+        ...visibleCategoryWhere(options.includeHidden),
+      },
+      select: productCardSelect,
+      orderBy: getStorefrontProductOrderBy(),
+      ...(typeof options.limit === 'number' ? { take: options.limit } : {}),
+    });
 
-  return records.map((record) => mapProduct(record as unknown as DbProduct));
+    return records.map((record) => mapProduct(record as unknown as DbProduct));
+  } catch (error) {
+    if (isMissingTableError(error)) {
+      return [];
+    }
+    throw error;
+  }
 }
