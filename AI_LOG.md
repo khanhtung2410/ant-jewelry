@@ -1,3 +1,43 @@
+## 2026-11-16 15:05:00 +07:00 - Ensure generateStaticParams returns at least one param (Cache Components)
+
+### Prompt nguyên văn đã dùng
+
+> 14:05:17.292 Running build in Washington, D.C., USA (East) – iad1
+> 14:05:17.292 Build machine configuration: 2 cores, 8 GB
+> 14:05:17.452 Cloning github.com/khanhtung2410/ant-jewelry (Branch: chore/iron-out-terminal-warnings, Commit: 8cf430b)
+> ...
+> 14:06:09.056 prisma:error
+> 14:06:09.056 Invalid `prisma.blogPost.findMany()` invocation:
+> 14:06:09.056 The table `public.BlogPost` does not exist in the current database.
+> 14:06:09.097 Error: When using Cache Components, all `generateStaticParams` functions must return at least one result...
+> 14:06:09.098     at <unknown> (src/app/(public)/blog/[slug]/page.tsx:8:8)
+> 14:06:09.602 Error: Failed to collect page data for /blog/[slug]
+> 14:06:09.672 Error: [BUILD_UTILS_SPAWN_1] Command "npm run build:production" exited with 1
+
+### Đã tự kiểm chứng
+
+- Vercel build trên `8cf430b` ghi log `prisma:error` P2021 (Prisma logging) nhưng lỗi chặn build là Next.js Cache Components: `generateStaticParams` của `/blog/[slug]` trả về mảng rỗng khi không có dữ liệu/bảng, trong khi Cache Components yêu cầu trả về **ít nhất một kết quả**.
+- Cập nhật `generateStaticParams` để luôn trả về placeholder khi rỗng:
+  - `src/app/(public)/blog/[slug]/page.tsx` → `[{ slug: '__empty__' }]`
+  - `src/app/(public)/c/[slug]/page.tsx` → `[{ slug: '__empty__' }]`
+  - `src/app/(public)/p/[slug]/page.tsx` → `[{ slug: '__empty__' }]`
+- Slug placeholder không tồn tại trong DB nên metadata/content đã có logic `notFound()`/fallback phù hợp; mục tiêu là thỏa điều kiện build-time validation của Cache Components khi DB chưa migrate/không có dữ liệu.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8)
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm test` → 49 files / 225 tests passed (Vitest, `prisma/test.db`), exit 0.
+- `npm run format:check` → `All matched files use Prettier code style!`, exit 0.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+
+### AI sai ở đâu
+
+- Khi xử lý DB chưa migrate, đã trả `[]` từ `generateStaticParams`; với Cache Components (Next 16) điều này vi phạm yêu cầu “at least one result” và làm build fail dù query đã được guard.
+- Vẫn cần migrate DB production để có dữ liệu thật; placeholder chỉ giải quyết ràng buộc build.
+
+---
+
 ## 2026-11-16 14:45:00 +07:00 - Guard cached public queries against missing tables (P2021)
 
 ### Prompt nguyên văn đã dùng
