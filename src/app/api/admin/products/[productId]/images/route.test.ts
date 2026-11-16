@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { MAX_PRODUCT_IMAGES_PER_UPLOAD } from '@/features/products/lib/product-image-validation';
 import { POST } from './route';
 
 const mocks = vi.hoisted(() => ({
@@ -51,9 +52,14 @@ function createPngBytes(): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
-function createUploadRequest(): Request {
+function createUploadRequest(fileCount = 1): Request {
   const formData = new FormData();
-  formData.append('files', new File([createPngBytes()], 'ring.png', { type: 'image/png' }));
+  for (let index = 0; index < fileCount; index += 1) {
+    formData.append(
+      'files',
+      new File([createPngBytes()], `ring-${index}.png`, { type: 'image/png' }),
+    );
+  }
 
   return new Request('http://localhost/api/admin/products/product-1/images', {
     method: 'POST',
@@ -63,6 +69,10 @@ function createUploadRequest(): Request {
 }
 
 describe('POST product image upload', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('revalidates the products cache so the storefront shows the new image', async () => {
     const response = await POST(createUploadRequest(), {
       params: Promise.resolve({ productId: 'product-1' }),
@@ -75,5 +85,17 @@ describe('POST product image upload', () => {
     expect(mocks.revalidateTag).toHaveBeenCalledWith('products', { expire: 0 });
     expect(mocks.revalidatePath).toHaveBeenCalledWith('/p/[slug]', 'page');
     expect(mocks.revalidatePath).toHaveBeenCalledWith('/c/[slug]', 'page');
+  });
+
+  it('rejects requests with too many files before uploading anything', async () => {
+    const response = await POST(createUploadRequest(MAX_PRODUCT_IMAGES_PER_UPLOAD + 1), {
+      params: Promise.resolve({ productId: 'product-1' }),
+    });
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(400);
+    expect(body.error).toMatch(/at most 10 images/i);
+    expect(mocks.uploadProductImage).not.toHaveBeenCalled();
+    expect(mocks.createProductImage).not.toHaveBeenCalled();
   });
 });

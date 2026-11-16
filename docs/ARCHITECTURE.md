@@ -840,6 +840,11 @@ Không đưa ra thiết kế chi tiết cho các nội dung này như thể đã
 - Khoá tài khoản (`User.locked`) vẫn được kiểm tra sau khi so mật khẩu và được kiểm tra lại ở mỗi request trong `getAdminSession`.
 - `User.sessionVersion` được nhúng vào token. `getAdminSession` so version trong token với database; lệch version thì session bị coi là thu hồi dù chữ ký còn hợp lệ. Logout tăng version rồi mới xoá cookie, nên token cũ đã bị sao chép cũng không vào được `/admin`. Đổi role, trạng thái khoá hoặc đặt mật khẩu mới trong `saveUserAccess` cũng tăng version trong cùng transaction, nên mọi phiên cũ của tài khoản bị đăng xuất.
 
+### 10.5. Last-ADMIN race và giới hạn URL/upload (R4.3, R4.4)
+- `saveUserAccess` chạy kiểm tra "còn ADMIN đang hoạt động" và cập nhật trong cùng transaction `Serializable`. Lỗi serialization tạm thời (`P2034`, write conflict, `database is locked`) được retry tối đa 3 lần, nên hai request đồng thời hạ quyền hoặc khoá hai ADMIN cuối không thể cùng lọt qua.
+- `isPathOrUrl` chỉ nhận path bắt đầu bằng đúng một dấu `/` (loại `//host` protocol-relative và `/\host`) hoặc URL `http(s)://`. Nhờ vậy ảnh/link do ADMIN nhập không âm thầm trỏ sang host khác.
+- Route upload ảnh sản phẩm giới hạn tối đa 10 file mỗi request; UI kiểm tra cùng ngưỡng trước khi gửi. Mỗi file vẫn tối đa 5 MB và phải đúng chữ ký JPEG/PNG/WebP.
+
 ## 11. Image Storage Architecture
 
 ### 11.1. Implemented storage

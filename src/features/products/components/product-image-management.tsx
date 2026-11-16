@@ -12,7 +12,10 @@ import {
   setProductImageFront,
   setProductImageHover,
 } from '../actions';
-import { MAX_PRODUCT_IMAGE_SIZE } from '../lib/product-image-validation';
+import {
+  MAX_PRODUCT_IMAGE_SIZE,
+  MAX_PRODUCT_IMAGES_PER_UPLOAD,
+} from '../lib/product-image-validation';
 import { isExternalImageUrl } from '../lib/product-gallery';
 
 type ImageRecord = {
@@ -50,6 +53,11 @@ export function ProductImageManagement({
     const files = inputRef.current?.files;
     if (!files || files.length === 0) {
       setError('Choose at least one image.');
+      return;
+    }
+
+    if (files.length > MAX_PRODUCT_IMAGES_PER_UPLOAD) {
+      setError(`Upload at most ${MAX_PRODUCT_IMAGES_PER_UPLOAD} images at a time.`);
       return;
     }
 
@@ -96,7 +104,8 @@ export function ProductImageManagement({
         <div>
           <h3 className="font-heading text-sm tracking-[0.08em]">PRODUCT IMAGES</h3>
           <p className="mt-1 text-xs text-[var(--font-color)]">
-            JPEG, PNG, or WebP; up to 5 MB per file.
+            JPEG, PNG, or WebP; up to 5 MB per file and {MAX_PRODUCT_IMAGES_PER_UPLOAD} files per
+            upload.
           </p>
         </div>
         <AdminConfirmForm

@@ -20,9 +20,43 @@ import { wouldRemoveLastActiveAdmin } from './lib/last-admin';
 
 const DUPLICATE_EMAIL_ERROR = 'This email address is already in use.';
 const LAST_ADMIN_ERROR = 'At least one active ADMIN account must remain.';
+const SERIALIZABLE_TRANSACTION_ATTEMPTS = 3;
 
 class LastActiveAdminError extends Error {}
 class UserNotFoundError extends Error {}
+
+function isRetryableTransactionError(error: unknown): boolean {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    return error.code === 'P2034';
+  }
+  return (
+    error instanceof Error &&
+    /write conflict|deadlock|database is locked|SQLITE_BUSY|serialization failure/i.test(
+      error.message,
+    )
+  );
+}
+
+/**
+ * Runs the read-check-write sequence at Serializable isolation so two concurrent
+ * requests cannot both believe another active ADMIN remains. Retries transient
+ * serialization failures, which are expected under contention.
+ */
+async function runSerializableTransaction<T>(
+  operation: (transaction: Prisma.TransactionClient) => Promise<T>,
+): Promise<T> {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await prisma.$transaction(operation, {
+        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      });
+    } catch (error) {
+      if (attempt >= SERIALIZABLE_TRANSACTION_ATTEMPTS || !isRetryableTransactionError(error)) {
+        throw error;
+      }
+    }
+  }
+}
 
 export type CreateUserFormValues = {
   name: string;
@@ -116,7 +150,7 @@ export async function saveUserAccess(
   const passwordHash = parsed.data.password ? await bcrypt.hash(parsed.data.password, 10) : null;
 
   try {
-    await prisma.$transaction(async (transaction) => {
+    await runSerializableTransaction(async (transaction) => {
       const current = await transaction.user.findUnique({
         where: { id: parsed.data.userId },
         select: { role: true, locked: true },
