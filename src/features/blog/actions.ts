@@ -1,10 +1,10 @@
 'use server';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getAdminSession } from '@/features/auth/session';
-import { prisma } from '@/features/shared/db/prisma';
+import { prisma, isUniqueConstraintError } from '@/features/shared/db/prisma';
 import {
   formatZodIssues,
   formState,
@@ -66,15 +66,17 @@ async function syncBlogPostImages(
 ) {
   const images = collectBlogImages(coverImageUrl, body, title);
 
-  await prisma.blogImage.deleteMany({ where: { blogPostId } });
-  if (images.length > 0) {
-    await prisma.blogImage.createMany({
-      data: images.map((image, index) => ({
-        blogPostId,
-        url: image.url,
-        alt: image.alt,
-        sortOrder: index + 1,
-      })),
+  const existing = await (prisma.orm.public.BlogImage as any).where({ blogPostId }).all();
+  for (const image of existing) {
+    await (prisma.orm.public.BlogImage as any).where({ id: image.id }).delete();
+  }
+  for (let index = 0; index < images.length; index += 1) {
+    const image = images[index];
+    await (prisma.orm.public.BlogImage as any).create({
+      blogPostId,
+      url: image.url,
+      alt: image.alt,
+      sortOrder: index + 1,
     });
   }
 }
@@ -97,16 +99,15 @@ export async function saveBlogPost(
     return formState(values, formatZodIssues(parsed.error.issues));
   }
 
-  const existingSlug = await prisma.blogPost.findUnique({
-    where: { slug: parsed.data.slug },
-    select: { id: true },
-  });
+  const existingSlug = await (prisma.orm.public.BlogPost as any)
+    .where({ slug: parsed.data.slug })
+    .first();
   if (existingSlug && existingSlug.id !== blogId) {
     return stateWithErrors(values, { slug: ['This slug is already in use.'] });
   }
 
   const existingPost = blogId
-    ? await prisma.blogPost.findUnique({ where: { id: blogId }, select: { id: true } })
+    ? await (prisma.orm.public.BlogPost as any).where({ id: blogId }).first()
     : null;
   if (blogId && !existingPost) {
     return stateWithErrors(values, { form: ['This blog post no longer exists.'] });
@@ -124,15 +125,8 @@ export async function saveBlogPost(
 
   try {
     const savedPost = blogId
-      ? await prisma.blogPost.update({
-          where: { id: blogId },
-          data,
-          select: { id: true },
-        })
-      : await prisma.blogPost.create({
-          data,
-          select: { id: true },
-        });
+      ? await (prisma.orm.public.BlogPost as any).where({ id: blogId }).update(data)
+      : await (prisma.orm.public.BlogPost as any).create(data);
 
     await syncBlogPostImages(
       savedPost.id,
@@ -144,7 +138,7 @@ export async function saveBlogPost(
     revalidateBlogPages();
     redirect(savedBlogRedirect(readFormString(formData, 'returnTo')));
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    if (isUniqueConstraintError(error)) {
       return stateWithErrors(values, { slug: ['This slug is already in use.'] });
     }
     throw error;
@@ -158,15 +152,12 @@ export async function deleteBlogPost(blogPostId: string, _formData: FormData) {
     throw new Error('You do not have permission to delete blog posts.');
   }
 
-  const post = await prisma.blogPost.findUnique({
-    where: { id: blogPostId },
-    select: { id: true },
-  });
+  const post = await (prisma.orm.public.BlogPost as any).where({ id: blogPostId }).first();
   if (!post) {
     throw new Error('Blog post not found.');
   }
 
-  await prisma.blogPost.delete({ where: { id: post.id } });
+  await (prisma.orm.public.BlogPost as any).where({ id: post.id }).delete();
   revalidateBlogPages();
   redirect(savedBlogRedirect('/admin/blog'));
 }

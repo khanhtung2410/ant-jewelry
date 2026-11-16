@@ -1,4 +1,5 @@
 'use server';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -74,7 +75,7 @@ export async function saveHeroSlide(
 
   const heroSlideId = values.heroSlideId ?? '';
   const existingSlide = heroSlideId
-    ? await prisma.heroSlide.findUnique({ where: { id: heroSlideId }, select: { id: true } })
+    ? await (prisma.orm.public.HeroSlide as any).where({ id: heroSlideId }).first()
     : null;
   if (heroSlideId && !existingSlide) {
     return stateWithErrors(values, { form: ['This hero slide no longer exists.'] });
@@ -90,14 +91,14 @@ export async function saveHeroSlide(
   };
 
   if (heroSlideId) {
-    await prisma.heroSlide.update({ where: { id: heroSlideId }, data });
+    await (prisma.orm.public.HeroSlide as any).where({ id: heroSlideId }).update(data);
   } else {
-    const lastSlide = await prisma.heroSlide.aggregate({ _max: { sortOrder: true } });
-    await prisma.heroSlide.create({
-      data: {
-        ...data,
-        sortOrder: (lastSlide._max.sortOrder ?? 0) + 1,
-      },
+    const lastSlide = await (prisma.orm.public.HeroSlide as any)
+      .orderBy((s: any) => s.sortOrder.desc())
+      .first();
+    await (prisma.orm.public.HeroSlide as any).create({
+      ...data,
+      sortOrder: (lastSlide?.sortOrder ?? 0) + 1,
     });
   }
 
@@ -112,15 +113,12 @@ export async function deleteHeroSlide(heroSlideId: string, _formData: FormData) 
     throw new Error('You do not have permission to delete hero slides.');
   }
 
-  const slide = await prisma.heroSlide.findUnique({
-    where: { id: heroSlideId },
-    select: { id: true },
-  });
+  const slide = await (prisma.orm.public.HeroSlide as any).where({ id: heroSlideId }).first();
   if (!slide) {
     throw new Error('Hero slide not found.');
   }
 
-  await prisma.heroSlide.delete({ where: { id: slide.id } });
+  await (prisma.orm.public.HeroSlide as any).where({ id: slide.id }).delete();
   revalidateHeroSlidePages();
   redirect(savedHeroSlidesRedirect('/admin/hero-slides'));
 }
@@ -140,19 +138,20 @@ export async function moveHeroSlide(
     throw new Error('Invalid move direction.');
   }
 
-  const slides = await prisma.heroSlide.findMany({
-    select: { id: true },
-    orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-  });
-  const currentIds = slides.map((slide) => slide.id);
+  const slides = await (prisma.orm.public.HeroSlide as any)
+    .orderBy([(s: any) => s.sortOrder.asc(), (s: any) => s.createdAt.asc()])
+    .all();
+  const currentIds = slides.map((slide: any) => slide.id);
   const nextIds = moveIdInOrder(currentIds, heroSlideId, direction);
 
   if (nextIds.some((id, index) => id !== currentIds[index])) {
-    await prisma.$transaction(
-      nextIds.map((id, index) =>
-        prisma.heroSlide.update({ where: { id }, data: { sortOrder: index + 1 } }),
-      ),
-    );
+    await prisma.transaction(async (tx: any) => {
+      for (let index = 0; index < nextIds.length; index += 1) {
+        await tx.orm.public.HeroSlide.where({ id: nextIds[index] }).update({
+          sortOrder: index + 1,
+        });
+      }
+    });
     revalidateHeroSlidePages();
   }
 

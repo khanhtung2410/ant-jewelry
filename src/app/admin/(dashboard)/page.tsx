@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from 'next/link';
 import { VISIBILITY_STATUS } from '@/constants/statuses';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
@@ -29,6 +30,29 @@ type ActivityLogItem = {
   href?: string;
 };
 
+function asDate(value: unknown): Date {
+  return value instanceof Date ? value : new Date(String(value));
+}
+
+async function safeCount(model: any, where?: any): Promise<number | null> {
+  try {
+    let q = model as any;
+    if (where) q = q.where(where);
+    const rows = await q.all();
+    return rows.length;
+  } catch {
+    return null;
+  }
+}
+
+async function safeAll<T = any>(loader: () => Promise<T[]>): Promise<T[]> {
+  try {
+    return await loader();
+  } catch {
+    return [];
+  }
+}
+
 export default async function AdminDashboardPage() {
   const session = await getAdminSession();
   if (!session) return null;
@@ -42,93 +66,92 @@ export default async function AdminDashboardPage() {
 
   const [productCount, visibleProductCount, categoryCount, blogCount, heroCount, userCount] =
     await Promise.all([
-      canProducts ? prisma.product.count() : Promise.resolve(null),
-      canProducts ? prisma.product.count({ where: { status: 'VISIBLE' } }) : Promise.resolve(null),
-      canCategories ? prisma.category.count() : Promise.resolve(null),
-      canBlog ? prisma.blogPost.count() : Promise.resolve(null),
-      canHero ? prisma.heroSlide.count() : Promise.resolve(null),
-      canUsers ? prisma.user.count() : Promise.resolve(null),
+      canProducts ? safeCount(prisma.orm.public.Product) : Promise.resolve(null),
+      canProducts
+        ? safeCount(prisma.orm.public.Product, { status: 'VISIBLE' })
+        : Promise.resolve(null),
+      canCategories ? safeCount(prisma.orm.public.Category) : Promise.resolve(null),
+      canBlog ? safeCount(prisma.orm.public.BlogPost) : Promise.resolve(null),
+      canHero ? safeCount(prisma.orm.public.HeroSlide) : Promise.resolve(null),
+      canUsers ? safeCount(prisma.orm.public.User) : Promise.resolve(null),
     ]);
 
   const [recentProducts, recentProductUpdates, recentBlog, recentCategories, recentUsers] =
     await Promise.all([
       canProducts
-        ? prisma.product.findMany({
-            take: 6,
-            orderBy: { updatedAt: 'desc' },
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              brand: true,
-              price: true,
-              status: true,
-              updatedAt: true,
-              category: { select: { name: true } },
-            },
-          })
+        ? safeAll(() =>
+            (prisma.orm.public.Product as any)
+              .include('category')
+              .orderBy((p: any) => p.updatedAt.desc())
+              .limit(6)
+              .all(),
+          )
         : Promise.resolve([]),
       canProducts
-        ? prisma.product.findMany({
-            take: 5,
-            orderBy: { updatedAt: 'desc' },
-            select: { id: true, name: true, updatedAt: true, status: true },
-          })
+        ? safeAll(() =>
+            (prisma.orm.public.Product as any)
+              .orderBy((p: any) => p.updatedAt.desc())
+              .limit(5)
+              .all(),
+          )
         : Promise.resolve([]),
       canBlog
-        ? prisma.blogPost.findMany({
-            take: 5,
-            orderBy: { updatedAt: 'desc' },
-            select: { id: true, title: true, updatedAt: true, status: true },
-          })
+        ? safeAll(() =>
+            (prisma.orm.public.BlogPost as any)
+              .orderBy((p: any) => p.updatedAt.desc())
+              .limit(5)
+              .all(),
+          )
         : Promise.resolve([]),
       canCategories
-        ? prisma.category.findMany({
-            take: 5,
-            orderBy: { updatedAt: 'desc' },
-            select: { id: true, name: true, updatedAt: true, status: true },
-          })
+        ? safeAll(() =>
+            (prisma.orm.public.Category as any)
+              .orderBy((c: any) => c.updatedAt.desc())
+              .limit(5)
+              .all(),
+          )
         : Promise.resolve([]),
       canUsers
-        ? prisma.user.findMany({
-            take: 5,
-            orderBy: { updatedAt: 'desc' },
-            select: { id: true, email: true, name: true, updatedAt: true, role: true },
-          })
+        ? safeAll(() =>
+            (prisma.orm.public.User as any)
+              .orderBy((u: any) => u.updatedAt.desc())
+              .limit(5)
+              .all(),
+          )
         : Promise.resolve([]),
     ]);
 
   const activityLog: ActivityLogItem[] = [
-    ...recentProductUpdates.map((item) => ({
+    ...recentProductUpdates.map((item: any) => ({
       id: `product-${item.id}`,
       type: 'Product',
       title: item.name,
       detail: `Status: ${item.status}`,
-      at: item.updatedAt,
+      at: asDate(item.updatedAt),
       href: '/admin/products',
     })),
-    ...recentBlog.map((item) => ({
+    ...recentBlog.map((item: any) => ({
       id: `blog-${item.id}`,
       type: 'Blog Post',
       title: item.title,
       detail: `Status: ${item.status}`,
-      at: item.updatedAt,
+      at: asDate(item.updatedAt),
       href: '/admin/blog',
     })),
-    ...recentCategories.map((item) => ({
+    ...recentCategories.map((item: any) => ({
       id: `category-${item.id}`,
       type: 'Category',
       title: item.name,
       detail: `Status: ${item.status}`,
-      at: item.updatedAt,
+      at: asDate(item.updatedAt),
       href: '/admin/categories',
     })),
-    ...recentUsers.map((item) => ({
+    ...recentUsers.map((item: any) => ({
       id: `user-${item.id}`,
       type: 'User',
       title: item.name || item.email,
       detail: `${item.role} · ${item.email}`,
-      at: item.updatedAt,
+      at: asDate(item.updatedAt),
       href: '/admin/users',
     })),
   ]
@@ -211,7 +234,7 @@ export default async function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {recentProducts.map((product) => (
+                    {recentProducts.map((product: any) => (
                       <tr key={product.id} className="border-t border-[var(--line)] align-top">
                         <td className="px-4 py-3">
                           <p className="font-medium text-foreground">{product.name}</p>
@@ -220,20 +243,22 @@ export default async function AdminDashboardPage() {
                           </p>
                         </td>
                         <td className="px-4 py-3 text-[var(--font-color)]">
-                          {product.category.name}
+                          {product.category?.name ?? ''}
                         </td>
                         <td className="whitespace-nowrap px-4 py-3">
                           {formatPrice(product.price)} ₫
                         </td>
                         <td className="px-4 py-3">
                           <StatusBadge
-                            config={VISIBILITY_STATUS[product.status]}
+                            config={
+                              VISIBILITY_STATUS[product.status as keyof typeof VISIBILITY_STATUS]
+                            }
                             className="min-w-[5rem]"
                           />
                         </td>
                         <td className="whitespace-nowrap px-4 py-3 text-xs text-[var(--font-color)]">
-                          <time dateTime={product.updatedAt.toISOString()}>
-                            {formatDateTime(product.updatedAt)}
+                          <time dateTime={asDate(product.updatedAt).toISOString()}>
+                            {formatDateTime(asDate(product.updatedAt))}
                           </time>
                         </td>
                       </tr>

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Prisma } from '@prisma/client';
 import { Suspense } from 'react';
 import { getProductBySlug, getProducts } from '@/features/shared/queries';
+import { isMissingTableError } from '@/features/shared/db/prisma';
 import { ProductPageContent } from './product-page-content';
 
 export async function generateStaticParams() {
@@ -11,7 +11,7 @@ export async function generateStaticParams() {
     const params = products.map((product) => ({ slug: product.slug }));
     return params.length > 0 ? params : [{ slug: '__empty__' }];
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+    if (isMissingTableError(error)) {
       return [{ slug: '__empty__' }];
     }
     throw error;
@@ -24,7 +24,7 @@ export async function generateMetadata(props: PageProps<'/p/[slug]'>): Promise<M
   try {
     product = await getProductBySlug(slug);
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+    if (isMissingTableError(error)) {
       notFound();
     }
     throw error;

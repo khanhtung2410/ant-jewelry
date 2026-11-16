@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from 'next/link';
 import { AccessDenied } from '@/features/admin/components/access-denied';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
@@ -21,10 +22,9 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
   }
 
   const params = await searchParams;
-  const users = await prisma.user.findMany({
-    select: { id: true, name: true, email: true, role: true, locked: true },
-    orderBy: [{ role: 'asc' }, { createdAt: 'asc' }],
-  });
+  const users = await (prisma.orm.public.User as any)
+    .orderBy([(u: any) => u.role.asc(), (u: any) => u.createdAt.asc()])
+    .all();
 
   return (
     <div>
@@ -42,7 +42,13 @@ export default async function AdminUsersPage({ searchParams }: AdminUsersPagePro
         }
       />
       <UserManagement
-        users={users}
+        users={users.map((u: any) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          locked: u.locked,
+        }))}
         currentUserId={session.userId}
         saved={firstSearchParam(params.saved) === '1'}
         createDialog={firstSearchParam(params.new) === '1'}

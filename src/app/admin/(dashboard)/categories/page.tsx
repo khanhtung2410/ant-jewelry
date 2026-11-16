@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from 'next/link';
 import { AccessDenied } from '@/features/admin/components/access-denied';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
@@ -26,11 +27,19 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
   const params = await searchParams;
   const editId = firstSearchParam(params.edit);
   const createRequested = firstSearchParam(params.new) === '1';
-  const categories = await prisma.category.findMany({
-    include: { _count: { select: { products: true } } },
-    orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-  });
-  const selectedCategory = editId ? categories.find((category) => category.id === editId) : null;
+  const [categories, products] = await Promise.all([
+    (prisma.orm.public.Category as any)
+      .orderBy([(c: any) => c.sortOrder.asc(), (c: any) => c.name.asc()])
+      .all(),
+    (prisma.orm.public.Product as any).all(),
+  ]);
+  const selectedCategory = editId
+    ? categories.find((category: any) => category.id === editId)
+    : null;
+  const counts = new Map<string, number>();
+  for (const p of products) {
+    counts.set(p.categoryId, (counts.get(p.categoryId) ?? 0) + 1);
+  }
 
   const values: CategoryFormValues | null = selectedCategory
     ? {
@@ -67,14 +76,14 @@ export default async function AdminCategoriesPage({ searchParams }: AdminCategor
         }
       />
       <CategoryManagement
-        categories={categories.map((category) => ({
+        categories={categories.map((category: any) => ({
           id: category.id,
           name: category.name,
           slug: category.slug,
           type: category.type,
           status: category.status,
           sortOrder: category.sortOrder,
-          productCount: category._count.products,
+          productCount: counts.get(category.id) ?? 0,
         }))}
         saved={firstSearchParam(params.saved) === '1'}
         dialog={values ? { values, closeHref } : null}

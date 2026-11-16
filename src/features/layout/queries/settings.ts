@@ -1,9 +1,16 @@
-import { Prisma } from '@prisma/client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { Settings } from '@/features/shared/domain/domain';
 import { prisma } from '@/features/shared/db/prisma';
 
 function isMissingTableError(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021';
+  const e = error as {
+    code?: string;
+    sqlState?: string;
+    cause?: { code?: string; sqlState?: string };
+  } | null;
+  const code = e?.code ?? e?.cause?.code;
+  const sqlState = e?.sqlState ?? e?.cause?.sqlState;
+  return code === 'P2021' || sqlState === '42P01';
 }
 
 /**
@@ -12,7 +19,7 @@ function isMissingTableError(error: unknown): boolean {
 export async function getSettings(): Promise<Settings> {
   'use cache';
   try {
-    const record = await prisma.setting.findFirst({ orderBy: { createdAt: 'asc' } });
+    const record = await prisma.orm.public.Setting.orderBy((s: any) => s.createdAt.asc()).first();
 
     if (!record) {
       return {

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { Prisma } from '@prisma/client';
 import { BlogList } from '@/features/blog/components/blog-list';
 import { getBlogPosts } from '@/features/shared/queries';
+import { isMissingTableError } from '@/features/shared/db/prisma';
 
 export const metadata: Metadata = {
   title: 'Blog',
@@ -13,7 +13,7 @@ export default async function BlogPage() {
   try {
     posts = await getBlogPosts();
   } catch (error) {
-    if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021')) {
+    if (!isMissingTableError(error)) {
       throw error;
     }
   }

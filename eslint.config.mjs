@@ -31,6 +31,9 @@ const eslintConfig = defineConfig([
     // Local tooling / prompt skill artifacts.
     '.opencode/**',
     '.github/prompts/**',
+    // Generated Prisma ORM 8 artifacts/migrations
+    'src/prisma/**',
+    'migrations/**',
   ]),
 ]);
 

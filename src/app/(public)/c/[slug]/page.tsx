@@ -1,6 +1,6 @@
-import { Prisma } from '@prisma/client';
 import { Suspense } from 'react';
 import { getCategories } from '@/features/shared/queries';
+import { isMissingTableError } from '@/features/shared/db/prisma';
 import { CategoryPageContent } from './category-page-content';
 
 export async function generateStaticParams() {
@@ -9,7 +9,7 @@ export async function generateStaticParams() {
     const params = categories.map((category) => ({ slug: category.slug }));
     return params.length > 0 ? params : [{ slug: '__empty__' }];
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+    if (isMissingTableError(error)) {
       return [{ slug: '__empty__' }];
     }
     throw error;

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
-import { Prisma } from '@prisma/client';
 import { getBlogPosts, getCategories, getProducts } from '@/features/shared/queries';
 import { getSiteUrl } from '@/features/shared/lib/site-url';
+import { isMissingTableError } from '@/features/shared/db/prisma';
 
 const staticPaths = ['/blog', '/jewelry-care', '/privacy', '/ship', '/terms'];
 
@@ -9,7 +9,7 @@ async function getCollectionOrEmpty<T>(load: () => Promise<T[]>): Promise<T[]> {
   try {
     return await load();
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+    if (isMissingTableError(error)) {
       return [];
     }
     throw error;

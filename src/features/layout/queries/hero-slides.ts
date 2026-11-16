@@ -1,10 +1,17 @@
-import { Prisma } from '@prisma/client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { HeroSlide } from '@/features/shared/domain/domain';
 import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
 
 function isMissingTableError(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021';
+  const e = error as {
+    code?: string;
+    sqlState?: string;
+    cause?: { code?: string; sqlState?: string };
+  } | null;
+  const code = e?.code ?? e?.cause?.code;
+  const sqlState = e?.sqlState ?? e?.cause?.sqlState;
+  return code === 'P2021' || sqlState === '42P01';
 }
 
 /**
@@ -13,12 +20,11 @@ function isMissingTableError(error: unknown): boolean {
 export async function getHeroSlides(): Promise<HeroSlide[]> {
   'use cache';
   try {
-    const records = await prisma.heroSlide.findMany({
-      where: { status: visibilityStatus.VISIBLE },
-      orderBy: { sortOrder: 'asc' },
-    });
+    const records = await prisma.orm.public.HeroSlide.where({ status: visibilityStatus.VISIBLE })
+      .orderBy((slide: any) => slide.sortOrder.asc())
+      .all();
 
-    return records.map((record) => ({
+    return records.map((record: any) => ({
       slide_id: record.id,
       imageUrl: record.imageUrl,
       alt: record.alt,

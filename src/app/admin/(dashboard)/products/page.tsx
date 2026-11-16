@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from 'next/link';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { AccessDenied } from '@/features/admin/components/access-denied';
@@ -48,45 +49,48 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
     ? ''
     : firstSearchParam(editorView ? params.view : params.edit);
 
-  const listWhere = {
-    ...(search ? { name: { contains: search } } : {}),
-    ...(categoryFilter ? { categoryId: categoryFilter } : {}),
-  };
+  const categories = await (prisma.orm.public.Category as any)
+    .orderBy([(c: any) => c.sortOrder.asc(), (c: any) => c.name.asc()])
+    .all();
 
-  const [categories, totalProducts] = await Promise.all([
-    prisma.category.findMany({
-      orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }],
-      select: { id: true, name: true, type: true, status: true },
-    }),
-    prisma.product.count({ where: listWhere }),
-  ]);
+  let allProducts = await (prisma.orm.public.Product as any)
+    .include('category')
+    .orderBy([(p: any) => p.updatedAt.desc(), (p: any) => p.name.asc()])
+    .all();
 
+  if (search) {
+    const q = search.toLowerCase();
+    allProducts = allProducts.filter((p: any) =>
+      String(p.name ?? '')
+        .toLowerCase()
+        .includes(q),
+    );
+  }
+  if (categoryFilter) {
+    allProducts = allProducts.filter((p: any) => p.categoryId === categoryFilter);
+  }
+
+  const totalProducts = allProducts.length;
   const { page: currentPage, totalPages } = resolveAdminProductsPage(
     firstSearchParam(params.page),
     totalProducts,
     ADMIN_PRODUCTS_PAGE_SIZE,
   );
 
-  const [products, selectedProduct] = await Promise.all([
-    prisma.product.findMany({
-      where: listWhere,
-      include: { category: { select: { id: true, name: true } } },
-      orderBy: [{ updatedAt: 'desc' }, { name: 'asc' }],
-      skip: (currentPage - 1) * ADMIN_PRODUCTS_PAGE_SIZE,
-      take: ADMIN_PRODUCTS_PAGE_SIZE,
-    }),
-    selectedProductId
-      ? prisma.product.findUnique({
-          where: { id: selectedProductId },
-          include: {
-            colors: { orderBy: { createdAt: 'asc' } },
-            images: { orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }] },
-          },
-        })
-      : Promise.resolve(null),
-  ]);
+  const start = (currentPage - 1) * ADMIN_PRODUCTS_PAGE_SIZE;
+  const products = allProducts.slice(start, start + ADMIN_PRODUCTS_PAGE_SIZE);
 
-  const selectedCategory = categories.find((category) => category.id === categoryFilter);
+  const selectedProduct = selectedProductId
+    ? await (prisma.orm.public.Product as any)
+        .where({ id: selectedProductId })
+        .include('colors', (c: any) => c.orderBy((x: any) => x.createdAt.asc()))
+        .include('images', (i: any) =>
+          i.orderBy([(x: any) => x.sortOrder.asc(), (x: any) => x.id.asc()]),
+        )
+        .first()
+    : null;
+
+  const selectedCategory = categories.find((category: any) => category.id === categoryFilter);
   const defaultCategory = selectedCategory ?? categories[0];
   const values: ProductFormValues | null = selectedProduct
     ? {
@@ -98,7 +102,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         price: formatPrice(selectedProduct.price),
         description: selectedProduct.description,
         details: detailsToText(selectedProduct.details),
-        colors: selectedProduct.colors.map((color) => ({
+        colors: (selectedProduct.colors ?? []).map((color: any) => ({
           id: color.id,
           name: color.name,
           hex: color.hex,
@@ -152,7 +156,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         }
       />
       <ProductManagement
-        products={products.map((product) => ({
+        products={products.map((product: any) => ({
           id: product.id,
           name: product.name,
           slug: product.slug,
@@ -161,7 +165,12 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
           status: product.status,
           category: product.category,
         }))}
-        categories={categories}
+        categories={categories.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          type: c.type,
+          status: c.status,
+        }))}
         totalProducts={totalProducts}
         currentPage={currentPage}
         totalPages={totalPages}
@@ -177,14 +186,14 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
                 productName: selectedProduct?.name ?? null,
                 closeHref,
                 images: selectedProduct
-                  ? selectedProduct.images.map((image): AdminProductImage => ({
+                  ? (selectedProduct.images ?? []).map((image: any): AdminProductImage => ({
                       id: image.id,
                       url: image.url,
                       alt: image.alt,
                       isFront: image.isFront,
                       isHover: image.isHover,
                       sortOrder: image.sortOrder,
-                      productColorId: image.productColorId,
+                      productColorId: image.productColorId ?? null,
                     }))
                   : [],
               }

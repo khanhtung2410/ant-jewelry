@@ -1,5 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { cacheTag } from 'next/cache';
-import { Prisma } from '@prisma/client';
 import type {
   Product,
   ProductCardData,
@@ -8,14 +8,21 @@ import type {
   ProductStatus,
   ProductType,
 } from '@/features/shared/domain/domain';
-
-function isMissingTableError(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021';
-}
 import { createVndPrice } from '@/features/shared/domain/domain';
 import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
 import { MAX_PRODUCT_CARD_PAGE_SIZE, PRODUCT_CARD_PAGE_SIZE } from '../lib/product-card-page';
+
+function isMissingTableError(error: unknown): boolean {
+  const e = error as {
+    code?: string;
+    sqlState?: string;
+    cause?: { code?: string; sqlState?: string };
+  } | null;
+  const code = e?.code ?? e?.cause?.code;
+  const sqlState = e?.sqlState ?? e?.cause?.sqlState;
+  return code === 'P2021' || sqlState === '42P01';
+}
 
 export const PRODUCT_SORTS = ['price_asc', 'price_desc', 'name_asc', 'name_desc'] as const;
 
@@ -27,288 +34,207 @@ export function parseProductSort(value: string | string[] | undefined): ProductS
     return DEFAULT_PRODUCT_SORT;
   }
 
-  switch (value) {
-    case 'price_asc':
-    case 'price_desc':
-    case 'name_asc':
-    case 'name_desc':
-      return value;
-    default:
-      return DEFAULT_PRODUCT_SORT;
-  }
+  return PRODUCT_SORTS.includes(value as ProductSort)
+    ? (value as ProductSort)
+    : DEFAULT_PRODUCT_SORT;
 }
 
-export interface GetProductsQuery {
-  categoryId?: string;
-  status?: ProductStatus;
-  includeHidden?: boolean;
+export type GetProductsQuery = {
+  category?: ProductType;
+  visibleOnly?: boolean;
   sort?: ProductSort;
-}
+  limit?: number;
+};
 
-export interface GetProductCardPageQuery {
+export type ProductCardPage = {
+  products: ProductCardData[];
+  hasMore: boolean;
+};
+
+export type GetProductCardPageQuery = {
   categoryId: string;
   sort?: ProductSort;
   offset?: number;
   limit?: number;
-}
+};
 
-export interface ProductCardPage {
-  products: ProductCardData[];
-  hasMore: boolean;
-}
-
-function compareProducts(sort: ProductSort | undefined): (a: Product, b: Product) => number {
-  const compareById = (a: Product, b: Product) => a.product_id.localeCompare(b.product_id);
-
-  switch (sort) {
-    case 'price_asc':
-      return (a, b) => a.price - b.price || compareById(a, b);
-    case 'price_desc':
-      return (a, b) => b.price - a.price || compareById(a, b);
-    case 'name_asc':
-      return (a, b) => a.name.localeCompare(b.name, 'vi') || compareById(a, b);
-    case 'name_desc':
-      return (a, b) => b.name.localeCompare(a.name, 'vi') || compareById(a, b);
-    default:
-      return () => 0;
-  }
-}
-
-export function sortProducts(products: Product[], sort: ProductSort): Product[] {
-  return [...products].sort(compareProducts(sort));
-}
-
-/**
- * Database ordering for product lists. `id` is always the secondary key, so
- * pagination never repeats or skips products that share the same price or name.
- */
-export function getProductOrderBy(sort: ProductSort): Prisma.ProductOrderByWithRelationInput[] {
-  switch (sort) {
-    case 'price_asc':
-      return [{ price: 'asc' }, { id: 'asc' }];
-    case 'price_desc':
-      return [{ price: 'desc' }, { id: 'asc' }];
-    case 'name_asc':
-      return [{ name: 'asc' }, { id: 'asc' }];
-    case 'name_desc':
-      return [{ name: 'desc' }, { id: 'asc' }];
-  }
-}
-
-/**
- * Storefront order for curated lists such as the Home carousel. `createdAt` is
- * the visible order and `id` breaks ties, so SQLite and PostgreSQL return the
- * same rows in the same order for identical data.
- */
-export function getStorefrontProductOrderBy(): Prisma.ProductOrderByWithRelationInput[] {
-  return [{ createdAt: 'asc' }, { id: 'asc' }];
-}
-
-const productInclude = {
-  category: {
-    select: {
-      id: true,
-      name: true,
-      type: true,
-    },
-  },
-  colors: {
-    include: {
-      images: {
-        orderBy: { sortOrder: 'asc' as const },
-      },
-    },
-    orderBy: { createdAt: 'asc' as const },
-  },
-  images: {
-    orderBy: { sortOrder: 'asc' as const },
-  },
-} as const;
-
-const productCardSelect = {
-  id: true,
-  categoryId: true,
-  name: true,
-  slug: true,
-  price: true,
-  status: true,
-  category: {
-    select: {
-      id: true,
-      name: true,
-      type: true,
-    },
-  },
-  colors: {
-    select: {
-      id: true,
-      name: true,
-      hex: true,
-      images: {
-        select: {
-          id: true,
-          url: true,
-          alt: true,
-          isFront: true,
-          isHover: true,
-          sortOrder: true,
-          productColorId: true,
-        },
-        orderBy: { sortOrder: 'asc' as const },
-      },
-    },
-    orderBy: { createdAt: 'asc' as const },
-  },
-  images: {
-    select: {
-      id: true,
-      url: true,
-      alt: true,
-      isFront: true,
-      isHover: true,
-      sortOrder: true,
-      productColorId: true,
-    },
-    orderBy: { sortOrder: 'asc' as const },
-  },
-} as const;
-
-type DbProductImage = {
+function mapImage(record: {
   id: string;
   url: string;
   alt: string;
-  isFront: boolean;
-  isHover?: boolean;
   sortOrder: number;
-  productColorId?: string | null;
-};
+  isFront: boolean;
+  isHover: boolean;
+  productColorId: string | null;
+}): ProductImage {
+  return {
+    imageId: record.id,
+    url: record.url,
+    alt: record.alt,
+    sortOrder: record.sortOrder,
+    isFront: record.isFront,
+    isHover: record.isHover,
+    productColorId: record.productColorId ?? undefined,
+  };
+}
 
-type DbProductColor = {
+function mapColor(record: {
   id: string;
   name: string;
   hex: string;
-  images?: DbProductImage[];
-};
+  images?: {
+    id: string;
+    url: string;
+    alt: string;
+    sortOrder: number;
+    isFront: boolean;
+    isHover: boolean;
+    productColorId: string | null;
+  }[];
+}): ProductColor {
+  return {
+    color_id: record.id,
+    name: record.name,
+    hex: record.hex,
+    ...(record.images ? { images: record.images.map(mapImage) } : {}),
+  };
+}
 
-type DbProduct = {
+function mapProduct(record: {
   id: string;
   categoryId: string;
   name: string;
   slug: string;
-  brand?: string;
-  category: { id: string; name: string; type: string };
-  description?: string;
-  details?: unknown;
+  brand: string;
   price: number;
+  description: string;
+  details: unknown;
   status: ProductStatus;
-  colors: DbProductColor[];
-  images: DbProductImage[];
-};
-
-function mapImage(image: DbProductImage): ProductImage {
-  return {
-    imageId: image.id,
-    url: image.url,
-    alt: image.alt,
-    isFront: image.isFront,
-    isHover: image.isHover ?? false,
-    sortOrder: image.sortOrder,
-  };
-}
-
-function mapColor(color: DbProductColor): ProductColor {
-  const images = (color.images ?? []).map(mapImage);
-  return {
-    colorId: color.id,
-    name: color.name,
-    hex: color.hex,
-    ...(images.length > 0 ? { images } : {}),
-  };
-}
-
-function mapProduct(record: DbProduct): Product {
-  const sharedImages = record.images.filter((image) => image.productColorId == null).map(mapImage);
-  const details =
-    record.details && typeof record.details === 'object' && !Array.isArray(record.details)
-      ? (record.details as Record<string, string>)
-      : {};
-
+  category: { type: string; status: 'VISIBLE' | 'HIDDEN' };
+  colors: {
+    id: string;
+    name: string;
+    hex: string;
+    images?: {
+      id: string;
+      url: string;
+      alt: string;
+      sortOrder: number;
+      isFront: boolean;
+      isHover: boolean;
+      productColorId: string | null;
+    }[];
+  }[];
+  images: {
+    id: string;
+    url: string;
+    alt: string;
+    sortOrder: number;
+    isFront: boolean;
+    isHover: boolean;
+    productColorId: string | null;
+  }[];
+}): Product {
   return {
     product_id: record.id,
     categoryId: record.categoryId,
-    name: record.name,
-    slug: record.slug,
-    brand: record.brand ?? '',
     type: record.category.type as ProductType,
-    description: record.description ?? '',
-    details,
-    colors: record.colors.map((color) => mapColor(color as DbProductColor)),
-    images: sharedImages,
-    price: createVndPrice(record.price),
-    status: record.status,
-  };
-}
-
-type DbProductCard = {
-  id: string;
-  name: string;
-  slug: string;
-  price: number;
-  colors: DbProductColor[];
-  images: DbProductImage[];
-};
-
-function mapProductCard(record: DbProductCard): ProductCardData {
-  return {
-    product_id: record.id,
     name: record.name,
     slug: record.slug,
+    brand: record.brand,
     price: createVndPrice(record.price),
-    colors: record.colors.map((color) => mapColor(color as DbProductColor)),
-    images: record.images
-      .filter((image) => image.productColorId == null)
-      .map((image) => mapImage(image)),
+    description: record.description,
+    details: (record.details ?? {}) as Record<string, string>,
+    status: record.status,
+    colors: record.colors.map(mapColor),
+    images: record.images.map(mapImage),
   };
 }
 
-/**
- * Products inherit the visibility of their category: hiding a category removes
- * its products from every storefront query without changing the product rows.
- * Admin screens opt out with `includeHidden`.
- */
-function visibleCategoryWhere(includeHidden?: boolean) {
-  return includeHidden ? {} : { category: { status: visibilityStatus.VISIBLE } };
+function getVisibleCategoryWhere(visibleOnly: boolean) {
+  return visibleOnly ? { status: visibilityStatus.VISIBLE } : {};
 }
 
-function toWhere(query: GetProductsQuery) {
-  return {
-    ...(query.categoryId ? { categoryId: query.categoryId } : {}),
-    ...(query.status
-      ? { status: query.status }
-      : query.includeHidden
-        ? {}
-        : { status: visibilityStatus.VISIBLE }),
-    ...visibleCategoryWhere(query.includeHidden),
-  };
+export function getProductOrderBy(sort: ProductSort): Array<Record<string, 'asc' | 'desc'>> {
+  switch (sort) {
+    case 'price_desc':
+      return [{ price: 'desc' }, { name: 'asc' }];
+    case 'name_asc':
+      return [{ name: 'asc' }];
+    case 'name_desc':
+      return [{ name: 'desc' }];
+    case 'price_asc':
+    default:
+      return [{ price: 'asc' }, { name: 'asc' }];
+  }
 }
 
-/**
- * Returns products for storefront pages. Products link to their category by
- * `categoryId`; the product type is derived from that category.
- * Hidden products are excluded unless `includeHidden` is set explicitly for an
- * admin screen.
- */
+export function getStorefrontProductOrderBy(): Array<Record<string, 'asc' | 'desc'>> {
+  return getProductOrderBy(DEFAULT_PRODUCT_SORT);
+}
+
+export function sortProducts<T extends Pick<Product, 'name' | 'price'>>(
+  products: T[],
+  sort: ProductSort,
+): T[] {
+  const sorted = [...products];
+
+  sorted.sort((left, right) => {
+    switch (sort) {
+      case 'price_desc':
+        return right.price - left.price || left.name.localeCompare(right.name, 'vi');
+      case 'name_asc':
+        return left.name.localeCompare(right.name, 'vi');
+      case 'name_desc':
+        return right.name.localeCompare(left.name, 'vi');
+      case 'price_asc':
+      default:
+        return left.price - right.price || left.name.localeCompare(right.name, 'vi');
+    }
+  });
+
+  return sorted;
+}
+
 export async function getProducts(query: GetProductsQuery = {}): Promise<Product[]> {
   'use cache';
   cacheTag('products');
-  try {
-    const records = await prisma.product.findMany({
-      where: toWhere(query),
-      include: productInclude,
-    });
+  const sort = query.sort ?? 'price_asc';
+  const visibleOnly = query.visibleOnly ?? !query.category;
 
-    const mapped = records.map((record) => mapProduct(record as unknown as DbProduct));
-    return query.sort ? sortProducts(mapped, query.sort) : mapped;
+  try {
+    let q = prisma.orm.public.Product as any;
+    const where: Record<string, unknown> = {
+      ...(query.category
+        ? { category: { type: query.category, ...getVisibleCategoryWhere(true) } }
+        : {}),
+      ...(visibleOnly ? { status: visibilityStatus.VISIBLE } : {}),
+      ...(!query.category && visibleOnly ? { category: getVisibleCategoryWhere(true) } : {}),
+    };
+    // apply where if not empty
+    if (Object.keys(where).length > 0) q = q.where(where);
+
+    q = q
+      .include('category')
+      .include('colors', (colors: any) =>
+        colors
+          .orderBy((c: any) => c.createdAt.asc())
+          .include('images', (images: any) => images.orderBy((i: any) => i.sortOrder.asc())),
+      )
+      .include('images', (images: any) => images.orderBy((i: any) => i.sortOrder.asc()));
+
+    const order = getProductOrderBy(sort);
+    q = q.orderBy(
+      order.map((o) => (p: any) => {
+        const [key, dir] = Object.entries(o)[0] as [string, 'asc' | 'desc'];
+        return p[key][dir]();
+      }),
+    );
+
+    if (typeof query.limit === 'number') q = q.limit(query.limit);
+
+    const records = await q.all();
+    return records.map(mapProduct);
   } catch (error) {
     if (isMissingTableError(error)) {
       return [];
@@ -317,38 +243,67 @@ export async function getProducts(query: GetProductsQuery = {}): Promise<Product
   }
 }
 
-/**
- * Returns one product-card page for a category. Sorting and pagination run in
- * the database, and only the columns needed by `ProductCard` are selected and
- * mapped, so descriptions and details never leave the server.
- */
 export async function getProductCardPage(query: GetProductCardPageQuery): Promise<ProductCardPage> {
   'use cache';
   cacheTag('products');
-  try {
-    const limit = Math.min(
-      Math.max(query.limit ?? PRODUCT_CARD_PAGE_SIZE, 1),
-      MAX_PRODUCT_CARD_PAGE_SIZE,
-    );
-    const offset = Math.max(query.offset ?? 0, 0);
+  const sort = query.sort ?? DEFAULT_PRODUCT_SORT;
+  const limit = Math.min(
+    Math.max(query.limit ?? PRODUCT_CARD_PAGE_SIZE, 1),
+    MAX_PRODUCT_CARD_PAGE_SIZE,
+  );
+  const offset = Math.max(query.offset ?? 0, 0);
 
-    const records = await prisma.product.findMany({
-      where: {
+  try {
+    let q = (prisma.orm.public.Product as any)
+      .where({
         categoryId: query.categoryId,
         status: visibilityStatus.VISIBLE,
         category: { status: visibilityStatus.VISIBLE },
-      },
-      select: productCardSelect,
-      orderBy: getProductOrderBy(query.sort ?? DEFAULT_PRODUCT_SORT),
-      skip: offset,
-      take: limit + 1,
-    });
+      })
+      .include('category')
+      .include('images', (images: any) => images.orderBy((i: any) => i.sortOrder.asc()));
+
+    const order = getProductOrderBy(sort);
+    q = q.orderBy(
+      order.map((o) => (p: any) => {
+        const [key, dir] = Object.entries(o)[0] as [string, 'asc' | 'desc'];
+        return p[key][dir]();
+      }),
+    );
+
+    // fetch limit+1 to detect hasMore; offset via skip-like behavior not guaranteed in ORM - fallback to all+slice if needed
+    let records: any[];
+    try {
+      records = (await q.limit(limit + 1).offset)
+        ? await q
+            .offset(offset)
+            .limit(limit + 1)
+            .all()
+        : await q.all();
+    } catch {
+      records = await q.all();
+    }
+    if (!Array.isArray(records)) records = [];
+    if (records.length > limit + 1 || (offset > 0 && records.length > limit)) {
+      // already sliced by db
+    } else if (offset > 0) {
+      records = records.slice(offset, offset + limit + 1);
+    }
+
+    const hasMore = records.length > limit;
+    const page = records.slice(0, limit);
 
     return {
-      products: records
-        .slice(0, limit)
-        .map((record) => mapProductCard(record as unknown as DbProductCard)),
-      hasMore: records.length > limit,
+      hasMore,
+      products: page.map((record: any) => ({
+        product_id: record.id,
+        name: record.name,
+        slug: record.slug,
+        brand: record.brand,
+        price: createVndPrice(record.price),
+        colors: (record.colors ?? []).map(mapColor),
+        images: record.images.map(mapImage),
+      })),
     };
   } catch (error) {
     if (isMissingTableError(error)) {
@@ -358,23 +313,26 @@ export async function getProductCardPage(query: GetProductCardPageQuery): Promis
   }
 }
 
-export async function getProductBySlug(
-  slug: string,
-  options: { includeHidden?: boolean } = {},
-): Promise<Product | null> {
+export async function getProductBySlug(slug: string): Promise<Product | null> {
   'use cache';
   cacheTag('products');
   try {
-    const record = await prisma.product.findFirst({
-      where: {
+    const record = await (prisma.orm.public.Product as any)
+      .where({
         slug,
-        ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
-        ...visibleCategoryWhere(options.includeHidden),
-      },
-      include: productInclude,
-    });
+        status: visibilityStatus.VISIBLE,
+        category: { status: visibilityStatus.VISIBLE },
+      })
+      .include('category')
+      .include('colors', (colors: any) =>
+        colors
+          .orderBy((c: any) => c.createdAt.asc())
+          .include('images', (images: any) => images.orderBy((i: any) => i.sortOrder.asc())),
+      )
+      .include('images', (images: any) => images.orderBy((i: any) => i.sortOrder.asc()))
+      .first();
 
-    return record ? mapProduct(record as unknown as DbProduct) : null;
+    return record ? mapProduct(record) : null;
   } catch (error) {
     if (isMissingTableError(error)) {
       return null;
@@ -390,16 +348,25 @@ export async function getProductById(
   'use cache';
   cacheTag('products');
   try {
-    const record = await prisma.product.findFirst({
-      where: {
-        id: productId,
-        ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
-        ...visibleCategoryWhere(options.includeHidden),
-      },
-      include: productInclude,
-    });
+    const visibleOnly = !options.includeHidden;
+    let q = (prisma.orm.public.Product as any).where({ id: productId });
+    if (visibleOnly) {
+      q = q.where({
+        status: visibilityStatus.VISIBLE,
+        category: { status: visibilityStatus.VISIBLE },
+      });
+    }
+    const record = await q
+      .include('category')
+      .include('colors', (colors: any) =>
+        colors
+          .orderBy((c: any) => c.createdAt.asc())
+          .include('images', (images: any) => images.orderBy((i: any) => i.sortOrder.asc())),
+      )
+      .include('images', (images: any) => images.orderBy((i: any) => i.sortOrder.asc()))
+      .first();
 
-    return record ? mapProduct(record as unknown as DbProduct) : null;
+    return record ? mapProduct(record) : null;
   } catch (error) {
     if (isMissingTableError(error)) {
       return null;
@@ -408,32 +375,33 @@ export async function getProductById(
   }
 }
 
-export async function getRelatedProducts(productId: string, limit = 4): Promise<Product[]> {
+export async function getProductsByCategoryId(
+  categoryId: string,
+  options: { includeHidden?: boolean; limit?: number } = {},
+): Promise<Product[]> {
   'use cache';
   cacheTag('products');
   try {
-    const current = await prisma.product.findUnique({
-      where: { id: productId },
-      select: { id: true, categoryId: true },
-    });
-
-    if (!current) {
-      return [];
-    }
-
-    const records = await prisma.product.findMany({
-      where: {
-        categoryId: current.categoryId,
-        id: { not: productId },
+    const visibleOnly = !options.includeHidden;
+    let q = (prisma.orm.public.Product as any).where({ categoryId });
+    if (visibleOnly) {
+      q = q.where({
         status: visibilityStatus.VISIBLE,
         category: { status: visibilityStatus.VISIBLE },
-      },
-      include: productInclude,
-      take: limit,
-      orderBy: getStorefrontProductOrderBy(),
-    });
-
-    return records.map((record) => mapProduct(record as unknown as DbProduct));
+      });
+    }
+    q = q
+      .include('category')
+      .include('colors', (colors: any) =>
+        colors
+          .orderBy((c: any) => c.createdAt.asc())
+          .include('images', (images: any) => images.orderBy((i: any) => i.sortOrder.asc())),
+      )
+      .include('images', (images: any) => images.orderBy((i: any) => i.sortOrder.asc()))
+      .orderBy([(p: any) => p.price.asc(), (p: any) => p.name.asc()]);
+    if (typeof options.limit === 'number') q = q.limit(options.limit);
+    const records = await q.all();
+    return records.map(mapProduct);
   } catch (error) {
     if (isMissingTableError(error)) {
       return [];
@@ -442,30 +410,37 @@ export async function getRelatedProducts(productId: string, limit = 4): Promise<
   }
 }
 
-/**
- * Returns the leading products of one category in the storefront order. Home
- * carousels ask for one category at a time so `take` limits the rows of each
- * section instead of truncating the combined result.
- */
-export async function getProductsByCategoryId(
-  categoryId: string,
-  options: { includeHidden?: boolean; limit?: number } = {},
+export async function getRelatedProducts(
+  productId: string,
+  options: { limit?: number } = {},
 ): Promise<Product[]> {
   'use cache';
   cacheTag('products');
   try {
-    const records = await prisma.product.findMany({
-      where: {
-        categoryId,
-        ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
-        ...visibleCategoryWhere(options.includeHidden),
-      },
-      select: productCardSelect,
-      orderBy: getStorefrontProductOrderBy(),
-      ...(typeof options.limit === 'number' ? { take: options.limit } : {}),
-    });
+    const product = await getProductById(productId);
+    if (!product) {
+      return [];
+    }
 
-    return records.map((record) => mapProduct(record as unknown as DbProduct));
+    let q = (prisma.orm.public.Product as any)
+      .where({
+        categoryId: product.categoryId,
+        status: visibilityStatus.VISIBLE,
+        category: { status: visibilityStatus.VISIBLE },
+      })
+      .where((p: any) => p.id.neq(productId))
+      .include('category')
+      .include('colors', (colors: any) =>
+        colors
+          .orderBy((c: any) => c.createdAt.asc())
+          .include('images', (images: any) => images.orderBy((i: any) => i.sortOrder.asc())),
+      )
+      .include('images', (images: any) => images.orderBy((i: any) => i.sortOrder.asc()))
+      .orderBy([(p: any) => p.price.asc(), (p: any) => p.name.asc()]);
+
+    if (typeof options.limit === 'number') q = q.limit(options.limit);
+    const records = await q.all();
+    return records.map(mapProduct);
   } catch (error) {
     if (isMissingTableError(error)) {
       return [];

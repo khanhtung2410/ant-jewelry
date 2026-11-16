@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from 'next/link';
 import { AccessDenied } from '@/features/admin/components/access-denied';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
@@ -26,10 +27,10 @@ export default async function AdminHeroSlidesPage({ searchParams }: AdminHeroSli
   const params = await searchParams;
   const editId = firstSearchParam(params.edit);
   const createRequested = firstSearchParam(params.new) === '1';
-  const slides = await prisma.heroSlide.findMany({
-    orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
-  });
-  const selectedSlide = editId ? slides.find((slide) => slide.id === editId) : null;
+  const slides = await (prisma.orm.public.HeroSlide as any)
+    .orderBy([(s: any) => s.sortOrder.asc(), (s: any) => s.createdAt.asc()])
+    .all();
+  const selectedSlide = editId ? slides.find((slide: any) => slide.id === editId) : null;
 
   const values: HeroSlideFormValues | null = selectedSlide
     ? {
@@ -70,7 +71,7 @@ export default async function AdminHeroSlidesPage({ searchParams }: AdminHeroSli
         }
       />
       <HeroSlideManagement
-        slides={slides.map((slide) => ({
+        slides={slides.map((slide: any) => ({
           id: slide.id,
           imageUrl: slide.imageUrl,
           alt: slide.alt,

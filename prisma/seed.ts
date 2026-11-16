@@ -1,52 +1,49 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import bcrypt from 'bcryptjs';
-import { PrismaClient } from '@prisma/client';
+import postgres from '@prisma/orm-postgres/runtime';
+import { contractFromJson } from '@prisma/orm-postgres/static';
+import contractJson from '../src/prisma/contract.json' with { type: 'json' };
+import type { Contract } from '../src/prisma/contract';
 import { categories } from '../src/features/products/mocks/categories';
 import { blogPosts } from '../src/features/blog/mocks/blog-posts';
 import { heroSlides } from '../src/features/layout/mocks/hero-slides';
 import { products } from '../src/features/products/mocks/products';
 import { settings } from '../src/features/layout/mocks/settings';
 
-const prisma = new PrismaClient();
+const contract = contractFromJson<Contract>(contractJson as Contract);
+const prisma = postgres({ contract, url: process.env.DATABASE_URL });
 
 function getSharedImages(product: (typeof products)[number]) {
   const colorImageIds = new Set(
     product.colors.flatMap((color) => (color.images ?? []).map((image) => image.imageId)),
   );
-
   return product.images.filter((image) => !colorImageIds.has(image.imageId));
 }
 
-async function main() {
-  if (!process.env.DATABASE_URL?.startsWith('file:')) {
-    throw new Error(
-      'The demo seed only supports local SQLite; it refuses to run against other databases.',
-    );
+async function findBySlug(model: any, slug: string) {
+  return model.where({ slug }).first();
+}
+
+async function upsertBySlug(model: any, slug: string, data: Record<string, unknown>) {
+  const existing = await findBySlug(model, slug);
+  if (existing) {
+    return model.where({ id: existing.id }).update(data);
   }
+  return model.create({ slug, ...data });
+}
 
-  const now = new Date();
-
+async function main() {
   for (const category of categories) {
-    await prisma.category.upsert({
-      where: { slug: category.slug },
-      update: {
-        name: category.name,
-        type: category.type,
-        sortOrder: category.sortOrder,
-        status: category.status,
-      },
-      create: {
-        name: category.name,
-        slug: category.slug,
-        type: category.type,
-        sortOrder: category.sortOrder,
-        status: category.status,
-      },
+    await upsertBySlug(prisma.orm.public.Category as any, category.slug, {
+      name: category.name,
+      type: category.type,
+      sortOrder: category.sortOrder,
+      status: category.status,
     });
   }
 
-  const categoryByType = new Map(
-    (await prisma.category.findMany()).map((category) => [category.type, category]),
-  );
+  const allCategories = await (prisma.orm.public.Category as any).all();
+  const categoryByType = new Map(allCategories.map((category: any) => [category.type, category]));
 
   for (const product of products) {
     const category = categoryByType.get(product.type);
@@ -54,45 +51,36 @@ async function main() {
       throw new Error(`Missing category for product type: ${product.type}`);
     }
 
-    const seededProduct = await prisma.product.upsert({
-      where: { slug: product.slug },
-      update: {
-        categoryId: category.id,
-        name: product.name,
-        brand: product.brand,
-        description: product.description,
-        details: product.details,
-        price: product.price,
-        status: product.status,
-      },
-      create: {
-        categoryId: category.id,
-        name: product.name,
-        slug: product.slug,
-        brand: product.brand,
-        description: product.description,
-        details: product.details,
-        price: product.price,
-        status: product.status,
-      },
-      select: { id: true },
+    const seededProduct = await upsertBySlug(prisma.orm.public.Product as any, product.slug, {
+      categoryId: category.id,
+      name: product.name,
+      brand: product.brand,
+      description: product.description,
+      details: product.details,
+      price: product.price,
+      status: product.status,
     });
 
-    await prisma.productImage.deleteMany({ where: { productId: seededProduct.id } });
-    await prisma.productColor.deleteMany({ where: { productId: seededProduct.id } });
+    const existingImages = await (prisma.orm.public.ProductImage as any)
+      .where({ productId: seededProduct.id })
+      .all();
+    for (const img of existingImages) {
+      await (prisma.orm.public.ProductImage as any).where({ id: img.id }).delete();
+    }
+    const existingColors = await (prisma.orm.public.ProductColor as any)
+      .where({ productId: seededProduct.id })
+      .all();
+    for (const color of existingColors) {
+      await (prisma.orm.public.ProductColor as any).where({ id: color.id }).delete();
+    }
 
     const colorIdBySourceId = new Map<string, string>();
-
     for (const color of product.colors) {
-      const createdColor = await prisma.productColor.create({
-        data: {
-          productId: seededProduct.id,
-          name: color.name,
-          hex: color.hex,
-        },
-        select: { id: true },
+      const createdColor = await (prisma.orm.public.ProductColor as any).create({
+        productId: seededProduct.id,
+        name: color.name,
+        hex: color.hex,
       });
-
       colorIdBySourceId.set(color.colorId, createdColor.id);
     }
 
@@ -103,14 +91,12 @@ async function main() {
       alt: image.alt,
       isFront: image.isFront,
       sortOrder: image.sortOrder,
+      isHover: false,
     }));
 
     const colorImages = product.colors.flatMap((color) => {
       const createdColorId = colorIdBySourceId.get(color.colorId);
-      if (!createdColorId || !color.images?.length) {
-        return [];
-      }
-
+      if (!createdColorId || !color.images?.length) return [];
       return color.images.map((image) => ({
         productId: seededProduct.id,
         productColorId: createdColorId,
@@ -118,36 +104,23 @@ async function main() {
         alt: image.alt,
         isFront: image.isFront,
         sortOrder: image.sortOrder,
+        isHover: false,
       }));
     });
 
-    const imagesToCreate = [...sharedImages, ...colorImages];
-    if (imagesToCreate.length > 0) {
-      await prisma.productImage.createMany({ data: imagesToCreate });
+    for (const image of [...sharedImages, ...colorImages]) {
+      await (prisma.orm.public.ProductImage as any).create(image);
     }
   }
 
   for (const post of blogPosts) {
-    const seededPost = await prisma.blogPost.upsert({
-      where: { slug: post.slug },
-      update: {
-        title: post.title,
-        summary: post.summary,
-        body: post.body,
-        coverImageUrl: post.coverImageUrl,
-        publishedAt: new Date(post.publishedAt),
-        status: post.status,
-      },
-      create: {
-        title: post.title,
-        slug: post.slug,
-        summary: post.summary,
-        body: post.body,
-        coverImageUrl: post.coverImageUrl,
-        publishedAt: new Date(post.publishedAt),
-        status: post.status,
-      },
-      select: { id: true },
+    const seededPost = await upsertBySlug(prisma.orm.public.BlogPost as any, post.slug, {
+      title: post.title,
+      summary: post.summary,
+      body: post.body,
+      coverImageUrl: post.coverImageUrl,
+      publishedAt: new Date(post.publishedAt),
+      status: post.status,
     });
 
     const imageMatches = [...post.body.matchAll(/!\[(.*?)\]\((.*?)\)/g)].map((match) => ({
@@ -165,26 +138,28 @@ async function main() {
       ).values(),
     );
 
-    await prisma.blogImage.deleteMany({ where: { blogPostId: seededPost.id } });
-    if (uniqueImages.length > 0) {
-      await prisma.blogImage.createMany({
-        data: uniqueImages.map((image, index) => ({
-          blogPostId: seededPost.id,
-          url: image.url,
-          alt: image.alt,
-          sortOrder: index + 1,
-        })),
+    const existingBlogImages = await (prisma.orm.public.BlogImage as any)
+      .where({ blogPostId: seededPost.id })
+      .all();
+    for (const image of existingBlogImages) {
+      await (prisma.orm.public.BlogImage as any).where({ id: image.id }).delete();
+    }
+    for (let index = 0; index < uniqueImages.length; index += 1) {
+      const image = uniqueImages[index];
+      await (prisma.orm.public.BlogImage as any).create({
+        blogPostId: seededPost.id,
+        url: image.url,
+        alt: image.alt,
+        sortOrder: index + 1,
       });
     }
   }
 
   for (const [index, slide] of heroSlides.entries()) {
-    const existingSlides = await prisma.heroSlide.findMany({
-      where: { imageUrl: slide.imageUrl },
-      select: { id: true },
-      orderBy: { createdAt: 'asc' },
-    });
-
+    const existingSlides = await (prisma.orm.public.HeroSlide as any)
+      .where({ imageUrl: slide.imageUrl })
+      .orderBy((s: any) => s.createdAt.asc())
+      .all();
     const data = {
       imageUrl: slide.imageUrl,
       alt: slide.alt,
@@ -194,25 +169,19 @@ async function main() {
       sortOrder: slide.sortOrder ?? index + 1,
       status: slide.status,
     };
-
     if (existingSlides[0]) {
-      await prisma.heroSlide.update({ where: { id: existingSlides[0].id }, data });
-
-      if (existingSlides.length > 1) {
-        await prisma.heroSlide.deleteMany({
-          where: { id: { in: existingSlides.slice(1).map((item) => item.id) } },
-        });
+      await (prisma.orm.public.HeroSlide as any).where({ id: existingSlides[0].id }).update(data);
+      for (const extra of existingSlides.slice(1)) {
+        await (prisma.orm.public.HeroSlide as any).where({ id: extra.id }).delete();
       }
     } else {
-      await prisma.heroSlide.create({ data });
+      await (prisma.orm.public.HeroSlide as any).create(data);
     }
   }
 
-  const existingSettings = await prisma.setting.findMany({
-    orderBy: { createdAt: 'asc' },
-    select: { id: true },
-  });
-
+  const existingSettings = await (prisma.orm.public.Setting as any)
+    .orderBy((s: any) => s.createdAt.asc())
+    .all();
   const settingData = {
     siteName: settings.siteName,
     phone: settings.phone,
@@ -221,64 +190,40 @@ async function main() {
     address: settings.address,
     email: settings.email,
   };
-
   if (existingSettings[0]) {
-    await prisma.setting.update({ where: { id: existingSettings[0].id }, data: settingData });
-    if (existingSettings.length > 1) {
-      await prisma.setting.deleteMany({
-        where: { id: { in: existingSettings.slice(1).map((item) => item.id) } },
-      });
+    await (prisma.orm.public.Setting as any).where({ id: existingSettings[0].id }).update(settingData);
+    for (const extra of existingSettings.slice(1)) {
+      await (prisma.orm.public.Setting as any).where({ id: extra.id }).delete();
     }
   } else {
-    await prisma.setting.create({ data: settingData });
+    await (prisma.orm.public.Setting as any).create(settingData);
   }
 
   const adminPasswordHash = await bcrypt.hash('Admin@123', 10);
   const editorPasswordHash = await bcrypt.hash('Editor@123', 10);
 
-  await prisma.user.upsert({
-    where: { email: 'admin@antjewelry.local' },
-    update: {
-      name: 'Admin',
-      passwordHash: adminPasswordHash,
-      role: 'ADMIN',
-      locked: false,
-    },
-    create: {
-      email: 'admin@antjewelry.local',
-      name: 'Admin',
-      passwordHash: adminPasswordHash,
-      role: 'ADMIN',
-      locked: false,
-    },
-  });
-
-  await prisma.user.upsert({
-    where: { email: 'editor@antjewelry.local' },
-    update: {
-      name: 'Editor',
-      passwordHash: editorPasswordHash,
-      role: 'EDITOR',
-      locked: false,
-    },
-    create: {
-      email: 'editor@antjewelry.local',
-      name: 'Editor',
-      passwordHash: editorPasswordHash,
-      role: 'EDITOR',
-      locked: false,
-    },
-  });
-
-  void now;
+  for (const user of [
+    { email: 'admin@antjewelry.local', name: 'Admin', passwordHash: adminPasswordHash, role: 'ADMIN' },
+    { email: 'editor@antjewelry.local', name: 'Editor', passwordHash: editorPasswordHash, role: 'EDITOR' },
+  ]) {
+    const existing = await (prisma.orm.public.User as any).where({ email: user.email }).first();
+    const data = { name: user.name, passwordHash: user.passwordHash, role: user.role, locked: false };
+    if (existing) {
+      await (prisma.orm.public.User as any).where({ id: existing.id }).update(data);
+    } else {
+      await (prisma.orm.public.User as any).create({ email: user.email, ...data });
+    }
+  }
 }
 
 main()
   .then(async () => {
-    await prisma.$disconnect();
+    await (prisma as any).close?.();
   })
   .catch(async (error) => {
     console.error(error);
-    await prisma.$disconnect();
+    try {
+      await (prisma as any).close?.();
+    } catch {}
     process.exit(1);
   });

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AccessDenied } from '@/features/admin/components/access-denied';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
 import { SavedNotice } from '@/features/admin/components/form-controls';
@@ -22,7 +23,9 @@ export default async function AdminSettingsPage({ searchParams }: AdminSettingsP
   }
 
   const params = await searchParams;
-  const record = await prisma.setting.findFirst({ orderBy: { createdAt: 'asc' } });
+  const record = await (prisma.orm.public.Setting as any)
+    .orderBy((s: any) => s.createdAt.asc())
+    .first();
   const values: SettingsFormValues = {
     siteName: record?.siteName ?? 'ANT JEWELRY',
     phone: record?.phone ?? '',

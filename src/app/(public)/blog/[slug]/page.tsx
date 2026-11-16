@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Prisma } from '@prisma/client';
 import { Suspense } from 'react';
 import { getBlogPostBySlug, getBlogPosts } from '@/features/shared/queries';
+import { isMissingTableError } from '@/features/shared/db/prisma';
 import { BlogPostPageContent } from './blog-post-page-content';
 
 export async function generateStaticParams() {
@@ -11,7 +11,7 @@ export async function generateStaticParams() {
     const params = posts.map((post) => ({ slug: post.slug }));
     return params.length > 0 ? params : [{ slug: '__empty__' }];
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+    if (isMissingTableError(error)) {
       return [{ slug: '__empty__' }];
     }
     throw error;
@@ -24,7 +24,7 @@ export async function generateMetadata(props: PageProps<'/blog/[slug]'>): Promis
   try {
     post = await getBlogPostBySlug(slug);
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+    if (isMissingTableError(error)) {
       notFound();
     }
     throw error;

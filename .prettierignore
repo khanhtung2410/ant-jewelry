@@ -8,3 +8,5 @@ package-lock.json
 docs/
 *.md
 prisma/
+src/prisma/
+migrations/

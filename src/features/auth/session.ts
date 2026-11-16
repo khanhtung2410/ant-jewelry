@@ -1,4 +1,5 @@
 import 'server-only';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { cookies } from 'next/headers';
 import { connection } from 'next/server';
@@ -41,19 +42,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   const session = readValidatedSession(cookieStore);
   if (!session) return null;
 
-  // Tokens stay valid until they expire, so re-check the account on every request.
-  // This makes locking an account, changing its role and logout take effect immediately.
-  const user = await prisma.user.findUnique({
-    where: { id: session.userId },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      locked: true,
-      sessionVersion: true,
-    },
-  });
+  const user = await (prisma.orm.public.User as any).where({ id: session.userId }).first();
 
   if (!user || user.locked || user.sessionVersion !== session.sessionVersion) return null;
 
@@ -61,7 +50,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
     userId: user.id,
     email: user.email,
     role: user.role,
-    name: user.name,
+    name: user.name ?? null,
     sessionVersion: user.sessionVersion,
     exp: session.exp,
   };
@@ -83,10 +72,12 @@ export async function revokeAdminSession(): Promise<void> {
 
   if (session) {
     try {
-      await prisma.user.updateMany({
-        where: { id: session.userId },
-        data: { sessionVersion: { increment: 1 } },
-      });
+      const user = await (prisma.orm.public.User as any).where({ id: session.userId }).first();
+      if (user) {
+        await (prisma.orm.public.User as any)
+          .where({ id: session.userId })
+          .update({ sessionVersion: (user.sessionVersion ?? 0) + 1 });
+      }
     } catch (error) {
       console.error('Admin logout could not revoke the session:', error);
     }

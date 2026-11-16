@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Prisma } from '@prisma/client';
 import { BlogRow } from '@/features/blog/components/blog-row';
 import { Carousel } from '@/features/products/components/carousel';
 import { ActionButton } from '@/features/layout/components/action-button';
@@ -9,6 +8,7 @@ import {
   getHeroSlides,
   getStorefrontCategorySections,
 } from '@/features/shared/queries';
+import { isMissingTableError } from '@/features/shared/db/prisma';
 
 export const metadata: Metadata = {
   alternates: {
@@ -20,7 +20,7 @@ async function getOrEmpty<T>(load: () => Promise<T[]>): Promise<T[]> {
   try {
     return await load();
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+    if (isMissingTableError(error)) {
       return [];
     }
     throw error;

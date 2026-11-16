@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getAdminSession } from '@/features/auth/session';
 import { prisma } from '@/features/shared/db/prisma';
 import { canManageProducts } from '@/features/shared/lib/permissions';
@@ -41,10 +42,10 @@ export async function POST(
   }
 
   const { productId } = await context.params;
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
-    select: { id: true, name: true, images: { select: { sortOrder: true, isFront: true } } },
-  });
+  const product = await (prisma.orm.public.Product as any)
+    .where({ id: productId })
+    .include('images')
+    .first();
   if (!product) {
     return jsonError('Product not found.', 404);
   }
@@ -82,11 +83,12 @@ export async function POST(
     validatedFiles.push({ bytes, type });
   }
 
-  const largestSortOrder = product.images.reduce(
+  const productImages = (product.images ?? []) as Array<{ sortOrder: number; isFront: boolean }>;
+  const largestSortOrder = productImages.reduce(
     (largest, image) => Math.max(largest, image.sortOrder),
     0,
   );
-  const hasFrontImage = product.images.some((image) => image.isFront);
+  const hasFrontImage = productImages.some((image) => image.isFront);
   const uploaded: { storageKey: string; url: string; type: ValidatedFile['type'] }[] = [];
 
   try {
@@ -111,30 +113,28 @@ export async function POST(
 
   let images;
   try {
-    images = await prisma.$transaction(
-      uploaded.map((image, index) =>
-        prisma.productImage.create({
-          data: {
-            productId: product.id,
-            storageKey: image.storageKey,
-            url: image.url,
-            alt: `${product.name} - image ${largestSortOrder + index + 1}`,
-            isFront: !hasFrontImage && index === 0,
-            isHover: false,
-            sortOrder: largestSortOrder + index + 1,
-          },
-          select: {
-            id: true,
-            url: true,
-            alt: true,
-            isFront: true,
-            isHover: true,
-            sortOrder: true,
-            productColorId: true,
-          },
-        }),
-      ),
-    );
+    images = [];
+    for (let index = 0; index < uploaded.length; index += 1) {
+      const image = uploaded[index];
+      const created = await (prisma.orm.public.ProductImage as any).create({
+        productId: product.id,
+        storageKey: image.storageKey,
+        url: image.url,
+        alt: `${product.name} - image ${largestSortOrder + index + 1}`,
+        isFront: !hasFrontImage && index === 0,
+        isHover: false,
+        sortOrder: largestSortOrder + index + 1,
+      });
+      images.push({
+        id: created.id,
+        url: created.url,
+        alt: created.alt,
+        isFront: created.isFront,
+        isHover: created.isHover,
+        sortOrder: created.sortOrder,
+        productColorId: created.productColorId ?? null,
+      });
+    }
   } catch (error) {
     try {
       await enqueueProductImageDeletions(uploaded.map((image) => image.storageKey));
@@ -147,8 +147,6 @@ export async function POST(
     return jsonError('Image metadata could not be saved. Please retry.', 500);
   }
 
-  // A Route Handler cannot use updateTag, so expire the products tag
-  // immediately: the next /p/<slug> visit must show the uploaded images.
   revalidateProductPages({ immediate: true });
   return Response.json({ images }, { status: 201 });
 }

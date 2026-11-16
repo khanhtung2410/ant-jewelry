@@ -1,12 +1,8 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { cacheTag } from 'next/cache';
-import { Prisma } from '@prisma/client';
 import type { Category, Product, ProductType } from '@/features/shared/domain/domain';
 import { visibilityStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
-
-function isMissingTableError(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021';
-}
 import {
   getProductCardPage,
   getProductsByCategoryId,
@@ -14,6 +10,17 @@ import {
   type ProductSort,
 } from './products';
 import { CAROUSEL_PRODUCT_LIMIT } from '../lib/carousel-products';
+
+function isMissingTableError(error: unknown): boolean {
+  const e = error as {
+    code?: string;
+    sqlState?: string;
+    cause?: { code?: string; sqlState?: string };
+  } | null;
+  const code = e?.code ?? e?.cause?.code;
+  const sqlState = e?.sqlState ?? e?.cause?.sqlState;
+  return code === 'P2021' || sqlState === '42P01';
+}
 
 function mapCategory(record: {
   id: string;
@@ -42,11 +49,11 @@ export async function getCategories(
 ): Promise<Category[]> {
   'use cache';
   try {
-    const records = await prisma.category.findMany({
-      where: options.includeHidden ? {} : { status: visibilityStatus.VISIBLE },
-      orderBy: { sortOrder: 'asc' },
-    });
-
+    let query = prisma.orm.public.Category as any;
+    if (!options.includeHidden) {
+      query = query.where({ status: visibilityStatus.VISIBLE });
+    }
+    const records = await query.orderBy((c: any) => c.sortOrder.asc()).all();
     return records.map(mapCategory);
   } catch (error) {
     if (isMissingTableError(error)) {
@@ -62,13 +69,11 @@ export async function getCategoryBySlug(
 ): Promise<Category | null> {
   'use cache';
   try {
-    const record = await prisma.category.findFirst({
-      where: {
-        slug,
-        ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
-      },
-    });
-
+    let query = (prisma.orm.public.Category as any).where({ slug });
+    if (!options.includeHidden) {
+      query = query.where({ status: visibilityStatus.VISIBLE });
+    }
+    const record = await query.first();
     return record ? mapCategory(record) : null;
   } catch (error) {
     if (isMissingTableError(error)) {
@@ -84,13 +89,11 @@ export async function getCategoryById(
 ): Promise<Category | null> {
   'use cache';
   try {
-    const record = await prisma.category.findFirst({
-      where: {
-        id: categoryId,
-        ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
-      },
-    });
-
+    let query = (prisma.orm.public.Category as any).where({ id: categoryId });
+    if (!options.includeHidden) {
+      query = query.where({ status: visibilityStatus.VISIBLE });
+    }
+    const record = await query.first();
     return record ? mapCategory(record) : null;
   } catch (error) {
     if (isMissingTableError(error)) {
@@ -106,13 +109,11 @@ export async function getCategoryByType(
 ): Promise<Category | null> {
   'use cache';
   try {
-    const record = await prisma.category.findFirst({
-      where: {
-        type,
-        ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
-      },
-    });
-
+    let query = (prisma.orm.public.Category as any).where({ type });
+    if (!options.includeHidden) {
+      query = query.where({ status: visibilityStatus.VISIBLE });
+    }
+    const record = await query.first();
     return record ? mapCategory(record) : null;
   } catch (error) {
     if (isMissingTableError(error)) {

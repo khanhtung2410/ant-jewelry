@@ -1,11 +1,11 @@
 'use server';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Prisma } from '@prisma/client';
 import { updateTag } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { visibilityStatus } from '@/constants/statuses';
 import { getAdminSession } from '@/features/auth/session';
-import { prisma } from '@/features/shared/db/prisma';
+import { prisma, isUniqueConstraintError } from '@/features/shared/db/prisma';
 import {
   formatZodIssues,
   formState,
@@ -81,29 +81,22 @@ export async function saveProduct(
     return formState(values, formatZodIssues(parsed.error.issues));
   }
 
-  const category = await prisma.category.findUnique({
-    where: { id: parsed.data.categoryId },
-    select: { id: true },
-  });
+  const category = await (prisma.orm.public.Category as any)
+    .where({ id: parsed.data.categoryId })
+    .first();
   if (!category) {
-    return stateWithErrors(values, {
-      categoryId: ['Choose a valid category.'],
-    });
+    return stateWithErrors(values, { categoryId: ['Choose a valid category.'] });
   }
 
-  const existingSlug = await prisma.product.findUnique({
-    where: { slug: parsed.data.slug },
-    select: { id: true },
-  });
+  const existingSlug = await (prisma.orm.public.Product as any)
+    .where({ slug: parsed.data.slug })
+    .first();
   if (existingSlug && existingSlug.id !== productId) {
     return stateWithErrors(values, { slug: ['This slug is already in use.'] });
   }
 
   const existingProduct = productId
-    ? await prisma.product.findUnique({
-        where: { id: productId },
-        select: { id: true, price: true },
-      })
+    ? await (prisma.orm.public.Product as any).where({ id: productId }).first()
     : null;
   if (productId && !existingProduct) {
     return stateWithErrors(values, { form: ['This product no longer exists.'] });
@@ -113,7 +106,6 @@ export async function saveProduct(
     return stateWithErrors(values, { form: ['Only an ADMIN can set a product price.'] });
   }
 
-  // EDITORs may manage products but cannot change prices; keep the stored price.
   const price =
     existingProduct && !canEditPrice(session.role) ? existingProduct.price : parsed.data.price;
 
@@ -129,68 +121,58 @@ export async function saveProduct(
   };
 
   try {
-    await prisma.$transaction(async (transaction) => {
+    await prisma.transaction(async (tx: any) => {
       const product = productId
-        ? await transaction.product.update({ where: { id: productId }, data })
-        : await transaction.product.create({ data });
+        ? await tx.orm.public.Product.where({ id: productId }).update(data)
+        : await tx.orm.public.Product.create(data);
       const retainedColorIds: string[] = [];
 
       for (const color of parsed.data.colors) {
         if (color.id) {
-          const existingColor = await transaction.productColor.findFirst({
-            where: { id: color.id, productId: product.id },
-            select: { id: true },
-          });
+          const existingColor = await tx.orm.public.ProductColor.where({
+            id: color.id,
+            productId: product.id,
+          }).first();
           if (!existingColor) {
             throw new InvalidProductColorError();
           }
-          await transaction.productColor.update({
-            where: { id: color.id },
-            data: { name: color.name, hex: color.hex },
+          await tx.orm.public.ProductColor.where({ id: color.id }).update({
+            name: color.name,
+            hex: color.hex,
           });
           retainedColorIds.push(color.id);
         } else {
-          const createdColor = await transaction.productColor.create({
-            data: { productId: product.id, name: color.name, hex: color.hex },
-            select: { id: true },
+          const createdColor = await tx.orm.public.ProductColor.create({
+            productId: product.id,
+            name: color.name,
+            hex: color.hex,
           });
           retainedColorIds.push(createdColor.id);
         }
       }
 
-      const removedColorIds = await transaction.productColor.findMany({
-        where: {
-          productId: product.id,
-          ...(retainedColorIds.length > 0 ? { id: { notIn: retainedColorIds } } : {}),
-        },
-        select: { id: true },
-      });
+      const allColors = await tx.orm.public.ProductColor.where({ productId: product.id }).all();
+      const removedColorIds = allColors
+        .filter((c: any) => !retainedColorIds.includes(c.id))
+        .map((c: any) => c.id);
+
       if (removedColorIds.length > 0) {
-        const colorImages = await transaction.productImage.findMany({
-          where: {
-            productId: product.id,
-            productColorId: { in: removedColorIds.map((color) => color.id) },
-            storageKey: { not: null },
-          },
-          select: { storageKey: true },
-        });
+        const allImages = await tx.orm.public.ProductImage.where({ productId: product.id }).all();
+        const colorImages = allImages.filter(
+          (img: any) => removedColorIds.includes(img.productColorId) && img.storageKey,
+        );
         for (const image of colorImages) {
-          if (image.storageKey) {
-            await transaction.pendingImageDeletion.upsert({
-              where: { storageKey: image.storageKey },
-              create: { storageKey: image.storageKey },
-              update: {},
-            });
+          const existingDel = await tx.orm.public.PendingImageDeletion.where({
+            storageKey: image.storageKey,
+          }).first();
+          if (!existingDel) {
+            await tx.orm.public.PendingImageDeletion.create({ storageKey: image.storageKey });
           }
         }
+        for (const id of removedColorIds) {
+          await tx.orm.public.ProductColor.where({ id }).delete();
+        }
       }
-
-      await transaction.productColor.deleteMany({
-        where: {
-          productId: product.id,
-          ...(retainedColorIds.length > 0 ? { id: { notIn: retainedColorIds } } : {}),
-        },
-      });
 
       return product;
     });
@@ -199,7 +181,7 @@ export async function saveProduct(
     updateTag('products');
     redirect(savedProductsRedirect(String(formData.get('returnTo') ?? '')));
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    if (isUniqueConstraintError(error)) {
       return stateWithErrors(values, { slug: ['This slug is already in use.'] });
     }
     if (error instanceof InvalidProductColorError) {
@@ -218,22 +200,16 @@ export async function toggleProductVisibility(productId: string, _formData: Form
     throw new Error('You do not have permission to change product visibility.');
   }
 
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
-    select: { id: true, status: true },
-  });
+  const product = await (prisma.orm.public.Product as any).where({ id: productId }).first();
   if (!product) {
     throw new Error('Product not found.');
   }
 
-  await prisma.product.update({
-    where: { id: product.id },
-    data: {
-      status:
-        product.status === visibilityStatus.VISIBLE
-          ? visibilityStatus.HIDDEN
-          : visibilityStatus.VISIBLE,
-    },
+  await (prisma.orm.public.Product as any).where({ id: product.id }).update({
+    status:
+      product.status === visibilityStatus.VISIBLE
+        ? visibilityStatus.HIDDEN
+        : visibilityStatus.VISIBLE,
   });
 
   revalidateProductPages({ immediate: true });
@@ -247,11 +223,8 @@ export async function setProductImageHover(
   void _formData;
   await requireProductManager();
 
-  await prisma.$transaction(async (transaction) => {
-    const image = await transaction.productImage.findFirst({
-      where: { id: imageId, productId },
-      select: { id: true, isFront: true, productColorId: true },
-    });
+  await prisma.transaction(async (tx: any) => {
+    const image = await tx.orm.public.ProductImage.where({ id: imageId, productId }).first();
     if (!image) {
       throw new Error('Product image not found.');
     }
@@ -259,14 +232,13 @@ export async function setProductImageHover(
       throw new Error('Choose a shared image that is not the cover image for the hover image.');
     }
 
-    await transaction.productImage.updateMany({
-      where: { productId },
-      data: { isHover: false },
-    });
-    await transaction.productImage.update({
-      where: { id: image.id },
-      data: { isHover: true },
-    });
+    const images = await tx.orm.public.ProductImage.where({ productId }).all();
+    for (const img of images) {
+      if (img.isHover) {
+        await tx.orm.public.ProductImage.where({ id: img.id }).update({ isHover: false });
+      }
+    }
+    await tx.orm.public.ProductImage.where({ id: image.id }).update({ isHover: true });
   });
 
   revalidateProductPages({ immediate: true });
@@ -280,11 +252,8 @@ export async function setProductImageFront(
   void _formData;
   await requireProductManager();
 
-  await prisma.$transaction(async (transaction) => {
-    const image = await transaction.productImage.findFirst({
-      where: { id: imageId, productId },
-      select: { id: true, productColorId: true },
-    });
+  await prisma.transaction(async (tx: any) => {
+    const image = await tx.orm.public.ProductImage.where({ id: imageId, productId }).first();
     if (!image) {
       throw new Error('Product image not found.');
     }
@@ -292,17 +261,15 @@ export async function setProductImageFront(
       throw new Error('Only shared product images can be used as the cover image.');
     }
 
-    await transaction.productImage.updateMany({
-      where: { productId },
-      data: { isFront: false },
-    });
-    await transaction.productImage.update({
-      where: { id: image.id },
-      data: { isHover: false },
-    });
-    await transaction.productImage.update({
-      where: { id: image.id },
-      data: { isFront: true },
+    const images = await tx.orm.public.ProductImage.where({ productId }).all();
+    for (const img of images) {
+      if (img.isFront) {
+        await tx.orm.public.ProductImage.where({ id: img.id }).update({ isFront: false });
+      }
+    }
+    await tx.orm.public.ProductImage.where({ id: image.id }).update({
+      isHover: false,
+      isFront: true,
     });
   });
 
@@ -318,22 +285,23 @@ export async function assignProductImageColor(
 
   const colorId = String(formData.get('productColorId') ?? '') || null;
   if (colorId) {
-    const color = await prisma.productColor.findFirst({
-      where: { id: colorId, productId },
-      select: { id: true },
-    });
+    const color = await (prisma.orm.public.ProductColor as any)
+      .where({ id: colorId, productId })
+      .first();
     if (!color) {
       throw new Error('Selected color does not belong to this product.');
     }
   }
 
-  const image = await prisma.productImage.updateMany({
-    where: { id: imageId, productId },
-    data: { productColorId: colorId, ...(colorId ? { isFront: false, isHover: false } : {}) },
-  });
-  if (image.count !== 1) {
+  const image = await (prisma.orm.public.ProductImage as any)
+    .where({ id: imageId, productId })
+    .first();
+  if (!image) {
     throw new Error('Product image not found.');
   }
+  await (prisma.orm.public.ProductImage as any)
+    .where({ id: imageId })
+    .update({ productColorId: colorId, ...(colorId ? { isFront: false, isHover: false } : {}) });
 
   revalidateProductPages({ immediate: true });
 }
@@ -347,13 +315,11 @@ export async function moveProductImage(
   void _formData;
   await requireProductManager();
 
-  await prisma.$transaction(async (transaction) => {
-    const images = await transaction.productImage.findMany({
-      where: { productId },
-      orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
-      select: { id: true, sortOrder: true },
-    });
-    const index = images.findIndex((image) => image.id === imageId);
+  await prisma.transaction(async (tx: any) => {
+    const images = await tx.orm.public.ProductImage.where({ productId })
+      .orderBy([(i: any) => i.sortOrder.asc(), (i: any) => i.id.asc()])
+      .all();
+    const index = images.findIndex((image: any) => image.id === imageId);
     const neighborIndex = direction === 'up' ? index - 1 : index + 1;
     if (index < 0) {
       throw new Error('Product image not found.');
@@ -364,17 +330,12 @@ export async function moveProductImage(
 
     const image = images[index];
     const neighbor = images[neighborIndex];
-    await transaction.productImage.update({
-      where: { id: image.id },
-      data: { sortOrder: -1 },
+    await tx.orm.public.ProductImage.where({ id: image.id }).update({ sortOrder: -1 });
+    await tx.orm.public.ProductImage.where({ id: neighbor.id }).update({
+      sortOrder: image.sortOrder,
     });
-    await transaction.productImage.update({
-      where: { id: neighbor.id },
-      data: { sortOrder: image.sortOrder },
-    });
-    await transaction.productImage.update({
-      where: { id: image.id },
-      data: { sortOrder: neighbor.sortOrder },
+    await tx.orm.public.ProductImage.where({ id: image.id }).update({
+      sortOrder: neighbor.sortOrder,
     });
   });
 
@@ -384,33 +345,32 @@ export async function moveProductImage(
 export async function deleteProductImage(productId: string, imageId: string, _formData: FormData) {
   void _formData;
   await requireProductManager();
-  const image = await prisma.productImage.findFirst({
-    where: { id: imageId, productId },
-    select: { id: true, storageKey: true, isFront: true },
-  });
+  const image = await (prisma.orm.public.ProductImage as any)
+    .where({ id: imageId, productId })
+    .first();
   if (!image) {
     throw new Error('Product image not found.');
   }
 
-  await prisma.$transaction(async (transaction) => {
+  await prisma.transaction(async (tx: any) => {
     if (image.storageKey) {
-      await transaction.pendingImageDeletion.upsert({
-        where: { storageKey: image.storageKey },
-        create: { storageKey: image.storageKey },
-        update: {},
-      });
+      const existingDel = await tx.orm.public.PendingImageDeletion.where({
+        storageKey: image.storageKey,
+      }).first();
+      if (!existingDel) {
+        await tx.orm.public.PendingImageDeletion.create({ storageKey: image.storageKey });
+      }
     }
-    await transaction.productImage.delete({ where: { id: image.id } });
+    await tx.orm.public.ProductImage.where({ id: image.id }).delete();
     if (image.isFront) {
-      const nextImage = await transaction.productImage.findFirst({
-        where: { productId, productColorId: null },
-        orderBy: [{ sortOrder: 'asc' }, { id: 'asc' }],
-        select: { id: true },
-      });
+      const nextImages = await tx.orm.public.ProductImage.where({ productId })
+        .orderBy([(i: any) => i.sortOrder.asc(), (i: any) => i.id.asc()])
+        .all();
+      const nextImage = nextImages.find((i: any) => i.productColorId == null);
       if (nextImage) {
-        await transaction.productImage.update({
-          where: { id: nextImage.id },
-          data: { isFront: true, isHover: false },
+        await tx.orm.public.ProductImage.where({ id: nextImage.id }).update({
+          isFront: true,
+          isHover: false,
         });
       }
     }
@@ -426,25 +386,26 @@ export async function deleteProduct(productId: string, _formData: FormData) {
   if (!session || !hasPermission(session.role, 'products:delete')) {
     throw new Error('You do not have permission to delete products.');
   }
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
-    select: { id: true, images: { select: { storageKey: true } } },
-  });
+  const product = await (prisma.orm.public.Product as any)
+    .where({ id: productId })
+    .include('images')
+    .first();
   if (!product) {
     throw new Error('Product not found.');
   }
 
-  await prisma.$transaction(async (transaction) => {
-    for (const image of product.images) {
+  await prisma.transaction(async (tx: any) => {
+    for (const image of product.images ?? []) {
       if (image.storageKey) {
-        await transaction.pendingImageDeletion.upsert({
-          where: { storageKey: image.storageKey },
-          create: { storageKey: image.storageKey },
-          update: {},
-        });
+        const existingDel = await tx.orm.public.PendingImageDeletion.where({
+          storageKey: image.storageKey,
+        }).first();
+        if (!existingDel) {
+          await tx.orm.public.PendingImageDeletion.create({ storageKey: image.storageKey });
+        }
       }
     }
-    await transaction.product.delete({ where: { id: product.id } });
+    await tx.orm.public.Product.where({ id: product.id }).delete();
   });
 
   revalidateProductPages({ immediate: true });

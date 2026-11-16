@@ -1,10 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import bcrypt from 'bcryptjs';
-import { Prisma, PrismaClient } from '@prisma/client';
+import postgres from '@prisma/orm-postgres/runtime';
+import { contractFromJson } from '@prisma/orm-postgres/static';
+import contractJson from '../src/prisma/contract.json' with { type: 'json' };
+import type { Contract } from '../src/prisma/contract';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { z } from 'zod';
 
-const prisma = new PrismaClient();
+const contract = contractFromJson<Contract>(contractJson as Contract);
+const prisma = postgres({ contract, url: process.env.DATABASE_URL });
 const emailSchema = z.string().email();
 
 function readHidden(prompt: string): Promise<string> {
@@ -103,28 +108,20 @@ async function promptForAdmin(databaseHost: string): Promise<{ email: string; pa
 
 async function createFirstAdmin(email: string, password: string): Promise<{ email: string }> {
   const passwordHash = await bcrypt.hash(password, 12);
-  return prisma.$transaction(
-    async (transaction) => {
-      const existingAdmin = await transaction.user.findFirst({
-        where: { role: 'ADMIN' },
-        select: { id: true },
-      });
-      if (existingAdmin) {
-        throw new Error('An ADMIN already exists; refusing to create another bootstrap account.');
-      }
+  return prisma.transaction(async (tx: any) => {
+    const users = await tx.orm.public.User.all();
+    const existingAdmin = users.find((u: any) => u.role === 'ADMIN');
+    if (existingAdmin) {
+      throw new Error('An ADMIN already exists; refusing to create another bootstrap account.');
+    }
 
-      return transaction.user.create({
-        data: {
-          email,
-          passwordHash,
-          role: 'ADMIN',
-          locked: false,
-        },
-        select: { email: true },
-      });
-    },
-    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-  );
+    return tx.orm.public.User.create({
+      email,
+      passwordHash,
+      role: 'ADMIN',
+      locked: false,
+    });
+  });
 }
 
 async function main() {
@@ -145,5 +142,7 @@ main()
     process.exitCode = 1;
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    try {
+      await (prisma as any).close?.();
+    } catch {}
   });

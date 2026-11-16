@@ -1,4 +1,5 @@
 'use server';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
@@ -56,18 +57,7 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
       return loginRateLimitedState();
     }
 
-    user = await prisma.user.findUnique({
-      where: { email },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        passwordHash: true,
-        role: true,
-        locked: true,
-        sessionVersion: true,
-      },
-    });
+    user = await (prisma.orm.public.User as any).where({ email }).first();
   } catch (error) {
     return handleAuthActionError('Admin login could not load the user record:', error);
   }

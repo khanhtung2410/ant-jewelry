@@ -1,18 +1,17 @@
-import { Prisma } from '@prisma/client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import type { BlogPost, BlogPostImage } from '@/features/shared/domain/domain';
 import { publishStatus } from '@/constants/statuses';
 import { prisma } from '@/features/shared/db/prisma';
 
 function isMissingTableError(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021';
-}
-
-/**
- * Newest first, with `id` as the tie-breaker so posts that share a
- * `publishedAt` value keep the same order on SQLite and PostgreSQL.
- */
-export function getBlogPostOrderBy(): Prisma.BlogPostOrderByWithRelationInput[] {
-  return [{ publishedAt: 'desc' }, { id: 'asc' }];
+  const e = error as {
+    code?: string;
+    sqlState?: string;
+    cause?: { code?: string; sqlState?: string };
+  } | null;
+  const code = e?.code ?? e?.cause?.code;
+  const sqlState = e?.sqlState ?? e?.cause?.sqlState;
+  return code === 'P2021' || sqlState === '42P01';
 }
 
 function mapBlogPost(record: {
@@ -22,10 +21,12 @@ function mapBlogPost(record: {
   summary: string;
   body: string;
   coverImageUrl: string;
-  publishedAt: Date;
+  publishedAt: unknown;
   status: 'DRAFT' | 'PUBLISHED';
   images: { id: string; url: string; alt: string; sortOrder: number }[];
 }): BlogPost {
+  const publishedAt =
+    record.publishedAt instanceof Date ? record.publishedAt : new Date(String(record.publishedAt));
   return {
     blog_id: record.id,
     title: record.title,
@@ -39,9 +40,17 @@ function mapBlogPost(record: {
       alt: image.alt,
       sortOrder: image.sortOrder,
     })),
-    publishedAt: record.publishedAt.toISOString(),
+    publishedAt: publishedAt.toISOString(),
     status: record.status,
   };
+}
+
+/**
+ * Newest first, with `id` as the tie-breaker so posts that share a
+ * `publishedAt` value keep the same order on SQLite and PostgreSQL.
+ */
+export function getBlogPostOrderBy(): Array<Record<string, 'asc' | 'desc'>> {
+  return [{ publishedAt: 'desc' }, { id: 'asc' }];
 }
 
 /**
@@ -53,13 +62,16 @@ export async function getBlogPosts(
 ): Promise<BlogPost[]> {
   'use cache';
   try {
-    const records = await prisma.blogPost.findMany({
-      where: options.includeDrafts ? {} : { status: publishStatus.PUBLISHED },
-      orderBy: getBlogPostOrderBy(),
-      include: { images: { orderBy: { sortOrder: 'asc' } } },
-      ...(typeof options.limit === 'number' ? { take: options.limit } : {}),
-    });
-
+    let query = (prisma.orm.public.BlogPost as any)
+      .include('images', (images: any) => images.orderBy((img: any) => img.sortOrder.asc()))
+      .orderBy([(post: any) => post.publishedAt.desc(), (post: any) => post.id.asc()]);
+    if (!options.includeDrafts) {
+      query = query.where({ status: publishStatus.PUBLISHED });
+    }
+    if (typeof options.limit === 'number') {
+      query = query.limit(options.limit);
+    }
+    const records = await query.all();
     return records.map(mapBlogPost);
   } catch (error) {
     if (isMissingTableError(error)) {
@@ -75,14 +87,13 @@ export async function getBlogPostBySlug(
 ): Promise<BlogPost | null> {
   'use cache';
   try {
-    const record = await prisma.blogPost.findFirst({
-      where: {
-        slug,
-        ...(options.includeDrafts ? {} : { status: publishStatus.PUBLISHED }),
-      },
-      include: { images: { orderBy: { sortOrder: 'asc' } } },
-    });
-
+    let query = (prisma.orm.public.BlogPost as any).where({ slug });
+    if (!options.includeDrafts) {
+      query = query.where({ status: publishStatus.PUBLISHED });
+    }
+    const record = await query
+      .include('images', (images: any) => images.orderBy((img: any) => img.sortOrder.asc()))
+      .first();
     return record ? mapBlogPost(record) : null;
   } catch (error) {
     if (isMissingTableError(error)) {

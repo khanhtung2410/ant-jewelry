@@ -13,23 +13,20 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:watch": "vitest",
-    "db:push": "prisma db push",
-    "db:seed": "prisma db seed",
-    "db:generate": "prisma generate",
-    "db:generate:production": "prisma generate --schema prisma/postgresql/schema.prisma",
-    "db:migrate:production": "prisma migrate deploy --schema prisma/postgresql/schema.prisma",
-    "db:migrate:status:production": "prisma migrate status --schema prisma/postgresql/schema.prisma",
-    "db:create-admin:production": "npm run db:generate:production && tsx prisma/create-admin.ts",
-    "build:production": "npm run db:generate:production && next build"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "db:contract": "prisma contract emit",
+    "db:migrate": "prisma db migrate",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:generate": "prisma contract emit",
+    "db:generate:production": "prisma contract emit",
+    "db:migrate:production": "prisma db migrate",
+    "db:migrate:status:production": "prisma db migrate --status",
+    "db:create-admin:production": "tsx prisma/create-admin.ts",
+    "build:production": "npm run db:contract && next build"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
     "next": "16.4.5",
-    "prisma": "6.19.3",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "^4.6.7"
@@ -44,6 +41,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.4.5",
     "prettier": "^3.9.10",
+    "prisma": "8.0.0-rc.33",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",

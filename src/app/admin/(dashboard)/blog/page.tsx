@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import Link from 'next/link';
 import { AccessDenied } from '@/features/admin/components/access-denied';
 import { AdminPageHeader } from '@/features/admin/components/admin-page-header';
@@ -17,6 +18,10 @@ type AdminBlogPageProps = {
   searchParams: Promise<Partial<Record<'edit' | 'new' | 'saved', SearchParam>>>;
 };
 
+function asDate(value: unknown): Date {
+  return value instanceof Date ? value : new Date(String(value));
+}
+
 export default async function AdminBlogPage({ searchParams }: AdminBlogPageProps) {
   const session = await getAdminSession();
   if (!session) return null;
@@ -27,10 +32,10 @@ export default async function AdminBlogPage({ searchParams }: AdminBlogPageProps
   const params = await searchParams;
   const editId = firstSearchParam(params.edit);
   const createRequested = firstSearchParam(params.new) === '1';
-  const posts = await prisma.blogPost.findMany({
-    orderBy: [{ publishedAt: 'desc' }, { title: 'asc' }],
-  });
-  const selectedPost = editId ? posts.find((post) => post.id === editId) : null;
+  const posts = await (prisma.orm.public.BlogPost as any)
+    .orderBy([(p: any) => p.publishedAt.desc(), (p: any) => p.title.asc()])
+    .all();
+  const selectedPost = editId ? posts.find((post: any) => post.id === editId) : null;
 
   const values: BlogPostFormValues | null = selectedPost
     ? {
@@ -40,7 +45,7 @@ export default async function AdminBlogPage({ searchParams }: AdminBlogPageProps
         summary: selectedPost.summary,
         body: selectedPost.body,
         coverImageUrl: selectedPost.coverImageUrl,
-        publishedAt: toDateInputValue(selectedPost.publishedAt.toISOString()),
+        publishedAt: toDateInputValue(asDate(selectedPost.publishedAt).toISOString()),
         status: selectedPost.status,
       }
     : createRequested
@@ -73,12 +78,12 @@ export default async function AdminBlogPage({ searchParams }: AdminBlogPageProps
         }
       />
       <BlogManagement
-        posts={posts.map((post) => ({
+        posts={posts.map((post: any) => ({
           id: post.id,
           title: post.title,
           slug: post.slug,
           status: post.status,
-          publishedAt: post.publishedAt.toISOString(),
+          publishedAt: asDate(post.publishedAt).toISOString(),
         }))}
         saved={firstSearchParam(params.saved) === '1'}
         dialog={values ? { values, closeHref } : null}

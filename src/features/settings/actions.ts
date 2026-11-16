@@ -1,4 +1,5 @@
 'use server';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
@@ -52,15 +53,14 @@ export async function saveSettings(
     return formState(values, formatZodIssues(parsed.error.issues));
   }
 
-  const existing = await prisma.setting.findFirst({
-    orderBy: { createdAt: 'asc' },
-    select: { id: true },
-  });
+  const existing = await (prisma.orm.public.Setting as any)
+    .orderBy((s: any) => s.createdAt.asc())
+    .first();
 
   if (existing) {
-    await prisma.setting.update({ where: { id: existing.id }, data: parsed.data });
+    await (prisma.orm.public.Setting as any).where({ id: existing.id }).update(parsed.data);
   } else {
-    await prisma.setting.create({ data: parsed.data });
+    await (prisma.orm.public.Setting as any).create(parsed.data);
   }
 
   revalidatePath('/', 'layout');

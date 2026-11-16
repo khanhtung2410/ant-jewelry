@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
-import { Prisma } from '@prisma/client';
 import { BlogDetail } from '@/features/blog/components/blog-detail';
 import { getBlogPostBySlug, getBlogPosts } from '@/features/shared/queries';
+import { isMissingTableError } from '@/features/shared/db/prisma';
 
 type BlogPostPageContentProps = Pick<PageProps<'/blog/[slug]'>, 'params'>;
 
@@ -17,7 +17,7 @@ export async function BlogPostPageContent({ params }: BlogPostPageContentProps) 
     }
     otherPosts = (await getBlogPosts()).filter((item) => item.slug !== post!.slug).slice(0, 1);
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+    if (isMissingTableError(error)) {
       notFound();
     }
     throw error;

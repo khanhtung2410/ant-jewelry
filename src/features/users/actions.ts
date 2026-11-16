@@ -1,12 +1,12 @@
 'use server';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { adminRole } from '@/constants/roles';
 import { getAdminSession } from '@/features/auth/session';
-import { prisma } from '@/features/shared/db/prisma';
+import { prisma, isUniqueConstraintError } from '@/features/shared/db/prisma';
 import {
   formatZodIssues,
   formState,
@@ -26,30 +26,22 @@ class LastActiveAdminError extends Error {}
 class UserNotFoundError extends Error {}
 
 function isRetryableTransactionError(error: unknown): boolean {
-  if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    return error.code === 'P2034';
-  }
+  const code = (error as { code?: string } | null)?.code;
+  if (code === 'P2034') return true;
   return (
     error instanceof Error &&
-    /write conflict|deadlock|database is locked|SQLITE_BUSY|serialization failure/i.test(
+    /write conflict|deadlock|database is locked|SQLITE_BUSY|serialization failure|could not serialize/i.test(
       error.message,
     )
   );
 }
 
-/**
- * Runs the read-check-write sequence at Serializable isolation so two concurrent
- * requests cannot both believe another active ADMIN remains. Retries transient
- * serialization failures, which are expected under contention.
- */
 async function runSerializableTransaction<T>(
-  operation: (transaction: Prisma.TransactionClient) => Promise<T>,
+  operation: (transaction: any) => Promise<T>,
 ): Promise<T> {
   for (let attempt = 1; ; attempt += 1) {
     try {
-      return await prisma.$transaction(operation, {
-        isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
-      });
+      return await prisma.transaction(operation);
     } catch (error) {
       if (attempt >= SERIALIZABLE_TRANSACTION_ATTEMPTS || !isRetryableTransactionError(error)) {
         throw error;
@@ -109,16 +101,14 @@ export async function createUser(
   }
 
   try {
-    await prisma.user.create({
-      data: {
-        name: parsed.data.name || null,
-        email: parsed.data.email,
-        role: parsed.data.role,
-        passwordHash: await bcrypt.hash(parsed.data.password, 10),
-      },
+    await (prisma.orm.public.User as any).create({
+      name: parsed.data.name || null,
+      email: parsed.data.email,
+      role: parsed.data.role,
+      passwordHash: await bcrypt.hash(parsed.data.password, 10),
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    if (isUniqueConstraintError(error)) {
       return formState(values, { email: [DUPLICATE_EMAIL_ERROR] });
     }
     throw error;
@@ -146,15 +136,11 @@ export async function saveUserAccess(
     return formState(values, formatZodIssues(parsed.error.issues));
   }
 
-  // Hash outside the transaction so the interactive transaction stays short.
   const passwordHash = parsed.data.password ? await bcrypt.hash(parsed.data.password, 10) : null;
 
   try {
     await runSerializableTransaction(async (transaction) => {
-      const current = await transaction.user.findUnique({
-        where: { id: parsed.data.userId },
-        select: { role: true, locked: true },
-      });
+      const current = await transaction.orm.public.User.where({ id: parsed.data.userId }).first();
       if (!current) {
         throw new UserNotFoundError();
       }
@@ -164,27 +150,24 @@ export async function saveUserAccess(
         current.role === adminRole.ADMIN &&
         !current.locked &&
         (next.role !== adminRole.ADMIN || next.locked);
+      const otherActiveAdmins = isLosingAdminAccess ? await transaction.orm.public.User.all() : [];
       const otherActiveAdminCount = isLosingAdminAccess
-        ? await transaction.user.count({
-            where: { role: adminRole.ADMIN, locked: false, id: { not: parsed.data.userId } },
-          })
+        ? otherActiveAdmins.filter(
+            (u: any) => u.role === adminRole.ADMIN && !u.locked && u.id !== parsed.data.userId,
+          ).length
         : 0;
 
       if (wouldRemoveLastActiveAdmin({ current, next, otherActiveAdminCount })) {
         throw new LastActiveAdminError();
       }
 
-      // Role, lock or password changes must invalidate tokens issued under the old access.
       const accessChanged =
         current.role !== next.role || current.locked !== next.locked || passwordHash !== null;
 
-      await transaction.user.update({
-        where: { id: parsed.data.userId },
-        data: {
-          ...next,
-          ...(passwordHash ? { passwordHash } : {}),
-          ...(accessChanged ? { sessionVersion: { increment: 1 } } : {}),
-        },
+      await transaction.orm.public.User.where({ id: parsed.data.userId }).update({
+        ...next,
+        ...(passwordHash ? { passwordHash } : {}),
+        ...(accessChanged ? { sessionVersion: (current.sessionVersion ?? 0) + 1 } : {}),
       });
     });
   } catch (error) {
