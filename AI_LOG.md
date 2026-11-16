@@ -30,6 +30,12 @@
 - `npm run format:check` → pass, exit 0 (`prisma7-formatcheck-v2.txt`).
 - `npm run build` (`DATABASE_URL=file:./dev.db`, sau `prisma generate` cho SQLite schema) → pass, exit 0 (`prisma7-build2.txt`); build hoàn tất (`✓ Compiled successfully`, `✓ Generating static pages (24/24)`) nhưng có log `prisma:error` P2021/missing tables trong quá trình prerender/collect do DB local chưa migrate/seed trong môi trường kiểm thử này.
 
+### Follow-up: fix `npm run build` không còn lỗi "no table"
+
+- Nguyên nhân: với Prisma 7 + driver adapter, `file:./dev.db` (đường dẫn tương đối) được better-sqlite3 resolve theo cwd trong khi quy ước cũ của Prisma là tương đối theo thư mục schema (`prisma/`), dẫn đến build kết nối nhầm DB trống/thiếu bảng và phát sinh `prisma:error ... table main.* does not exist`.
+- Sửa: chuẩn hóa URL SQLite tương đối (`file:./...`) thành đường dẫn tuyệt đối dựa trên `prisma/` trong `src/features/shared/db/prisma.ts`, `prisma/seed.ts`, `prisma/create-admin.ts`.
+- Kiểm chứng (Node `spawnSync`, UTF-8): `npm run format/lint/typecheck/format:check` pass (`*-fixdb.txt`); `npx prisma db push` (không `--force-reset`) báo schema đã đồng bộ; `npm run build` (`DATABASE_URL=file:./dev.db`) pass, exit 0 (`prisma7-build-notable.txt`), `✓ Generating static pages (53/53)` và không còn log "table ... does not exist".
+
 ### Hạn chế / ghi chú
 
 - Không chạy `prisma db push --force-reset`/seed cho DB test/dev trong phiên này do hành động phá hủy DB bị chặn bởi cơ chế an toàn của môi trường (cần consent/review rõ ràng); vì vậy chưa chạy `npm test`/`npm run test:e2e` end-to-end.
