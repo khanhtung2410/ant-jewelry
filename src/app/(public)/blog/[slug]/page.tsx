@@ -19,7 +19,15 @@ export async function generateStaticParams() {
 
 export async function generateMetadata(props: PageProps<'/blog/[slug]'>): Promise<Metadata> {
   const { slug } = await props.params;
-  const post = await getBlogPostBySlug(slug);
+  let post: Awaited<ReturnType<typeof getBlogPostBySlug>>;
+  try {
+    post = await getBlogPostBySlug(slug);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+      notFound();
+    }
+    throw error;
+  }
 
   if (!post) {
     notFound();

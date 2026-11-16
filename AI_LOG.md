@@ -1,3 +1,92 @@
+## 2026-11-16 13:55:00 +07:00 - Vercel inspect (P2021) and build resilience fix
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> use current branch, commit
+>
+> run npx vercel inspect dpl_GFQZtEbzBtYAtx5wq5Jwo2gRS1B9 --logs, resolve vercel or point out change if cant resolve using current aaavailaable tool
+
+### Đã tự kiểm chứng
+
+**Vercel inspect**
+
+- Chạy `npx --yes vercel@latest inspect dpl_GFQZtEbzBtYAtx5wq5Jwo2gRS1B9 --logs` (deployment trên `main`, commit `3a6373c`).
+- Build fail: `PrismaClientKnownRequestError` `P2021` (`The table public.BlogPost does not exist in the current database`) trong `prisma.blogPost.findMany()` tại `src/features/blog/queries/blog-posts.ts:51`, báo `Failed to collect page data for /blog/[slug]` và `Command "npm run build:production" exited with 1`.
+- Nguyên nhân: database production mà build kết nối tới chưa có bảng/migration (hoặc trỏ sai DB). Dù `generateStaticParams` của route slug đã guard P2021, các luồng khác (blog list `/blog`, `sitemap`, home query blog/sections, metadata/content slug) vẫn có thể truy vấn DB trong quá trình collect/prerender và làm build fail khi bảng chưa tồn tại.
+
+**Thay đổi đã thực hiện (code-side resilience)**
+
+- Bổ sung xử lý `P2021` để build có thể hoàn tất khi DB chưa migrate:
+  - `src/app/(public)/blog/page.tsx`: trả danh sách bài rỗng khi P2021.
+  - `src/app/sitemap.ts`: trả mảng rỗng cho categories/products/posts khi P2021.
+  - `src/app/(public)/page.tsx`: fallback mảng rỗng cho sections/posts/slides khi P2021.
+  - `src/app/(public)/blog/[slug]/page.tsx`, `blog-post-page-content.tsx`: `notFound()` khi P2021 trong metadata/content.
+  - `src/app/(public)/p/[slug]/page.tsx`: `notFound()` khi P2021 trong `generateMetadata`.
+- Không thay đổi hành vi khi DB/bảng đã có; chỉ tránh crash build do bảng thiếu.
+
+**Hạn chế / cần thao tác ngoài công cụ hiện có**
+
+- Không thể chạy migration trên DB production, thay đổi env Vercel, hay redeploy/xác minh deployment từ môi trường hiện tại (không có quyền/credentials hạ tầng).
+- Cần thực hiện trên hạ tầng: xác nhận `DATABASE_URL`/`DIRECT_URL` đúng DB production, chạy `npm run db:migrate:production` và `npm run db:migrate:status:production`, sau đó redeploy (để build mới có code resilience và runtime có schema đúng).
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8)
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm test` → 49 files / 225 tests passed (Vitest, `prisma/test.db`), exit 0.
+- `npm run format:check` → `All matched files use Prettier code style!`, exit 0.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+
+### AI sai ở đâu
+
+- Ban đầu chỉ guard `generateStaticParams` cho slug routes, nhưng Vercel build vẫn fail vì các trang/query khác (blog index, sitemap, home, metadata/content) chạm DB trong lúc collect/prerender; cần bao quát P2021 ở các điểm đọc dữ liệu công khai liên quan.
+- Khi sửa nhanh, lần đầu đặt JSX trong `try/catch` và dùng biến `let` khiến lint `react-hooks/error-boundaries` và typecheck báo lỗi; đã tách data-fetch khỏi JSX và sửa narrowing/format.
+- Không thể tự “resolve” hoàn toàn lỗi deployment vì nguyên nhân gốc (DB chưa migrate/cấu hình trên Vercel) nằm ngoài khả năng thay đổi hạ tầng của agent.
+
+---
+
+## 2026-11-16 13:10:00 +07:00 - Address terminal errors/warnings and re-verify
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> iron out error and warn from terminal output
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Rà soát output terminal/lệnh**
+
+- `npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`, `npm run build` chạy lại trên nhánh hiện tại đều **exit 0** (capture UTF-8 bằng Node `spawnSync`, không có ký tự thay thế `�`).
+- Không thấy lỗi/warning từ lint, typecheck, Vitest, Prettier hay Next build trong output kiểm tra.
+- `npm audit` báo **11 vulnerabilities (8 moderate, 3 high)**; `npm audit fix` (không `--force`) đã áp dụng phần có thể sửa và cập nhật `package-lock.json`, nhưng các cảnh báo còn lại yêu cầu nâng cấp breaking (`prisma@7`, `eslint-config-next@15.5.x` theo gợi ý npm) nên không tự áp dụng để tránh thay đổi hành vi/stack ngoài phạm vi.
+
+**Thay đổi đã thực hiện**
+
+- Chạy `npm audit fix` (non-breaking) và cập nhật `package-lock.json`.
+- Không thay đổi mã nguồn ứng dụng; xác nhận storage đang ở chế độ local filesystem (`PRODUCT_IMAGE_UPLOAD_DIR`, `/uploads`) và không còn workflow S3/R2 trong code/docs.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8)
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm test` → 49 files / 225 tests passed (Vitest, `prisma/test.db`), exit 0.
+- `npm run format:check` → `All matched files use Prettier code style!`, exit 0.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+
+### AI sai ở đâu
+
+- Không thể “xóa sạch” toàn bộ cảnh báo `npm audit` mà không dùng `--force`/nâng cấp breaking; đã giới hạn ở fix an toàn và ghi rõ phần còn lại thay vì tự ý đổi major dependency.
+- Một số cảnh báo trước đó đến từ npm/git (ví dụ notice phiên bản npm, LF/CRLF) không phải lỗi runtime/build của dự án; đã ưu tiên xử lý và xác nhận các output kiểm tra thực tế.
+
+---
+
 ## 2026-11-16 12:12:00 +07:00 - Revert S3 storage workflow to local storage
 
 ### Prompt nguyên văn đã dùng
