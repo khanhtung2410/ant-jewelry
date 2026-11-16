@@ -64,9 +64,8 @@ Các biến trong `.env.example`:
 |---|---:|---|
 | `DATABASE_URL` | Có | `file:./dev.db` cho local; PostgreSQL cho production |
 | `AUTH_SECRET` | Có | Khóa ký session admin; không commit giá trị thật |
-| `SITE_URL` | Không | Mặc định `http://localhost:3000`; production nên đặt `https://<project>.vercel.app` |
-| `PRODUCT_IMAGE_UPLOAD_DIR` | Không | Local: mặc định `./uploads` |
-| `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_BASE_URL` | Production (Vercel) | Lưu ảnh sản phẩm lên S3/R2 để ảnh còn sau redeploy |
+| `SITE_URL` | Không | Mặc định `http://localhost:3000`; đặt origin thật khi deploy |
+| `PRODUCT_IMAGE_UPLOAD_DIR` | Không | Mặc định `./uploads`, nơi lưu ảnh sản phẩm upload |
 | `DIRECT_URL` | Production | URL PostgreSQL trực tiếp cho Prisma Migrate |
 
 `.env` và `.env.local` đã nằm trong `.gitignore`; chỉ `.env.example` được commit.
@@ -142,7 +141,7 @@ ant-jewelry/
 │   │   │   ├── (auth)/login/   # Đăng nhập admin
 │   │   │   └── (dashboard)/    # products, categories, blog, hero-slides, settings, users
 │   │   ├── api/admin/          # Route Handler upload ảnh sản phẩm
-│   │   └── uploads/            # Phục vụ file upload local (filesystem); S3/R2 dùng URL public
+│   │   └── uploads/            # Phục vụ file upload từ PRODUCT_IMAGE_UPLOAD_DIR
 │   ├── features/
 │   │   ├── admin/              # Khung admin dùng chung
 │   │   ├── auth/               # Session, login, rate limit
@@ -176,7 +175,8 @@ không truy cập Prisma trực tiếp.
 - Production: `prisma/postgresql/schema.prisma` và migrations trong
   `prisma/postgresql/migrations/`.
 - `src/features/shared/db/prisma.ts` giữ một `PrismaClient` dùng chung.
-- Ảnh sản phẩm: local lưu trên filesystem (`PRODUCT_IMAGE_UPLOAD_DIR`, mặc định `./uploads`) và phục vụ qua `/uploads/...`; production có thể dùng S3-compatible object storage (R2/S3) khi cấu hình `S3_*` để ảnh còn sau redeploy.
+- Ảnh sản phẩm upload được lưu trên filesystem local (`PRODUCT_IMAGE_UPLOAD_DIR`, mặc định
+  `./uploads`) và phục vụ qua route `/uploads/...`.
 
 Sau khi đổi schema local, chạy `npm run db:push` và `npm run db:generate` nếu Prisma Client
 chưa được cập nhật. Không dùng `prisma db push` cho production.
@@ -203,18 +203,25 @@ npm run test:e2e
 
 Khi thay đổi UI, kiểm tra thêm thủ công các luồng bị ảnh hưởng và ghi rõ trong Pull Request.
 
-## 7. Deploy production (R6.2)
+## 7. Deploy production
 
-Production dùng **Vercel + PostgreSQL + S3-compatible object storage (R2/S3)**. Dùng domain `*.vercel.app` (không đổi DNS `antjewelry.vn`).
+Production dùng Vercel + PostgreSQL (schema trong `prisma/postgresql/`). Ảnh sản phẩm upload
+được lưu trên filesystem local (`PRODUCT_IMAGE_UPLOAD_DIR`, mặc định `./uploads`) và phục vụ
+qua `/uploads/...`.
 
-1. Provision PostgreSQL, bucket R2/S3 + public base URL, và cấu hình `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`, `SITE_URL` (`https://<project>.vercel.app`), cùng `S3_BUCKET`, `S3_REGION`, `S3_ENDPOINT` (R2), `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_PUBLIC_BASE_URL`.
-2. Chạy migration: `npm run db:migrate:production` và `npm run db:migrate:status:production`.
-3. Deploy qua Vercel (`vercel.json` dùng `npm run build:production`).
-4. Tạo ADMIN đầu tiên: `npm run db:create-admin:production` (không chạy `db:seed` production).
-5. Kiểm tra 6 màn public + admin trên `*.vercel.app`; upload ảnh rồi redeploy để xác nhận ảnh còn (S3/R2).
+1. Provision PostgreSQL và cấu hình `DATABASE_URL`, `DIRECT_URL`, `AUTH_SECRET`,
+   `SITE_URL`, `PRODUCT_IMAGE_UPLOAD_DIR` trong môi trường production.
+2. Chạy migration: `npm run db:migrate:production` và
+   `npm run db:migrate:status:production`.
+3. Deploy qua Vercel; `vercel.json` dùng `npm run build:production`.
+4. Tạo ADMIN đầu tiên bằng `npm run db:create-admin:production`. Không chạy `db:seed`
+   trên production.
+5. Kiểm tra `/robots.txt`, `/sitemap.xml`, đăng nhập admin, dữ liệu và upload ảnh sau deploy.
 
-Nếu build Vercel báo `P2021: The table public.BlogPost does not exist`, cần chạy migration cho đúng DB trước/sau deploy (xem chi tiết và checklist trong [`docs/DEPLOY.md`](docs/DEPLOY.md)). Chi tiết đầy đủ, backup/restore và rollback xem
-[`docs/DEPLOY.md`](docs/DEPLOY.md).
+Lưu ý: trên môi trường serverless/ephemeral (như Vercel), filesystem local không bền vững qua
+redeploy/instance mới; cần mount/storage bền vững có quyền ghi nếu muốn giữ ảnh upload. Nếu
+build báo `P2021: The table public.BlogPost does not exist`, chạy migration cho đúng DB
+trước/sau deploy. Chi tiết xem [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## 8. Tài liệu
 

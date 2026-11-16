@@ -1,3 +1,41 @@
+## 2026-11-16 12:12:00 +07:00 - Revert S3 storage workflow to local storage
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> remove all of s3 storage workflow, change it back to local storage
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+**Thay đổi đã thực hiện**
+
+- Loại bỏ toàn bộ workflow S3/R2 cho ảnh sản phẩm: `src/features/products/server/product-image-storage.ts` chỉ còn lưu/đọc/xóa trên filesystem local (`PRODUCT_IMAGE_UPLOAD_DIR`, mặc định `./uploads`, URL `/uploads/<storageKey>`), không còn `@aws-sdk/client-s3`, S3 config/client hay biến `S3_*`.
+- `src/features/products/server/product-image-storage.test.ts` trở lại kiểm thử local storage thuần (không set/xóa `S3_BUCKET`).
+- Gỡ dependency `@aws-sdk/client-s3` khỏi `package.json` và cập nhật `package-lock.json`.
+- Khôi phục `.env.example`, `README.md`, `docs/DEPLOY.md` về hướng dẫn lưu ảnh local (`/uploads`, `PRODUCT_IMAGE_UPLOAD_DIR`) và bỏ các biến/hướng dẫn S3/R2 object storage.
+- Giữ nguyên fix không liên quan S3: `generateStaticParams` của `/blog/[slug]`, `/c/[slug]`, `/p/[slug]` vẫn bắt `P2021` (DB chưa migrate) và trả `[]` để tránh lỗi build khi thu thập page data.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8)
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm test` → 49 files / 225 tests passed (Vitest, `prisma/test.db`), exit 0.
+- `npm run format:check` → `All matched files use Prettier code style!`, exit 0.
+- `npm run build` → `✓ Compiled successfully`, `✓ Generating static pages (53/53)`, exit 0.
+
+### AI sai ở đâu
+
+- Khi khôi phục file từ git bằng PowerShell redirect (`> file`), file bị ghi UTF-16 và làm hỏng `package.json`/docs; đã khôi phục lại bằng Node đọc `git show` dạng buffer và ghi UTF-8, sau đó chạy `npm install` để đồng bộ lockfile.
+- Output kiểm tra tiếp tục được capture bằng Node `spawnSync` (UTF-8) để tránh mojibake.
+
+---
+
 ## 2026-11-16 12:05:00 +07:00 - Production deploy prep: Vercel + PostgreSQL + S3/R2 (R6.2)
 
 ### Prompt nguyên văn đã dùng

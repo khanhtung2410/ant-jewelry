@@ -1,16 +1,15 @@
-# Production deployment and operations (R6.2)
+# Production deployment and operations
 
 ## Overview
 
-Production target: **Vercel** (Next.js) + **PostgreSQL** + **S3-compatible object storage** (Cloudflare R2 or AWS S3) for product image uploads. Use the Vercel-assigned **`*.vercel.app`** domain for this rollout and **do not change DNS for `antjewelry.vn`**.
+Production target: **Vercel** (Next.js) + **PostgreSQL**. Product image uploads are stored on the **local filesystem** (`PRODUCT_IMAGE_UPLOAD_DIR`, default `./uploads`) and served by the application from `/uploads/...`.
 
-**Status:** This repository now includes S3/R2-capable upload storage, PostgreSQL schema/migrations, and a build that can tolerate an unmigrated database during static params collection. Actual Vercel project, PostgreSQL, bucket, migration execution, first ADMIN creation, and live verification still require provisioned credentials and operator access (they cannot be completed from source changes alone).
+**Note:** On serverless/ephemeral platforms (such as Vercel), local filesystem storage is not durable across redeploys or instances. Keep uploaded image persistence requirements in mind when choosing hosting/storage.
 
 ## Prerequisites
 
 - Vercel project connected to this repository (production environment).
 - PostgreSQL database with a pooled application URL (`DATABASE_URL`) and a direct URL (`DIRECT_URL`) pointing to the same database/schema.
-- S3-compatible object storage bucket (Cloudflare R2 or AWS S3) with a **public base URL** (public bucket, R2 public access/custom domain, or CDN) so uploaded images can be loaded by browsers and by Next.js `<Image>` (images are rendered with `unoptimized` when the URL is external).
 - A real, monitored owner email for the first ADMIN (not `admin@antjewelry.local`).
 - Decide whether production starts empty or needs approved data migration. Do not run `db:seed` on production.
 
@@ -23,22 +22,15 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 | `DATABASE_URL` | Yes | PostgreSQL pooled/runtime connection string |
 | `DIRECT_URL` | Yes | Direct PostgreSQL connection for Prisma migrations (same DB/schema as `DATABASE_URL`) |
 | `AUTH_SECRET` | Yes | Random signing key for admin sessions (`node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"`) |
-| `SITE_URL` | Yes | Canonical HTTPS origin, e.g. `https://<project>.vercel.app` (use `*.vercel.app`; no custom DNS cutover) |
-| `S3_BUCKET` | Yes (Vercel) | Object storage bucket name for product uploads |
-| `S3_REGION` | Yes | Region (use `auto` for R2 where applicable) |
-| `S3_ENDPOINT` | R2/compatible | S3 endpoint (e.g. `https://<accountid>.r2.cloudflarestorage.com` for R2) |
-| `S3_ACCESS_KEY_ID` | Yes | Bucket access key |
-| `S3_SECRET_ACCESS_KEY` | Yes | Bucket secret key |
-| `S3_FORCE_PATH_STYLE` | No | Set `true` only if the provider requires path-style requests |
-| `S3_PUBLIC_BASE_URL` | Yes (Vercel) | Public base URL serving objects (no trailing slash), e.g. `https://pub-...r2.dev` or CDN/custom domain |
-| `PRODUCT_IMAGE_UPLOAD_DIR` | No | Local filesystem path only; **not used when `S3_BUCKET` is set** |
+| `SITE_URL` | Yes | Canonical HTTPS origin for the deployment (e.g. `https://<project>.vercel.app`) |
+| `PRODUCT_IMAGE_UPLOAD_DIR` | No | Filesystem path for uploaded product images (default `./uploads`, relative to app working directory) |
 
-`vercel.json` runs `npm run build:production` (`prisma generate --schema prisma/postgresql/schema.prisma && next build`). Local dev/test continue to use SQLite + local uploads unless S3 variables are configured.
+`vercel.json` runs `npm run build:production` (`prisma generate --schema prisma/postgresql/schema.prisma && next build`). Local dev/test use SQLite and local uploads unless configured otherwise.
 
 ## Vercel deployment sequence
 
-1. **Provision services**: PostgreSQL, S3/R2 bucket + public access/base URL, Vercel project. Configure all environment variables above. Set `SITE_URL` to the `*.vercel.app` production URL.
-2. **Run migrations (before or alongside first successful content build):**
+1. **Provision services**: PostgreSQL and Vercel project. Configure all environment variables above.
+2. **Run migrations** (before or alongside first successful content build):
    ```bash
    npm ci
    npm run db:migrate:production
@@ -50,11 +42,11 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
    ```bash
    npm run db:create-admin:production
    ```
-   Interactive command: confirms the remote DB host, prompts for a real owner email, requires a 16+ character password (not echoed), hashes it, and refuses if an ADMIN already exists. Clears `DATABASE_URL` from your shell after use; run `npm run db:generate` before returning to local SQLite dev.
-5. **Verify on `*.vercel.app`:**
-   - Public screens: Home (`/`), category (`/c/<slug>`), product (`/p/<slug>`), Blog list (`/blog`), Blog detail (`/blog/<slug>`), and a static/info page as applicable.
+   Interactive command: confirms the remote DB host, prompts for a real owner email, requires a 16+ character password (not echoed), hashes it, and refuses if an ADMIN already exists. Clear `DATABASE_URL` from your shell after use; run `npm run db:generate` before returning to local SQLite dev.
+5. **Verify deployment:**
+   - Public screens: Home (`/`), category (`/c/<slug>`), product (`/p/<slug>`), Blog list (`/blog`), Blog detail (`/blog/<slug>`), and other public pages as applicable.
    - Admin: `/admin/login`, dashboard and content management.
-   - Upload a product image in admin, confirm it displays, **redeploy**, and confirm the image still loads (proves S3/R2 persistence; Vercel filesystem is ephemeral).
+   - Upload a product image in admin and confirm it displays.
    - Check `/robots.txt`, `/sitemap.xml`, and canonical/`SITE_URL` behavior.
 
 ## Vercel build error: `public.BlogPost` does not exist (P2021)
@@ -77,15 +69,15 @@ If `next build` fails during page data collection with:
   ```bash
   pg_dump "$DIRECT_URL" --format=custom --file=ant-jewelry-production.dump
   ```
-  Keep dumps in protected backup storage (not in repo/artifacts). Back up or rely on durability/versioning of the object storage bucket for uploaded images.
-- **Restore:** restore to staging first, verify data/login/pages/images, then follow approved recovery procedure for production. Redeploy previous Vercel build only when schema/uploads remain compatible.
+  Keep dumps in protected backup storage (not in repo/artifacts). Include a backup strategy for uploaded files stored under `PRODUCT_IMAGE_UPLOAD_DIR` if they must be retained.
+- **Restore:** restore to staging first, verify data/login/pages/images, then follow approved recovery procedure for production. Redeploy previous Vercel build only when schema remains compatible.
 
-## Production readiness checklist (R6.2)
+## Production readiness checklist
 
-- [ ] Vercel + PostgreSQL + S3/R2 bucket provisioned; env vars set (no secrets in code/logs).
-- [ ] `SITE_URL` set to `*.vercel.app`; **no DNS changes to `antjewelry.vn`**.
+- [ ] Vercel + PostgreSQL provisioned; env vars set (no secrets in code/logs).
+- [ ] `SITE_URL` set to the deployment HTTPS origin.
 - [ ] Migrations applied and status clean.
 - [ ] First ADMIN created with real owner email via `db:create-admin:production`.
-- [ ] Public `*.vercel.app` loads Home, category, product, Blog list, Blog detail, and admin login/dashboard.
-- [ ] Image upload works and **persists after redeploy** (S3/R2).
+- [ ] Public deployment loads key pages and admin login/dashboard.
+- [ ] Product image upload works in the deployed environment (note: local filesystem uploads may not persist across redeploys on ephemeral hosts).
 - [ ] Backup/restore procedure documented and tested outside production as applicable.

@@ -11,7 +11,6 @@ import {
 } from './product-image-storage';
 
 const originalUploadDir = process.env.PRODUCT_IMAGE_UPLOAD_DIR;
-const originalBucket = process.env.S3_BUCKET;
 let tempDir: string | undefined;
 
 afterEach(async () => {
@@ -20,11 +19,6 @@ afterEach(async () => {
   } else {
     process.env.PRODUCT_IMAGE_UPLOAD_DIR = originalUploadDir;
   }
-  if (originalBucket === undefined) {
-    delete process.env.S3_BUCKET;
-  } else {
-    process.env.S3_BUCKET = originalBucket;
-  }
   if (tempDir) {
     await rm(tempDir, { recursive: true, force: true });
     tempDir = undefined;
@@ -32,7 +26,6 @@ afterEach(async () => {
 });
 
 async function useTempUploadDir() {
-  delete process.env.S3_BUCKET;
   tempDir = await mkdtemp(path.join(os.tmpdir(), 'ant-jewelry-uploads-'));
   process.env.PRODUCT_IMAGE_UPLOAD_DIR = tempDir;
   return tempDir;
