@@ -1,3 +1,51 @@
+## 2026-11-16 09:41:59 +00:00 - Upgrade Prisma ORM to v7 and ignore agent skill dirs
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> upgrade to prisma 7
+>
+> add to ai log
+>
+> (follow-up) also add to gitignore agent skill
+
+### Đã thực hiện
+
+- Tạo nhánh `chore/upgrade-prisma-7` từ `main`; thêm ignore cho thư mục agent skill/AI tool (`.agents/`, `.claude/`, `.cursor/`, `.devin/`) trong `.gitignore`.
+- Nâng cấp Prisma từ 6 lên 7: `prisma@^7.10.1`, `@prisma/client@^7.10.1`; thêm driver adapters `@prisma/adapter-better-sqlite3`, `@prisma/adapter-pg`, `better-sqlite3`, `pg` (và type packages liên quan); cập nhật `package.json`/`package-lock.json`.
+- Chuyển cấu hình theo Prisma 7: thêm `prisma.config.ts` (SQLite/dev, schema `prisma/schema.prisma`, migrations/seed) và `prisma.postgresql.config.ts` (production schema/migrations); bỏ `url = env("DATABASE_URL")` khỏi datasource trong `prisma/schema.prisma` và `prisma/postgresql/schema.prisma`.
+- Cập nhật khởi tạo `PrismaClient` để dùng driver adapter phù hợp theo `DATABASE_URL` (SQLite `file:`/`sqlite:` → `PrismaBetterSqlite3`, PostgreSQL → `PrismaPg`) trong `src/features/shared/db/prisma.ts`, `prisma/seed.ts`, `prisma/create-admin.ts`.
+- Cập nhật scripts/CLI: bỏ `--skip-generate` khỏi `prisma db push --force-reset` trong `vitest.global-setup.ts` và `playwright.config.ts`; đổi script production Prisma sang `--config prisma.postgresql.config.ts`; seed được cấu hình trong `prisma.config.ts`.
+- Chạy `prisma generate`/`prisma validate` cho SQLite và PostgreSQL configs.
+
+### Kết quả kiểm chứng (Node `spawnSync`, UTF-8, lưu tại `C:\\Users\\Hello\\AppData\\Local\\Temp\\opencode\\`)
+
+- `npm run format` → pass, exit 0 (`prisma7-format.txt`).
+- `npm run lint` → pass, exit 0 (`prisma7-lint-v2.txt`).
+- `npm run typecheck` → pass, exit 0 (`prisma7-typecheck-v2.txt`).
+- `npm run format:check` → pass, exit 0 (`prisma7-formatcheck-v2.txt`).
+- `npm run build` (`DATABASE_URL=file:./dev.db`, sau `prisma generate` cho SQLite schema) → pass, exit 0 (`prisma7-build2.txt`); build hoàn tất (`✓ Compiled successfully`, `✓ Generating static pages (24/24)`) nhưng có log `prisma:error` P2021/missing tables trong quá trình prerender/collect do DB local chưa migrate/seed trong môi trường kiểm thử này.
+
+### Follow-up: fix `npm run build` không còn lỗi "no table"
+
+- Nguyên nhân: với Prisma 7 + driver adapter, `file:./dev.db` (đường dẫn tương đối) được better-sqlite3 resolve theo cwd trong khi quy ước cũ của Prisma là tương đối theo thư mục schema (`prisma/`), dẫn đến build kết nối nhầm DB trống/thiếu bảng và phát sinh `prisma:error ... table main.* does not exist`.
+- Sửa: chuẩn hóa URL SQLite tương đối (`file:./...`) thành đường dẫn tuyệt đối dựa trên `prisma/` trong `src/features/shared/db/prisma.ts`, `prisma/seed.ts`, `prisma/create-admin.ts`.
+- Kiểm chứng (Node `spawnSync`, UTF-8): `npm run format/lint/typecheck/format:check` pass (`*-fixdb.txt`); `npx prisma db push` (không `--force-reset`) báo schema đã đồng bộ; `npm run build` (`DATABASE_URL=file:./dev.db`) pass, exit 0 (`prisma7-build-notable.txt`), `✓ Generating static pages (53/53)` và không còn log "table ... does not exist".
+
+### Hạn chế / ghi chú
+
+- Không chạy `prisma db push --force-reset`/seed cho DB test/dev trong phiên này do hành động phá hủy DB bị chặn bởi cơ chế an toàn của môi trường (cần consent/review rõ ràng); vì vậy chưa chạy `npm test`/`npm run test:e2e` end-to-end.
+- Chưa xác minh migrate/deploy production PostgreSQL (`db:migrate:production`, deploy Vercel, tạo ADMIN production) ngoài khả năng/cấu hình hạ tầng hiện có.
+- Client Prisma được generate vào `node_modules/@prisma/client`; cần generate lại đúng schema/config (SQLite dev hoặc PostgreSQL production config) tùy môi trường/build.
+
+**So sánh Figma:** không áp dụng (không thay đổi UI).
+
+---
+
 ## 2026-11-16 15:05:00 +07:00 - Ensure generateStaticParams returns at least one param (Cache Components)
 
 ### Prompt nguyên văn đã dùng

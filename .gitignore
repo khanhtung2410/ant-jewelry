@@ -75,3 +75,9 @@ desktop.ini
 # opencode / github prompt tooling
 .opencode/
 .github/prompts/
+
+# agent skills / AI tool dirs
+.agents/
+.claude/
+.cursor/
+.devin/
