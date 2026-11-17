@@ -1,3 +1,43 @@
+## 2026-11-17 12:00:00 +07:00 - Record deployment links and partial requirement status
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R3.3 PARTIAL — globals.css dùng token/biến màu; contact-popover.tsx, global-error.tsx, admin/(auth)/login/page.tsx dùng var(...)/token. Nhưng grep hex trong src vẫn có hex cứng trong TSX/TS: src/constants/statuses.ts, src/constants/roles.ts (badge colors) → chưa đáp ứng yêu cầu "grep hex trong src/**/*.tsx không có kết quả"/mong muốn bỏ hex cứng.
+> R5.6 PARTIAL — Có nhiều test liên quan SEE MORE, R1.2, R4.1 và E2E bàn phím R3.1; nhưng bằng chứng unit test cho R2.5 trong repo nghiêng về collectBlogImages (blog) chứ không phải test hành vi xóa ảnh sản phẩm/revalidate/lỗi storage theo đúng yêu cầu R2.5.
+> R6.1 PARTIAL — docs/PERFORMANCE.md ghi nguyên nhân/cải thiện và kết quả đo (median/range, đạt ngưỡng), nhưng ghi nhận đo trên local production build (chưa xác minh trên bản deploy).
+> R6.2 PARTIAL — docs/DEPLOY.md, README.md, scripts production/migrate/create-admin có; không có link production + trạng thái hoạt động thực tế được ghi/xác minh trong repo.
+>
+> https://ant-jewelry.vercel.app/admin
+> https://ant-jewelry.vercel.app/
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đọc `docs/CONTRIBUTING.md`, `.github/pull_request_template.md`, `AI_LOG.md`, `docs/PERFORMANCE.md`, `docs/DEPLOY.md`, `src/constants/statuses.ts`, `src/constants/roles.ts`, và trạng thái git/PR hiện tại (`fix/create-admin-transaction-timeouts`, working tree clean, PR #70 đã merged vào `main`).
+- Ghi nhận các link production được cung cấp: storefront `https://ant-jewelry.vercel.app/`, admin `https://ant-jewelry.vercel.app/admin`.
+- Xác nhận trong repo (đối chiếu ghi nhận PARTIAL được cung cấp):
+  - R3.3: `globals.css` và một số component dùng token/biến màu, nhưng `src/constants/statuses.ts` và `src/constants/roles.ts` vẫn chứa hex cứng cho badge/background/color.
+  - R5.6: có test liên quan SEE MORE, R1.2, R4.1 và E2E bàn phím R3.1; bằng chứng unit test R2.5 hiện nghiêng về `collectBlogImages` (blog), chưa phải hành vi xóa ảnh sản phẩm/revalidate/lỗi storage theo đúng yêu cầu.
+  - R6.1: `docs/PERFORMANCE.md` ghi nguyên nhân/cải thiện và kết quả đo (median/range, đạt ngưỡng) nhưng đo trên local production build, chưa xác minh trên bản deploy.
+  - R6.2: có `docs/DEPLOY.md`, `README.md`, scripts production/migrate/create-admin; trước mục này repo chưa ghi nhận link production + trạng thái hoạt động thực tế.
+- Không thay đổi mã nguồn ứng dụng hay tài liệu kỹ thuật ngoài `AI_LOG.md` trong thay đổi này.
+
+### Kết quả kiểm chứng
+
+- Không chạy lint/typecheck/test/build/format:check vì chỉ cập nhật `AI_LOG.md` (markdown/log) và không có thay đổi code.
+
+### Hạn chế / AI sai ở đâu
+
+- Không tự xác minh trạng thái hoạt động thực tế của các URL production từ môi trường hiện tại; chỉ ghi nhận link do người dùng cung cấp.
+- Các nhận định R3.3/R5.6/R6.1/R6.2 được ghi theo nội dung yêu cầu và đối chiếu nhanh trong repo, không phải kết luận audit đầy đủ mới.
+
+---
+
 ## 2026-11-17 00:00:00 +07:00 - Add transaction timeout options to create-admin script
 
 ### Prompt nguyên văn đã dùng
