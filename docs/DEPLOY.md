@@ -25,18 +25,23 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 | `DIRECT_URL` | No | Optional; not required by the current PostgreSQL schema/build. Provide only if your migration/tooling setup needs it |
 | `PRODUCT_IMAGE_UPLOAD_DIR` | No | Filesystem path for uploaded product images (default `./uploads`, relative to app working directory) |
 
-`vercel.json` runs `npm run build:production` (`prisma generate --schema prisma/postgresql/schema.prisma && next build`). Migrations are **not** run during Vercel build; run them explicitly (see below). Local dev/test use SQLite and local uploads unless configured otherwise.
+`vercel.json` runs `npm run build:production`: it generates the PostgreSQL Prisma client, applies pending migrations on **Production** Vercel builds (`scripts/migrate-production.mjs` → `prisma migrate deploy`), then runs `next build`. Preview builds skip migrations because Preview and Production are connected to the same database here; local builds also skip them. A production build now fails if the database is unreachable instead of deploying an app with no schema. Migrations can still be run manually (see below). Local dev/test use SQLite and local uploads unless configured otherwise.
 
 ## Vercel deployment sequence
 
 1. **Provision services**: PostgreSQL and Vercel project. Configure all environment variables above.
-2. **Run migrations** (before or alongside first successful content build):
+2. **Migrations** (automatic on Production builds, manual when needed):
    ```bash
    npm ci
    npm run db:migrate:production
    npm run db:migrate:status:production
    ```
-   Run from a trusted machine with `DATABASE_URL` set to the production database (and `DIRECT_URL` if your environment requires it). Do not use `prisma db push` on production.
+   The Vercel Production build runs `prisma migrate deploy` before `next build`, so a normal deploy applies pending migrations. The manual commands are still useful for a first-time setup, a database created outside a deploy, or checking status. Run them from a trusted machine with `DATABASE_URL` set to the **direct** connection string (Prisma Postgres: `db.prisma.io`, not `pooled.db.prisma.io`). Do not use `prisma db push` on production.
+
+   If `prisma migrate deploy` reports `P1001: Can't reach database server`, check the URL before the network: against Prisma Postgres, P1001 is also returned for stale/wrong credentials. Confirm with the `pg` probe below, and copy the current direct string from the Prisma Console (`npx vercel integration open prisma`).
+   ```bash
+   node -e "const{Client}=require('pg');const c=new Client({connectionString:process.env.DATABASE_URL,connectionTimeoutMillis:15000});c.connect().then(()=>{console.log('CONNECTED');return c.end()}).catch(e=>{console.log(e.code||'',e.message);process.exit(1)})"
+   ```
 3. **Deploy** from Vercel (connected repo/branch). Build uses PostgreSQL Prisma client. `generateStaticParams` for blog/category/product slugs returns empty params if tables are missing (`P2021`) so a build can complete before data exists, but migrations should be applied for correct runtime data.
 4. **Create the first ADMIN** (after migrations):
    ```bash
