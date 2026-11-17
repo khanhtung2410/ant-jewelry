@@ -77,6 +77,20 @@ describe('renderMarkdown', () => {
     expect(imageHtml).not.toContain('evil.com');
   });
 
+  it('does not render links from urls with control characters', () => {
+    const html = renderToStaticMarkup(
+      <div>
+        {renderMarkdown('[tab](/\t/evil.com) [newline](/\n/evil.com) [backslash](/\\evil.com)')}
+      </div>,
+    );
+
+    expect(html).not.toContain('<a ');
+    expect(html).not.toContain('href=');
+    expect(html).toContain('tab');
+    expect(html).toContain('newline');
+    expect(html).toContain('backslash');
+  });
+
   it('renders headings and bullet lists', () => {
     const html = renderToStaticMarkup(
       <div>{renderMarkdown('## Tiêu đề\n\n- Mục một\n- Mục hai')}</div>,

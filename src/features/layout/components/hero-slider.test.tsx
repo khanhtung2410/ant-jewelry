@@ -71,6 +71,14 @@ describe('HeroSlider', () => {
     expect(html).not.toContain('<h1>Collection 1</h1>');
   });
 
+  it('does not render the explore link when the stored url has control characters', () => {
+    const unsafeSlide = { ...slides[0], linkUrl: '/\t/evil.com' };
+    const html = renderToStaticMarkup(<HeroSlider slides={[unsafeSlide]} />);
+
+    expect(html).not.toContain('EXPLORE NOW');
+    expect(html).not.toContain('href=');
+  });
+
   it('skips the image optimizer for admin-entered absolute URLs', () => {
     const externalSlide = { ...slides[0], imageUrl: 'https://cdn.example.com/hero.jpg' };
     const html = renderToStaticMarkup(<HeroSlider slides={[externalSlide]} />);

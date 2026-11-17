@@ -89,4 +89,3 @@ export function isValidDateInput(value: string): boolean {
     date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
   );
 }
-

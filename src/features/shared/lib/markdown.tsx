@@ -3,7 +3,6 @@ import { isSafeImageSrc, isSafeLinkHref } from './safe-url';
 
 export { isSafeImageSrc, isSafeLinkHref };
 
-
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const pattern =
