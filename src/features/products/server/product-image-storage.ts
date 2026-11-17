@@ -1,8 +1,9 @@
 import 'server-only';
 
 import { randomUUID } from 'node:crypto';
-import { mkdir, readFile, unlink, writeFile } from 'node:fs/promises';
+import { readFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
+import { prisma } from '@/features/shared/db/prisma';
 import type { SupportedProductImage } from '../lib/product-image-validation';
 
 const storageKeySegmentPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
@@ -16,16 +17,8 @@ const contentTypeByExtension: Record<string, string> = {
 export class InvalidProductImageStorageKeyError extends Error {}
 export class StoredProductImageNotFoundError extends Error {}
 
-export function getProductImageUploadRoot(): string {
-  const configured = process.env.PRODUCT_IMAGE_UPLOAD_DIR?.trim();
-  // The upload directory only exists at runtime, so it must not be resolved by
-  // Turbopack's static file tracing (which would otherwise trace the whole
-  // project into the server bundle).
-  return path.resolve(/*turbopackIgnore: true*/ configured || path.join(process.cwd(), 'uploads'));
-}
-
-function resolveStoredImagePath(storageKey: string): string {
-  const segments = storageKey.split('/');
+function normalizeStorageKey(storageKey: string): string {
+  const segments = storageKey.split('/').filter(Boolean);
   if (
     segments.length !== 3 ||
     segments[0] !== 'products' ||
@@ -33,52 +26,89 @@ function resolveStoredImagePath(storageKey: string): string {
   ) {
     throw new InvalidProductImageStorageKeyError('Invalid product image storage key.');
   }
+  return segments.join('/');
+}
 
+export function getProductImageUploadRoot(): string {
+  const configured = process.env.PRODUCT_IMAGE_UPLOAD_DIR?.trim();
+  // Kept only for reading/deleting images uploaded by older filesystem-based
+  // versions. New uploads are stored in the database.
+  return path.resolve(/*turbopackIgnore: true*/ configured || path.join(process.cwd(), 'uploads'));
+}
+
+function resolveLegacyImagePath(storageKey: string): string {
+  const key = normalizeStorageKey(storageKey);
   const root = getProductImageUploadRoot();
-  const filePath = path.resolve(root, ...segments);
+  const filePath = path.resolve(root, ...key.split('/'));
   if (!filePath.startsWith(`${root}${path.sep}`)) {
     throw new InvalidProductImageStorageKeyError('Invalid product image storage key.');
   }
   return filePath;
 }
 
+function isMissingFile(error: unknown): boolean {
+  return (error as NodeJS.ErrnoException)?.code === 'ENOENT';
+}
+
+/**
+ * Uploaded bytes live in the application database, not on the server
+ * filesystem. On Vercel `cwd/uploads` is read-only and `/tmp` is ephemeral,
+ * while the database is durable across redeploys and instances.
+ */
 export async function uploadProductImage(
   productId: string,
   image: Uint8Array,
   type: SupportedProductImage,
 ): Promise<{ storageKey: string; url: string }> {
-  const storageKey = `products/${productId}/${randomUUID()}.${type.extension}`;
-  const filePath = resolveStoredImagePath(storageKey);
-  await mkdir(path.dirname(filePath), { recursive: true });
-  await writeFile(filePath, image, { flag: 'wx' });
+  const storageKey = normalizeStorageKey(`products/${productId}/${randomUUID()}.${type.extension}`);
+  await prisma.productImageBlob.create({
+    data: {
+      storageKey,
+      bytes: Buffer.from(image),
+      contentType: type.contentType,
+    },
+  });
   return { storageKey, url: `/uploads/${storageKey}` };
 }
 
 export async function deleteStoredProductImage(storageKey: string): Promise<void> {
-  const filePath = resolveStoredImagePath(storageKey);
+  const key = normalizeStorageKey(storageKey);
+  await prisma.productImageBlob.deleteMany({ where: { storageKey: key } });
+
+  // Best-effort cleanup of a legacy filesystem copy, if one exists.
   try {
-    await unlink(filePath);
+    await unlink(resolveLegacyImagePath(key));
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      return;
-    }
-    throw error;
+    if (!isMissingFile(error)) throw error;
   }
 }
 
 export async function readStoredProductImage(
   storageKey: string,
 ): Promise<{ bytes: Uint8Array; contentType: string }> {
-  const filePath = resolveStoredImagePath(storageKey);
-  const contentType = contentTypeByExtension[path.extname(filePath).slice(1).toLowerCase()];
-  if (!contentType) {
+  const key = normalizeStorageKey(storageKey);
+  const extension = key.split('.').pop()?.toLowerCase() ?? '';
+  const fallbackContentType = contentTypeByExtension[extension];
+  if (!fallbackContentType) {
     throw new StoredProductImageNotFoundError('Unsupported product image type.');
   }
 
+  const blob = await prisma.productImageBlob.findUnique({ where: { storageKey: key } });
+  if (blob) {
+    return {
+      bytes: new Uint8Array(blob.bytes),
+      contentType: blob.contentType || fallbackContentType,
+    };
+  }
+
+  // Legacy images written before the database-backed storage change.
   try {
-    return { bytes: new Uint8Array(await readFile(filePath)), contentType };
+    return {
+      bytes: new Uint8Array(await readFile(resolveLegacyImagePath(key))),
+      contentType: fallbackContentType,
+    };
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+    if (isMissingFile(error)) {
       throw new StoredProductImageNotFoundError('Product image not found.');
     }
     throw error;

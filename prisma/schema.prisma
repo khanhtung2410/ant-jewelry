@@ -116,6 +116,13 @@ model ProductImage {
   @@index([productColorId])
 }
 
+model ProductImageBlob {
+  storageKey  String   @id
+  bytes       Bytes
+  contentType String
+  createdAt   DateTime @default(now())
+}
+
 model PendingImageDeletion {
   id         String   @id @default(cuid())
   storageKey String   @unique
