@@ -18,7 +18,7 @@ function resolveTestDatabaseFile(): string {
     throw new Error(`Test database must be a SQLite file URL, got: ${TEST_DATABASE_URL}`);
   }
 
-  const resolved = path.resolve(prismaDirectory, TEST_DATABASE_URL.slice('file:'.length));
+  const resolved = path.resolve(process.cwd(), TEST_DATABASE_URL.slice('file:'.length));
   if (resolved !== expectedTestDatabase) {
     throw new Error(`Refusing to reset unexpected test database path: ${resolved}`);
   }
@@ -38,9 +38,8 @@ export default function setup() {
     unlinkSync(testDatabaseFile);
   }
 
-  // Prisma CLI resolves relative file: URLs from cwd while PrismaClient
-  // resolves them from prisma/. An absolute URL makes both commands target the
-  // exact file we just verified and deleted.
+  // Both the Prisma CLI and PrismaClient resolve relative file: URLs from the
+  // project root, but an absolute URL removes any ambiguity for both commands.
   const databaseUrl = `file:${testDatabaseFile.replace(/\\/g, '/')}`;
   const env = { ...process.env, DATABASE_URL: databaseUrl };
   execSync('npx prisma db push', { stdio: 'pipe', env });

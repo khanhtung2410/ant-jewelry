@@ -1,4 +1,3 @@
-import path from 'node:path';
 import bcrypt from 'bcryptjs';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
@@ -8,20 +7,13 @@ import { stdin, stdout } from 'node:process';
 import { z } from 'zod';
 import { BCRYPT_COST } from '../src/features/shared/lib/password';
 
-function resolveSqliteUrl(url: string): string {
-  if (!url.startsWith('file:')) return url;
-  const filePath = url.slice('file:'.length);
-  if (filePath.startsWith('/') || /^[A-Za-z]:[\\/]/.test(filePath)) return url;
-  return `file:${path.resolve(process.cwd(), 'prisma', filePath).replace(/\\/g, '/')}`;
-}
-
 function createPrismaClient() {
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error('DATABASE_URL environment variable is not set');
   }
   if (url.startsWith('file:') || url.startsWith('sqlite:')) {
-    return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: resolveSqliteUrl(url) }) });
+    return new PrismaClient({ adapter: new PrismaBetterSqlite3({ url }) });
   }
   return new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
 }

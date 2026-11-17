@@ -14,7 +14,7 @@ slides, Settings và người dùng. Toàn bộ nội dung công khai đọc t�
 | Framework | Next.js 16 (App Router), React 19 |
 | Ngôn ngữ | TypeScript strict |
 | Styling | Tailwind CSS v4, design tokens trong `src/app/globals.css` |
-| Database / ORM | Prisma 6; SQLite cho local/test, PostgreSQL cho production |
+| Database / ORM | Prisma 7; SQLite cho local/test, PostgreSQL cho production |
 | Validation | Zod |
 | Authentication | JWT ký bằng `AUTH_SECRET`, lưu trong cookie `httpOnly` |
 | Test | Vitest (unit), Playwright (E2E) |
@@ -25,7 +25,7 @@ Actions cho mutation, Route Handlers cho upload ảnh sản phẩm. Không có b
 
 ## 2. Chạy local từ clone mới
 
-Yêu cầu: **Node.js >= 20.9**, **npm** và **Git**.
+Yêu cầu: **Node.js 22** (xem `engines.node` và `packageManager` trong `package.json`), **npm** và **Git**.
 
 ```bash
 git clone https://github.com/khanhtung2410/ant-jewelry.git
@@ -42,7 +42,7 @@ cp .env.example .env
 Mở `.env` và điền tối thiểu:
 
 ```dotenv
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="file:./prisma/dev.db"
 AUTH_SECRET="<chuỗi random>"
 ```
 
@@ -51,6 +51,7 @@ AUTH_SECRET="<chuỗi random>"
 > `.env.local`, các lệnh `npm run db:push` / `npm run db:seed` sẽ không thấy `DATABASE_URL`.
 > Dùng `.env` cho cả hai, hoặc nạp `.env.local` vào Prisma bằng
 > `dotenv -e .env.local -- npx prisma ...` nếu dự án của bạn đã cài `dotenv-cli`.
+> `prisma.config.ts` nạp `.env` qua gói `dotenv` (đã khai báo trong `package.json`).
 
 Tạo `AUTH_SECRET` bằng:
 
@@ -62,7 +63,7 @@ Các biến trong `.env.example`:
 
 | Biến | Bắt buộc (local) | Ghi chú |
 |---|---:|---|
-| `DATABASE_URL` | Có | `file:./dev.db` cho local; PostgreSQL cho production |
+| `DATABASE_URL` | Có | `file:./prisma/dev.db` cho local; PostgreSQL cho production |
 | `AUTH_SECRET` | Có | Khóa ký session admin; không commit giá trị thật |
 | `SITE_URL` | Không | Mặc định `http://localhost:3000`; đặt origin thật khi deploy |
 | `PRODUCT_IMAGE_UPLOAD_DIR` | Không | Mặc định `./uploads`, nơi lưu ảnh sản phẩm upload |
@@ -74,10 +75,13 @@ Các biến trong `.env.example`:
 
 ```bash
 npm run db:push
+npm run db:generate
 npm run db:seed
 ```
 
 - `db:push` tạo schema SQLite từ `prisma/schema.prisma` (file `prisma/dev.db`).
+- **Prisma 7 không tự generate Prisma Client sau `db push`**, nên phải chạy riêng
+  `npm run db:generate` trước lần build/chạy đầu tiên (và mỗi lần đổi schema).
 - `db:seed` nạp danh mục, sản phẩm, Blog, hero slides, Settings và hai tài khoản mẫu.
 - Seed chỉ chạy với SQLite (`DATABASE_URL` bắt đầu bằng `file:`) và từ chối database khác.
 
@@ -122,8 +126,9 @@ npm run start
 | `npm run test:e2e` | Playwright E2E; tự reset DB E2E và chạy `next build && next start` |
 | `npm run format` / `npm run format:check` | Prettier ghi / kiểm tra |
 | `npm run db:push` | Đồng bộ schema SQLite local |
-| `npm run db:seed` | Nạp dữ liệu mẫu |
-| `npm run db:generate` | Generate Prisma Client cho SQLite |
+| `npm run db:seed` | Nạp dữ liệu mẫu SQLite local |
+| `npm run db:seed:production` | Nạp catalogue PostgreSQL production (không tạo user demo) |
+| `npm run db:generate` | Generate Prisma Client cho SQLite (bắt buộc sau `db:push`) |
 | `npm run db:generate:production` | Generate Prisma Client cho PostgreSQL |
 | `npm run db:migrate:production` | `prisma migrate deploy` cho production |
 | `npm run db:migrate:status:production` | Kiểm tra trạng thái migration production |
@@ -170,8 +175,10 @@ không truy cập Prisma trực tiếp.
 
 ## 5. Database và Prisma
 
-- Local/test: `prisma/schema.prisma` với SQLite. Các URL `file:./dev.db`,
-  `file:./test.db`, `file:./e2e.db` được resolve tương đối trong thư mục `prisma/`.
+- Local/test: `prisma/schema.prisma` với SQLite. Quy ước duy nhất: các URL
+  `file:./prisma/dev.db`, `file:./prisma/test.db`, `file:./prisma/e2e.db` được resolve
+  từ gốc repo bởi cả Prisma CLI lẫn PrismaClient (driver adapter), nên mỗi môi trường
+  chỉ có đúng một file DB trong `prisma/`.
 - Production: `prisma/postgresql/schema.prisma` và migrations trong
   `prisma/postgresql/migrations/`.
 - `src/features/shared/db/prisma.ts` giữ một `PrismaClient` dùng chung.
