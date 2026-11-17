@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import bcrypt from 'bcryptjs';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/features/shared/db/prisma';
+import { BCRYPT_COST } from '@/features/shared/lib/password';
 import { loginAction } from './actions';
 import { LOGIN_FAILURE_WINDOW_MS, LOGIN_MAX_FAILED_ATTEMPTS } from './login-rate-limit';
 import { AUTH_MESSAGES } from './messages';
@@ -42,14 +43,14 @@ describe('loginAction', () => {
       where: { email: LOCKED_EMAIL },
       update: {
         name: 'Locked test user',
-        passwordHash: await bcrypt.hash(PASSWORD, 10),
+        passwordHash: await bcrypt.hash(PASSWORD, BCRYPT_COST),
         role: 'EDITOR',
         locked: true,
       },
       create: {
         name: 'Locked test user',
         email: LOCKED_EMAIL,
-        passwordHash: await bcrypt.hash(PASSWORD, 10),
+        passwordHash: await bcrypt.hash(PASSWORD, BCRYPT_COST),
         role: 'EDITOR',
         locked: true,
       },
@@ -59,14 +60,14 @@ describe('loginAction', () => {
       where: { email: RATE_EMAIL },
       update: {
         name: 'Rate limit test user',
-        passwordHash: await bcrypt.hash(RATE_PASSWORD, 10),
+        passwordHash: await bcrypt.hash(RATE_PASSWORD, BCRYPT_COST),
         role: 'EDITOR',
         locked: false,
       },
       create: {
         name: 'Rate limit test user',
         email: RATE_EMAIL,
-        passwordHash: await bcrypt.hash(RATE_PASSWORD, 10),
+        passwordHash: await bcrypt.hash(RATE_PASSWORD, BCRYPT_COST),
         role: 'EDITOR',
         locked: false,
       },

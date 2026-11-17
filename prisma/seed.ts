@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { BCRYPT_COST } from '../src/features/shared/lib/password';
 import { seedCatalogue } from './seed-catalogue';
 
 function resolveSqliteUrl(url: string): string {
@@ -34,8 +35,8 @@ async function main() {
 
   await seedCatalogue(prisma);
 
-  const adminPasswordHash = await bcrypt.hash('Admin@123', 10);
-  const editorPasswordHash = await bcrypt.hash('Editor@123', 10);
+  const adminPasswordHash = await bcrypt.hash('Admin@123', BCRYPT_COST);
+  const editorPasswordHash = await bcrypt.hash('Editor@123', BCRYPT_COST);
 
   await prisma.user.upsert({
     where: { email: 'admin@antjewelry.local' },

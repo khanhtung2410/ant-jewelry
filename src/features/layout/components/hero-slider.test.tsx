@@ -79,11 +79,11 @@ describe('HeroSlider', () => {
     expect(html).not.toContain('<a ');
   });
 
-  it('skips the image optimizer for admin-entered absolute URLs', () => {
-    const externalSlide = { ...slides[0], imageUrl: 'https://cdn.example.com/hero.jpg' };
+  it('skips the image optimizer for uppercase HTTPS admin URLs', () => {
+    const externalSlide = { ...slides[0], imageUrl: 'HTTPS://cdn.example.com/hero.jpg' };
     const html = renderToStaticMarkup(<HeroSlider slides={[externalSlide]} />);
 
-    expect(html).toContain('src="https://cdn.example.com/hero.jpg"');
+    expect(html).toContain('src="HTTPS://cdn.example.com/hero.jpg"');
     expect(html).toContain('data-unoptimized="true"');
   });
 

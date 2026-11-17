@@ -14,6 +14,7 @@ import {
   readFormString,
   type FormState,
 } from '@/features/shared/lib/form-validation';
+import { BCRYPT_COST } from '@/features/shared/lib/password';
 import { canManageUsers } from '@/features/shared/lib/permissions';
 import { createUserSchema, updateUserAccessSchema } from './lib/user-form-schema';
 import { wouldRemoveLastActiveAdmin } from './lib/last-admin';
@@ -114,7 +115,7 @@ export async function createUser(
         name: parsed.data.name || null,
         email: parsed.data.email,
         role: parsed.data.role,
-        passwordHash: await bcrypt.hash(parsed.data.password, 10),
+        passwordHash: await bcrypt.hash(parsed.data.password, BCRYPT_COST),
       },
     });
   } catch (error) {
@@ -147,7 +148,9 @@ export async function saveUserAccess(
   }
 
   // Hash outside the transaction so the interactive transaction stays short.
-  const passwordHash = parsed.data.password ? await bcrypt.hash(parsed.data.password, 10) : null;
+  const passwordHash = parsed.data.password
+    ? await bcrypt.hash(parsed.data.password, BCRYPT_COST)
+    : null;
 
   try {
     await runSerializableTransaction(async (transaction) => {
