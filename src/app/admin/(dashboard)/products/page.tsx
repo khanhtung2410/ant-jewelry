@@ -17,6 +17,8 @@ import {
 import { formatPrice } from '@/features/shared/lib/format-price';
 import { prisma } from '@/features/shared/db/prisma';
 import {
+  canCreateProducts,
+  canDeleteProducts,
   canEditPrice,
   canManageProducts,
   canViewProducts,
@@ -41,9 +43,11 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
   const search = firstSearchParam(params.search).trim();
   const categoryFilter = firstSearchParam(params.category);
   const canManageProductsAccess = canManageProducts(session.role);
+  const canCreateProduct = canCreateProducts(session.role);
+  const canDeleteProduct = canDeleteProducts(session.role);
   const canEditProductPrice = canEditPrice(session.role);
   const editorView = !canManageProductsAccess;
-  const createRequested = canManageProductsAccess && firstSearchParam(params.new) === '1';
+  const createRequested = canCreateProduct && firstSearchParam(params.new) === '1';
   const selectedProductId = createRequested
     ? ''
     : firstSearchParam(editorView ? params.view : params.edit);
@@ -132,10 +136,12 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         description={
           editorView
             ? 'View product information and prices. Product changes are restricted to ADMIN accounts.'
-            : 'Search, filter, create, and update storefront products.'
+            : canCreateProduct
+              ? 'Search, filter, create, and update storefront products.'
+              : 'Search, filter, and update storefront products.'
         }
         actions={
-          !editorView ? (
+          canCreateProduct ? (
             <Link
               href={buildAdminProductsHref({
                 search,
@@ -169,6 +175,7 @@ export default async function AdminProductsPage({ searchParams }: AdminProductsP
         categoryFilter={categoryFilter}
         editorView={editorView}
         canEditPrice={canEditProductPrice}
+        canDeleteProduct={canDeleteProduct}
         saved={firstSearchParam(params.saved) === '1'}
         dialog={
           values

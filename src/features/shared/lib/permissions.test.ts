@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   canAccessAdmin,
+  canCreateProducts,
+  canDeleteProducts,
   canEditPrice,
   canManageBlog,
   canManageCategories,
@@ -18,6 +20,8 @@ describe('permissions', () => {
     expect(canAccessAdmin('ADMIN')).toBe(true);
     expect(canViewProducts('ADMIN')).toBe(true);
     expect(canManageProducts('ADMIN')).toBe(true);
+    expect(canCreateProducts('ADMIN')).toBe(true);
+    expect(canDeleteProducts('ADMIN')).toBe(true);
     expect(canEditPrice('ADMIN')).toBe(true);
     expect(canManageCategories('ADMIN')).toBe(true);
     expect(canManageBlog('ADMIN')).toBe(true);
@@ -30,6 +34,8 @@ describe('permissions', () => {
     expect(canAccessAdmin('EDITOR')).toBe(true);
     expect(canViewProducts('EDITOR')).toBe(true);
     expect(canManageProducts('EDITOR')).toBe(true);
+    expect(canCreateProducts('EDITOR')).toBe(false);
+    expect(canDeleteProducts('EDITOR')).toBe(false);
     expect(canEditPrice('EDITOR')).toBe(false);
     expect(canManageCategories('EDITOR')).toBe(true);
     expect(canManageBlog('EDITOR')).toBe(true);

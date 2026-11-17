@@ -42,6 +42,7 @@ export function ProductFormDialog({
   productName,
   editorView,
   canEditPrice,
+  canDeleteProduct,
   closeHref,
   images = [],
 }: {
@@ -50,6 +51,7 @@ export function ProductFormDialog({
   productName: string | null;
   editorView: boolean;
   canEditPrice: boolean;
+  canDeleteProduct: boolean;
   closeHref: string;
   images?: ProductImage[];
 }) {
@@ -124,6 +126,7 @@ export function ProductFormDialog({
             <ProductImageManagement
               productId={values.productId}
               productName={productName ?? values.name}
+              canDeleteProduct={canDeleteProduct}
               images={images}
               colors={values.colors.filter(
                 (color): color is { id: string; name: string; hex: string } => Boolean(color.id),

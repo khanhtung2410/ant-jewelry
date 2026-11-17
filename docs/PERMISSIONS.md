@@ -17,7 +17,7 @@ This document defines the current admin roles and permissions for Ant Jewelry (G
 | View products | Yes | Yes | Product listing/detail screens; EDITOR can manage products but not prices. |
 | Create products | Yes | No | EDITOR cannot create products; only ADMIN can set an initial price. |
 | Update products | Yes | Yes | EDITOR can update products via `products:update`; hiding is allowed through the same permission. |
-| Delete/hide products | Yes | Yes | Delete is ADMIN-only via `products:delete`; hiding is allowed via `products:update`. |
+| Delete/hide products | Yes | No | Delete is ADMIN-only via `products:delete`; hiding is allowed via `products:update`. |
 | Edit product price | Yes | No | `products:edit_price` is ADMIN-only; EDITOR saves keep the stored price. |
 | Manage categories | Yes | Yes | EDITOR can create/update/delete/reorder as implemented. |
 | Manage blog posts | Yes | Yes | Write permission granted to EDITOR. |

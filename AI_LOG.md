@@ -1,4 +1,45 @@
-## 2026-11-17 22:11:47 +07:00 - Make product image cleanup best-effort (R2.5)
+## 2026-11-17 22:26:48 +07:00 - Gate product buttons by create/delete permissions (R1.1b)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R1.1b — UI theo quyền. products/page.tsx:45 đặt editorView = !canManageProducts; EDITOR giờ có products:update nên vẫn thấy nút New product (:138-150, cả ?new=1) và Delete product (product-image-management.tsx:111-119). Gate từng nút bằng products:create / products:delete. saveProduct chặn tạo mới bằng products:create chứ không phải canEditPrice (actions.ts:112). Sửa docs/PERMISSIONS.md:20 (“Delete/hide products: Yes / Yes” là sai).
+> đăng nhập EDITOR: không thấy nút New / Delete product; mở ?new=1 không ra form tạo.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: PR #77 đã merge; local `main` còn commit squash trước đó, đã fetch, xác nhận `git diff HEAD origin/main` rỗng rồi cho `main` về `origin/main` (`b1a11b5`).
+- Đọc toàn bộ file liên quan: `src/app/admin/(dashboard)/products/page.tsx`, `product-management.tsx`, `product-form-dialog.tsx`, `product-image-management.tsx`, `src/features/products/actions.ts`, `src/features/shared/lib/permissions.ts`, `permissions.test.ts`, `action-authorization.test.ts`, `docs/PERMISSIONS.md`.
+- `permissions.ts`: thêm helper `canCreateProducts` / `canDeleteProducts` dựa trên `products:create` / `products:delete`.
+- `products/page.tsx`: New product chỉ render khi `canCreateProducts`, `?new=1` chỉ tạo form khi có quyền create (`createRequested`), description phản ánh đúng quyền; truyền `canDeleteProduct` xuống `ProductManagement` → `ProductFormDialog` → `ProductImageManagement`, nút Delete product chỉ render khi có `products:delete`. `editorView` vẫn giữ nguyên (`!canManageProducts`) nên EDITOR đúng quyền được Edit/ẩn sản phẩm.
+- `products/actions.ts`: chặn tạo mới bằng `hasPermission(role, 'products:create')` thay vì `canEditPrice`; thông báo đổi thành “You do not have permission to create products.”.
+- `docs/PERMISSIONS.md`: dòng Delete/hide products đổi EDITOR từ Yes sang No, giữ ghi chú hide vẫn được qua `products:update`.
+- Test: cập nhật kỳ vọng của test EDITOR tạo sản phẩm trong `action-authorization.test.ts`; bổ sung helper test trong `permissions.test.ts`; thêm `product-image-management.test.tsx` (ẩn/hiện Delete product theo prop) và `page.test.tsx` render trang với session EDITOR: `?new=1` không có “New product”, không gọi `product.findUnique` (không ra form tạo), và khi mở edit vẫn không có “Delete product”.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8, lưu tại `C:\Users\Hello\AppData\Local\Temp\opencode\`)
+
+- `npm test` → passed, exit 0, **56 files / 256 tests** (trước đó 54 files / 252 tests).
+- `npm run lint`, `npm run typecheck`, `npm run build` → exit 0.
+- `npm run format:check` → exit 0.
+
+### Hạn chế / AI sai ở đâu
+
+- Lần đầu chạy typecheck/build fail do `vi.fn(async () => [])` trong test page suy ra kiểu `never`; đã ghi rõ kiểu trả về `Promise<unknown[]>`/`Promise<number>`/`Promise<unknown>` cho các mock.
+- Test render trang với dialog lỗi “invariant expected app router to be mounted”; đã mock `next/navigation` (`useRouter`, `redirect`) trong file test.
+- Chưa chạy E2E Playwright (cần browser + global setup riêng); hành vi EDITOR được kiểm chứng bằng unit test render server component và component con.
+
+**So sánh Figma:** không đổi layout có chủ đích; chỉ ẩn nút không đúng quyền.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

@@ -118,8 +118,8 @@ export async function saveProduct(
     return stateWithErrors(values, { form: ['This product no longer exists.'] });
   }
 
-  if (!productId && !canEditPrice(session.role)) {
-    return stateWithErrors(values, { form: ['Only an ADMIN can set a product price.'] });
+  if (!productId && !hasPermission(session.role, 'products:create')) {
+    return stateWithErrors(values, { form: ['You do not have permission to create products.'] });
   }
 
   // EDITORs may manage products but cannot change prices; keep the stored price.
