@@ -1,26 +1,8 @@
 ﻿import type { ReactNode } from 'react';
+import { isSafeImageSrc, isSafeLinkHref } from './safe-url';
 
-const safeRemoteUrl = /^https?:\/\//i;
-const safeRootPath = /^\/(?!\/)/;
-const safeFragment = /^#/;
+export { isSafeImageSrc, isSafeLinkHref };
 
-/**
- * Allows absolute http(s) URLs, root-relative paths (`/blog`) and in-page
- * fragments. Rejects protocol-relative URLs (`//evil.com`) and any other
- * scheme such as `javascript:` or `data:`.
- */
-export function isSafeLinkHref(href: string): boolean {
-  return safeRemoteUrl.test(href) || safeRootPath.test(href) || safeFragment.test(href);
-}
-
-/**
- * Images only support http(s) sources and root-relative paths. Fragments
- * make no sense for an image and protocol-relative URLs would leak the
- * request to another host.
- */
-export function isSafeImageSrc(src: string): boolean {
-  return safeRemoteUrl.test(src) || safeRootPath.test(src);
-}
 
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
   const nodes: ReactNode[] = [];
