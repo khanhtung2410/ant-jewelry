@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useState } from 'react';
 import type { HeroSlide } from '@/features/shared/domain/domain';
 import { isExternalImageUrl } from '@/features/shared/lib/image-url';
+import { isSafeLinkHref } from '@/features/shared/lib/safe-url';
 import { ActionButton } from './action-button';
 import { ArrowButton } from './arrow-button';
 
@@ -49,13 +50,15 @@ export function HeroSlider({ slides }: HeroSliderProps) {
           <p>{activeSlide.subtitle}</p>
         </div>
 
-        <ActionButton
-          href={activeSlide.linkUrl}
-          aria-label={`Explore ${activeSlide.title}`}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs lg:text-sm"
-        >
-          EXPLORE NOW
-        </ActionButton>
+        {isSafeLinkHref(activeSlide.linkUrl) ? (
+          <ActionButton
+            href={activeSlide.linkUrl}
+            aria-label={`Explore ${activeSlide.title}`}
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs lg:text-sm"
+          >
+            EXPLORE NOW
+          </ActionButton>
+        ) : null}
 
         <div className="pointer-events-none absolute inset-x-0 top-1/2 flex -translate-y-1/2 items-center justify-between px-[8%]">
           <ArrowButton

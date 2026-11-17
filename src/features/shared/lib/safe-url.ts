@@ -3,13 +3,21 @@ const httpUrlPattern = /^https?:\/\//i;
 // the request to another host. Browsers also treat "/\\" like "//".
 const safeRootPathPattern = /^\/(?![/\\])/;
 const safeFragmentPattern = /^#/;
+// Browsers strip ASCII tab/newline characters before resolving a URL, so
+// "/\t/evil.com" navigates to protocol-relative "//evil.com". Trimming the ends
+// is not enough; reject control characters and whitespace inside the value.
+const unsafeUrlCharacterPattern = /[\s\u0000-\u001f\u007f-\u009f]/;
+
+function hasUnsafeUrlCharacter(value: string): boolean {
+  return unsafeUrlCharacterPattern.test(value);
+}
 
 export function isHttpUrl(value: string): boolean {
-  return httpUrlPattern.test(value);
+  return !hasUnsafeUrlCharacter(value) && httpUrlPattern.test(value);
 }
 
 export function isSafeRootPath(value: string): boolean {
-  return safeRootPathPattern.test(value);
+  return !hasUnsafeUrlCharacter(value) && safeRootPathPattern.test(value);
 }
 
 export function isPathOrHttpUrl(value: string): boolean {
@@ -18,10 +26,12 @@ export function isPathOrHttpUrl(value: string): boolean {
 
 /**
  * Allows absolute http(s) URLs, root-relative paths (`/blog`) and in-page
- * fragments. Rejects protocol-relative URLs (`//evil.com`, `/\evil.com`) and
- * any other scheme such as `javascript:` or `data:`.
+ * fragments. Rejects protocol-relative URLs (`//evil.com`, `/\evil.com`),
+ * control characters or whitespace anywhere in the value, and any other scheme
+ * such as `javascript:` or `data:`.
  */
 export function isSafeLinkHref(href: string): boolean {
+  if (hasUnsafeUrlCharacter(href)) return false;
   return isHttpUrl(href) || isSafeRootPath(href) || safeFragmentPattern.test(href);
 }
 
@@ -31,5 +41,6 @@ export function isSafeLinkHref(href: string): boolean {
  * another host.
  */
 export function isSafeImageSrc(src: string): boolean {
+  if (hasUnsafeUrlCharacter(src)) return false;
   return isHttpUrl(src) || isSafeRootPath(src);
 }
