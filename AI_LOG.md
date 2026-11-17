@@ -1,4 +1,49 @@
-## 2026-11-17 23:59:36 +07:00 - Verify AI-safe test setup and small cleanup (D4, D3)
+## 2026-11-18 00:31:23 +07:00 - LCP fixes and Lighthouse re-measurement (R6.1)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R6.1 — Lighthouse Home ≥ 85. Hiện trung vị 84 (82–92). Ảnh bìa blog above-the-fold đang loading="lazy" (blog-detail.tsx:25-35), hãy xem cả LCP trang blog. Việc giảm carousel Home từ 10 xuống 5 sản phẩm là thay đổi UI: nếu giữ, ghi lý do + ảnh so Figma trong PR để mentor duyệt.
+> trung vị 3 lần đo trên production, mobile: Home và trang sản phẩm Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95; số đo ghi trong docs/PERFORMANCE.md.
+>
+> add to ai log
+>
+> (follow-up) https://ant-jewelry.vercel.app/
+> a;so test lighthouse inprod page
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: PR #82 đã merge; local `main` còn commit squash trước đó, đã fetch, xác nhận `git diff HEAD origin/main` rỗng rồi `git reset --hard origin/main` về `f8dbd7c`.
+- Đọc toàn bộ file liên quan: `src/features/blog/components/blog-detail.tsx`, `blog-row.tsx`, `src/features/layout/components/hero-slider.tsx`, `src/features/products/components/product-gallery.tsx`, `src/features/products/lib/carousel-products.ts`, `docs/PERFORMANCE.md`.
+- Sửa LCP: ảnh bìa trên trang chi tiết Blog đổi `loading="lazy"` → `loading="eager"` + `fetchPriority="high"` (ảnh bìa trong blog row/list vẫn `lazy` vì nằm dưới fold); ảnh hero thêm `priority` để Next.js chèn preload sớm. Không đổi bố cục hay `CAROUSEL_PRODUCT_LIMIT = 5` (giữ nguyên từ commit trước, đã ghi rõ lý do + ảnh chụp mobile trong docs/PR để mentor duyệt).
+- `docs/PERFORMANCE.md`: cập nhật môi trường đo (Lighthouse 13.6.0 + Playwright Chromium headless shell, mobile + simulated throttling, `DATABASE_URL=file:./prisma/dev.db`), thêm số đo deploy ngày 2026-11-18, thêm trang blog chi tiết, ghi rõ bỏ 1 lần khởi động rồi lấy trung vị 3 lần, cập nhật bảng thay đổi và trạng thái đạt mục tiêu.
+- Ảnh chụp mobile đối chiếu Figma: `docs/r6-1-screenshots/home-mobile.png`, `docs/r6-1-screenshots/blog-detail-mobile.png`.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8, lưu tại `C:\Users\Hello\AppData\Local\Temp\opencode\`)
+
+- **Production deploy** (`https://ant-jewelry.vercel.app/`, 3 lần mobile/simulated sau 1 lần warm-up):
+  - Home: Performance **91** (61–96), A11y 96, SEO 100, FCP 946 ms, LCP 2596 ms, TBT 295 ms.
+  - Sản phẩm `/p/aurora-band`: Performance **96** (92–97), A11y 100, SEO 100, FCP 949 ms, LCP 2149 ms, TBT 199 ms.
+  - Blog chi tiết: Performance **82** (80–95), A11y 98, SEO 100, LCP 2664 ms.
+- **Production build local** (3 lần sau 1 lần warm-up): Home 92 (91–95), sản phẩm 91 (87–95), blog 90 (90–92); A11y 96/100/98, SEO 100.
+- `npm run build`, `npm run lint`, `npm run typecheck`, `npm run format:check`, `npm test` (57 files / 258 tests) → exit 0.
+- Các lượt đo đầu dùng Chrome hệ thống bị dính profile/CPU cao (load 90%, TBT tới 8255 ms); đã đổi sang Chromium headless shell và bỏ lần warm-up để số đo ổn định. Lần warm-up của Home trên deploy vẫn ghi là 61 trong dải thô nhưng không tính vào trung vị.
+
+### Hạn chế / AI sai ở đâu
+
+- Lần đầu chạy Lighthouse với Chrome hệ thống cho kết quả sai lệch (Home median 57, product 64); nguyên nhân là Chrome dùng chung profile với trình duyệt đang chạy và máy bị tải cao. Phải chuyển sang headless shell riêng và warm-up.
+- Ảnh bìa blog đạt LCP ~2.6 s trên deploy nhưng Performance trung vị 82 < 85; R6.1 chỉ yêu cầu Home và trang sản phẩm nên ghi nhận thêm mà không coi là fail yêu cầu. Figma gốc không có trong repo, ảnh chụp mobile chỉ để mentor đối chiếu.
+
+**So sánh Figma:** giữ nguyên bố cục; carousel 5 card/section là thay đổi UI kế thừa từ commit trước, lý do và ảnh chụp mobile đã đưa vào docs/PR để mentor duyệt.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

@@ -29,7 +29,8 @@ export function BlogDetail({ post, otherPosts }: BlogDetailProps) {
             src={post.coverImageUrl}
             alt={post.title}
             className="h-auto w-full object-cover"
-            loading="lazy"
+            loading="eager"
+            fetchPriority="high"
           />
         </div>
       ) : null}

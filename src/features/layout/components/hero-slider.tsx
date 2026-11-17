@@ -39,6 +39,7 @@ export function HeroSlider({ slides }: HeroSliderProps) {
           fill
           unoptimized={isExternalImageUrl(activeSlide.imageUrl)}
           sizes="100vw"
+          priority
           loading="eager"
           fetchPriority="high"
           className="object-cover object-left"
