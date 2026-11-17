@@ -145,7 +145,11 @@ async function createFirstAdmin(email: string, password: string): Promise<{ emai
         select: { email: true },
       });
     },
-    { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    {
+      isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+      maxWait: 15000,
+      timeout: 30000,
+    },
   );
 }
 

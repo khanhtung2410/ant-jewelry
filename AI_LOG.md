@@ -1,3 +1,31 @@
+## 2026-11-17 00:00:00 +07:00 - Add transaction timeout options to create-admin script
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đọc `docs/CONTRIBUTING.md`, `AI_LOG.md`, `prisma/create-admin.ts`, trạng thái git và diff hiện tại; có file tạm chưa theo dõi `.tmp-tx-test.mts` (script kiểm thử transaction cục bộ, không đưa vào commit).
+- `prisma/create-admin.ts`: bổ sung `maxWait: 15000` và `timeout: 30000` cho `$transaction` Serializable khi tạo ADMIN đầu tiên, để tránh giao dịch treo/chờ vô hạn trong các môi trường DB chậm hoặc có contention.
+- Không thay đổi hành vi nghiệp vụ khác (vẫn kiểm tra host production, xác nhận host, validate email/mật khẩu, từ chối nếu đã có ADMIN, hash bcrypt cost 12).
+
+**Kết quả kiểm chứng**
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm run format:check` → passed (`All matched files use Prettier code style!`), exit 0. (đã loại bỏ file tạm `.tmp-tx-test.mts` chưa theo dõi để tránh Prettier kiểm tra nhầm)
+
+### AI sai ở đâu / hạn chế
+
+- Không thể tự xác minh tạo ADMIN trên database production thật do thiếu credentials/hạ tầng; thay đổi chỉ điều chỉnh tùy chọn transaction của script.
+
+---
+
 ## 2026-11-16 09:41:59 +00:00 - Upgrade Prisma ORM to v7 and ignore agent skill dirs
 
 ### Prompt nguyên văn đã dùng
