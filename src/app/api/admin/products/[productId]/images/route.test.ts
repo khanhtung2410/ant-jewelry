@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
     id: 'image-1',
     ...data,
   })),
+  enqueueProductImageDeletions: vi.fn(async () => {}),
 }));
 
 vi.mock('next/cache', () => ({
@@ -34,6 +35,12 @@ vi.mock('@/features/auth/session', () => ({
 vi.mock('@/features/products/server/product-image-storage', () => ({
   uploadProductImage: mocks.uploadProductImage,
 }));
+
+vi.mock('@/features/products/server/product-image-cleanup', async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import('@/features/products/server/product-image-cleanup')>();
+  return { ...actual, enqueueProductImageDeletions: mocks.enqueueProductImageDeletions };
+});
 
 vi.mock('@/features/shared/db/prisma', () => ({
   prisma: {
@@ -97,5 +104,44 @@ describe('POST product image upload', () => {
     expect(body.error).toMatch(/at most 10 images/i);
     expect(mocks.uploadProductImage).not.toHaveBeenCalled();
     expect(mocks.createProductImage).not.toHaveBeenCalled();
+  });
+
+  it('returns an upload error even when cleanup of a partial upload fails', async () => {
+    mocks.uploadProductImage
+      .mockImplementationOnce(async (productId: string) => ({
+        storageKey: `products/${productId}/uploaded.png`,
+        url: `/uploads/products/${productId}/uploaded.png`,
+      }))
+      .mockRejectedValueOnce(new Error('write failed'));
+    mocks.enqueueProductImageDeletions.mockRejectedValueOnce(new Error('cleanup failed'));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const response = await POST(createUploadRequest(2), {
+      params: Promise.resolve({ productId: 'product-1' }),
+    });
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(500);
+    expect(body.error).toMatch(/upload failed/i);
+    expect(mocks.enqueueProductImageDeletions).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it('returns a metadata error even when cleanup fails', async () => {
+    mocks.createProductImage.mockRejectedValueOnce(new Error('db failed'));
+    mocks.enqueueProductImageDeletions.mockRejectedValueOnce(new Error('cleanup failed'));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const response = await POST(createUploadRequest(), {
+      params: Promise.resolve({ productId: 'product-1' }),
+    });
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(500);
+    expect(body.error).toMatch(/metadata/i);
+    expect(mocks.enqueueProductImageDeletions).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 });

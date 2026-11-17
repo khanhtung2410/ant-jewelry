@@ -32,6 +32,15 @@ export type ProductFormState = FormState<ProductFormValues>;
 
 class InvalidProductColorError extends Error {}
 
+async function cleanupPendingProductImages(): Promise<void> {
+  try {
+    await processPendingProductImageDeletions();
+  } catch (error) {
+    // Storage cleanup is best-effort; failed rows stay queued for a later retry.
+    console.error('Product image cleanup failed:', error);
+  }
+}
+
 function readFormValues(formData: FormData): ProductFormValues {
   const colorIds = formData.getAll('colorId').map(String);
   const colorNames = formData.getAll('colorName').map(String);
@@ -194,9 +203,9 @@ export async function saveProduct(
 
       return product;
     });
-    await processPendingProductImageDeletions();
     revalidateProductPages({ immediate: true });
     updateTag('products');
+    await cleanupPendingProductImages();
     redirect(savedProductsRedirect(String(formData.get('returnTo') ?? '')));
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
@@ -417,7 +426,7 @@ export async function deleteProductImage(productId: string, imageId: string, _fo
   });
 
   revalidateProductPages({ immediate: true });
-  await processPendingProductImageDeletions();
+  await cleanupPendingProductImages();
 }
 
 export async function deleteProduct(productId: string, _formData: FormData) {
@@ -448,7 +457,7 @@ export async function deleteProduct(productId: string, _formData: FormData) {
   });
 
   revalidateProductPages({ immediate: true });
-  await processPendingProductImageDeletions();
+  await cleanupPendingProductImages();
   redirect('/admin/products?deleted=1');
 }
 
