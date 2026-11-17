@@ -1,4 +1,41 @@
-## 2026-11-17 23:48:12 +07:00 - Align Prisma 7 setup, docs, lockfile and SQLite paths (D1, R5.1b, R5.1c, D2, D5)
+## 2026-11-17 23:59:36 +07:00 - Verify AI-safe test setup and small cleanup (D4, D3)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> D4 — npm test chạy được trong môi trường AI. Prisma 7 chặn prisma db push --force-reset khi lệnh do AI agent gọi (cả Claude Code lẫn công cụ em dùng ở #71), nên vitest.global-setup.ts fail và em đã merge mà không chạy full suite. Đổi setup thành: xoá file prisma/test.db (chỉ file test, kiểm tra đúng đường dẫn trước khi xoá) → prisma db push (không --force-reset) → seed. Không dùng biến PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION để lách.
+> agent AI chạy npm test pass toàn bộ; dev.db giữ nguyên (so md5sum trước / sau).
+> D3 — Dọn nhỏ. Xoá getCategoryByType (không còn ai dùng). moveProductImage gọi revalidateProductPages() mặc định 'max' (actions.ts:381), không giống các action ảnh khác: dùng { immediate: true }.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: PR #81 đã merge; local `main` còn commit squash trước đó, đã fetch, xác nhận `git diff HEAD origin/main` rỗng rồi `git reset --hard origin/main` về `e32af91`.
+- Đọc toàn bộ file liên quan: `vitest.global-setup.ts`, `vitest.database.ts`, `src/features/products/actions.ts`, `src/features/products/queries/categories.ts`, `src/features/shared/queries/index.ts`, `src/features/shared/queries/queries.test.ts`, `src/features/products/server/product-revalidation.test.ts`.
+- **D4:** sau PR #75 và PR #81, `vitest.global-setup.ts` đã đúng yêu cầu: kiểm tra `prisma/schema.prisma`, chỉ nhận URL SQLite, resolve theo cwd và so sánh chính xác với `<cwd>/prisma/test.db`, từ chối path khác/không phải file; xoá đúng file test rồi chạy `prisma db push` (không `--force-reset`) và seed bằng URL tuyệt đối. Lượt này kiểm chứng lại bằng cách chạy full suite và so MD5 `prisma/dev.db` trước/sau; không dùng biến consent.
+- **D3:** xoá hàm `getCategoryByType` khỏi `src/features/products/queries/categories.ts`, bỏ export khỏi `src/features/shared/queries/index.ts` và bỏ import khỏi test; giữ ý nghĩa test “exactly one category per ProductType” bằng cách đếm từ `getCategories()`. `moveProductImage` đổi `revalidateProductPages()` → `revalidateProductPages({ immediate: true })` cho đồng nhất với các action ảnh khác. `grep getCategoryByType src` → không còn kết quả.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8, lưu tại `C:\Users\Hello\AppData\Local\Temp\opencode\`)
+
+- `npm test` → exit 0, **57 files / 258 tests**; `prisma/dev.db` MD5 trước/sau đều `b30a3d2dd982ec383f3b7263a17a7cb0` (không đổi); biến `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION` không được thiết lập.
+- `npm run lint`, `npm run typecheck`, `npm run format:check`, `npm run build` → exit 0.
+
+### Hạn chế / AI sai ở đâu
+
+- D4 đã được triển khai từ PR #75; lượt này chỉ kiểm chứng lại sau khi PR #81 đổi quy ước đường dẫn SQLite (từ `file:./test.db` sang `file:./prisma/test.db`) để đảm bảo global setup vẫn xoá đúng file và không đụng `dev.db`.
+- Test `product-revalidation.test.ts` vẫn giữ trường hợp gọi `revalidateProductPages()` mặc định `'max'` — đó là test cho helper, không phải action `moveProductImage`, nên không đổi.
+
+**So sánh Figma:** không áp dụng (không đổi UI).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

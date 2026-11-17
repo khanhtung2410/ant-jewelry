@@ -5,7 +5,6 @@ import {
   getBlogPosts,
   getCategories,
   getCategoryBySlug,
-  getCategoryByType,
   getHeroSlides,
   getProductById,
   getProductBySlug,
@@ -435,8 +434,9 @@ describe('category queries', () => {
   });
 
   it('has exactly one category per ProductType', async () => {
+    const categories = await getCategories();
     for (const type of productTypes) {
-      expect((await getCategoryByType(type))?.type).toBe(type);
+      expect(categories.filter((category) => category.type === type)).toHaveLength(1);
     }
   });
 
