@@ -193,8 +193,9 @@ npm run test:e2e
 ```
 
 - **Unit test** dùng Vitest, đặt cạnh code trong `src/**/*.test.ts(x)`.
-- `npm test` chạy trên `prisma/test.db` nhờ `vitest.setup.ts`; global setup reset và seed
-  database test, nên **không đụng `prisma/dev.db`**.
+- `npm test` chạy trên `prisma/test.db` nhờ `vitest.setup.ts`; global setup kiểm tra đường dẫn,
+  xoá đúng file test, tạo schema bằng `prisma db push` (không dùng `--force-reset`) rồi seed.
+  Cách này chạy được cả khi AI agent bị Prisma chặn lệnh reset, và **không đụng `prisma/dev.db`**.
 - **E2E** dùng Playwright. `playwright.config.ts` tự reset `prisma/e2e.db`, build production
   và chạy `next start` trên `http://127.0.0.1:3100`, nên E2E kiểm tra đúng bundle production
   và cũng không đụng `dev.db`.
