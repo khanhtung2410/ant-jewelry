@@ -64,6 +64,19 @@ describe('renderMarkdown', () => {
     expect(html).toContain('x');
   });
 
+  it('does not render backslash protocol-relative links or images', () => {
+    const linkHtml = renderToStaticMarkup(<div>{renderMarkdown('[x](/\\evil.com)')}</div>);
+    const imageHtml = renderToStaticMarkup(<div>{renderMarkdown('![x](/\\evil.com/a.png)')}</div>);
+
+    expect(linkHtml).not.toContain('<a ');
+    expect(linkHtml).toContain('x');
+    expect(linkHtml).not.toContain('evil.com');
+
+    expect(imageHtml).not.toContain('<img');
+    expect(imageHtml).toContain('x');
+    expect(imageHtml).not.toContain('evil.com');
+  });
+
   it('renders headings and bullet lists', () => {
     const html = renderToStaticMarkup(
       <div>{renderMarkdown('## Tiêu đề\n\n- Mục một\n- Mục hai')}</div>,

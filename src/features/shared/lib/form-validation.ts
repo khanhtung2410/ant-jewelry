@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isPathOrHttpUrl } from './safe-url';
 
 export type FieldErrors = Record<string, string[]>;
 
@@ -55,13 +56,8 @@ export const sortOrderInputSchema = z
     'Sort order must be zero or greater.',
   );
 
-const httpUrlPattern = /^https?:\/\//i;
-// A leading "//" is a protocol-relative URL, not a site path, and would leak
-// the request to another host. Browsers also treat "/\\" like "//".
-const rootPathPattern = /^\/(?![/\\])/;
-
 export function isPathOrUrl(value: string): boolean {
-  return rootPathPattern.test(value) || httpUrlPattern.test(value);
+  return isPathOrHttpUrl(value);
 }
 
 export function requiredPathOrUrl(label: string) {
@@ -93,3 +89,4 @@ export function isValidDateInput(value: string): boolean {
     date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
   );
 }
+

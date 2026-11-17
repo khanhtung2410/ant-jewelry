@@ -4969,3 +4969,38 @@ Không ghi nhận trong log cũ.
 Không ghi nhận trong log cũ.
 
 ---
+
+---
+
+## 2026-11-17 14:02:34 +07:00 — Unify safe URL validation for markdown and forms (R3.5b)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> Hai chỗ validate URL đang dùng hai regex khác nhau. Gom về một hàm dùng chung, rồi test các trường hợp bên dưới.
+>
+> R3.5b — Markdown lọt /\. markdown.tsx:4 dùng /^\/(?!\/)/ nên [x](/\evil.com) thành link sang https://evil.com (open redirect + ảnh từ host lạ). form-validation.ts:61 đã có bản đúng /^\/(?![/\\])/.
+> unit test: [x](/\evil.com) và ![x](/\evil.com/a.png) không render thành link / ảnh.
+> add to ai log
+
+### Đã thực hiện
+
+- Thêm `src/features/shared/lib/safe-url.ts` làm nguồn dùng chung cho kiểm tra URL/path an toàn: cho phép http(s), path gốc `/...` (từ chối `//host` và `/\host`), và fragment `#...` cho link; xuất `isPathOrHttpUrl`, `isSafeLinkHref`, `isSafeImageSrc`.
+- `src/features/shared/lib/markdown.tsx`: bỏ regex cục bộ, import/re-export `isSafeLinkHref` và `isSafeImageSrc` từ `safe-url.ts` để markdown dùng cùng quy tắc (sửa R3.5b, không render link/ảnh từ path `/\...`).
+- `src/features/shared/lib/form-validation.ts`: dùng `isPathOrHttpUrl` cho `isPathOrUrl` và các schema path-or-URL, giữ API hiện có.
+- `src/features/shared/lib/markdown.test.tsx`: thêm test đảm bảo `[x](/\evil.com)` và `![x](/\evil.com/a.png)` không render thành link/ảnh.
+
+### Kiểm chứng
+
+- Kiểm tra nhanh logic bằng `tsx` (tránh `vitest` global setup chạy `prisma db push --force-reset`): `isSafeLinkHref('/\\evil.com') === false`, `isSafeImageSrc('/\\evil.com/a.png') === false`, `/blog` và `//evil.com` vẫn đúng như trước.
+- Chưa chạy đầy đủ `npm run lint`, `npm run typecheck`, `npm test`, `npm run build` trong phiên này do giới hạn môi trường/setup.
+
+**So sánh Figma:** không có thay đổi UI.
+
+### AI sai ở đâu
+
+- Chưa ghi nhận.
