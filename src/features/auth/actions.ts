@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/features/shared/db/prisma';
+import { DUMMY_PASSWORD_HASH } from '@/features/shared/lib/password';
 import { getClientIp } from './client-ip';
 import {
   handleAuthActionError,
@@ -14,10 +15,6 @@ import { clearFailedLogins, isLoginRateLimited, recordFailedLogin } from './logi
 import { revokeAdminSession, setAdminSessionCookie } from './session';
 
 export type LoginState = AuthActionState;
-
-// Compared when the email does not exist so both branches spend the same time
-// hashing. The password never matches because this hash is random.
-const DUMMY_PASSWORD_HASH = '$2b$10$RKKmelcNHmpPTiJTupzh3uVY10nt12zZvn4SxSwz2Dwf8jo13OiA2';
 
 function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();

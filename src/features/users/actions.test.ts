@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/features/shared/db/prisma';
+import { BCRYPT_COST } from '@/features/shared/lib/password';
 import type { UserAccessFormState } from './actions';
 
 vi.mock('@/features/auth/session', () => ({
@@ -44,7 +45,7 @@ describe('saveUserAccess session version', () => {
   let userId: string;
 
   beforeAll(async () => {
-    oldPasswordHash = await bcrypt.hash(OLD_PASSWORD, 10);
+    oldPasswordHash = await bcrypt.hash(OLD_PASSWORD, BCRYPT_COST);
     const user = await prisma.user.create({
       data: {
         email: EMAIL,

@@ -6,6 +6,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { createInterface } from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { z } from 'zod';
+import { BCRYPT_COST } from '../src/features/shared/lib/password';
 
 function resolveSqliteUrl(url: string): string {
   if (!url.startsWith('file:')) return url;
@@ -124,7 +125,7 @@ async function promptForAdmin(databaseHost: string): Promise<{ email: string; pa
 }
 
 async function createFirstAdmin(email: string, password: string): Promise<{ email: string }> {
-  const passwordHash = await bcrypt.hash(password, 12);
+  const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
   return prisma.$transaction(
     async (transaction) => {
       const existingAdmin = await transaction.user.findFirst({

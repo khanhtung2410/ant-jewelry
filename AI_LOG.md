@@ -1,4 +1,44 @@
-## 2026-11-17 21:47:28 +07:00 - Make npm test runnable in AI environments (D4)
+## 2026-11-17 21:58:46 +07:00 - Case-insensitive image URLs and shared bcrypt cost (R3.7b, R4.1b)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R3.7b — URL ảnh viết hoa. isExternalImageUrl (image-url.ts:5) phân biệt hoa thường, trong khi validator nhận HTTPS://… (cờ /i) → ảnh đi qua optimizer với host chưa cấu hình → trang crash. Dùng /^https?:\/\//i.
+> unit test: HTTPS://cdn.example.com/a.jpg được coi là ảnh ngoài.
+> R4.1b — Cùng cost bcrypt. create-admin.ts:127 hash với cost 12, còn dummy hash và các chỗ khác dùng cost 10 → thời gian phản hồi lộ email ADMIN production. Dùng chung một hằng số cost.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: đang ở `main`, PR #75 đã merge trên GitHub nhưng local còn commit squash trước đó; đã fetch, xác nhận `git diff HEAD origin/main` rỗng rồi cho `main` về đúng `origin/main` (`b2aaf85`). Không mất thay đổi nào.
+- Đọc toàn bộ file liên quan: `src/features/shared/lib/image-url.ts`, `src/features/auth/actions.ts`, `src/features/users/actions.ts`, `prisma/create-admin.ts`, `prisma/seed.ts`, các file test tương ứng, `docs/ARCHITECTURE.md`, `docs/CONTRIBUTING.md`, `.github/pull_request_template.md`.
+- **R3.7b:** `isExternalImageUrl` đổi từ `startsWith('https://'/'http://')` sang `/^https?:\/\//i`, khớp cả `HTTPS://...` như validator (`safe-url.ts` đã dùng cờ `/i`). Ảnh host lạ không còn đi vào Next.js image optimizer (vốn sẽ crash do chưa cấu hình `remotePatterns`).
+- **R4.1b:** thêm `src/features/shared/lib/password.ts` với `BCRYPT_COST = 10` và `DUMMY_PASSWORD_HASH` được tạo từ chính hằng số này (`bcrypt.hashSync`). Dùng chung cho seed (`prisma/seed.ts`), user action (`src/features/users/actions.ts`), script tạo ADMIN đầu tiên (`prisma/create-admin.ts`, trước đây cost 12) và dummy hash của login (`src/features/auth/actions.ts`). Mọi nơi tạo hash bây giờ cùng cost, nên `bcrypt.compare` tốn cùng thời gian dù email có tồn tại hay không. Các test cũ dùng số `10` cũng đổi sang hằng số.
+- Unit test mới: `image-url.test.ts` (`HTTPS://cdn.example.com/a.jpg` là ảnh ngoài, các biến thể hoa/thường, path/protocol-relative/data không phải ảnh ngoài); `password.test.ts` (dummy hash và hash mới đều có rounds bằng `BCRYPT_COST`, dummy không bao giờ khớp). Test hero-slider đổi sang URL `HTTPS://...` để phủ đúng trường hợp báo lỗi. Cập nhật `docs/ARCHITECTURE.md` cho cả hai thay đổi.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8, lưu tại `C:\Users\Hello\AppData\Local\Temp\opencode\`)
+
+- `npm test` → passed, exit 0, **53 files / 247 tests** (trước đó 51 files / 241 tests).
+- `npm run lint`, `npm run typecheck`, `npm run build` → exit 0.
+- `npm run format:check` → exit 0 (`All matched files use Prettier code style!`) sau khi chạy Prettier cho `src/features/users/actions.ts`.
+
+### Hạn chế / AI sai ở đâu
+
+- Ban đầu `format:check` báo `src/features/users/actions.ts` sai style sau khi thay import/hàm; đã chạy Prettier cho file đó và kiểm tra lại.
+- Đặt hằng số cost ở module dùng chung thay vì để mỗi nơi tự định nghĩa; nếu không, dummy hash (hardcoded cost 10) vẫn lệch với cost 12 của ADMIN production và tiếp tục lộ timing.
+- Không chạy E2E (`npm run test:e2e`) trong phiên này vì Playwright vẫn dùng `--force-reset`; thay đổi này nằm ở unit/helper và đã được full suite unit phủ.
+
+**So sánh Figma:** không áp dụng (không thay đổi UI có chủ đích).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
