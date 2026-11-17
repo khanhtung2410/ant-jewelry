@@ -8,8 +8,12 @@ const {
   revalidateTagMock,
   redirectMock,
   processPendingProductImageDeletionsMock,
+  categoryFindUniqueMock,
   productFindUniqueMock,
+  productCreateMock,
+  productUpdateMock,
   productDeleteMock,
+  productColorFindManyMock,
   productImageFindFirstMock,
   productImageFindManyMock,
   productImageDeleteMock,
@@ -23,8 +27,12 @@ const {
     throw redirectError;
   });
   const processPendingProductImageDeletionsMock = vi.fn(async () => {});
+  const categoryFindUniqueMock = vi.fn(async () => ({ id: 'category-1' }));
   const productFindUniqueMock = vi.fn();
+  const productCreateMock = vi.fn(async () => ({ id: 'p-1' }));
+  const productUpdateMock = vi.fn(async () => ({ id: 'p-1' }));
   const productDeleteMock = vi.fn(async () => ({}));
+  const productColorFindManyMock = vi.fn(async () => []);
   const productImageFindFirstMock = vi.fn();
   const productImageFindManyMock = vi.fn(async () => []);
   const productImageDeleteMock = vi.fn(async () => ({}));
@@ -39,7 +47,15 @@ const {
         delete: productImageDeleteMock,
         update: productImageUpdateMock,
       },
-      product: { delete: productDeleteMock },
+      productColor: {
+        findMany: productColorFindManyMock,
+        deleteMany: vi.fn(async () => ({})),
+      },
+      product: {
+        delete: productDeleteMock,
+        create: productCreateMock,
+        update: productUpdateMock,
+      },
     }),
   );
 
@@ -48,8 +64,12 @@ const {
     revalidateTagMock,
     redirectMock,
     processPendingProductImageDeletionsMock,
+    categoryFindUniqueMock,
     productFindUniqueMock,
+    productCreateMock,
+    productUpdateMock,
     productDeleteMock,
+    productColorFindManyMock,
     productImageFindFirstMock,
     productImageFindManyMock,
     productImageDeleteMock,
@@ -97,9 +117,12 @@ vi.mock('@/features/products/server/product-image-cleanup', () => ({
 vi.mock('@/features/shared/db/prisma', () => ({
   prisma: {
     $transaction: transactionMock,
+    category: { findUnique: categoryFindUniqueMock },
     product: {
       findUnique: productFindUniqueMock,
       delete: productDeleteMock,
+      create: productCreateMock,
+      update: productUpdateMock,
     },
     productImage: {
       findFirst: productImageFindFirstMock,
@@ -113,7 +136,8 @@ vi.mock('@/features/shared/db/prisma', () => ({
   },
 }));
 
-const { deleteProduct, deleteProductImage } = await import('@/features/products/actions');
+const { deleteProduct, deleteProductImage, saveProduct } =
+  await import('@/features/products/actions');
 
 describe('product deletion actions (R2.5)', () => {
   beforeEach(() => {
@@ -171,26 +195,23 @@ describe('product deletion actions (R2.5)', () => {
     expect(processPendingProductImageDeletionsMock).toHaveBeenCalledTimes(1);
   });
 
-  it('surfaces storage cleanup errors when deleting a product image', async () => {
+  it('still deletes a product image when storage cleanup fails', async () => {
     productImageFindFirstMock.mockResolvedValueOnce({
       id: 'img-1',
       storageKey: 'products/p-1/cover.webp',
       isFront: false,
     });
-    processPendingProductImageDeletionsMock.mockRejectedValueOnce(
-      new AggregateError(
-        [new Error('unlink failed')],
-        'Some product images could not be removed from storage.',
-      ),
-    );
+    processPendingProductImageDeletionsMock.mockRejectedValueOnce(new Error('unlink failed'));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    await expect(deleteProductImage('p-1', 'img-1', new FormData())).rejects.toMatchObject({
-      message: 'Some product images could not be removed from storage.',
-    });
+    await expect(deleteProductImage('p-1', 'img-1', new FormData())).resolves.toBeUndefined();
 
     expect(pendingImageDeletionUpsertMock).toHaveBeenCalled();
     expect(productImageDeleteMock).toHaveBeenCalledWith({ where: { id: 'img-1' } });
     expect(revalidateTagMock).toHaveBeenCalledWith('products', { expire: 0 });
+    expect(processPendingProductImageDeletionsMock).toHaveBeenCalledTimes(1);
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 
   it('rejects image deletion when the image does not exist', async () => {
@@ -237,25 +258,22 @@ describe('product deletion actions (R2.5)', () => {
     expect(redirectMock).toHaveBeenCalledWith('/admin/products?deleted=1');
   });
 
-  it('surfaces storage cleanup errors when deleting a product before redirect', async () => {
+  it('still redirects after deleting a product when storage cleanup fails', async () => {
     productFindUniqueMock.mockResolvedValueOnce({
       id: 'p-1',
       images: [{ storageKey: 'products/p-1/a.webp' }],
     });
-    processPendingProductImageDeletionsMock.mockRejectedValueOnce(
-      new AggregateError(
-        [new Error('unlink failed')],
-        'Some product images could not be removed from storage.',
-      ),
-    );
+    processPendingProductImageDeletionsMock.mockRejectedValueOnce(new Error('unlink failed'));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    await expect(deleteProduct('p-1', new FormData())).rejects.toMatchObject({
-      message: 'Some product images could not be removed from storage.',
-    });
+    await expect(deleteProduct('p-1', new FormData())).rejects.toBe(redirectError);
 
     expect(productDeleteMock).toHaveBeenCalledWith({ where: { id: 'p-1' } });
     expect(revalidateTagMock).toHaveBeenCalledWith('products', { expire: 0 });
-    expect(redirectMock).not.toHaveBeenCalled();
+    expect(processPendingProductImageDeletionsMock).toHaveBeenCalledTimes(1);
+    expect(redirectMock).toHaveBeenCalledWith('/admin/products?deleted=1');
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 
   it('rejects product deletion without products:delete permission', async () => {
@@ -280,5 +298,44 @@ describe('product deletion actions (R2.5)', () => {
     await expect(deleteProduct('missing', new FormData())).rejects.toThrow('Product not found.');
     expect(transactionMock).not.toHaveBeenCalled();
     expect(processPendingProductImageDeletionsMock).not.toHaveBeenCalled();
+  });
+
+  it('still saves a product when storage cleanup fails', async () => {
+    productFindUniqueMock.mockResolvedValueOnce(null);
+    processPendingProductImageDeletionsMock.mockRejectedValueOnce(new Error('unlink failed'));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const formData = new FormData();
+    formData.set('name', 'Gold ring');
+    formData.set('slug', 'gold-ring');
+    formData.set('categoryId', 'category-1');
+    formData.set('brand', 'ANT');
+    formData.set('price', '1000000');
+    formData.set('description', 'A ring');
+
+    const state = {
+      values: {
+        name: '',
+        slug: '',
+        categoryId: '',
+        brand: '',
+        price: '',
+        description: '',
+        details: '',
+        colors: [],
+        published: false,
+      },
+      fieldErrors: {},
+      message: null,
+    };
+
+    await expect(saveProduct(state, formData)).rejects.toBe(redirectError);
+
+    expect(productCreateMock).toHaveBeenCalled();
+    expect(revalidateTagMock).toHaveBeenCalledWith('products', { expire: 0 });
+    expect(processPendingProductImageDeletionsMock).toHaveBeenCalledTimes(1);
+    expect(redirectMock).toHaveBeenCalledWith('/admin/products?saved=1');
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 });

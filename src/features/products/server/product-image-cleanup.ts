@@ -38,7 +38,13 @@ export async function processPendingProductImageDeletions(): Promise<void> {
   }
 
   if (failures.length > 0) {
-    throw new AggregateError(failures, 'Some product images could not be removed from storage.');
+    // Failed rows are deliberately left in PendingImageDeletion so a later
+    // save/deletion retries them. Cleanup is best-effort and must never fail
+    // the product action that queued it.
+    console.error(
+      `${failures.length} product image(s) could not be removed from storage; they remain queued for retry.`,
+      ...failures,
+    );
   }
 }
 

@@ -95,14 +95,13 @@ export async function POST(
       uploaded.push({ ...stored, type: file.type });
     }
   } catch (error) {
+    console.error('Product image upload failed:', error);
     if (uploaded.length > 0) {
       try {
         await enqueueProductImageDeletions(uploaded.map((image) => image.storageKey));
       } catch (cleanupError) {
-        throw new AggregateError(
-          [error, cleanupError],
-          'Image upload failed and uploaded objects could not all be cleaned up.',
-        );
+        // Cleanup is best-effort; failed keys stay queued for a later retry.
+        console.error('Could not queue uploaded product images for cleanup:', cleanupError);
       }
     }
 
@@ -136,12 +135,14 @@ export async function POST(
       ),
     );
   } catch (error) {
+    console.error('Product image metadata could not be saved:', error);
     try {
       await enqueueProductImageDeletions(uploaded.map((image) => image.storageKey));
     } catch (cleanupError) {
-      throw new AggregateError(
-        [error, cleanupError],
-        'Image metadata could not be saved and uploaded objects could not all be cleaned up.',
+      // Keep the original metadata error as the response; cleanup retries later.
+      console.error(
+        'Could not queue product images for cleanup after a metadata error:',
+        cleanupError,
       );
     }
     return jsonError('Image metadata could not be saved. Please retry.', 500);

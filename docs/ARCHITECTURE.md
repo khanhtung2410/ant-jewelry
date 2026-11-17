@@ -861,7 +861,7 @@ Phân chia trách nhiệm:
 
 The server validates JPEG, PNG, and WebP signatures from file bytes and enforces a 5 MiB per-file limit. Storage keys are validated before reading/serving to prevent path traversal.
 
-Deletion records are queued transactionally with database deletion and processed against the local filesystem. Failed cleanup remains queued and is reported instead of being silently discarded. Image uploads invalidate the `products` cache tag through the same `revalidateProductPages()` helper as the Server Actions, so `/p/<slug>` serves the new images on its next request. On serverless/ephemeral hosts, uploaded files may not persist across deploys or instance restarts.
+Deletion records are queued transactionally with database deletion and processed against the local filesystem. Failed cleanup stays queued for a later retry and is logged instead of being thrown, so a storage error cannot fail the product action or upload response. Cache revalidation runs before the best-effort cleanup and callers wrap it in try/catch; image uploads invalidate the `products` cache tag through the same `revalidateProductPages()` helper as the Server Actions, so `/p/<slug>` serves the new images on its next request. On serverless/ephemeral hosts, uploaded files may not persist across deploys or instance restarts.
 
 ## 12. Non-functional Architecture
 SAD đề cập các vấn đề phi chức năng nhưng chưa có dữ liệu khảo sát quy mô sản phẩm, số lượng người dùng đồng thời và lưu lượng truy cập. Vì vậy, chưa có cơ sở để đưa ra các chỉ tiêu hiệu năng định lượng chính thức.

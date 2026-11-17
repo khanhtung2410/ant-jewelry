@@ -1,4 +1,43 @@
-## 2026-11-17 21:58:46 +07:00 - Case-insensitive image URLs and shared bcrypt cost (R3.7b, R4.1b)
+## 2026-11-17 22:11:47 +07:00 - Make product image cleanup best-effort (R2.5)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R2.5 — Lỗi storage chỉ ghi log. processPendingProductImageDeletions vẫn throw AggregateError (product-image-cleanup.ts:41) và được gọi trước revalidateProductPages (products/actions.ts:197-198). Đổi thứ tự, bắt lỗi + log, giữ ảnh trong hàng chờ để lần sau thử lại. Sửa luôn deleteProduct / deleteProductImage và route upload (route.ts:102,142). Test product-deletion.test.ts:181,246 đang khẳng định lỗi được ném ra, tức là ngược yêu cầu: sửa lại.
+> unit test: storage xoá lỗi → saveProduct / deleteProduct vẫn thành công, có gọi revalidate (và redirect), ảnh lỗi còn trong hàng chờ.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: PR #76 đã merge; local `main` còn commit squash trước đó, đã fetch, xác nhận `git diff HEAD origin/main` rỗng rồi cho `main` về `origin/main` (`11a9693`).
+- Đọc toàn bộ file liên quan: `src/features/products/server/product-image-cleanup.ts`, `src/features/products/actions.ts`, `src/app/api/admin/products/[productId]/images/route.ts`, `src/features/products/actions/product-deletion.test.ts`, `route.test.ts`, `src/features/products/server/product-image-storage.ts`, `product-revalidation.ts`, `docs/ARCHITECTURE.md`.
+- `product-image-cleanup.ts`: bỏ `throw new AggregateError` ở cuối `processPendingProductImageDeletions`; thay bằng `console.error` với số lượng ảnh lỗi. Row thất bại vẫn không bị xoá khỏi `PendingImageDeletion` (chỉ xoá row sau khi `deleteStoredProductImage` thành công) nên được thử lại ở lần save/xoá sau.
+- `products/actions.ts`: thêm helper `cleanupPendingProductImages()` bọc `await processPendingProductImageDeletions()` trong try/catch + log; `saveProduct` đổi thứ tự sang revalidate/updateTag rồi mới cleanup (trước redirect), `deleteProductImage` và `deleteProduct` cũng dùng helper thay vì gọi thẳng. Storage lỗi không còn làm action fail.
+- `route.ts`: hai nhánh cleanup lỗi (sau upload lỗi và sau lỗi lưu metadata) không còn `throw AggregateError` mà ghi log, rồi trả nguyên response 500 tương ứng; log thêm lỗi gốc để dễ debug.
+- Sửa test `product-deletion.test.ts`: hai test cũ khẳng định ném lỗi giờ khẳng định `deleteProductImage` resolve / `deleteProduct` vẫn redirect, vẫn revalidate, vẫn gọi cleanup và có log lỗi; thêm test `saveProduct` với cleanup reject → vẫn redirect `?saved=1`. Thêm `product-image-cleanup.test.ts` kiểm tra row lỗi còn lại trong hàng chờ, row thành công bị xoá, không throw; thêm 2 test `route.test.ts` cho hai nhánh cleanup lỗi trả 500. Cập nhật `docs/ARCHITECTURE.md`.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8, lưu tại `C:\Users\Hello\AppData\Local\Temp\opencode\`)
+
+- `npm test` → passed, exit 0, **54 files / 252 tests** (trước đó 53 files / 247 tests).
+- `npm run lint`, `npm run typecheck`, `npm run build` → exit 0.
+- `npm run format:check` → exit 0 sau khi chạy Prettier cho 4 file route/cleanup/test bị lệch style.
+
+### Hạn chế / AI sai ở đâu
+
+- Lần đầu chạy test fail 2 chỗ do mock thiệt: transaction mock thiếu `productColor.deleteMany` cho test `saveProduct`, và mock module cleanup trong `route.test.ts` làm mất export `getProductRevalidationPaths` mà `revalidateProductPages` cần. Đã bổ sung mock và dùng `importOriginal` để giữ các export còn lại.
+- Không phải lúc nào lỗi storage cũng là `AggregateError` từ `processPending...`; call site vẫn dùng try/catch để chặn cả lỗi DB bất ngờ. Hành vi "giữ ảnh trong hàng chờ" được kiểm chứng bằng unit test riêng, không phải bằng mock reject ở call site.
+
+**So sánh Figma:** không áp dụng (không thay đổi UI).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
