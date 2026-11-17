@@ -33,12 +33,14 @@ type ColorOption = { id: string; name: string };
 export function ProductImageManagement({
   productId,
   productName,
+  canDeleteProduct,
   images,
   colors,
   className,
 }: {
   productId: string;
   productName: string;
+  canDeleteProduct: boolean;
   images: ImageRecord[];
   colors: ColorOption[];
   className?: string;
@@ -108,14 +110,16 @@ export function ProductImageManagement({
             upload.
           </p>
         </div>
-        <AdminConfirmForm
-          action={deleteProduct.bind(null, productId)}
-          confirmMessage={`Delete "${productName}" and all its images?`}
-        >
-          <button type="submit" className="text-xs text-red-700 underline underline-offset-2">
-            Delete product
-          </button>
-        </AdminConfirmForm>
+        {canDeleteProduct ? (
+          <AdminConfirmForm
+            action={deleteProduct.bind(null, productId)}
+            confirmMessage={`Delete "${productName}" and all its images?`}
+          >
+            <button type="submit" className="text-xs text-red-700 underline underline-offset-2">
+              Delete product
+            </button>
+          </AdminConfirmForm>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row">

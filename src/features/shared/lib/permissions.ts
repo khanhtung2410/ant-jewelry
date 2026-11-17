@@ -50,6 +50,14 @@ export function canManageProducts(role: Role): boolean {
   return hasPermission(role, 'products:update');
 }
 
+export function canCreateProducts(role: Role): boolean {
+  return hasPermission(role, 'products:create');
+}
+
+export function canDeleteProducts(role: Role): boolean {
+  return hasPermission(role, 'products:delete');
+}
+
 export function canViewProducts(role: Role): boolean {
   return hasPermission(role, 'products:view');
 }

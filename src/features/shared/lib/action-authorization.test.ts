@@ -145,7 +145,7 @@ describe('server action authorization', () => {
     );
   });
 
-  it('rejects an EDITOR creating a product because only an ADMIN can set the price', async () => {
+  it('rejects an EDITOR creating a product without products:create permission', async () => {
     const formData = new FormData();
     formData.set('name', 'Gold ring');
     formData.set('slug', 'gold-ring');
@@ -156,7 +156,7 @@ describe('server action authorization', () => {
 
     const state = await saveProduct(productState, formData);
 
-    expect(state.fieldErrors.form?.[0]).toMatch(/ADMIN/);
+    expect(state.fieldErrors.form?.[0]).toMatch(/permission/i);
   });
 
   it('rejects an EDITOR calling the settings action directly', async () => {
