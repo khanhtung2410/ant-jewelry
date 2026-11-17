@@ -82,12 +82,19 @@ If `next build` fails during page data collection with:
   Keep dumps in protected backup storage (not in repo/artifacts). Include a backup strategy for uploaded files stored under `PRODUCT_IMAGE_UPLOAD_DIR` if they must be retained.
 - **Restore:** restore to staging first, verify data/login/pages/images, then follow approved recovery procedure for production. Redeploy previous Vercel build only when schema remains compatible.
 
+## Current deployment status (verified)
+
+- **Storefront:** https://ant-jewelry.vercel.app/ (HTTP 200 at time of check, 2026-11-17)
+- **Admin:** https://ant-jewelry.vercel.app/admin (redirects to login as expected for unauthenticated access)
+- **Lighthouse (production, 2026-11-17, 3 runs, mobile):** Home median Performance 84 / Accessibility 96 / SEO 100; product `/p/aurora-band` median Performance 89 / Accessibility 100 / SEO 100. See `docs/PERFORMANCE.md` for ranges and methodology.
+
 ## Production readiness checklist
 
-- [ ] Vercel + PostgreSQL provisioned; env vars set (no secrets in code/logs).
+- [x] Vercel deployment accessible at `https://ant-jewelry.vercel.app/` (storefront and admin routes respond).
+- [ ] Vercel + PostgreSQL provisioned; env vars set (no secrets in code/logs) — confirm in Vercel dashboard.
 - [ ] `SITE_URL` set to the deployment HTTPS origin.
 - [ ] Migrations applied and status clean.
 - [ ] First ADMIN created with real owner email via `db:create-admin:production`.
-- [ ] Public deployment loads key pages and admin login/dashboard.
+- [ ] Public deployment loads key pages and admin login/dashboard — verify with real content and authenticated admin access.
 - [ ] Product image upload works in the deployed environment (note: local filesystem uploads may not persist across redeploys on ephemeral hosts).
 - [ ] Backup/restore procedure documented and tested outside production as applicable.

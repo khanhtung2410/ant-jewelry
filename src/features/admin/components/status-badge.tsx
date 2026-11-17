@@ -9,8 +9,7 @@ export function StatusBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center justify-center whitespace-nowrap rounded-full px-2 py-1 text-xs ${className}`}
-      style={{ backgroundColor: config.bg, color: config.color }}
+      className={`inline-flex items-center justify-center whitespace-nowrap rounded-full px-2 py-1 text-xs ${config.className} ${className}`.trim()}
     >
       {config.label}
     </span>
