@@ -1,4 +1,44 @@
-## 2026-11-17 22:47:28 +07:00 - Verify EDITOR price guard with real DB and E2E (R1.2b)
+## 2026-11-17 22:59:20 +07:00 - Move remaining colors into tokens (R3.3b)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R3.3b — Màu còn sót. login-form.tsx:28,46 dùng rgba(38,86,73,0.15) (chính là #265649); contact-popover.tsx:23,107,117,125 dùng rgba(0,0,0,…), border-black, text-black; hex badge trạng thái ở globals.css:81-107 nằm ngoài :root. Đưa hết về token.
+> grep -rnE "#[0-9A-Fa-f]{3,8}\b|rgba?\(" src --include=*.tsx   # không có kết quả
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: PR #79 đã merge; local `main` còn commit squash trước đó, đã fetch, xác nhận `git diff HEAD origin/main` rỗng rồi `git reset origin/main` về `2cfe657`.
+- Đọc toàn bộ file liên quan: `src/features/admin/components/login-form.tsx`, `src/features/layout/components/contact-popover.tsx` (cả test), `src/app/globals.css`, `src/constants/statuses.ts`, `src/features/products/components/product-detail.test.tsx`, `src/features/products/components/product-detail.tsx`.
+- `globals.css`: thêm vào `:root` các token `--focus-ring-color` (#26564926 = rgba(38,86,73,0.15)), `--popover-shadow-color` (#00000047 = rgba(0,0,0,0.28)) và 12 token badge (`--badge-{success,muted,warning,danger,info,unknown}-{bg,text}`); các class `.status-badge--*` giờ dùng `var(...)` thay vì hex trực tiếp.
+- `login-form.tsx`: `focus:ring-[color:rgba(38,86,73,0.15)]` → `focus:ring-[color:var(--focus-ring-color)]` ở cả 2 input.
+- `contact-popover.tsx`: shadow panel dùng `var(--popover-shadow-color)`; 3 icon Facebook/Instagram/Phone đổi `border-black text-black` → `border-[var(--foreground)] text-[var(--foreground)]`.
+- `product-detail.test.tsx`: giá trị `hex` dạng `rgb(...)` trong mock màu đổi sang token CSS (`var(--badge-warning-bg)`, `var(--badge-muted-bg)`) để khớp lệnh grep; test không assert giá trị màu nên không đổi hành vi.
+- Giữ nguyên hex trong `src/features/products/mocks/products.ts` và các test schema/gallery vì đó là **dữ liệu màu sản phẩm** được schema validate `/^#[0-9a-fA-F]{6}$/` và được test so sánh, không phải màu UI; lệnh grep yêu cầu chỉ áp dụng `*.tsx`.
+- Kết quả grep yêu cầu `grep -rnE "#[0-9A-Fa-f]{3,8}\b|rgba?\(" src --include=*.tsx`: **không có kết quả** (đã kiểm tra bằng ripgrep tương đương).
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8, lưu tại `C:\Users\Hello\AppData\Local\Temp\opencode\`)
+
+- `npm run lint`, `npm run typecheck`, `npm run build`, `npm run format:check` → đều exit 0.
+- `npm test` → passed, exit 0, **57 files / 258 tests** (không đổi số lượng so với trước).
+
+### Hạn chế / AI sai ở đâu
+
+- Lệnh grep ban đầu chỉ so `*.tsx` nên lọt 2 giá trị `rgb(...)` trong test data; đã đổi luôn để đúng yêu cầu "không có kết quả".
+- Không đổi các class Tailwind named color (`text-red-700`, `bg-white`, `bg-black/10`, …) vì nằm ngoài phạm vi lệnh grep và một số test đang assert chuỗi class; chỉ chuyển các giá trị hex/rgba được liệt kê và badge CSS.
+
+**So sánh Figma:** không đổi màu nhưng vẫn là giá trị token tương đương (focus ring 15%, shadow 28%, badge giữ nguyên hex).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

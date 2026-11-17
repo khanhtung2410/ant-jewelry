@@ -13,6 +13,20 @@
   --button-bg-normal: #6d6c6b;
   --surface-muted: #f4f6f2;
   --admin-background: #f6f7f4;
+  --focus-ring-color: #26564926;
+  --popover-shadow-color: #00000047;
+  --badge-success-bg: #dcfce7;
+  --badge-success-text: #15803d;
+  --badge-muted-bg: #f1f5f9;
+  --badge-muted-text: #334155;
+  --badge-warning-bg: #fef3c7;
+  --badge-warning-text: #92400e;
+  --badge-danger-bg: #fee2e2;
+  --badge-danger-text: #b91c1c;
+  --badge-info-bg: #dbeafe;
+  --badge-info-text: #1e40af;
+  --badge-unknown-bg: #e5e7eb;
+  --badge-unknown-text: #374151;
 
   /* Montserrat (content) and Roboto Mono (headings/nav) are loaded in src/app/layout.tsx. */
   --font-body-family: var(--font-montserrat), 'Montserrat', Arial, Helvetica, sans-serif;
@@ -78,31 +92,31 @@ hr {
 
 /* Status badge tokens (used by StatusBadge component). */
 .status-badge--success {
-  background-color: #dcfce7;
-  color: #15803d;
+  background-color: var(--badge-success-bg);
+  color: var(--badge-success-text);
 }
 
 .status-badge--muted {
-  background-color: #f1f5f9;
-  color: #334155;
+  background-color: var(--badge-muted-bg);
+  color: var(--badge-muted-text);
 }
 
 .status-badge--warning {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: var(--badge-warning-bg);
+  color: var(--badge-warning-text);
 }
 
 .status-badge--danger {
-  background-color: #fee2e2;
-  color: #b91c1c;
+  background-color: var(--badge-danger-bg);
+  color: var(--badge-danger-text);
 }
 
 .status-badge--info {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: var(--badge-info-bg);
+  color: var(--badge-info-text);
 }
 
 .status-badge--unknown {
-  background-color: #e5e7eb;
-  color: #374151;
+  background-color: var(--badge-unknown-bg);
+  color: var(--badge-unknown-text);
 }

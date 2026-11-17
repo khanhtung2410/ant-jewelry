@@ -34,7 +34,7 @@ function image(id: string, url: string, isFront = false): ProductImage {
 const gold: ProductColor = {
   colorId: 'color-gold-18k',
   name: 'Vàng 18K',
-  hex: 'rgb(212, 175, 55)',
+  hex: 'var(--badge-warning-bg)',
   images: [
     image('gold-front', '/mock/products/aurora-band-gold-1.svg', true),
     image('gold-detail', '/mock/products/aurora-band-gold-2.svg'),
@@ -46,7 +46,7 @@ const gold: ProductColor = {
 const whiteGold: ProductColor = {
   colorId: 'color-white-gold-18k',
   name: 'Vàng trắng 18K',
-  hex: 'rgb(229, 228, 226)',
+  hex: 'var(--badge-muted-bg)',
 };
 
 function makeProduct(): Product {

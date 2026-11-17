@@ -25,7 +25,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           type="email"
           autoComplete="email"
           required
-          className="w-full rounded-md border border-[var(--line)] bg-white px-3 py-2 text-foreground outline-none transition focus:border-[var(--underline-color)] focus:ring-2 focus:ring-[color:rgba(38,86,73,0.15)]"
+          className="w-full rounded-md border border-[var(--line)] bg-white px-3 py-2 text-foreground outline-none transition focus:border-[var(--underline-color)] focus:ring-2 focus:ring-[color:var(--focus-ring-color)]"
           placeholder="admin@antjewelry.local"
         />
       </div>
@@ -43,7 +43,7 @@ export function LoginForm({ nextPath }: { nextPath: string }) {
           type="password"
           autoComplete="current-password"
           required
-          className="w-full rounded-md border border-[var(--line)] bg-white px-3 py-2 text-foreground outline-none transition focus:border-[var(--underline-color)] focus:ring-2 focus:ring-[color:rgba(38,86,73,0.15)]"
+          className="w-full rounded-md border border-[var(--line)] bg-white px-3 py-2 text-foreground outline-none transition focus:border-[var(--underline-color)] focus:ring-2 focus:ring-[color:var(--focus-ring-color)]"
           placeholder="Enter your password"
         />
       </div>
