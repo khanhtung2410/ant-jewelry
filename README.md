@@ -211,12 +211,13 @@ qua `/uploads/...`.
 
 1. Provision PostgreSQL và cấu hình `DATABASE_URL`, `AUTH_SECRET`,
    `SITE_URL`, `PRODUCT_IMAGE_UPLOAD_DIR` trong môi trường production (`DIRECT_URL` không bắt buộc).
-2. Chạy migration: `npm run db:migrate:production` và
-   `npm run db:migrate:status:production`.
-3. Deploy qua Vercel; `vercel.json` dùng `npm run build:production`.
-4. Tạo ADMIN đầu tiên bằng `npm run db:create-admin:production`. Không chạy `db:seed`
+2. Deploy Production lên Vercel; `vercel.json` dùng `npm run build:production`, tự động chạy
+   `prisma migrate deploy` trước `next build` (chỉ ở Production; Preview bỏ qua vì dùng chung DB).
+   Có thể chạy migration thủ công bằng `npm run db:migrate:production` và
+   `npm run db:migrate:status:production` với URL **direct** (`db.prisma.io`, không dùng pooled).
+3. Tạo ADMIN đầu tiên bằng `npm run db:create-admin:production`. Không chạy `db:seed`
    trên production.
-5. Kiểm tra `/robots.txt`, `/sitemap.xml`, đăng nhập admin, dữ liệu và upload ảnh sau deploy.
+4. Kiểm tra `/robots.txt`, `/sitemap.xml`, đăng nhập admin, dữ liệu và upload ảnh sau deploy.
 
 Lưu ý: trên môi trường serverless/ephemeral (như Vercel), filesystem local không bền vững qua
 redeploy/instance mới; cần mount/storage bền vững có quyền ghi nếu muốn giữ ảnh upload. Nếu

@@ -20,7 +20,7 @@
     "db:migrate:production": "prisma migrate deploy --config prisma.postgresql.config.ts",
     "db:migrate:status:production": "prisma migrate status --config prisma.postgresql.config.ts",
     "db:create-admin:production": "npm run db:generate:production && tsx prisma/create-admin.ts",
-    "build:production": "npm run db:generate:production && next build"
+    "build:production": "npm run db:generate:production && node scripts/migrate-production.mjs && next build"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.10.1",
