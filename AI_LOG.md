@@ -1,4 +1,41 @@
-## 2026-11-17 21:30:55 +07:00 - Reject control characters in safe URLs (R4.4b)
+## 2026-11-17 21:47:28 +07:00 - Make npm test runnable in AI environments (D4)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> D4 — npm test chạy được trong môi trường AI. Prisma 7 chặn prisma db push --force-reset khi lệnh do AI agent gọi (cả Claude Code lẫn công cụ em dùng ở #71), nên vitest.global-setup.ts fail và em đã merge mà không chạy full suite. Đổi setup thành: xoá file prisma/test.db (chỉ file test, kiểm tra đúng đường dẫn trước khi xoá) → prisma db push (không --force-reset) → seed. Không dùng biến PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION để lách.
+> agent AI chạy npm test pass toàn bộ; dev.db giữ nguyên (so md5sum trước / sau).
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đọc toàn bộ các file liên quan: `vitest.global-setup.ts`, `vitest.database.ts`, `vitest.setup.ts`, `vitest.config.mts`, `prisma.config.ts`, `src/features/shared/db/prisma.ts`, `prisma/seed.ts`, `README.md`, `.gitignore`, `.github/pull_request_template.md`, `docs/CONTRIBUTING.md`.
+- Nguyên nhân sâu hơn: với `DATABASE_URL=file:./test.db`, Prisma CLI resolve theo **cwd** (tạo/cập nhật `test.db` ở gốc repo) trong khi `resolveSqliteUrl` của app/seed resolve theo thư mục `prisma/` (`prisma/test.db`). Setup cũ dùng `--force-reset` nên reset file gốc (không được dùng) còn seed ghi vào `prisma/test.db`; sau khi xoá `prisma/test.db`, `db push` thuần tạo schema ở file gốc và seed báo `P2021: table main.Category does not exist`. Đã xác nhận bằng probe tạo file DB thử nghiệm (đã xoá sau khi probe).
+- `vitest.global-setup.ts`: kiểm tra `prisma/schema.prisma` tồn tại, chỉ chấp nhận URL SQLite, resolve `TEST_DATABASE_URL` và so sánh chính xác với `<cwd>/prisma/test.db`; từ chối path khác hoặc path không phải file. Xoá đúng file test đó (nếu có), rồi truyền URL **tuyệt đối** `file:<đường dẫn đã kiểm tra>` cho cả `npx prisma db push` và `npx prisma db seed` để CLI và PrismaClient cùng trỏ một file. Không dùng `--force-reset`, không đặt `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION`.
+- `README.md`: cập nhật mục kiểm thử mô tả luồng xoá file test → `db push` → seed và lý do không đụng `prisma/dev.db`.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8, lưu tại `C:\Users\Hello\AppData\Local\Temp\opencode\`)
+
+- `npm test` → passed, exit 0, **51 files / 241 tests**; chạy lại lần 2 → vẫn 51 files / 241 tests, exit 0 (chứng tỏ setup lặp lại ổn định).
+- `npm run lint`, `npm run typecheck`, `npm run format:check` (`All matched files use Prettier code style!`), `npm run build` → đều exit 0.
+- MD5 trước/sau: `dev.db` `98778fef83cd6221d9ef23a5279278ba` (giữ nguyên), `prisma/dev.db` `eccd1a88d311ac85c990d6ee502c111f` (giữ nguyên); `test.db` ở gốc cũng giữ nguyên `8ee30b482991f9db73da2e31fcb95c1c`. Chỉ `prisma/test.db` được tạo lại mỗi lần chạy test.
+
+### Hạn chế / AI sai ở đâu
+
+- Ban đầu chỉ đổi `--force-reset` thành `db push` mà giữ nguyên URL tương đối; seed fail P2021 vì CLI và PrismaClient resolve SQLite path khác nhau. Phải dùng URL tuyệt đối từ verified path cho cả hai lệnh.
+- `playwright.config.ts` vẫn dùng `prisma db push --force-reset` cho `prisma/e2e.db`; D4 chỉ yêu cầu `npm test` nên không đổi và cũng không chạy E2E trong phiên này.
+- File `test.db` cũ ở gốc repo (artifact của setup cũ) được giữ nguyên, không xoá vì nằm ngoài phạm vi và có thể chứa dữ liệu local.
+
+**So sánh Figma:** không áp dụng (không thay đổi UI).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
