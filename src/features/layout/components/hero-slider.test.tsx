@@ -76,7 +76,7 @@ describe('HeroSlider', () => {
     const html = renderToStaticMarkup(<HeroSlider slides={[unsafeSlide]} />);
 
     expect(html).not.toContain('EXPLORE NOW');
-    expect(html).not.toContain('href=');
+    expect(html).not.toContain('<a ');
   });
 
   it('skips the image optimizer for admin-entered absolute URLs', () => {

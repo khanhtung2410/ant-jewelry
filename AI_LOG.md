@@ -1,4 +1,44 @@
-## 2026-11-17 13:30:00 +07:00 - Address R3.3/R5.6/R6.1/R6.2 partials and add product deletion tests
+## 2026-11-17 21:30:55 +07:00 - Reject control characters in safe URLs (R4.4b)
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R4.4b — Ký tự điều khiển trong URL. / + tab (hoặc xuống dòng) + /evil.com qua được isPathOrUrl vì .trim() chỉ cắt hai đầu; trình duyệt xoá tab nên href thành //evil.com (link hero, hero-slider.tsx:53). Từ chối mọi ký tự điều khiển / khoảng trắng bên trong URL.
+> unit test: "/\t/evil.com", "/\n/evil.com", "/\\evil.com" đều bị từ chối, ở cả form và markdown.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đọc toàn bộ các file liên quan: `docs/CONTRIBUTING.md`, `src/features/shared/lib/safe-url.ts`, `src/features/shared/lib/form-validation.ts`, `src/features/shared/lib/markdown.tsx`, `src/features/layout/components/hero-slider.tsx` và các file test tương ứng, `docs/ARCHITECTURE.md`, `AI_LOG.md`, `package.json`, cấu hình Vitest.
+- `src/features/shared/lib/safe-url.ts`: thêm pattern `[\s\u0000-\u001f\u007f-\u009f]` và helper `hasUnsafeUrlCharacter`, áp dụng cho `isHttpUrl`, `isSafeRootPath`, `isSafeLinkHref`, `isSafeImageSrc`. Mọi ký tự điều khiển/khoảng trắng ở bất kỳ vị trí nào trong URL đều bị từ chối (không chỉ phần đầu/cuối như `.trim()`), nên `/\t/evil.com` và `/\n/evil.com` không còn lọt qua `isPathOrUrl`/`requiredPathOrUrl`.
+- `src/features/layout/components/hero-slider.tsx`: chặn link "EXPLORE NOW" bằng `isSafeLinkHref(activeSlide.linkUrl)` trước khi render `ActionButton`; URL có tab/xuống dòng/backslash không còn tạo `href` dẫn tới host lạ.
+- Unit test: `safe-url.test.ts` (mới) kiểm tra path/URL chứa tab, newline, CR, space, NUL, DEL, C1, khoảng trắng trong URL tuyệt đối; `form-validation.test.ts` thêm `/\t/evil.com`, `/\n/evil.com` (có sẵn `/\evil.com`); `markdown.test.tsx` thêm test link markdown với tab/newline/backslash không render thành `<a>`; `hero-slider.test.tsx` thêm test không render link cho slide có URL chứa tab.
+- Sửa assertion trong test hero-slider: `not.toContain('href=')` bị trúng thẻ `<link rel="preload" as="image" href="...">` do Next.js Image tạo ra; đổi thành `not.toContain('<a ')` để kiểm tra đúng explore link.
+- `docs/ARCHITECTURE.md`: cập nhật mục R4.4 ghi rõ lý do từ chối ký tự điều khiển/khoảng trắng (trình duyệt xoá tab trước khi resolve URL).
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8, lưu tại `C:\Users\Hello\AppData\Local\Temp\opencode\`)
+
+- `npm run lint` → passed, exit 0.
+- `npm run typecheck` → passed, exit 0.
+- `npm run format:check` → passed (`All matched files use Prettier code style!`), exit 0.
+- `npm run build` → passed, exit 0 (`✓ Compiled successfully`, `✓ Generating static pages (53/53)`).
+- Chạy riêng 4 file test bị ảnh hưởng bằng config Vitest tạm không `globalSetup` → 4 files / 25 tests passed, exit 0; file config tạm đã xoá sau khi chạy.
+- `npm test` (full) → exit 1 vì `vitest.global-setup.ts` gọi `npx prisma db push --force-reset` bị cơ chế an toàn của Prisma chặn với AI agent; không tự ý đặt `PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION` (cần consent rõ ràng từ người dùng). Các test liên quan đã được chạy riêng như trên.
+
+### Hạn chế / AI sai ở đâu
+
+- Không chạy được full `npm test`/E2E do lệnh reset DB phá huỷ trong global setup bị chặn; đã chạy bộ test mục tiêu thay thế và ghi rõ hạn chế.
+- Nhánh hiện tại là `main` (default branch); để mở PR theo đúng luồng GitHub Flow, commit được push sang remote branch riêng làm head của PR mà không chuyển nhánh local.
+- Test hero-slider ban đầu viết assertion quá rộng (`not.toContain('href=')`) làm fail dù logic đã đúng; đã thu hẹp về phần tử anchor.
+
+**So sánh Figma:** không thay đổi giao diện có chủ đích (chỉ bỏ link không an toàn).
+
+---
 
 ### Prompt nguyên văn đã dùng
 
