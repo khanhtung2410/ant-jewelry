@@ -1,4 +1,42 @@
-## 2026-11-17 22:26:48 +07:00 - Gate product buttons by create/delete permissions (R1.1b)
+## 2026-11-17 22:47:28 +07:00 - Verify EDITOR price guard with real DB and E2E (R1.2b)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R1.2b — Test giá thật. Unit test hiện chỉ kiểm tham số truyền vào prisma mock (action-authorization.test.ts:98-116); E2E chỉ kiểm readonly (storefront-admin.spec.ts:217-230). Cần: test với DB thật (EDITOR gửi giá khác → đọc lại DB, giá không đổi) và E2E EDITOR sửa tên → lưu → tên mới hiện ra, giá giữ nguyên. Ô giá readonly vẫn bị validate khi submit: EDITOR không được bị chặn lưu vì field mình không sửa được.
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: PR #78 đã merge; local `main` còn commit squash trước đó, đã fetch, xác nhận `git diff HEAD origin/main` rỗng rồi dùng `git reset origin/main` (giữ nguyên file `AGENTS.md` đang có feedback block do `next dev` ghi thêm) để về `origin/main` (`d30e67c`). Commit `AGENTS.md` cùng thay đổi này theo hướng dẫn trong file.
+- Đọc toàn bộ file liên quan: `src/features/shared/lib/action-authorization.test.ts`, `e2e/storefront-admin.spec.ts`, `src/features/products/actions.ts`, `product-form-schema.ts`, `product-form-dialog.tsx`, `format-price.ts`, `playwright.config.ts`, `prisma/schema.prisma`, `src/test/next-cache.ts`.
+- `products/actions.ts`: chuyển bước đọc `existingProduct` lên trước `schema.safeParse`. Với role không có `products:edit_price`, gán lại `values.price = formatPrice(existingProduct.price)` trước khi validate, nên ô giá readonly (dù client gửi giá khác hoặc giá sai định dạng) không thể chặn EDITOR lưu; giá lưu vẫn là giá trong DB. ADMIN/Người có quyền sửa giá vẫn validate giá do họ gửi như trước.
+- Unit test DB thật mới `product-price-real-db.test.ts`: tạo sản phẩm trong `prisma/test.db` bằng PrismaClient thật, đăng nhập EDITOR (mock session), gọi `saveProduct` với giá khác rồi đọc lại DB → giá không đổi, tên đổi; thêm case gửi giá không hợp lệ ở ô readonly → vẫn lưu được và giá không đổi. Dọn sản phẩm ở `afterAll`.
+- E2E `storefront-admin.spec.ts`: mở rộng test EDITOR từ chỗ chỉ kiểm `readonly` sang sửa tên → Save → kiểm URL `saved=1`, tên mới hiển thị trong danh sách, mở lại Edit và kiểm ô giá vẫn giữ giá cũ.
+- `AI_LOG.md` cập nhật; `AGENTS.md` được commit kèm để tree sạch theo chỉ dẫn feedback của Next.js.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8, lưu tại `C:\Users\Hello\AppData\Local\Temp\opencode\`)
+
+- `npm test` → passed, exit 0, **57 files / 258 tests** (trước đó 56 files / 256 tests), trong đó có 2 test DB thật mới.
+- `npm run lint`, `npm run typecheck`, `npm run build` → exit 0.
+- `npm run format:check` → exit 0.
+
+### Hạn chế / AI sai ở đâu
+
+- Chưa chạy `npm run test:e2e`: `playwright.config.ts` dùng `prisma db push --force-reset` cho `prisma/e2e.db`, bị cơ chế an toàn Prisma chặn với AI agent; không dùng biến consent để lách. Test E2E đã được viết nhưng chưa thực thi trong môi trường này.
+- Không có ứng viên feedback Next.js đủ tiêu chí (crash/hang/hiệu năng/diagnostics/CLI bất thường) trong lượt này nên không gọi lệnh `agent-feedback-instructions`.
+
+**So sánh Figma:** không đổi UI có chủ đích.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
