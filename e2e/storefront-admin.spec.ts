@@ -214,7 +214,7 @@ test('ADMIN price changes are reflected on the storefront', async ({ page }) => 
   }).toPass({ timeout: 20_000 });
 });
 
-test('EDITOR can edit product details but cannot edit a product price', async ({ page }) => {
+test('EDITOR can save product details but cannot edit a product price', async ({ page }) => {
   await signIn(page, 'editor@antjewelry.local', 'Editor@123');
   await page.goto('/admin/products?search=Aurora');
 
@@ -222,9 +222,19 @@ test('EDITOR can edit product details but cannot edit a product price', async ({
   await productRow.getByRole('link', { name: 'Edit' }).click();
 
   const productDialog = page.getByRole('dialog');
-  await expect(productDialog.getByLabel('Price (VND)')).toHaveAttribute('readonly', '');
-  await expect(
-    productDialog.getByRole('textbox', { name: 'Name', exact: true }),
-  ).not.toHaveAttribute('readonly', '');
-  await expect(productDialog.getByRole('button', { name: 'Save product' })).toBeVisible();
+  const priceInput = productDialog.getByLabel('Price (VND)');
+  await expect(priceInput).toHaveAttribute('readonly', '');
+  const originalPrice = await priceInput.inputValue();
+  const nameInput = productDialog.getByRole('textbox', { name: 'Name', exact: true });
+  await expect(nameInput).not.toHaveAttribute('readonly', '');
+
+  await nameInput.fill('Aurora Band (EDITOR rename)');
+  await productDialog.getByRole('button', { name: 'Save product' }).click();
+  await expect(page).toHaveURL(/saved=1/);
+
+  await page.goto('/admin/products?search=Aurora');
+  await expect(page.getByText('Aurora Band (EDITOR rename)')).toBeVisible();
+  const renamedRow = page.getByRole('row').filter({ hasText: 'Aurora Band (EDITOR rename)' });
+  await renamedRow.getByRole('link', { name: 'Edit' }).click();
+  await expect(page.getByRole('dialog').getByLabel('Price (VND)')).toHaveValue(originalPrice);
 });

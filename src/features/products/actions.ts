@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { visibilityStatus } from '@/constants/statuses';
 import { getAdminSession } from '@/features/auth/session';
 import { prisma } from '@/features/shared/db/prisma';
+import { formatPrice } from '@/features/shared/lib/format-price';
 import {
   formatZodIssues,
   formState,
@@ -85,6 +86,22 @@ export async function saveProduct(
   }
 
   const productId = String(formData.get('productId') ?? '');
+  const existingProduct = productId
+    ? await prisma.product.findUnique({
+        where: { id: productId },
+        select: { id: true, price: true },
+      })
+    : null;
+  if (productId && !existingProduct) {
+    return stateWithErrors(values, { form: ['This product no longer exists.'] });
+  }
+
+  // The price input is readonly for roles without products:edit_price. Its
+  // submitted value must never block saving, so validate the stored price.
+  if (existingProduct && !canEditPrice(session.role)) {
+    values.price = formatPrice(existingProduct.price);
+  }
+
   const parsed = productFormSchema.safeParse(values);
   if (!parsed.success) {
     return formState(values, formatZodIssues(parsed.error.issues));
@@ -106,16 +123,6 @@ export async function saveProduct(
   });
   if (existingSlug && existingSlug.id !== productId) {
     return stateWithErrors(values, { slug: ['This slug is already in use.'] });
-  }
-
-  const existingProduct = productId
-    ? await prisma.product.findUnique({
-        where: { id: productId },
-        select: { id: true, price: true },
-      })
-    : null;
-  if (productId && !existingProduct) {
-    return stateWithErrors(values, { form: ['This product no longer exists.'] });
   }
 
   if (!productId && !hasPermission(session.role, 'products:create')) {
