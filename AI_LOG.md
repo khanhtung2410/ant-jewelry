@@ -1,3 +1,94 @@
+## 2026-11-17 13:30:00 +07:00 - Address R3.3/R5.6/R6.1/R6.2 partials and add product deletion tests
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R3.3 PARTIAL — globals.css dùng token/biến màu; contact-popover.tsx, global-error.tsx, admin/(auth)/login/page.tsx dùng var(...)/token. Nhưng grep hex trong src vẫn có hex cứng trong TSX/TS: src/constants/statuses.ts, src/constants/roles.ts (badge colors) → chưa đáp ứng yêu cầu "grep hex trong src/**/*.tsx không có kết quả"/mong muốn bỏ hex cứng.
+> R5.6 PARTIAL — Có nhiều test liên quan SEE MORE, R1.2, R4.1 và E2E bàn phím R3.1; nhưng bằng chứng unit test cho R2.5 trong repo nghiêng về collectBlogImages (blog) chứ không phải test hành vi xóa ảnh sản phẩm/revalidate/lỗi storage theo đúng yêu cầu R2.5.
+> R6.1 PARTIAL — docs/PERFORMANCE.md ghi nguyên nhân/cải thiện và kết quả đo (median/range, đạt ngưỡng), nhưng ghi nhận đo trên local production build (chưa xác minh trên bản deploy).
+> R6.2 PARTIAL — docs/DEPLOY.md, README.md, scripts production/migrate/create-admin có; không có link production + trạng thái hoạt động thực tế được ghi/xác minh trong repo.
+>
+> https://ant-jewelry.vercel.app/admin
+> https://ant-jewelry.vercel.app/
+> run light house with prod link
+> fix, add to code problem
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- R3.3: thay `StatusConfig` từ `{ label, bg, color }` (hex cứng) sang `{ label, className }` trong `src/constants/statuses.ts` và `src/constants/roles.ts`; `StatusBadge` dùng class token thay vì inline `backgroundColor/color`; bổ sung các class badge token trong `src/app/globals.css`. Không còn hex cứng trong `src/**/*.ts,tsx` thuộc `src/constants/statuses.ts` và `src/constants/roles.ts` (mục tiêu nêu trong PARTIAL).
+- R5.6: thêm unit test `src/features/products/actions/product-deletion.test.ts` cho hành vi xóa ảnh sản phẩm và xóa sản phẩm (quyền truy cập, enqueue pending deletion, xóa bản ghi, promote ảnh bìa tiếp theo khi xóa front image, revalidate, xử lý lỗi storage/cleanup AggregateError, redirect khi xóa sản phẩm).
+- R6.1: chạy Lighthouse mobile (3 lần/trang) trên production deploy `https://ant-jewelry.vercel.app/` và `https://ant-jewelry.vercel.app/p/aurora-band`; cập nhật `docs/PERFORMANCE.md` với kết quả trung vị/dải trên deploy và giữ kết quả local production build làm tham chiếu.
+- R6.2: cập nhật `docs/DEPLOY.md` và `README.md` để ghi nhận link production và trạng thái kiểm chứng (storefront/admin phản hồi; Lighthouse deploy). Các bước hạ tầng còn lại (secrets, migration trạng thái sạch, ADMIN thật, upload ảnh bền vững trên host ephemeral) vẫn cần xác minh ngoài repo/môi trường.
+- Xác minh HTTP: `https://ant-jewelry.vercel.app/` trả 200, `https://ant-jewelry.vercel.app/admin` redirect (307) tới luồng đăng nhập như mong đợi khi chưa xác thực.
+
+**Kết quả kiểm chứng**
+
+- `npm run format` -> passed.
+- `npm run lint` -> passed, exit 0.
+- `npm run typecheck` -> passed, exit 0.
+- `npx vitest run src/features/products/actions/product-deletion.test.ts src/features/products/server/product-image-storage.test.ts src/features/products/server/product-revalidation.test.ts` (chạy với config tạm không globalSetup để tránh `prisma db push --force-reset` bị chặn bởi cơ chế an toàn môi trường; các test này mock DB/FS theo module) -> 3 files / 14 tests passed.
+- `npm test`, `npm run format:check`, `npm run build` đầy đủ: không chạy trong phiên này (global setup Vitest reset DB bị chặn như trên; build/test full chưa thực thi lại sau chỉnh sửa).
+
+**Lighthouse production (3 runs, mobile, median; range)**
+
+- Home `/`: Performance 84 (82-92), Accessibility 96, SEO 100, FCP 976 ms (970-1243), LCP 2893 ms (2869-2973), TBT 430 ms (199-515).
+- Product `/p/aurora-band`: Performance 89 (81-91), Accessibility 100, SEO 100, FCP 957 ms (951-1666), LCP 2368 ms (2353-2866), TBT 305 ms (259-677).
+- Mục tiêu R6.1 (median Performance >= 85, Accessibility >= 90, SEO >= 95): Accessibility/SEO đạt; Performance trang sản phẩm đạt, Home median 84 chưa đạt trên bản deploy (dao động/TBT).
+
+### Hạn chế / AI sai ở đâu
+
+- Không thể tự thay đổi hạ tầng Vercel/PostgreSQL/storage hay xác minh nội dung động/admin đã đăng nhập ngoài phản hồi HTTP; chỉ ghi nhận đo Lighthouse và HTTP cơ bản trên URL production.
+- Kết quả Lighthouse dao động theo thời điểm/hạ tầng; Home median trên deploy thấp hơn mục tiêu 85 dù có lần chạy đạt 92.
+- Không chạy lại toàn bộ `npm test`/`npm run build`/`npm run test:e2e` do ràng buộc global setup reset DB trong môi trường; chỉ chạy lint/typecheck/format và bộ test mục tiêu liên quan R2.5.
+
+---
+
+## 2026-11-17 12:00:00 +07:00 - Record deployment links and partial requirement status
+
+### Prompt nguyên văn đã dùng
+
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R3.3 PARTIAL — globals.css dùng token/biến màu; contact-popover.tsx, global-error.tsx, admin/(auth)/login/page.tsx dùng var(...)/token. Nhưng grep hex trong src vẫn có hex cứng trong TSX/TS: src/constants/statuses.ts, src/constants/roles.ts (badge colors) → chưa đáp ứng yêu cầu "grep hex trong src/**/*.tsx không có kết quả"/mong muốn bỏ hex cứng.
+> R5.6 PARTIAL — Có nhiều test liên quan SEE MORE, R1.2, R4.1 và E2E bàn phím R3.1; nhưng bằng chứng unit test cho R2.5 trong repo nghiêng về collectBlogImages (blog) chứ không phải test hành vi xóa ảnh sản phẩm/revalidate/lỗi storage theo đúng yêu cầu R2.5.
+> R6.1 PARTIAL — docs/PERFORMANCE.md ghi nguyên nhân/cải thiện và kết quả đo (median/range, đạt ngưỡng), nhưng ghi nhận đo trên local production build (chưa xác minh trên bản deploy).
+> R6.2 PARTIAL — docs/DEPLOY.md, README.md, scripts production/migrate/create-admin có; không có link production + trạng thái hoạt động thực tế được ghi/xác minh trong repo.
+>
+> https://ant-jewelry.vercel.app/admin
+> https://ant-jewelry.vercel.app/
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đọc `docs/CONTRIBUTING.md`, `.github/pull_request_template.md`, `AI_LOG.md`, `docs/PERFORMANCE.md`, `docs/DEPLOY.md`, `src/constants/statuses.ts`, `src/constants/roles.ts`, và trạng thái git/PR hiện tại (`fix/create-admin-transaction-timeouts`, working tree clean, PR #70 đã merged vào `main`).
+- Ghi nhận các link production được cung cấp: storefront `https://ant-jewelry.vercel.app/`, admin `https://ant-jewelry.vercel.app/admin`.
+- Xác nhận trong repo (đối chiếu ghi nhận PARTIAL được cung cấp):
+  - R3.3: `globals.css` và một số component dùng token/biến màu, nhưng `src/constants/statuses.ts` và `src/constants/roles.ts` vẫn chứa hex cứng cho badge/background/color.
+  - R5.6: có test liên quan SEE MORE, R1.2, R4.1 và E2E bàn phím R3.1; bằng chứng unit test R2.5 hiện nghiêng về `collectBlogImages` (blog), chưa phải hành vi xóa ảnh sản phẩm/revalidate/lỗi storage theo đúng yêu cầu.
+  - R6.1: `docs/PERFORMANCE.md` ghi nguyên nhân/cải thiện và kết quả đo (median/range, đạt ngưỡng) nhưng đo trên local production build, chưa xác minh trên bản deploy.
+  - R6.2: có `docs/DEPLOY.md`, `README.md`, scripts production/migrate/create-admin; trước mục này repo chưa ghi nhận link production + trạng thái hoạt động thực tế.
+- Không thay đổi mã nguồn ứng dụng hay tài liệu kỹ thuật ngoài `AI_LOG.md` trong thay đổi này.
+
+### Kết quả kiểm chứng
+
+- Không chạy lint/typecheck/test/build/format:check vì chỉ cập nhật `AI_LOG.md` (markdown/log) và không có thay đổi code.
+
+### Hạn chế / AI sai ở đâu
+
+- Không tự xác minh trạng thái hoạt động thực tế của các URL production từ môi trường hiện tại; chỉ ghi nhận link do người dùng cung cấp.
+- Các nhận định R3.3/R5.6/R6.1/R6.2 được ghi theo nội dung yêu cầu và đối chiếu nhanh trong repo, không phải kết luận audit đầy đủ mới.
+
+---
+
 ## 2026-11-17 00:00:00 +07:00 - Add transaction timeout options to create-admin script
 
 ### Prompt nguyên văn đã dùng

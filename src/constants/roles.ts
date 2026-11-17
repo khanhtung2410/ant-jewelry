@@ -9,8 +9,8 @@ export const adminRole = {
 export type AdminRoleType = (typeof adminRole)[keyof typeof adminRole];
 
 export const ROLE_CONFIG: Record<AdminRoleType, StatusConfig> = {
-  [adminRole.ADMIN]: { label: 'Quản trị viên', bg: '#DBEAFE', color: '#1E40AF' },
-  [adminRole.EDITOR]: { label: 'Biên tập viên', bg: '#F1F5F9', color: '#334155' },
+  [adminRole.ADMIN]: { label: 'Quản trị viên', className: 'status-badge--info' },
+  [adminRole.EDITOR]: { label: 'Biên tập viên', className: 'status-badge--muted' },
 };
 
 export const ROLE_OPTIONS: ReadonlyArray<{ value: AdminRoleType; label: string }> = [

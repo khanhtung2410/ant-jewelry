@@ -5,19 +5,28 @@
 ### Môi trường đo
 
 - **Công cụ:** Lighthouse 13.6.0, Chrome headless (Windows, local), mobile emulation, simulated throttling (`--form-factor=mobile --throttling-method=simulate`).
-- **Bản đo:** production build local (`npm run build && npm run start`, `DATABASE_URL=file:./dev.db` với dữ liệu seed) tại `http://localhost:3000`.
-- **Lưu ý triển khai:** `docs/DEPLOY.md` ghi nhận chưa có bản deploy production được xác minh của ứng dụng này (URL `https://antjewelry.vn/` không khớp route `/p/[slug]`). Vì vậy các lần đo R6.1 được thực hiện trên bản production build chạy local; khi có URL deploy chính thức cần chạy lại cùng quy trình 3 lần/trang và cập nhật bảng dưới đây.
+- **Bản deploy (production):** `https://ant-jewelry.vercel.app/` (Home) và `https://ant-jewelry.vercel.app/p/aurora-band` (trang sản phẩm), đo ngày 2026-11-17.
+- **Bản production build local (tham chiếu):** `npm run build && npm run start` (`DATABASE_URL=file:./dev.db` với dữ liệu seed) tại `http://localhost:3000`.
 
-Mỗi trang được đo **3 lần liên tiếp** trên cùng bản build/cùng cấu hình. Bảng báo cáo **trung vị** và **dải (min–max)**.
+Mỗi trang được đo **3 lần liên tiếp** trên cùng bản/cùng cấu hình. Bảng báo cáo **trung vị** và **dải (min–max)**.
 
-### Kết quả (median; range)
+### Kết quả đo trên production deploy (median; range)
+
+| Trang | Performance | Accessibility | SEO | FCP (ms) | LCP (ms) | TBT (ms) |
+|---|---:|---:|---:|---:|---:|---:|
+| Home (`/`) | **84** (82–92) | **96** | **100** | 976 (970–1243) | 2893 (2869–2973) | 430 (199–515) |
+| Sản phẩm (`/p/aurora-band`) | **89** (81–91) | **100** | **100** | 957 (951–1666) | 2368 (2353–2866) | 305 (259–677) |
+
+**Mục tiêu:** Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95 (trung vị 3 lần). **Trạng thái:** Accessibility và SEO đạt trên cả hai trang. Performance trung vị đạt mục tiêu ở trang sản phẩm (89) nhưng **chưa đạt** ở Home (84) do dao động/TBT và chi phí render trên mobile; cần tối ưu thêm trên bản deploy.
+
+### Kết quả đo trên production build local (tham chiếu, median; range)
 
 | Trang | Performance | Accessibility | SEO | FCP (ms) | LCP (ms) | TBT (ms) |
 |---|---:|---:|---:|---:|---:|---:|
 | Home (`/`) | **92** (91–96) | **96** | **100** | 927 (919–930) | 3279 (2452–3329) | 126 (92–138) |
 | Sản phẩm (`/p/aurora-band`) | **98** (92–99) | **100** | **100** | 765 (764–770) | 2311 (2220–3358) | 64 (52–68) |
 
-**Mục tiêu:** Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95 (trung vị 3 lần). **Đạt** cho cả Home và trang sản phẩm.
+Kết quả local production build đạt mục tiêu trung vị cho cả hai trang; chênh lệch so với deploy phản ánh khác biệt hạ tầng/mạng/cache/CDN và biến thiên đo.
 
 ### Baseline trước R6.1 (đo local, production build, 3 lần — tham chiếu)
 

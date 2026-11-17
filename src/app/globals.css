@@ -75,3 +75,34 @@ hr {
 .product-image-frame {
   background-color: var(--product-image-background);
 }
+
+/* Status badge tokens (used by StatusBadge component). */
+.status-badge--success {
+  background-color: #dcfce7;
+  color: #15803d;
+}
+
+.status-badge--muted {
+  background-color: #f1f5f9;
+  color: #334155;
+}
+
+.status-badge--warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.status-badge--danger {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.status-badge--info {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.status-badge--unknown {
+  background-color: #e5e7eb;
+  color: #374151;
+}

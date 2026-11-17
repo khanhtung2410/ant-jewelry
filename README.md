@@ -209,6 +209,10 @@ Production dùng Vercel + PostgreSQL (schema trong `prisma/postgresql/`). Ảnh 
 được lưu trên filesystem local (`PRODUCT_IMAGE_UPLOAD_DIR`, mặc định `./uploads`) và phục vụ
 qua `/uploads/...`.
 
+- **Storefront (production):** https://ant-jewelry.vercel.app/
+- **Admin:** https://ant-jewelry.vercel.app/admin
+- Trạng thái kiểm chứng và kết quả Lighthouse trên bản deploy: xem [`docs/DEPLOY.md`](docs/DEPLOY.md) và [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
+
 1. Provision PostgreSQL và cấu hình `DATABASE_URL`, `AUTH_SECRET`,
    `SITE_URL`, `PRODUCT_IMAGE_UPLOAD_DIR` trong môi trường production (`DIRECT_URL` không bắt buộc).
 2. Deploy Production lên Vercel; `vercel.json` dùng `npm run build:production`, tự động chạy
