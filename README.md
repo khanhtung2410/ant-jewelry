@@ -215,9 +215,10 @@ qua `/uploads/...`.
    `prisma migrate deploy` trước `next build` (chỉ ở Production; Preview bỏ qua vì dùng chung DB).
    Có thể chạy migration thủ công bằng `npm run db:migrate:production` và
    `npm run db:migrate:status:production` với URL **direct** (`db.prisma.io`, không dùng pooled).
-3. Tạo ADMIN đầu tiên bằng `npm run db:create-admin:production`. Không chạy `db:seed`
-   trên production.
-4. Kiểm tra `/robots.txt`, `/sitemap.xml`, đăng nhập admin, dữ liệu và upload ảnh sau deploy.
+3. (Tuỳ chọn) Nạp catalogue demo vào PostgreSQL bằng `npm run db:seed:production` (dùng URL
+   **direct**, không tạo user demo). `npm run db:seed` chỉ dành cho SQLite local.
+4. Tạo ADMIN đầu tiên bằng `npm run db:create-admin:production`.
+5. Kiểm tra `/robots.txt`, `/sitemap.xml`, đăng nhập admin, dữ liệu và upload ảnh sau deploy.
 
 Lưu ý: trên môi trường serverless/ephemeral (như Vercel), filesystem local không bền vững qua
 redeploy/instance mới; cần mount/storage bền vững có quyền ghi nếu muốn giữ ảnh upload. Nếu

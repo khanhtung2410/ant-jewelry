@@ -11,7 +11,7 @@ Production target: **Vercel** (Next.js) + **PostgreSQL**. Product image uploads 
 - Vercel project connected to this repository (production environment).
 - PostgreSQL database with an application URL (`DATABASE_URL`). A separate direct URL (`DIRECT_URL`) is optional and not required by the current schema/build.
 - A real, monitored owner email for the first ADMIN (not `admin@antjewelry.local`).
-- Decide whether production starts empty or needs approved data migration. Do not run `db:seed` on production.
+- Decide whether production starts empty or needs the demo catalogue. `npm run db:seed` is local SQLite only; production may use `npm run db:seed:production`, which seeds categories, products, blog posts, hero slides and settings but **never** the demo users.
 
 ## Environment variables (Vercel)
 
@@ -42,13 +42,18 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
    ```bash
    node -e "const{Client}=require('pg');const c=new Client({connectionString:process.env.DATABASE_URL,connectionTimeoutMillis:15000});c.connect().then(()=>{console.log('CONNECTED');return c.end()}).catch(e=>{console.log(e.code||'',e.message);process.exit(1)})"
    ```
-3. **Deploy** from Vercel (connected repo/branch). Build uses PostgreSQL Prisma client. `generateStaticParams` for blog/category/product slugs returns empty params if tables are missing (`P2021`) so a build can complete before data exists, but migrations should be applied for correct runtime data.
-4. **Create the first ADMIN** (after migrations):
+3. **(Optional) Seed the demo catalogue** (before deploying, so the build prerenders real slugs):
+   ```bash
+   npm run db:seed:production
+   ```
+   Upserts the demo categories, products, blog posts, hero slides and settings from the mocks. It refuses a SQLite URL, skips the demo `admin@antjewelry.local` / `editor@antjewelry.local` accounts, and is safe to re-run. Use the **direct** `db.prisma.io` string. If you seed after a deploy, redeploy (or wait for the 15-minute revalidate) so cached empty pages are regenerated.
+4. **Deploy** from Vercel (connected repo/branch). Build uses PostgreSQL Prisma client. `generateStaticParams` for blog/category/product slugs returns empty params if tables are missing (`P2021`) so a build can complete before data exists, but migrations should be applied for correct runtime data.
+5. **Create the first ADMIN** (after migrations):
    ```bash
    npm run db:create-admin:production
    ```
    Interactive command: confirms the remote DB host, prompts for a real owner email, requires a 16+ character password (not echoed), hashes it, and refuses if an ADMIN already exists. Clear `DATABASE_URL` from your shell after use; run `npm run db:generate` before returning to local SQLite dev.
-5. **Verify deployment:**
+6. **Verify deployment:**
    - Public screens: Home (`/`), category (`/c/<slug>`), product (`/p/<slug>`), Blog list (`/blog`), Blog detail (`/blog/<slug>`), and other public pages as applicable.
    - Admin: `/admin/login`, dashboard and content management.
    - Upload a product image in admin and confirm it displays.
