@@ -3,7 +3,7 @@
 > **Trạng thái tài liệu:** Kiến trúc đề xuất, đã đối chiếu với work tree hiện tại  
 > **Tài liệu nguồn:** `ANT_JEWELRY_SAD_v1.1.docx`  
 > **Cập nhật theo work tree:** 2026-11-09  
-> **Trạng thái work tree:** Có một Next.js application duy nhất (16.4.5, App Router) với React 19.3.0, Tailwind CSS v4, TypeScript strict, ESLint 9, Prettier 3 và Vitest 5. `src/types/domain.ts` định nghĩa `Product`, `ProductColor`, `ProductImage`, `Category`, `BlogPost`, `HeroSlide`, `Settings` và `Role`; `src/lib/mock/` chứa mock data có type và `src/lib/queries/` là tầng truy cập dữ liệu duy nhất cho page. `.env.example` và `.github/pull_request_template.md` đã có. Chưa có Database, Prisma, Authentication, Server Action, Route Handler nghiệp vụ hoặc workflow nghiệp vụ.
+> **Trạng thái work tree:** Có một Next.js application duy nhất (16.4.5, App Router) với React 19.3.0, Tailwind CSS v4, TypeScript strict, ESLint 9, Prettier 3, Vitest 5 và Playwright. Domain types nằm ở `src/features/shared/domain/domain.ts`; dữ liệu mẫu và truy vấn nằm gần domain trong `src/features/*/mocks/` và `src/features/*/queries/`. Đã có Prisma 7 (SQLite cho local/test, PostgreSQL cho production), Authentication bằng session cookie ký HMAC, Server Actions, Route Handler upload ảnh và các luồng nghiệp vụ ADMIN/EDITOR. `.env.example` và `.github/pull_request_template.md` đã có.
 > **Ngôn ngữ:** Nội dung diễn giải bằng tiếng Việt; giữ nguyên các technical terms, tên công nghệ, tên module, tên bảng, tên API, identifier và code terms bằng tiếng Anh.
 
 ---
@@ -34,13 +34,13 @@ Các trạng thái được sử dụng:
 
 ### 1.2. Giới hạn của tài liệu
 
-Work tree hiện tại có trang chủ giới thiệu dùng Server Component với dữ liệu đọc qua query functions; hero slider và product carousel là Client Components nhận dữ liệu qua props. Database chưa tồn tại. Vì vậy, tài liệu không khẳng định:
+Work tree hiện tại có storefront và admin dùng Server Component đọc dữ liệu qua Prisma query functions; hero slider, product carousel và các form là Client Components nhận dữ liệu qua props. Database, Authentication và Server Actions đã được triển khai. Vì vậy, tài liệu không khẳng định:
 
-- Cấu trúc module đã hoàn chỉnh; các thư mục `src/components/`, `src/features/`, `src/lib/` và `src/server/` vẫn là đề xuất.
+- Cấu trúc module trong các phần "đề xuất" phía dưới là sơ đồ cuối cùng; code hiện tại nằm chủ yếu trong `src/features/` và `src/app/`.
 - Phiên bản framework hoặc package ngoài các dependency đang có trong `package.json`.
-- Database schema vật lý, migrations, indexes hoặc constraints đã tồn tại.
-- Các Server Component, Server Action hoặc Route Handler nghiệp vụ đã được triển khai.
-- Cấu hình Authentication, Authorization hoặc bảo mật đã hoạt động.
+- Database schema production, migrations, indexes hoặc constraints đã được áp dụng lên môi trường deploy.
+- Các luồng nghiệp vụ mới ngoài những gì đã có trong `src/features/*/actions.ts` và `src/app/api/`.
+- Cấu hình hạ tầng deploy (secrets, storage bền vững) đã được xác minh ngoài repo.
 - Hạ tầng Hosting, Deployment, CI/CD, Logging hoặc Monitoring thực tế.
 
 Các sơ đồ, module và cấu trúc thư mục trong tài liệu là định hướng đề xuất, trừ khi được ghi rõ là đã có trong work tree. Phần hiện trạng chỉ mô tả đúng những gì đang tồn tại tại thời điểm cập nhật.
@@ -263,15 +263,13 @@ ant-jewelry/
 
 - Chỉ có một Next.js application ở thư mục gốc, source code trong `src/`; chưa có thư mục `frontend/` hoặc `backend/`.
 - `src/app/layout.tsx` tải Montserrat (nội dung) và Roboto Mono (heading/nav) bằng `next/font`, đọc `getCategories()` và `getSettings()` rồi render `SiteHeader`/`SiteFooter` cho toàn bộ route.
-- `src/components/` chứa UI dùng chung: `header.tsx` (menu HOME, PRODUCTS có dropdown 4 danh mục, BLOG, CONTACT; hỗ trợ bàn phím; dưới breakpoint `md` có nút MENU/CLOSE mở navigation và dropdown danh mục dạng accordion; link active và item dropdown dùng gạch chân 2px `--underline-color`), `footer.tsx` (địa chỉ, điện thoại, email, INFO, HELP, SOCIAL; dưới breakpoint `md` các cột HOME/INFO/HELP/SOCIAL thu gọn thành accordion có toggle), `icons.tsx` (SVG dùng `currentColor`), `product-card.tsx` (khung ảnh vuông, đổi ảnh khi hover, tên/giá/swatch), `carousel.tsx` (5 card mỗi trang, nút điều hướng và VIEW PRODUCTS) và `blog-row.tsx` (ảnh bìa, ngày, tiêu đề, tóm tắt).
+- UI dùng chung nằm gần domain: `src/features/layout/components/` chứa `header.tsx` (menu HOME, PRODUCTS có dropdown 4 danh mục, BLOG, CONTACT; hỗ trợ bàn phím; dưới breakpoint `md` có nút MENU/CLOSE và dropdown dạng accordion; link active dùng gạch chân 2px `--underline-color`), `footer.tsx`, `icons.tsx`, `hero-slider.tsx` và `contact-popover.tsx`; `src/features/products/components/` chứa `product-card.tsx` (khung ảnh vuông, đổi ảnh hover, tên/giá/swatch) và `carousel.tsx`; `src/features/blog/components/blog-row.tsx` render ảnh bìa, ngày, tiêu đề và tóm tắt. Không còn thư mục `src/components/`.
 - Dropdown PRODUCTS ở header (R3.1) dùng được bằng bàn phím: Enter mở menu, Tab đi lần lượt qua các link danh mục, Tab ra khỏi dropdown mới đóng, Esc đóng và trả focus về nút; ArrowUp/ArrowDown di chuyển giữa các link. E2E `keyboard users can open the PRODUCTS menu and reach every category link` chỉ dùng phím.
-- `src/lib/format-price.ts` định dạng giá VND bằng dấu chấm phân cách, ví dụ `10000000` → `10.000.000`; component tự thêm đơn vị hiển thị.
-- `src/lib/mock/` chứa 24 sản phẩm (23 hiển thị, 1 ẩn) thuộc 4 `ProductType` kiêm danh mục (WEDDING RING, ENGAGEMENT RING, NECKLACE, OTHER JEWELRY), 6 bài Blog (5 published, 1 draft), 3 hero slide (2 hiển thị, 1 ẩn) và Settings giả lập.
-- Ảnh sản phẩm mock dùng `public/mock/products/ring-*.webp`; `ring-2-1` và `ring-5-2` là ảnh phụ (góc chụp thứ hai) của `ring-2` và `ring-5`. Sản phẩm chưa có ảnh riêng dùng SVG placeholder theo `ProductType`.
-- `src/lib/queries/` là tầng truy cập dữ liệu duy nhất cho page; query trả bản clone, lọc danh mục bằng `ProductType` và loại bản ghi hidden/draft khỏi storefront.
-- ESLint chặn `src/app/**` import trực tiếp `@/lib/mock`.
-- Upload và lưu trữ ảnh sản phẩm đã triển khai trên local filesystem (`/uploads`); chính sách lưu ảnh Blog chưa được xác định.
-- Các script hiện có: `dev`, `build`, `start`, `lint`, `typecheck`, `format`, `format:check`, `test`, `test:watch`.
+- `src/features/shared/lib/format-price.ts` định dạng giá VND bằng dấu chấm phân cách, ví dụ `10000000` → `10.000.000`; component tự thêm đơn vị hiển thị.
+- Dữ liệu mẫu nằm trong `src/features/*/mocks/` (sản phẩm, Blog, hero slide) và được seed vào SQLite qua `prisma/seed.ts`; storefront đọc qua query trong `src/features/*/queries/`, không đọc mock trực tiếp.
+- Ảnh sản phẩm mẫu dùng `public/mock/products/ring-*.webp`; `ring-2-1` và `ring-5-2` là ảnh phụ của `ring-2` và `ring-5`.
+- Upload và lưu trữ ảnh sản phẩm dùng local filesystem (`/uploads`); xoá file đi qua hàng chờ `PendingImageDeletion` để thử lại khi storage lỗi.
+- Các script hiện có được liệt kê trong `README.md` mục 3 (gồm `db:*`, `test:e2e`, build production).
 
 ### 5.2. Kiến trúc đề xuất
 
@@ -913,7 +911,7 @@ ant-jewelry/
 └── .gitignore
 ```
 
-Đã có `src/lib/mock/`, `src/lib/queries/` và `src/components/` (header, footer, icon dùng chung). Chưa có `src/features/`, `src/server/` hoặc `prisma/`.
+Cấu trúc hiện tại dùng `src/features/` (admin, auth, blog, layout, products, settings, shared, users), `src/constants/`, `src/app/(public)`, `src/app/admin` và `src/app/api`, kèm `prisma/` (schema SQLite/PostgreSQL, migrations, seed). Không còn `src/lib/mock/`, `src/lib/queries/` hay `src/components/`; dữ liệu mẫu nằm trong `src/features/*/mocks/`.
 
 ### 13.2. Cấu trúc đề xuất cho single Next.js app
 

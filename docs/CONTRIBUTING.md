@@ -78,12 +78,11 @@ Chỉ dùng chữ ASCII, chữ số và dấu gạch ngang trong tên nhánh. Kh
 
 ```text
 src/app/          ← route, page, layout, route handler (hiện có)
-src/types/        ← domain contracts (hiện có)
+src/features/     ← domain modules: components/, actions/, queries/, lib/, mocks/ (hiện có)
+src/constants/    ← hằng số và cấu hình domain (hiện có)
+prisma/           ← schema, migrations và seed (hiện có)
 public/           ← static assets (hiện có)
 docs/             ← tài liệu dự án (hiện có)
-src/components/   ← component giao diện dùng chung (tạo khi cần)
-src/lib/          ← tiện ích và logic dùng chung (tạo khi cần)
-src/constants/    ← hằng số và cấu hình domain (tạo khi cần)
 ```
 
 Alias `@/*` trong `tsconfig.json` trỏ về `src/*`. Đặt code gần route hoặc domain đang sử dụng; chỉ tạo thư mục dùng chung khi có nhiều nơi thực sự cần dùng.

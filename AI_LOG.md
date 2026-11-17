@@ -1,4 +1,53 @@
-## 2026-11-17 22:59:20 +07:00 - Move remaining colors into tokens (R3.3b)
+## 2026-11-17 23:48:12 +07:00 - Align Prisma 7 setup, docs, lockfile and SQLite paths (D1, R5.1b, R5.1c, D2, D5)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> D1 — Xoá skill AI khỏi repo. PR #38 (“refactor: local product image storage”, +177k dòng) commit ~9 MB skill AI, chép trùng ở .opencode/ và .github/prompts/. git rm -r --cached hai thư mục này, thêm vào .gitignore, PR riêng.
+> git ls-files .opencode .github/prompts | wc -l = 0.
+> R5.1b — README theo Prisma 7. README:17 còn ghi “Prisma 6”. Prisma 7 không tự generate sau db push, nên thêm bước npm run db:generate (hoặc postinstall). Bổ sung db:seed:production vào bảng scripts. Thêm dotenv vào package.json, vì prisma.config.ts import nó. Kiểm tra file:./dev.db resolve đúng vào prisma/.
+> clone mới vào thư mục trống, chỉ làm theo README → npm run dev chạy, đăng nhập admin được. Ghi lại output vào PR.
+> R5.1c — Tài liệu cũ. docs/ARCHITECTURE.md (dòng ~6, 266, 916) vẫn mô tả src/lib/mock, src/components, “Chưa có Database, Prisma, Authentication”; CONTRIBUTING.md:84 nhắc src/components/. Cập nhật theo code hiện tại.
+> D2 — Lockfile đồng bộ. npm ci lỗi “package.json and package-lock.json are not in sync” (thiếu optional deps @tailwindcss/oxide-*). Chạy npm install rồi commit lockfile; khai báo engines.node / packageManager cho cả nhóm dùng cùng phiên bản.
+> rm -rf node_modules && npm ci chạy không lỗi.
+> D5 — 🚨 Đường dẫn SQLite lệch nhau sau khi lên Prisma 7. Prisma 7 CLI (db push, đọc prisma.config.ts) hiểu file:./x.db tính từ gốc repo, còn resolveSqliteUrl tự viết trong prisma/seed.ts:8 và src/shared/db/prisma.ts:22 luôn ghép thêm prisma/. Kết quả khi mentor chạy npm test: db push tạo bảng ở ./test.db, seed mở prisma/test.db rỗng → The table main.Category does not exist. Clone mới làm theo README cũng hỏng như vậy với dev.db; máy em không lỗi chỉ vì prisma/dev.db có sẵn từ thời Prisma 6. Chọn một quy ước (ví dụ file:./prisma/dev.db trong .env.example, vitest.database.ts, playwright.config.ts) và bỏ phần tự ghép prisma/, hoặc dùng chung một helper cho cả prisma.config.ts, seed và app.
+> clone mới vào thư mục trống: db:push → db:seed → npm run dev chạy được; npm test pass; repo chỉ còn một file DB cho mỗi môi trường (không có ./dev.db lẫn prisma/dev.db).
+>
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: PR #80 đã merge; local `main` còn commit squash trước đó, đã fetch, xác nhận `git diff HEAD origin/main` rỗng rồi `git reset --hard origin/main` về `aa708fc`.
+- **D1:** đã kiểm tra `git ls-files .opencode .github/prompts` → **0**; PR #73 (`chore: stop tracking local AI skill assets`) đã `git rm --cached` và thêm `.opencode/`, `.github/prompts/` vào `.gitignore` từ trước. Không có thay đổi để mở PR riêng trong lượt này; ghi nhận trạng thái đã đạt yêu cầu.
+- **D5:** chọn quy ước `file:./prisma/<env>.db` ở mọi nơi: `.env.example`, `vitest.database.ts`, `e2e/database.ts`; bỏ hẳn các hàm `resolveSqliteUrl` tự ghép `prisma/` trong `src/features/shared/db/prisma.ts`, `prisma/seed.ts`, `prisma/create-admin.ts` (giữ lại `export default prisma`). `vitest.global-setup.ts` resolve URL theo cwd thay vì theo thư mục `prisma/`. Cập nhật `.env` local. Xoá 2 file DB trùng ở gốc repo (`dev.db`, `test.db`); giữ `prisma/{dev,test,e2e}.db`.
+- **R5.1b:** README đổi Prisma 6 → 7; thêm bước `npm run db:generate` sau `db:push` (Prisma 7 không tự generate); thêm `db:seed:production` vào bảng scripts; ghi chú `prisma.config.ts` dùng gói `dotenv`; cập nhật mô tả URL SQLite. `package.json` thêm `dotenv`, `engines.node >=22`, `engines.npm >=10`, `packageManager: npm@10.9.9`.
+- **R5.1c:** `docs/ARCHITECTURE.md` các mục 1.2, 5.1, 13.1 cập nhật theo cấu trúc `src/features/`, `src/app/(public|admin|api)`, Prisma 7, Authentication, Server Action; không còn `src/lib/mock`, `src/components`, “Chưa có Database…”. `docs/CONTRIBUTING.md` mục cấu trúc file đổi sang `src/features/`, `prisma/`, `src/constants/`.
+- **D2:** chạy `npm install` làm lockfile đồng bộ (bổ sung optional deps `@tailwindcss/oxide-*`, dotenv). Phát hiện `better-sqlite3@13` chỉ build từ source (`node-gyp rebuild`) nên `npm ci` fail vì máy không có VC++ toolset; đổi xuống `^12.11.1` (cùng phiên bản `@prisma/adapter-better-sqlite3` đang dùng, có prebuild) rồi chạy lại `npm install`.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8, lưu tại `C:\Users\Hello\AppData\Local\Temp\opencode\`)
+
+- `rm -rf node_modules && npm ci` → exit 0 (`added 569 packages...`).
+- Sau `npm ci` phải chạy `npm run db:generate` (đúng như README đã ghi); sau đó `npm run lint`, `npm run typecheck`, `npm run format:check`, `npm test` (57 files / 258 tests), `npm run build` → đều exit 0.
+- `npm run db:push` báo `SQLite database "dev.db" at "file:./prisma/dev.db"`, `npm run db:seed` → exit 0.
+- **Clone mới** vào `...\Temp\opencode\fresh-ant` (thư mục trống), chỉ làm theo README: `npm install` → copy `.env.example` sang `.env` (đặt AUTH_SECRET) → `npm run db:push` → `npm run db:generate` → `npm run db:seed` → `npm run dev` → `GET /` 200, `GET /admin/login` 200, đăng nhập `admin@antjewelry.local` / `Admin@123` bằng Playwright → redirect tới `/admin`, tiêu đề admin hiển thị. `npm test` trong clone mới → 57 files / 258 tests, exit 0. Clone chỉ có `prisma/dev.db` (không có `./dev.db`).
+- Lần đầu `npm ci` fail do build `better-sqlite3@13` từ source; sau khi đổi sang v12 thì pass. Lần đầu chạy checks sau `npm ci` fail do Prisma Client chưa generate; đã chạy `npm run db:generate` rồi pass.
+
+### Hạn chế / AI sai ở đâu
+
+- Khi viết lại `src/features/shared/db/prisma.ts` đã lỡ bỏ `export default prisma`; typecheck/test báo lỗi, đã thêm lại.
+- Không mở PR riêng cho D1 vì yêu cầu đã được đáp ứng sẵn bởi PR #73 (số file tracked = 0); mở PR trống là không có ý nghĩa.
+- Không chạy E2E Playwright trong clone mới (webServer dùng `prisma db push --force-reset` bị Prisma chặn với AI agent); dùng Playwright trực tiếp trên dev server để kiểm chứng đăng nhập admin.
+
+**So sánh Figma:** không áp dụng (chỉ docs, cấu hình và DB path).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
