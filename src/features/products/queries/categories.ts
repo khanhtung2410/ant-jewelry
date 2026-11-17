@@ -100,28 +100,6 @@ export async function getCategoryById(
   }
 }
 
-export async function getCategoryByType(
-  type: ProductType,
-  options: { includeHidden?: boolean } = {},
-): Promise<Category | null> {
-  'use cache';
-  try {
-    const record = await prisma.category.findFirst({
-      where: {
-        type,
-        ...(options.includeHidden ? {} : { status: visibilityStatus.VISIBLE }),
-      },
-    });
-
-    return record ? mapCategory(record) : null;
-  } catch (error) {
-    if (isMissingTableError(error)) {
-      return null;
-    }
-    throw error;
-  }
-}
-
 /**
  * Category pages filter products by `categoryId`, so changing a category's
  * type keeps every product assigned to that category. Only the columns needed

@@ -394,7 +394,7 @@ export async function moveProductImage(
     });
   });
 
-  revalidateProductPages();
+  revalidateProductPages({ immediate: true });
 }
 
 export async function deleteProductImage(productId: string, imageId: string, _formData: FormData) {

@@ -19,7 +19,6 @@ export {
   getCategories,
   getCategoryById,
   getCategoryBySlug,
-  getCategoryByType,
   getProductsByCategorySlug,
   getStorefrontCategorySections,
 } from '@/features/products/queries/categories';
