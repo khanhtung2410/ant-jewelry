@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
+    "db:seed:production": "npm run db:generate:production && tsx prisma/seed-production.ts",
     "db:generate": "prisma generate",
     "db:generate:production": "prisma generate --config prisma.postgresql.config.ts",
     "db:migrate:production": "prisma migrate deploy --config prisma.postgresql.config.ts",
