@@ -20,7 +20,7 @@ export type ContactSettings = Pick<Settings, 'siteName' | 'phone' | 'facebookUrl
 
 const dialogBackdropClass = 'fixed inset-0 z-[60] grid place-items-center bg-black/10 p-4';
 const dialogPanelClass =
-  'relative flex h-auto w-[215px] flex-col overflow-hidden rounded-3xl bg-background px-4 pb-6 pt-4 shadow-[0_8px_24px_rgba(0,0,0,0.28)]';
+  'relative flex h-auto w-[215px] flex-col overflow-hidden rounded-3xl bg-background px-4 pb-6 pt-4 shadow-[0_8px_24px_var(--popover-shadow-color)]';
 
 interface ContactDialogContextValue {
   settings: ContactSettings;
@@ -104,7 +104,7 @@ export function ContactPopoverPanel({
           rel="noreferrer"
           className="flex items-center gap-3 text-[14px] text-[var(--underline-color)] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
         >
-          <FacebookIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-black p-1.5 text-black" />
+          <FacebookIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-[var(--foreground)] p-1.5 text-[var(--foreground)]" />
           <span>{settings.siteName}</span>
         </a>
 
@@ -114,7 +114,7 @@ export function ContactPopoverPanel({
           rel="noreferrer"
           className="flex items-center gap-3 text-[14px] text-[var(--underline-color)] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
         >
-          <InstagramIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-black p-1.5 text-black" />
+          <InstagramIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-[var(--foreground)] p-1.5 text-[var(--foreground)]" />
           <span>{settings.siteName}</span>
         </a>
 
@@ -122,7 +122,7 @@ export function ContactPopoverPanel({
           href={`tel:${settings.phone.replace(/\s+/g, '')}`}
           className="flex items-center gap-3 text-[14px] text-[var(--underline-color)] transition-colors hover:text-[var(--font-color)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
         >
-          <PhoneIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-black p-1.5 text-black [&_path]:origin-center [&_path]:scale-[0.8]" />
+          <PhoneIcon className="box-border h-8 w-8 shrink-0 overflow-visible rounded-full border border-[var(--foreground)] p-1.5 text-[var(--foreground)] [&_path]:origin-center [&_path]:scale-[0.8]" />
           <span>{settings.phone}</span>
         </a>
       </div>
