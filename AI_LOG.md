@@ -1,4 +1,43 @@
-## 2026-11-18 11:23:51 +07:00 - Upload an toàn trên Vercel và CDN cache (A1)
+## 2026-11-18 12:08:37 +07:00 - Loader và popover xác nhận cho thao tác ảnh
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> check upload in https://ant-jewelry.vercel.app/p/ivy-tennis-bracelet
+> when deleted images or upload multiple, there's a waiting time add a loader at bottom left of screen to notify user, uses ui ux promax skill for that
+> create a popover component for confirmation action (use ui/ux skill)
+> when press delete image from product, app currently using web alert, change to popover, scan if anything else use web alert and change to same popover confirm
+>
+> update doc file if needed
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: PR #86 đã merge; fetch, reset `main` về `9f44785`.
+- Kiểm tra production `https://ant-jewelry.vercel.app/p/ivy-tennis-bracelet`: trang mở 200, hiển thị sản phẩm và 4 ảnh (đều là ảnh mock — dữ liệu production chưa có upload thật; không đăng nhập ADMIN production được từ môi trường này).
+- Scan `window.confirm`/`window.alert`: chỉ có một chỗ gọi thật là `admin-confirm-form.tsx:21`; các match khác chỉ là chuỗi test `javascript:alert(1)` hoặc comment. Thay bằng popover dùng chung nên cả 5 call site (`product-image-management`, `hero-slide-management`, `category-management`, `blog-management`, product delete) đều hưởng lợi.
+- UI/UX Pro Max skill: thư mục `.opencode/skills/ui-ux-pro-max` chỉ còn file `.pyc` trong `__pycache__` (script `search.py` đã bị xoá khi dọn skill khỏi repo), không chạy lại được. Áp dụng các nguyên tắc đã ghi nhận từ lần dùng trước trong AI_LOG: dùng token màu/kiểu có sẵn, không dark/glassmorphism, ưu tiên khả năng tiếp cận (role, aria, focus, Escape).
+- Thêm `AdminStatusToast` (góc trái dưới, `role="status"`, `aria-live="polite"`, spinner) và `ConfirmPopover` (`role="dialog"`, `aria-modal`, focus vào Cancel, Esc/backdrop hủy, nút xác nhận). `AdminConfirmForm` giữ nguyên API/form action nhưng chặn submit lần đầu để mở popover, `requestSubmit()` sau khi xác nhận, và hiện toast “Deleting…” qua `useFormStatus`. `ProductImageManagement` hiện toast “Uploading i/n: tên file” trong vòng lặp gửi từng file.
+- Thêm test static render cho popover/toast. Cập nhật `docs/ARCHITECTURE.md`, `docs/HUONG_DAN_VAN_HANH.md`.
+- Verify production build local bằng Playwright (chặn API 700ms để thấy loader): loader góc trái dưới hiển thị `Uploading 1/2: large.png`; 2 ảnh upload xong; nút Delete mở popover “CONFIRM ACTION”; **0 native browser dialog**; Cancel đóng popover. Screenshot đính kèm PR.
+- `npm test` → 60 files / 263 tests pass; lint/typecheck/format:check/build exit 0.
+
+### Hạn chế / AI sai ở đâu
+
+- Không chạy được script UI/UX Pro Max vì source `.py` không còn (chỉ `.pyc`); đã ghi rõ và dùng nguyên tắc thiết kế đã lưu trong AI_LOG.
+- Lần đầu Playwright bị strict-mode vì có 2 dialog cùng lúc (product dialog + confirm popover); đã dùng `getByRole('dialog', { name: 'CONFIRM ACTION' })`.
+- Không verify được trên production thật (không có tài khoản ADMIN production); bằng chứng là production build local.
+
+**So sánh Figma:** không đổi bố cục tổng thể; loader/popover dùng token màu và kiểu bo góc hiện có của admin.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

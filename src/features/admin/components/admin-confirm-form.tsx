@@ -1,7 +1,20 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useFormStatus } from 'react-dom';
+import { AdminStatusToast } from './admin-status-toast';
+import { ConfirmPopover } from './confirm-popover';
 
+function PendingToast() {
+  const { pending } = useFormStatus();
+  return pending ? <AdminStatusToast message="Deleting…" /> : null;
+}
+
+/**
+ * Wraps a destructive Server Action form. Replaces window.confirm with an
+ * accessible in-app popover and shows a bottom-left busy indicator while the
+ * action runs.
+ */
 export function AdminConfirmForm({
   action,
   confirmMessage,
@@ -13,17 +26,44 @@ export function AdminConfirmForm({
   children: ReactNode;
   className?: string;
 }) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const confirmedRef = useRef(false);
+  const [open, setOpen] = useState(false);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (!confirmedRef.current) {
+      event.preventDefault();
+      setOpen(true);
+      return;
+    }
+    confirmedRef.current = false;
+  }
+
+  function cancel() {
+    setOpen(false);
+    formRef.current?.querySelector<HTMLButtonElement>('button')?.focus();
+  }
+
+  function confirm() {
+    confirmedRef.current = true;
+    setOpen(false);
+    formRef.current?.requestSubmit();
+  }
+
   return (
-    <form
-      action={action}
-      className={className}
-      onSubmit={(event) => {
-        if (!window.confirm(confirmMessage)) {
-          event.preventDefault();
-        }
-      }}
-    >
-      {children}
-    </form>
+    <>
+      <form ref={formRef} action={action} className={className} onSubmit={handleSubmit}>
+        {children}
+        <PendingToast />
+      </form>
+      {open ? (
+        <ConfirmPopover
+          message={confirmMessage}
+          onConfirm={confirm}
+          onCancel={cancel}
+          confirmLabel="Delete"
+        />
+      ) : null}
+    </>
   );
 }
