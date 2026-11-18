@@ -1,5 +1,4 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { getAdminSession } from '@/features/auth/session';
 import { prisma } from '@/features/shared/db/prisma';
 import type { ProductFormState } from '@/features/products/actions';
 

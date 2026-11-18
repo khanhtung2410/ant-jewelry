@@ -13,7 +13,6 @@ const {
   productCreateMock,
   productUpdateMock,
   productDeleteMock,
-  productColorFindManyMock,
   productImageFindFirstMock,
   productImageFindManyMock,
   productImageDeleteMock,
