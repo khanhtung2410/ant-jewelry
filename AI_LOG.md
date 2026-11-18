@@ -1,4 +1,60 @@
-## 2026-11-18 15:17:05 +07:00 - Tự generate Prisma và dọn file SQLite phụ (D6, D7)
+## 2026-11-18 15:53:46 +07:00 - Upload thật trên Vercel và Lighthouse sau upload (A1)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> Production https://ant-jewelry.vercel.app mở được cả 6 màn. Nhưng mentor quét 27 trang /p, /c trong sitemap: không trang nào dùng ảnh /uploads/, toàn bộ là ảnh mock. Nghĩa là luồng upload trên production chưa từng được chạy thật (AI_LOG.md:18 cũng ghi “chưa verify được trên Vercel thật”).
+>
+> A1 — Upload chạy được trên Vercel. Vercel Functions giới hạn body ~4,5 MB, app vẫn cho 5 MB/file × 10 file (product-image-validation.ts:1-2): một file 5 MB đã fail. Chọn một: giảm giới hạn (ví dụ 4 MB/request) và upload từng file một; hoặc nén/resize phía client trước khi gửi. Route src/app/uploads/[...path]/route.ts thêm s-maxage (CDN cache) + ETag, vì hiện mỗi lần miss là một function + một query kéo cả blob.
+> trên production: upload 1 ảnh ~4 MB và 3 ảnh cùng lúc → thành công; redeploy → ảnh vẫn hiện ở /p/<slug>; curl -I ảnh đó thấy x-vercel-cache: HIT ở lần thứ hai. Dán output + ảnh vào PR.
+>
+> vao /admin tren vercel
+> dung nick admin test : <email đã che> mk <đã che>
+> de test cac chuc nang cung nhu do light house
+>
+> update doc file if needed
+> add to ai log
+
+> Lưu ý: prompt gốc chứa email/mật khẩu ADMIN test; đã **che** trong log và không ghi vào repo/PR.
+
+### Đã tự kiểm chứng
+
+- Đồng bộ `main` (`8c21024`), tạo branch mới `fix/production-upload-verification`; giữ lại 2 ảnh deploy screenshot đã bị ghi đè trong working tree bằng stash/pop.
+- Đối chiếu code A1 đã có từ PR #86: 4 MB/file, đúng 1 file/request, UI gửi tuần tự, `/uploads/[...path]` có ETag + `s-maxage`.
+- Dùng tài khoản ADMIN do người dùng cung cấp (không lưu secrets) đăng nhập production bằng Playwright, mở `/admin/products?search=Ivy`, upload 1 PNG 3.78 MB rồi 3 ảnh cùng lúc vào sản phẩm Ivy Tennis Bracelet: 4 response API đều 201, thông báo “1 image(s) uploaded” và “3 image(s) uploaded”; trang `/p/ivy-tennis-bracelet` trả 200 và HTML chứa đúng storage key vừa upload. Không đăng nhập được bằng headless shell do Playwright vừa update thiếu browser revision 1255; đã dùng Chrome channel có sẵn.
+- Cache header production: `HEAD 1` → 200, `cache-control: public, max-age=31536000, immutable`, ETag, `x-vercel-cache=MISS`; `HEAD 2` → **HIT**; `HEAD 3` với `If-None-Match` → 304 + HIT. Vercel không trả lại `s-maxage` trong header dù app set; HIT vẫn xảy ra.
+- Lighthouse production lại sau upload (mobile, 1 warm-up bỏ + 3 lần): Home trung vị **95** (91/96/95, A11y 96, SEO 100); sản phẩm **97** (97/99/94, 100/100). JSON 3 lần mỗi trang lưu trong `docs/lighthouse-reports/` (ghi đè bộ cũ). Bài blog giữ số liệu lượt trước.
+- Cập nhật `docs/PERFORMANCE.md` (bảng + raw runs + trạng thái đạt rõ), `docs/DEPLOY.md` (bằng chứng upload thật, cache HIT, link ảnh mới), `AI_LOG.md`. Ảnh chụp mới: `admin-logged-in.png`, `admin-uploaded-images.png`, `product-with-uploaded-image.png` + 2 ảnh deploy được cập nhật.
+
+**Kết quả kiểm chứng** (capture UTF-8 bằng Node `spawnSync`/Playwright)
+
+```text
+admin login: https://ant-jewelry.vercel.app/admin
+large image (~3.78 MB): 1 image(s) uploaded
+batch of 3 images: 3 image(s) uploaded
+product page: status=200 contains uploaded key=true
+HEAD 1: status=200 ... x-vercel-cache=MISS
+HEAD 2: status=200 x-vercel-cache=HIT
+HEAD 3 (If-None-Match): status=304 x-vercel-cache=HIT
+Lighthouse: Home 95, Product 97
+```
+
+### Hạn chế / AI sai ở đâu
+
+- Không thể tự redeploy Production từ môi trường agent; bước “sau redeploy ảnh vẫn hiện” chưa chạy được. Ảnh nằm trong `ProductImageBlob` nên cơ chế bền vững, nhưng bằng chứng production sau redeploy vẫn cần mentor xác nhận.
+- Ảnh upload dùng sản phẩm thật trên production (Ivy Tennis Bracelet) theo yêu cầu test; 4 ảnh mới được thêm vào dữ liệu production.
+- Lần đầu script lấy URL upload sai cấu trúc (`entry.images.images`) nên log “uploaded urls: []”; đã lấy URL trực tiếp từ response để kiểm tra cache. Không để lộ credentials trong log hay repo.
+
+**So sánh Figma:** không đổi layout; ảnh chụp production dùng để đối chiếu tiếp.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
