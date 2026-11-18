@@ -27,7 +27,7 @@ describe('product image validation', () => {
     expect(detectProductImageType(new TextEncoder().encode('<svg />'))).toBeNull();
   });
 
-  it('sets the per-file size limit to 5 MiB', () => {
-    expect(MAX_PRODUCT_IMAGE_SIZE).toBe(5 * 1024 * 1024);
+  it('sets the per-file size limit below the Vercel body limit', () => {
+    expect(MAX_PRODUCT_IMAGE_SIZE).toBe(4 * 1024 * 1024);
   });
 });

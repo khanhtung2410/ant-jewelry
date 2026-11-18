@@ -3,7 +3,6 @@ import { prisma } from '@/features/shared/db/prisma';
 import { canManageProducts } from '@/features/shared/lib/permissions';
 import {
   MAX_PRODUCT_IMAGE_SIZE,
-  MAX_PRODUCT_IMAGES_PER_UPLOAD,
   detectProductImageType,
 } from '@/features/products/lib/product-image-validation';
 import { enqueueProductImageDeletions } from '@/features/products/server/product-image-cleanup';
@@ -56,24 +55,23 @@ export async function POST(
     return jsonError('Expected a multipart form upload.', 400);
   }
 
+  // One file per request keeps the multipart body below the Vercel Function
+  // limit; the admin UI loops over the selected files.
   const fileEntries = formData.getAll('files');
-  if (fileEntries.length === 0 || fileEntries.some((entry) => !(entry instanceof File))) {
-    return jsonError('Select one or more valid image files.', 400);
-  }
-  if (fileEntries.length > MAX_PRODUCT_IMAGES_PER_UPLOAD) {
-    return jsonError(`Upload at most ${MAX_PRODUCT_IMAGES_PER_UPLOAD} images at a time.`, 400);
+  if (fileEntries.length !== 1 || !(fileEntries[0] instanceof File)) {
+    return jsonError('Upload exactly one image per request.', 400);
   }
 
-  const files = fileEntries.filter((entry): entry is File => entry instanceof File);
+  const files = [fileEntries[0] as File];
   const validatedFiles: ValidatedFile[] = [];
   for (const file of files) {
     if (file.size === 0 || file.size > MAX_PRODUCT_IMAGE_SIZE) {
-      return jsonError('Each image must be greater than 0 bytes and no larger than 5 MB.', 413);
+      return jsonError('Each image must be greater than 0 bytes and no larger than 4 MB.', 413);
     }
 
     const bytes = new Uint8Array(await file.arrayBuffer());
     if (bytes.length === 0 || bytes.length > MAX_PRODUCT_IMAGE_SIZE) {
-      return jsonError('Each image must be greater than 0 bytes and no larger than 5 MB.', 413);
+      return jsonError('Each image must be greater than 0 bytes and no larger than 4 MB.', 413);
     }
     const type = detectProductImageType(bytes);
     if (!type) {
@@ -95,16 +93,9 @@ export async function POST(
       uploaded.push({ ...stored, type: file.type });
     }
   } catch (error) {
+    // A single-file request cannot leave a partially uploaded object behind;
+    // the metadata-error branch below handles cleanup after a successful write.
     console.error('Product image upload failed:', error);
-    if (uploaded.length > 0) {
-      try {
-        await enqueueProductImageDeletions(uploaded.map((image) => image.storageKey));
-      } catch (cleanupError) {
-        // Cleanup is best-effort; failed keys stay queued for a later retry.
-        console.error('Could not queue uploaded product images for cleanup:', cleanupError);
-      }
-    }
-
     return jsonError('Image upload failed. Please retry.', 500);
   }
 

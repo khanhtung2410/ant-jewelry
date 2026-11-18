@@ -56,7 +56,8 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 6. **Verify deployment:**
    - Public screens: Home (`/`), category (`/c/<slug>`), product (`/p/<slug>`), Blog list (`/blog`), Blog detail (`/blog/<slug>`), and other public pages as applicable.
    - Admin: `/admin/login`, dashboard and content management.
-   - Upload a product image in admin and confirm it displays, then redeploy and confirm the image still displays (bytes come from `ProductImageBlob`, not the filesystem).
+   - Upload one image near 4 MB and a batch of three images in admin (the UI sends them one per request) and confirm all display, then redeploy and confirm they still display (bytes come from `ProductImageBlob`, not the filesystem).
+   - `curl -I` an uploaded `/uploads/...` URL twice: expect `cache-control: ... s-maxage=31536000 ...`, an `etag`, and `x-vercel-cache: HIT` on the second request. A repeat request with matching `If-None-Match` should return 304.
    - Check `/robots.txt`, `/sitemap.xml`, and canonical/`SITE_URL` behavior.
 
 ## Đối chiếu Figma ↔ production (6 màn)

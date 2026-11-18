@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MAX_PRODUCT_IMAGES_PER_UPLOAD } from '@/features/products/lib/product-image-validation';
 import { POST } from './route';
 
 const mocks = vi.hoisted(() => ({
@@ -94,36 +93,30 @@ describe('POST product image upload', () => {
     expect(mocks.revalidatePath).toHaveBeenCalledWith('/c/[slug]', 'page');
   });
 
-  it('rejects requests with too many files before uploading anything', async () => {
-    const response = await POST(createUploadRequest(MAX_PRODUCT_IMAGES_PER_UPLOAD + 1), {
+  it('rejects batched requests so every upload stays under the body limit', async () => {
+    const response = await POST(createUploadRequest(2), {
       params: Promise.resolve({ productId: 'product-1' }),
     });
     const body = (await response.json()) as { error: string };
 
     expect(response.status).toBe(400);
-    expect(body.error).toMatch(/at most 10 images/i);
+    expect(body.error).toMatch(/exactly one image per request/i);
     expect(mocks.uploadProductImage).not.toHaveBeenCalled();
     expect(mocks.createProductImage).not.toHaveBeenCalled();
   });
 
-  it('returns an upload error even when cleanup of a partial upload fails', async () => {
-    mocks.uploadProductImage
-      .mockImplementationOnce(async (productId: string) => ({
-        storageKey: `products/${productId}/uploaded.png`,
-        url: `/uploads/products/${productId}/uploaded.png`,
-      }))
-      .mockRejectedValueOnce(new Error('write failed'));
-    mocks.enqueueProductImageDeletions.mockRejectedValueOnce(new Error('cleanup failed'));
+  it('returns an upload error when the storage write fails', async () => {
+    mocks.uploadProductImage.mockRejectedValueOnce(new Error('write failed'));
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    const response = await POST(createUploadRequest(2), {
+    const response = await POST(createUploadRequest(), {
       params: Promise.resolve({ productId: 'product-1' }),
     });
     const body = (await response.json()) as { error: string };
 
     expect(response.status).toBe(500);
     expect(body.error).toMatch(/upload failed/i);
-    expect(mocks.enqueueProductImageDeletions).toHaveBeenCalledTimes(1);
+    expect(mocks.enqueueProductImageDeletions).not.toHaveBeenCalled();
     expect(consoleError).toHaveBeenCalled();
     consoleError.mockRestore();
   });

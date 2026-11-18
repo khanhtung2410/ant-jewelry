@@ -841,7 +841,7 @@ Không đưa ra thiết kế chi tiết cho các nội dung này như thể đã
 ### 10.5. Last-ADMIN race và giới hạn URL/upload (R4.3, R4.4)
 - `saveUserAccess` chạy kiểm tra "còn ADMIN đang hoạt động" và cập nhật trong cùng transaction `Serializable`. Lỗi serialization tạm thời (`P2034`, write conflict, `database is locked`) được retry tối đa 3 lần, nên hai request đồng thời hạ quyền hoặc khoá hai ADMIN cuối không thể cùng lọt qua.
 - `isPathOrUrl` chỉ nhận path bắt đầu bằng đúng một dấu `/` (loại `//host` protocol-relative và `/\host`) hoặc URL `http(s)://`; mọi ký tự điều khiển/khoảng trắng bên trong URL cũng bị từ chối vì trình duyệt xoá tab/xuống dòng trước khi điều hướng (`/\t/evil.com` sẽ thành `//evil.com`). Nhờ vậy ảnh/link do ADMIN nhập không âm thầm trỏ sang host khác.
-- Route upload ảnh sản phẩm giới hạn tối đa 10 file mỗi request; UI kiểm tra cùng ngưỡng trước khi gửi. Mỗi file vẫn tối đa 5 MB và phải đúng chữ ký JPEG/PNG/WebP.
+- Route upload ảnh sản phẩm nhận **đúng 1 file/request**, mỗi file tối đa 4 MB (thấp hơn ngưỡng ~4,5 MB của Vercel Functions). UI cho chọn tối đa 10 ảnh nhưng gửi tuần tự từng file một. Mỗi file phải đúng chữ ký JPEG/PNG/WebP. Ảnh phục vụ qua `/uploads/[...path]` có `Cache-Control: public, s-maxage=31536000, immutable` và ETag theo nội dung (304 khi `If-None-Match` khớp), giúp CDN cache HIT không gọi Function/DB.
 
 ## 11. Image Storage Architecture
 
@@ -857,7 +857,7 @@ Phân chia trách nhiệm:
 | Next.js Route Handler / Server Actions | Authenticate and authorize uploads and image management; validate file content and coordinate cleanup |
 | Next.js storefront | Render image URLs read from the database |
 
-The server validates JPEG, PNG, and WebP signatures from file bytes and enforces a 5 MiB per-file limit. Storage keys are validated before reading/serving to prevent path traversal.
+The server validates JPEG, PNG, and WebP signatures from file bytes and enforces a 4 MiB per-file limit (one file per request). Storage keys are validated before reading/serving to prevent path traversal. The serving route adds a content-based ETag and a one-year `s-maxage` so repeat requests are served from the CDN cache.
 
 `src/features/products/server/product-image-storage.ts` is the single storage helper: new uploads write bytes to `ProductImageBlob` and use `/uploads/<storageKey>` as the public URL; reads/deletes use the same row, with a best-effort filesystem fallback for legacy files. This avoids the read-only `cwd/uploads` and ephemeral `/tmp` problem on Vercel without introducing an external object store.
 

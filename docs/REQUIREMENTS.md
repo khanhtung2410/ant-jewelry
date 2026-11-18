@@ -1561,7 +1561,7 @@ Danh sách giữ nguyên mã của các vấn đề cần xác nhận còn hiệ
 | OI-015 | Quan hệ `product_detail` và `product_price` tạo vòng tham chiếu; hướng tham chiếu chuẩn; `price_id` có phải "giá hiện tại" | Cao | FR-022, FR-026; mục 8.4 | SAD |
 | OI-016 | Trường `currency` chứa mã tiền tệ hay số tiền; kiểu và độ chính xác; đơn vị tiền hiển thị. **Đã chốt:** giá là số nguyên VND (`Int`), hiển thị `10.000.000`, không ký hiệu tiền tệ | Cao | FR-004, FR-006, FR-026 | SAD |
 | OI-017 | Hệ quản trị CSDL chính thức và quy ước kiểu chuỗi (VARCHAR/NVARCHAR so với PostgreSQL). **Đã chốt:** SQLite cho dev, PostgreSQL cho production | Trung bình | Mục 8.2; TC-03 | SAD |
-| OI-018 | Ảnh sản phẩm: hỗ trợ JPG/PNG/WebP ≤ 5 MiB, nhiều ảnh, thứ tự, ảnh cover/hover, gán màu và dọn object khi xóa đã triển khai. Còn TBC: chính sách lưu ảnh Blog | Trung bình | FR-008, FR-025, FR-032 | SAD |
+| OI-018 | Ảnh sản phẩm: hỗ trợ JPG/PNG/WebP, nhiều ảnh, thứ tự, ảnh cover/hover, gán màu và dọn object khi xóa đã triển khai. Giới hạn thực tế 4 MB/file do Vercel Functions (~4,5 MB/request); ảnh được gửi từng file một. Ảnh phục vụ qua `/uploads/[...path]` có ETag + `s-maxage` để CDN cache. Còn TBC: chính sách lưu ảnh Blog | Trung bình | FR-008, FR-025, FR-032 | SAD |
 | OI-021 | Phương thức xác thực, chính sách bảo vệ tài khoản, cấu trúc lưu tài khoản `ADMIN`/`EDITOR` | Trung bình | FR-033 đến FR-035; NFR-007, NFR-008 | SAD |
 | OI-022 | Hệ thống có sử dụng SKU không | Thấp (đề xuất) | Mục 8.2.1 (không có trường SKU) | SAD |
 | OI-023 | Quy ước API: phân trang (kể cả cơ chế "SEE MORE"), thứ tự mặc định, phiên bản hóa, múi giờ, định dạng lỗi | Trung bình | FR-004, FR-006, FR-010; mục 9.3 | SAD |

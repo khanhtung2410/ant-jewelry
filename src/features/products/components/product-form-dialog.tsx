@@ -137,10 +137,10 @@ export function ProductFormDialog({
             <section>
               <h3 className="font-heading text-sm tracking-[0.08em]">PRODUCT IMAGES</h3>
               <p className="mt-2 text-sm text-[var(--font-color)]">
-                Save this product first to upload and manage images (JPG, PNG, or WebP; up to 5 MB
-                each). After saving, open Edit and switch to the Images tab to reorder images,
-                choose cover and hover images, assign images to colors, and delete images with
-                storage cleanup.
+                Save this product first to upload and manage images (JPG, PNG, or WebP; up to 4 MB
+                each, sent one at a time). After saving, open Edit and switch to the Images tab to
+                reorder images, choose cover and hover images, assign images to colors, and delete
+                images with storage cleanup.
               </p>
             </section>
           )}

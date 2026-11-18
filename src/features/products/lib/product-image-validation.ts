@@ -1,4 +1,7 @@
-export const MAX_PRODUCT_IMAGE_SIZE = 5 * 1024 * 1024;
+// Vercel Functions cap request bodies at roughly 4.5 MB. Keep a single-file
+// request below that so multipart overhead cannot push it over the limit.
+export const MAX_PRODUCT_IMAGE_SIZE = 4 * 1024 * 1024;
+// How many files the admin UI may select at once; they are uploaded one by one.
 export const MAX_PRODUCT_IMAGES_PER_UPLOAD = 10;
 
 export type SupportedProductImage = {
