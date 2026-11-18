@@ -1,4 +1,37 @@
-## 2026-11-18 04:43:17 +07:00 - Durable local image storage without S3 (blocking issue)
+## 2026-11-18 08:27:17 +07:00 - Kiểm chứng đủ tiêu chí nộp lại
+
+### Prompt nguyên văn đã dùng
+
+> Khi nộp lại
+>
+> Production: upload ảnh → redeploy → ảnh còn; 6 màn + admin mở được
+> docs/PERFORMANCE.md đạt ngưỡng trên production; docs/DEPLOY.md có bảng Figma ↔ production 6 màn
+> Đăng nhập EDITOR: không thấy nút New / Delete product, sửa tên được, giá giữ nguyên
+> Test URL độc hại (/\evil.com, /<tab>/evil.com, HTTPS://…) có trong unit test và pass
+> Clone mới + npm ci + làm theo README chạy được; repo không còn .opencode/, .github/prompts/
+>
+> test code if achive this critetia
+
+### Đã tự kiểm chứng
+
+- **Production 6 màn + admin:** kiểm tra bằng Playwright trên `https://ant-jewelry.vercel.app/`: `/`, `/c/wedding-ring`, `/p/aurora-band`, `/blog`, `/blog/cach-chon-nhan-cuoi-phu-hop`, `/admin/login` đều trả 200. Đã thêm bảng đối chiếu Figma ↔ production 6 màn kèm ảnh chụp trong `docs/deploy-screenshots/` vào `docs/DEPLOY.md` (trước đó chỉ có danh sách màn hình, chưa có bảng).
+- **Upload → restart → ảnh còn:** trên clone mới chạy production build, đăng nhập ADMIN, POST ảnh PNG thật qua `/api/admin/products/<id>/images` → 201, URL `/uploads/products/...`, GET 200 (70 bytes). Dừng rồi khởi động lại `next start`, GET cùng URL vẫn 200; DB `ProductImageBlob` có đúng row (70 bytes, `image/png`). Chưa verify được trên Vercel thật (không có credentials), nhưng cơ chế lưu DB đã chạy được.
+- **docs/PERFORMANCE.md:** có số đo production 2026-11-18: Home 91/96/100, sản phẩm 96/100/100 — đạt Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95.
+- **EDITOR:** trên clone production build, đăng nhập `editor@antjewelry.local`: không có link “New product” (kể cả `?new=1`), không có nút “Delete product”; ô giá readonly (`12.500.000`), sửa tên thành “Aurora Band (EDITOR verified)” → lưu thành công; đọc DB xác nhận tên đổi và giá vẫn `12500000`.
+- **URL độc hại:** các test có sẵn và chạy pass (`/\evil.com`, `/\t/evil.com`, `/\n/evil.com` trong `safe-url.test.ts`, `form-validation.test.ts`, `markdown.test.tsx`, `hero-slider.test.tsx`; `HTTPS://cdn.example.com/a.jpg` trong `image-url.test.ts`). Chạy riêng 5 file → 28/28 pass; full suite → 57 files / 258 tests pass.
+- **Clone mới + npm ci:** clone repo vào thư mục trống, `npm ci` → 0, copy `.env.example` → `.env` (đặt AUTH_SECRET), `db:push` → `db:generate` → `db:seed` → `build` → exit 0; `npm run start` chạy. `git ls-files .opencode .github/prompts` → 0; cả hai thư mục không tồn tại trong clone; clone chỉ có `prisma/dev.db`.
+- Cập nhật `AI_LOG.md`; bổ sung bảng Figma ↔ production và ảnh chụp vào `docs/DEPLOY.md`.
+
+### Hạn chế / AI sai ở đâu
+
+- Lần đầu assert “renamed visible: false” do đọc trang khi còn trạng thái “Loading admin...”; sau khi đợi tiêu đề `PRODUCTS (...)` xuất hiện thì tên mới hiển thị đúng. Không phải lỗi ứng dụng.
+- Không thể tự verify upload trên Vercel thật hay redeploy trên hạ tầng; đã verify tương đương bằng restart production server local với DB file. Migration production vẫn phải do mentor chạy.
+
+**So sánh Figma:** bảng đối chiếu 6 màn và ảnh chụp đã thêm vào `docs/DEPLOY.md`.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
