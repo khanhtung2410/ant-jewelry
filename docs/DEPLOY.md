@@ -61,7 +61,9 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 | `DIRECT_URL` | No | Optional; not required by the current PostgreSQL schema/build. Provide only if your migration/tooling setup needs it |
 | `PRODUCT_IMAGE_UPLOAD_DIR` | No | Legacy filesystem path used only to read/remove pre-migration uploads (default `./uploads`) |
 
-`vercel.json` runs `npm run build:production`: it generates the PostgreSQL Prisma client, applies pending migrations on **Production** Vercel builds (`scripts/migrate-production.mjs` → `prisma migrate deploy`), then runs `next build`. Preview builds skip migrations because Preview and Production are connected to the same database here; local builds also skip them. A production build now fails if the database is unreachable instead of deploying an app with no schema. Migrations can still be run manually (see below). Local dev/test use SQLite and write image bytes into that SQLite database's `ProductImageBlob` table — there is no filesystem upload path anymore; `PRODUCT_IMAGE_UPLOAD_DIR` only reads/removes legacy files from older versions.
+`vercel.json` runs `npm run build:production`: it generates the PostgreSQL Prisma client, applies pending migrations on **Production** Vercel builds (`scripts/migrate-production.mjs` → `prisma migrate deploy`), then runs `next build`. Local builds skip migrations. A production build now fails if the database is unreachable instead of deploying an app with no schema. Migrations can still be run manually (see below). Local dev/test use SQLite and write image bytes into that SQLite database's `ProductImageBlob` table — there is no filesystem upload path anymore; `PRODUCT_IMAGE_UPLOAD_DIR` only reads/removes legacy files from older versions.
+
+> ⚠️ **Rủi ro Preview dùng chung DB Production:** Preview hiện không chạy migration và trỏ tới cùng `DATABASE_URL` với Production. Một Server Action hoặc upload từ Preview có thể **ghi vào dữ liệu thật**. Các lựa chọn: (1) tách database riêng cho Preview (`DATABASE_URL` theo environment), (2) tắt Preview deploy, hoặc (3) nếu bắt buộc giữ như hiện tại, chỉ dùng Preview để xem và **không thực hiện thao tác ghi**; mọi mutation phải được kiểm tra trong checklist bàn giao. Đây là rủi ro đã biết, chưa được khắc phục bằng cấu hình trong repo.
 
 ## Vercel deployment sequence
 
@@ -136,15 +138,19 @@ If `next build` fails during page data collection with:
 
 - **Storefront:** https://ant-jewelry.vercel.app/ (HTTP 200 at time of check, 2026-11-17)
 - **Admin:** https://ant-jewelry.vercel.app/admin (redirects to login as expected for unauthenticated access)
-- **Lighthouse (production, 2026-11-18, 3 runs, mobile):** Home median Performance 91 / Accessibility 96 / SEO 100; product `/p/aurora-band` median Performance 96 / Accessibility 100 / SEO 100. See `docs/PERFORMANCE.md` for ranges and methodology.
+- **Lighthouse (production, 2026-11-18, 3 recorded runs after a discarded warm-up, mobile):** Home median Performance 85 / Accessibility 96 / SEO 100; product `/p/aurora-band` median Performance 97 / Accessibility 100 / SEO 100. Raw scores and JSON reports for all three runs are linked in `docs/PERFORMANCE.md`.
 
-## Production readiness checklist
+## Production readiness checklist (kèm bằng chứng)
 
-- [x] Vercel deployment accessible at `https://ant-jewelry.vercel.app/` (storefront and admin routes respond).
-- [ ] Vercel + PostgreSQL provisioned; env vars set (no secrets in code/logs) — confirm in Vercel dashboard.
-- [ ] `SITE_URL` set to the deployment HTTPS origin.
-- [ ] Migrations applied and status clean.
-- [ ] First ADMIN created with real owner email via `db:create-admin:production`.
-- [ ] Public deployment loads key pages and admin login/dashboard — verify with real content and authenticated admin access.
-- [ ] `ProductImageBlob` migration applied; an uploaded image survives a redeploy.
-- [ ] Backup/restore procedure documented and tested outside production as applicable.
+| Item | Trạng thái | Bằng chứng / nội dung cần đính kèm |
+|---|---|---|
+| Vercel deployment accessible | [x] | 6 URL public + `/admin/login` trả 200 ngày 2026-11-18; ảnh chụp trong [`docs/deploy-screenshots/`](deploy-screenshots/) |
+| Vercel + PostgreSQL provisioned, env vars đúng, không lọt secret | [ ] | Cần ảnh/xuất danh sách biến trong Vercel dashboard (đã che giá trị). Repo chỉ có `.env.example`; production render được dữ liệu → gián tiếp chứng tỏ `DATABASE_URL` hoạt động |
+| `SITE_URL` đúng origin production | [x] | `curl https://ant-jewelry.vercel.app/` có `<link rel="canonical" href="https://ant-jewelry.vercel.app"/>` (6 lần xuất hiện origin trong HTML) |
+| Migration đã áp dụng, status sạch | [ ] | Cần output thật của `npm run db:migrate:status:production` (chạy với `DATABASE_URL` direct). Không thể tự lấy từ môi trường agent |
+| ADMIN đầu tiên bằng email thật | [ ] | Cần ảnh trang admin sau khi đăng nhập bằng tài khoản ADMIN vừa tạo (`db:create-admin:production`) |
+| 6 màn public + admin mở được | [x] | Bảng đối chiếu Figma ↔ production ở trên, 6 ảnh chụp kèm HTTP 200 |
+| Upload ảnh qua redeploy vẫn còn | [ ] | Cần ảnh `/p/<slug>` có ảnh `/uploads/...` **trên production sau redeploy**. Bằng chứng local (production build): [`docs/a1-screenshots/product-after-upload.png`](a1-screenshots/product-after-upload.png), upload ~4 MB + batch 3 ảnh vào DB rồi restart `next start` → ảnh vẫn 200 |
+| Backup/restore đã test | [ ] | Quy trình/pg_dump được mô tả ở mục Migration/backup; chưa có bản ghi test restore ngoài production |
+
+**Bằng chứng local đã có** (không thay thế bằng chứng production): admin đăng nhập và các thao tác xác nhận/upload trong [`docs/ux-screenshots/`](ux-screenshots/), ảnh sản phẩm sau upload trong [`docs/a1-screenshots/`](a1-screenshots/), báo cáo Lighthouse 3 lần trong [`docs/lighthouse-reports/`](lighthouse-reports/). Các ô còn `[ ]` chỉ được tick khi mentor đính kèm output/ảnh tương ứng từ Vercel — không tự tick khi chưa có bằng chứng.

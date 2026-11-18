@@ -8,17 +8,25 @@
 - **Bản deploy (production):** `https://ant-jewelry.vercel.app/`, `https://ant-jewelry.vercel.app/p/aurora-band` và `https://ant-jewelry.vercel.app/blog/cach-chon-nhan-cuoi-phu-hop`, đo ngày 2026-11-18.
 - **Bản production build local (tham chiếu):** `npm run build && npm run start` (`DATABASE_URL=file:./prisma/dev.db` với dữ liệu seed) tại `http://localhost:3000`, cùng ngày.
 
-Mỗi trang được đo **1 lần khởi động (bỏ qua) rồi 3 lần liên tiếp** trên cùng bản/cấu hình; bảng báo cáo **trung vị** và **dải (min–max)** của 3 lần sau. Lần đầu thường chịu chi phí khởi động Lighthouse/Chrome nên bị loại để tránh sai lệch. Ảnh chụp mobile đối chiếu Figma: [`docs/r6-1-screenshots/home-mobile.png`](r6-1-screenshots/home-mobile.png) và [`docs/r6-1-screenshots/blog-detail-mobile.png`](r6-1-screenshots/blog-detail-mobile.png).
+Mỗi trang được đo **1 lần khởi động (bỏ qua, không lưu báo cáo) rồi 3 lần liên tiếp** trên cùng bản/cấu hình; bảng báo cáo **trung vị** và **dải (min–max)** của đúng 3 lần đã lưu. Lần khởi động chịu chi phí Lighthouse/Chrome nên không được tính vào trung vị. Báo cáo JSON của cả 3 lần mỗi trang nằm trong [`docs/lighthouse-reports/`](lighthouse-reports/) và được liên kết trực tiếp ở bảng chi tiết bên dưới. Ảnh chụp mobile đối chiếu Figma: [`docs/r6-1-screenshots/home-mobile.png`](r6-1-screenshots/home-mobile.png) và [`docs/r6-1-screenshots/blog-detail-mobile.png`](r6-1-screenshots/blog-detail-mobile.png).
 
-### Kết quả đo trên production deploy (median; range)
+### Kết quả đo trên production deploy (3 lần đã lưu; median; range)
 
 | Trang | Performance | Accessibility | SEO | FCP (ms) | LCP (ms) | TBT (ms) |
 |---|---:|---:|---:|---:|---:|---:|
-| Home (`/`) | **91** (61–96) | **96** | **100** | 946 (946–978) | 2596 (1846–2866) | 295 (202–1340) |
-| Sản phẩm (`/p/aurora-band`) | **96** (92–97) | **100** | **100** | 949 (946–960) | 2149 (1846–2733) | 199 (166–235) |
-| Blog chi tiết (`/blog/cach-chon-nhan-cuoi-phu-hop`) | **82** (80–95) | **98** | **100** | 942 (939–944) | 2664 (2646–2710) | 170 (154–230) |
+| Home (`/`) | **85** (84–95) | **96** | **100** | 1370 (947–1717) | 2775 (2759–3067) | 112 (71–404) |
+| Sản phẩm (`/p/aurora-band`) | **97** (97–99) | **100** | **100** | 1474 (1333–1477) | 1927 (1624–2533) | 81 (60–136) |
+| Blog chi tiết (`/blog/cach-chon-nhan-cuoi-phu-hop`) | **97** (81–98) | **98** | **100** | 1009 (966–2411) | 2466 (2209–3616) | 87 (71–198) |
 
-**Mục tiêu:** Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95 (trung vị 3 lần). **Trạng thái:** Home (91) và trang sản phẩm (96) **đạt** cả ba mục tiêu trên bản deploy. Blog chi tiết đạt Accessibility/SEO; Performance trung vị 82 (dải 80–95) nên chưa đạt ngưỡng 85 — đây không nằm trong yêu cầu R6.1 nhưng được đo thêm để kiểm tra LCP ảnh bìa blog. Lần đầu của Home (61) nằm ngoài dải báo cáo vì là lần khởi động; các lần sau ổn định ở 91–96.
+**Chi tiết 3 lần đo (Performance) và báo cáo JSON:**
+
+| Trang | Lần 1 | Lần 2 | Lần 3 | Trung vị | Báo cáo |
+|---|---:|---:|---:|---:|---|
+| Home | 95 | 85 | 84 | **85** | [1](lighthouse-reports/prod-home-1.json) · [2](lighthouse-reports/prod-home-2.json) · [3](lighthouse-reports/prod-home-3.json) |
+| Sản phẩm | 99 | 97 | 97 | **97** | [1](lighthouse-reports/prod-product-1.json) · [2](lighthouse-reports/prod-product-2.json) · [3](lighthouse-reports/prod-product-3.json) |
+| Blog chi tiết | 81 | 98 | 97 | **97** | [1](lighthouse-reports/prod-blog-1.json) · [2](lighthouse-reports/prod-blog-2.json) · [3](lighthouse-reports/prod-blog-3.json) |
+
+**Mục tiêu:** Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95 (trung vị 3 lần). **Trạng thái:** Home (85) và sản phẩm (97) **đạt** trên bản deploy; Home sát ngưỡng nên cần theo dõi các lần đo sau. Blog chi tiết cũng đạt cả ba mục tiêu trong bộ đo mới. Bộ số liệu cũ ghi Home “91 (61–96)” đã được thay bằng 3 lần đo này — lần khởi động (61) khi đó bị tính nhầm vào dải, nay đã loại và không lưu báo cáo.
 
 ### Kết quả đo trên production build local (tham chiếu, median; range)
 
