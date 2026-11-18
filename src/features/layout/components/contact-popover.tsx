@@ -18,7 +18,8 @@ import { ActionButton } from './action-button';
 
 export type ContactSettings = Pick<Settings, 'siteName' | 'phone' | 'facebookUrl' | 'instagramUrl'>;
 
-const dialogBackdropClass = 'fixed inset-0 z-[60] grid place-items-center bg-black/10 p-4';
+const dialogBackdropClass =
+  'fixed inset-0 z-[60] grid place-items-center bg-[var(--backdrop-color)] p-4';
 const dialogPanelClass =
   'relative flex h-auto w-[215px] flex-col overflow-hidden rounded-3xl bg-background px-4 pb-6 pt-4 shadow-[0_8px_24px_var(--popover-shadow-color)]';
 

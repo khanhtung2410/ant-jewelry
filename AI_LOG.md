@@ -1,4 +1,42 @@
-## 2026-11-18 13:10:24 +07:00 - Bằng chứng checklist deploy và số liệu Lighthouse nhất quán (R6.2b, R6.1b)
+## 2026-11-18 13:44:39 +07:00 - Gộp B1, R3.3c, B2, B3 vào một PR
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> Gộp các mục này vào một PR.
+>
+> B1 — Test escape sai. image-url.test.ts:19 viết '/\cdn.example.com/a.jpg'. Trong JS, \c không phải escape nên chuỗi thật là /cdn.example.com/a.jpg, tức là trường hợp /\ chưa hề được test. Viết '/\\cdn.example.com/a.jpg', rồi rà các test URL khác xem có lỗi tương tự không.
+> R3.3c — Màu cuối cùng. contact-popover.tsx:21 còn bg-black/10: đưa về token như các màu khác.
+> B2 — PERMISSIONS.md:20. Dòng tên “Delete/hide products = No” nhưng ghi chú lại nói EDITOR ẩn được. Tách thành hai dòng “Delete product” và “Hide product”.
+> B3 — Không bắt buộc. Đưa check products:create lên đầu saveProduct, trước các query category/slug. Bọc findMany trong product-image-cleanup.ts:24 bằng try/catch, để lỗi DB khi dọn ảnh cũng không làm hỏng action. Sửa warning lint _storageKey chưa dùng trong product-image-cleanup.test.ts:7.
+>
+> update doc file if needed
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: PR #89 đã merge; fetch, reset `main` về `e7a8c2d`.
+- **B1:** đổi `image-url.test.ts:19` thành `'/\\cdn.example.com/a.jpg'` (hai dấu gạch chéo ngược trong source → chuỗi JS thật là `/\cdn...`). Rà tất cả test URL bằng regex `/\\([A-Za-z])`: chỉ có `\c` này là sai; các `\t`, `\n`, `\r`, `\u0000`, `\u007f` trong `safe-url.test.ts`, `form-validation.test.ts`, `hero-slider.test.tsx`, `markdown.test.tsx` là escape có chủ đích (tab/newline/control char) và `/\\evil.com` trong markdown/safe-url đã đúng.
+- **R3.3c:** thêm token `--backdrop-color: #0000001a` trong `:root` (`globals.css`) — tương đương `rgba(0,0,0,0.10)` — và đổi `contact-popover.tsx:21` từ `bg-black/10` sang `bg-[var(--backdrop-color)]`. Grep hex/rgba trong `src/**/*.tsx` vẫn không có kết quả.
+- **B2:** `docs/PERMISSIONS.md` tách dòng “Delete/hide products” thành “Delete product | Yes | No” (qua `products:delete`) và “Hide product | Yes | Yes” (qua `products:update`). Cập nhật luôn dòng 20 bị mâu thuẫn giữa nhãn và ghi chú.
+- **B3:** chuyển check `products:create` lên ngay sau auth check trong `saveProduct()`, trước mọi query existing/product/category/slug; bọc `prisma.pendingImageDeletion.findMany()` trong try/catch, log + return sạch khi DB lỗi (row giữ lại để retry); đổi mock `_storageKey` thành `storageKey` kèm `void storageKey` để hết lint; thêm test “queue read fails → no throw”.
+- `npm test` → 60 files / 264 tests pass; lint/typecheck/format:check/build exit 0. `AI_LOG.md` cập nhật.
+
+### Hạn chế / AI sai ở đâu
+
+- Chính mình đã từng đổi `'/\\cdn...'` thành `'/\cdn...'` ở lượt R3.3b vì tưởng đang sửa chuỗi thừa backslash; thực tế đã làm mất dấu gạch chéo ngược trong test. Lần này sửa lại đúng và rà toàn bộ test URL để tránh lặp.
+- Không đổi các class named color khác (`bg-black/40`, `backdrop:bg-black/45`) vì nằm ngoài phạm vi mục R3.3c và không nằm trong lệnh grep hex/rgba; nếu muốn "hết màu cứng" hoàn toàn cần đợt riêng.
+
+**So sánh Figma:** không đổi bố cục; token mới giữ nguyên màu nền mờ 10% của backdrop.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
