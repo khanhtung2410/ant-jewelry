@@ -15,7 +15,7 @@ Nếu không đăng nhập được, không tạo tài khoản mới hoặc sử
 
 1. Mở **Products** trong khu vực quản trị và chọn tạo sản phẩm.
 2. Điền tên, slug, danh mục, loại sản phẩm, thương hiệu, giá VND, mô tả và thông số. Slug tạo thành địa chỉ công khai `/p/<slug>`; dùng chữ thường, không dấu, ngăn cách từ bằng dấu gạch ngang và không trùng sản phẩm khác.
-3. Tải ảnh JPG, PNG hoặc WebP đã được cửa hàng duyệt. Mỗi ảnh tối đa 4 MB (hệ thống gửi từng ảnh một để phù hợp giới hạn Vercel). Chọn ảnh bìa và ảnh hover, sắp xếp ảnh, rồi gán ảnh vào màu tương ứng nếu cần.
+3. Tải ảnh JPG, PNG hoặc WebP đã được cửa hàng duyệt. Mỗi ảnh tối đa 4 MB (hệ thống gửi từng ảnh một để phù hợp giới hạn Vercel); trong lúc chờ sẽ có thông báo tiến độ ở góc trái dưới màn hình. Chọn ảnh bìa và ảnh hover, sắp xếp ảnh, rồi gán ảnh vào màu tương ứng nếu cần. Khi xóa ảnh/sản phẩm, một hộp xác nhận hiện trong ứng dụng (Esc hoặc Cancel để hủy) thay vì hộp thông báo của trình duyệt.
 4. Kiểm tra giá và chính tả. Để sản phẩm ở trạng thái hiển thị khi nội dung sẵn sàng; dùng **Ẩn** nếu cần tạm gỡ sản phẩm khỏi storefront.
 5. Lưu và mở trang sản phẩm công khai để kiểm tra ảnh, màu, thông tin và nút liên hệ.
 

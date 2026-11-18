@@ -861,6 +861,8 @@ The server validates JPEG, PNG, and WebP signatures from file bytes and enforces
 
 `src/features/products/server/product-image-storage.ts` is the single storage helper: new uploads write bytes to `ProductImageBlob` and use `/uploads/<storageKey>` as the public URL; reads/deletes use the same row, with a best-effort filesystem fallback for legacy files. This avoids the read-only `cwd/uploads` and ephemeral `/tmp` problem on Vercel without introducing an external object store.
 
+Admin image actions use an in-app `ConfirmPopover` (Escape/backdrop to cancel, focus on Cancel) instead of `window.confirm`, and a fixed bottom-left `AdminStatusToast` (`role="status"`, `aria-live`) reports progress while several files are uploaded or a deletion is pending. The same confirm/toast components are shared by all destructive admin forms.
+
 Deletion records are queued transactionally with database deletion and processed against that store. Failed cleanup stays queued for a later retry and is logged instead of being thrown, so a storage error cannot fail the product action or upload response. Cache revalidation runs before the best-effort cleanup and callers wrap it in try/catch; image uploads invalidate the `products` cache tag through the same `revalidateProductPages()` helper as the Server Actions, so `/p/<slug>` serves the new images on its next request.
 
 ## 12. Non-functional Architecture

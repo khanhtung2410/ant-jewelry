@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { AdminConfirmForm } from '@/features/admin/components/admin-confirm-form';
+import { AdminStatusToast } from '@/features/admin/components/admin-status-toast';
 import {
   assignProductImageColor,
   deleteProduct,
@@ -50,6 +51,7 @@ export function ProductImageManagement({
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
 
   async function uploadSelectedFiles() {
     const files = inputRef.current?.files;
@@ -73,10 +75,12 @@ export function ProductImageManagement({
     setUploading(true);
     setError(null);
     setMessage(null);
+    setStatus(`Uploading 1/${selected.length}…`);
     const uploadedImages: ImageRecord[] = [];
     try {
       // Vercel Functions limit the request body, so send one file at a time.
-      for (const file of selected) {
+      for (const [index, file] of selected.entries()) {
+        setStatus(`Uploading ${index + 1}/${selected.length}: ${file.name}`);
         const formData = new FormData();
         formData.append('files', file);
         const response = await fetch(
@@ -101,6 +105,7 @@ export function ProductImageManagement({
     } catch {
       setError('Image upload failed. Check your connection and try again.');
     } finally {
+      setStatus(null);
       setUploading(false);
     }
   }
@@ -155,6 +160,7 @@ export function ProductImageManagement({
           {message}
         </p>
       ) : null}
+      {status ? <AdminStatusToast message={status} /> : null}
 
       {images.length > 0 ? (
         <ol className="mt-5 space-y-3">
