@@ -2,9 +2,9 @@
 
 ## Overview
 
-Production target: **Vercel** (Next.js) + **PostgreSQL**. Product image uploads are stored on the **local filesystem** (`PRODUCT_IMAGE_UPLOAD_DIR`, default `./uploads`) and served by the application from `/uploads/...`.
+Production target: **Vercel** (Next.js) + **PostgreSQL**. Uploaded product image bytes are stored in the application database (`ProductImageBlob`) and served from `/uploads/...`.
 
-**Note:** On serverless/ephemeral platforms (such as Vercel), local filesystem storage is not durable across redeploys or instances. Keep uploaded image persistence requirements in mind when choosing hosting/storage.
+**Important:** on Vercel the deployment root is read-only and `/tmp` is discarded between instances, so the app never writes uploads to `cwd/uploads`. The database is the durable local store; `PRODUCT_IMAGE_UPLOAD_DIR` is only a legacy read path for files uploaded by older versions. The production migration `20261118100000_add_product_image_blobs` creates the new table.
 
 ## Prerequisites
 
@@ -23,7 +23,7 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 | `AUTH_SECRET` | Yes | Random signing key for admin sessions (`node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"`) |
 | `SITE_URL` | Yes | Canonical HTTPS origin for the deployment (e.g. `https://<project>.vercel.app`) |
 | `DIRECT_URL` | No | Optional; not required by the current PostgreSQL schema/build. Provide only if your migration/tooling setup needs it |
-| `PRODUCT_IMAGE_UPLOAD_DIR` | No | Filesystem path for uploaded product images (default `./uploads`, relative to app working directory) |
+| `PRODUCT_IMAGE_UPLOAD_DIR` | No | Legacy filesystem path used only to read/remove pre-migration uploads (default `./uploads`) |
 
 `vercel.json` runs `npm run build:production`: it generates the PostgreSQL Prisma client, applies pending migrations on **Production** Vercel builds (`scripts/migrate-production.mjs` → `prisma migrate deploy`), then runs `next build`. Preview builds skip migrations because Preview and Production are connected to the same database here; local builds also skip them. A production build now fails if the database is unreachable instead of deploying an app with no schema. Migrations can still be run manually (see below). Local dev/test use SQLite and local uploads unless configured otherwise.
 
@@ -56,7 +56,7 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 6. **Verify deployment:**
    - Public screens: Home (`/`), category (`/c/<slug>`), product (`/p/<slug>`), Blog list (`/blog`), Blog detail (`/blog/<slug>`), and other public pages as applicable.
    - Admin: `/admin/login`, dashboard and content management.
-   - Upload a product image in admin and confirm it displays.
+   - Upload a product image in admin and confirm it displays, then redeploy and confirm the image still displays (bytes come from `ProductImageBlob`, not the filesystem).
    - Check `/robots.txt`, `/sitemap.xml`, and canonical/`SITE_URL` behavior.
 
 ## Vercel build error: `public.BlogPost` does not exist (P2021)
@@ -79,7 +79,7 @@ If `next build` fails during page data collection with:
   ```bash
   pg_dump "$DIRECT_URL" --format=custom --file=ant-jewelry-production.dump
   ```
-  Keep dumps in protected backup storage (not in repo/artifacts). Include a backup strategy for uploaded files stored under `PRODUCT_IMAGE_UPLOAD_DIR` if they must be retained.
+  Keep dumps in protected backup storage (not in repo/artifacts). Uploaded image bytes are part of the PostgreSQL database, so the same backup/PITR covers them; no separate filesystem backup is needed.
 - **Restore:** restore to staging first, verify data/login/pages/images, then follow approved recovery procedure for production. Redeploy previous Vercel build only when schema remains compatible.
 
 ## Current deployment status (verified)
@@ -96,5 +96,5 @@ If `next build` fails during page data collection with:
 - [ ] Migrations applied and status clean.
 - [ ] First ADMIN created with real owner email via `db:create-admin:production`.
 - [ ] Public deployment loads key pages and admin login/dashboard — verify with real content and authenticated admin access.
-- [ ] Product image upload works in the deployed environment (note: local filesystem uploads may not persist across redeploys on ephemeral hosts).
+- [ ] `ProductImageBlob` migration applied; an uploaded image survives a redeploy.
 - [ ] Backup/restore procedure documented and tested outside production as applicable.

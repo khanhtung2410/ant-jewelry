@@ -182,8 +182,9 @@ không truy cập Prisma trực tiếp.
 - Production: `prisma/postgresql/schema.prisma` và migrations trong
   `prisma/postgresql/migrations/`.
 - `src/features/shared/db/prisma.ts` giữ một `PrismaClient` dùng chung.
-- Ảnh sản phẩm upload được lưu trên filesystem local (`PRODUCT_IMAGE_UPLOAD_DIR`, mặc định
-  `./uploads`) và phục vụ qua route `/uploads/...`.
+- Ảnh sản phẩm upload được lưu dưới dạng blob trong database (`ProductImageBlob`) và phục vụ
+  qua route `/uploads/...`, nên vẫn còn sau redeploy trên Vercel. `PRODUCT_IMAGE_UPLOAD_DIR`
+  chỉ dùng để đọc/dọn ảnh legacy từ bản filesystem cũ.
 
 Sau khi đổi schema local, chạy `npm run db:push` và `npm run db:generate` nếu Prisma Client
 chưa được cập nhật. Không dùng `prisma db push` cho production.
@@ -214,8 +215,9 @@ Khi thay đổi UI, kiểm tra thêm thủ công các luồng bị ảnh hưởn
 ## 7. Deploy production
 
 Production dùng Vercel + PostgreSQL (schema trong `prisma/postgresql/`). Ảnh sản phẩm upload
-được lưu trên filesystem local (`PRODUCT_IMAGE_UPLOAD_DIR`, mặc định `./uploads`) và phục vụ
-qua `/uploads/...`.
+được lưu trong bảng `ProductImageBlob` của chính database đó và phục vụ qua `/uploads/...`,
+không ghi vào `cwd/uploads` (chỉ đọc trên Vercel) hay `/tmp` (mất khi đổi instance). Chạy
+migration mới `20261118100000_add_product_image_blobs` trước/sau khi deploy.
 
 - **Storefront (production):** https://ant-jewelry.vercel.app/
 - **Admin:** https://ant-jewelry.vercel.app/admin

@@ -268,7 +268,7 @@ ant-jewelry/
 - `src/features/shared/lib/format-price.ts` định dạng giá VND bằng dấu chấm phân cách, ví dụ `10000000` → `10.000.000`; component tự thêm đơn vị hiển thị.
 - Dữ liệu mẫu nằm trong `src/features/*/mocks/` (sản phẩm, Blog, hero slide) và được seed vào SQLite qua `prisma/seed.ts`; storefront đọc qua query trong `src/features/*/queries/`, không đọc mock trực tiếp.
 - Ảnh sản phẩm mẫu dùng `public/mock/products/ring-*.webp`; `ring-2-1` và `ring-5-2` là ảnh phụ của `ring-2` và `ring-5`.
-- Upload và lưu trữ ảnh sản phẩm dùng local filesystem (`/uploads`); xoá file đi qua hàng chờ `PendingImageDeletion` để thử lại khi storage lỗi.
+- Upload và lưu trữ ảnh sản phẩm dùng `ProductImageBlob` trong database, phục vụ qua `/uploads`; xoá blob/file đi qua hàng chờ `PendingImageDeletion` để thử lại khi storage lỗi.
 - Các script hiện có được liệt kê trong `README.md` mục 3 (gồm `db:*`, `test:e2e`, build production).
 
 ### 5.2. Kiến trúc đề xuất
@@ -761,7 +761,7 @@ Các trường dữ liệu chi tiết (price, image URL, description, specificat
 |---|---|---|
 | Login / logout | Server Action | Tạo hoặc hủy session cookie; kiểm tra role |
 | Product CRUD | Server Action | Validate input, authorization, `revalidatePath` |
-| Product image upload | Route Handler | `multipart/form-data`; kiểm tra chữ ký JPG/PNG/WebP và lưu trên local filesystem (`/uploads`) |
+| Product image upload | Route Handler | `multipart/form-data`; kiểm tra chữ ký JPG/PNG/WebP và lưu bytes vào `ProductImageBlob`, phục vụ qua `/uploads` |
 | Product price | Server Action | Validate số tiền và quyền |
 | Category CRUD | Server Action | Chỉ sau khi Category model được xác nhận |
 | Blog CRUD và publish | Server Action | Validate trạng thái `DRAFT` / `PUBLISHED` |
@@ -846,20 +846,22 @@ Không đưa ra thiết kế chi tiết cho các nội dung này như thể đã
 ## 11. Image Storage Architecture
 
 ### 11.1. Implemented storage
-Product images are uploaded through an authenticated Next.js Route Handler and stored on the local filesystem. Files are written under `PRODUCT_IMAGE_UPLOAD_DIR` (default `./uploads`) and served by the application at `/uploads/<storageKey>`.
+Product images are uploaded through an authenticated Next.js Route Handler and stored as bytes in the application database (`ProductImageBlob`), then served by the application at `/uploads/<storageKey>`. The old filesystem location (`PRODUCT_IMAGE_UPLOAD_DIR`, default `./uploads`) is only read as a legacy fallback.
 
 Phân chia trách nhiệm:
 
 | Thành phần | Trách nhiệm |
 |---|---|
-| Local filesystem | Persist uploaded product image files |
+| Prisma database (`ProductImageBlob`) | Persist uploaded product image bytes durably, including on serverless hosts |
 | Prisma database | Store image URL, storage key, product/color assignment, order, cover, and hover metadata |
 | Next.js Route Handler / Server Actions | Authenticate and authorize uploads and image management; validate file content and coordinate cleanup |
 | Next.js storefront | Render image URLs read from the database |
 
 The server validates JPEG, PNG, and WebP signatures from file bytes and enforces a 5 MiB per-file limit. Storage keys are validated before reading/serving to prevent path traversal.
 
-Deletion records are queued transactionally with database deletion and processed against the local filesystem. Failed cleanup stays queued for a later retry and is logged instead of being thrown, so a storage error cannot fail the product action or upload response. Cache revalidation runs before the best-effort cleanup and callers wrap it in try/catch; image uploads invalidate the `products` cache tag through the same `revalidateProductPages()` helper as the Server Actions, so `/p/<slug>` serves the new images on its next request. On serverless/ephemeral hosts, uploaded files may not persist across deploys or instance restarts.
+`src/features/products/server/product-image-storage.ts` is the single storage helper: new uploads write bytes to `ProductImageBlob` and use `/uploads/<storageKey>` as the public URL; reads/deletes use the same row, with a best-effort filesystem fallback for legacy files. This avoids the read-only `cwd/uploads` and ephemeral `/tmp` problem on Vercel without introducing an external object store.
+
+Deletion records are queued transactionally with database deletion and processed against that store. Failed cleanup stays queued for a later retry and is logged instead of being thrown, so a storage error cannot fail the product action or upload response. Cache revalidation runs before the best-effort cleanup and callers wrap it in try/catch; image uploads invalidate the `products` cache tag through the same `revalidateProductPages()` helper as the Server Actions, so `/p/<slug>` serves the new images on its next request.
 
 ## 12. Non-functional Architecture
 SAD đề cập các vấn đề phi chức năng nhưng chưa có dữ liệu khảo sát quy mô sản phẩm, số lượng người dùng đồng thời và lưu lượng truy cập. Vì vậy, chưa có cơ sở để đưa ra các chỉ tiêu hiệu năng định lượng chính thức.
@@ -951,7 +953,7 @@ Cấu trúc cuối cùng có thể thay đổi khi các module được triển 
 
 ## 14. Environment và Deployment
 
-Deployment target: Next.js, PostgreSQL cho production, và local filesystem cho ảnh sản phẩm (`/uploads`). Các tài khoản/tài nguyên production vẫn cần được provision; xem [`DEPLOY.md`](./DEPLOY.md) để thực hiện thiết lập an toàn. Nếu deploy lên môi trường serverless/ephemeral (ví dụ Vercel), cần storage bền vững có quyền ghi cho thư mục upload.
+Deployment target: Next.js + PostgreSQL cho production; ảnh sản phẩm được lưu trong bảng `ProductImageBlob` của database và phục vụ qua `/uploads/...`. Các tài khoản/tài nguyên production vẫn cần được provision; xem [`DEPLOY.md`](./DEPLOY.md). Trên Vercel không ghi vào `cwd/uploads` (chỉ đọc) hay `/tmp` (không bền vững); migration `20261118100000_add_product_image_blobs` là bắt buộc.
 
 ### 14.1. Environment variables
 

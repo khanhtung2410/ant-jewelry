@@ -1,4 +1,46 @@
-## 2026-11-18 00:31:23 +07:00 - LCP fixes and Lighthouse re-measurement (R6.1)
+## 2026-11-18 04:43:17 +07:00 - Durable local image storage without S3 (blocking issue)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> Đây là phần chặn điểm. Production https://ant-jewelry.vercel.app mở được, nhưng ảnh đang ghi vào cwd/uploads (product-image-storage.ts:24,52). Trên Vercel thư mục này chỉ đọc, và /tmp mất khi đổi instance.
+>
+> update doc file if needed
+> add to ai log
+>
+> (follow-up) no, ont use s3 workflow, use locall strorage
+> (clarification) DB-backed local blobs: store uploaded image bytes in Prisma DB and serve through /uploads/[...path]
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: PR #83 đã merge; local `main` còn commit squash trước đó, đã fetch, xác nhận diff rỗng rồi reset về `22b1153`. Sau follow-up "không dùng S3", đã **xoá commit S3 chưa merge** bằng `git reset --hard 22b1153` (commit đó chỉ nằm trên remote branch của PR #84) rồi làm lại từ đầu theo hướng local/DB.
+- Đọc toàn bộ file liên quan: `src/features/products/server/product-image-storage.ts` và test, `src/app/uploads/[...path]/route.ts`, route upload admin, `prisma/schema.prisma`, `prisma/postgresql/schema.prisma`, migrations, `.env.example`, `README.md`, `docs/DEPLOY.md`, `docs/ARCHITECTURE.md`.
+- Thêm model `ProductImageBlob` (`storageKey` làm khóa, `bytes Bytes`, `contentType`, `createdAt`) vào cả schema SQLite và PostgreSQL kèm migration `20261118100000_add_product_image_blobs` cho hai môi trường.
+- `product-image-storage.ts`: upload ghi bytes vào database qua Prisma và trả URL `/uploads/<storageKey>`; read/delete dùng cùng row. Giữ fallback đọc/dọn file legacy theo `PRODUCT_IMAGE_UPLOAD_DIR` để ảnh cũ không mất. Không còn ghi vào `cwd/uploads`, không dùng `/tmp`, không có dependency/dịch vụ S3. Đây là "local storage" theo nghĩa lưu trong chính database của ứng dụng, bền vững trên Vercel.
+- Viết lại `product-image-storage.test.ts` dùng PrismaClient thật trên test DB: upload → đọc lại DB → read → delete; xoá key không tồn tại; key traversal bị từ chối; fallback ảnh legacy. Chạy `npm run db:generate` + `db:push` sau khi đổi schema.
+- Cập nhật `.env.example`, `README.md` (mục 5 & 7), `docs/DEPLOY.md` (overview, env, verification, backup, checklist), `docs/ARCHITECTURE.md` (mục 5, 11, deployment). `AI_LOG.md` cập nhật.
+
+**Kết quả kiểm chứng** (capture bằng Node `spawnSync`, UTF-8, lưu tại `C:\Users\Hello\AppData\Local\Temp\opencode\`)
+
+- `npm run db:generate` → exit 0; `npm run db:push` → exit 0 (`Your database is now in sync with your Prisma schema`).
+- `npm test` → exit 0, **58 files / 262 tests** (trước đó 57/258).
+- `npm run lint`, `npm run typecheck`, `npm run format:check`, `npm run build` → exit 0.
+
+### Hạn chế / AI sai ở đâu
+
+- Ban đầu em triển khai S3 theo hướng cũ R6.2; người dùng phủ nhận ("ont use s3 workflow"). Đã bỏ hoàn toàn hướng đó (kể cả dependency `@aws-sdk/client-s3`, biến `S3_*`, migration/doc liên quan) thay vì giữ nó lại.
+- Không thể tự chạy migration trên PostgreSQL production hay verify upload trên Vercel từ môi trường này; migration và bước verify đã được ghi rõ trong `docs/DEPLOY.md`. Ảnh đã tồn tại trên filesystem local vẫn đọc được nhờ fallback, nhưng không tự động chuyển vào DB.
+
+**So sánh Figma:** không áp dụng (không đổi UI).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
