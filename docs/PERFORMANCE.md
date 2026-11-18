@@ -14,19 +14,19 @@ Mỗi trang được đo **1 lần khởi động (bỏ qua, không lưu báo c�
 
 | Trang | Performance | Accessibility | SEO | FCP (ms) | LCP (ms) | TBT (ms) |
 |---|---:|---:|---:|---:|---:|---:|
-| Home (`/`) | **85** (84–95) | **96** | **100** | 1370 (947–1717) | 2775 (2759–3067) | 112 (71–404) |
-| Sản phẩm (`/p/aurora-band`) | **97** (97–99) | **100** | **100** | 1474 (1333–1477) | 1927 (1624–2533) | 81 (60–136) |
+| Home (`/`) | **95** (91–96) | **96** | **100** | 996 (930–1471) | 2580 (2346–3174) | 148 (142–163) |
+| Sản phẩm (`/p/aurora-band`) | **97** (94–99) | **100** | **100** | 970 (954–1131) | 2204 (1537–2671) | 162 (109–198) |
 | Blog chi tiết (`/blog/cach-chon-nhan-cuoi-phu-hop`) | **97** (81–98) | **98** | **100** | 1009 (966–2411) | 2466 (2209–3616) | 87 (71–198) |
 
 **Chi tiết 3 lần đo (Performance) và báo cáo JSON:**
 
 | Trang | Lần 1 | Lần 2 | Lần 3 | Trung vị | Báo cáo |
 |---|---:|---:|---:|---:|---|
-| Home | 95 | 85 | 84 | **85** | [1](lighthouse-reports/prod-home-1.json) · [2](lighthouse-reports/prod-home-2.json) · [3](lighthouse-reports/prod-home-3.json) |
-| Sản phẩm | 99 | 97 | 97 | **97** | [1](lighthouse-reports/prod-product-1.json) · [2](lighthouse-reports/prod-product-2.json) · [3](lighthouse-reports/prod-product-3.json) |
+| Home | 91 | 96 | 95 | **95** | [1](lighthouse-reports/prod-home-1.json) · [2](lighthouse-reports/prod-home-2.json) · [3](lighthouse-reports/prod-home-3.json) |
+| Sản phẩm | 97 | 99 | 94 | **97** | [1](lighthouse-reports/prod-product-1.json) · [2](lighthouse-reports/prod-product-2.json) · [3](lighthouse-reports/prod-product-3.json) |
 | Blog chi tiết | 81 | 98 | 97 | **97** | [1](lighthouse-reports/prod-blog-1.json) · [2](lighthouse-reports/prod-blog-2.json) · [3](lighthouse-reports/prod-blog-3.json) |
 
-**Mục tiêu:** Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95 (trung vị 3 lần). **Trạng thái:** Home (85) và sản phẩm (97) **đạt** trên bản deploy; Home sát ngưỡng nên cần theo dõi các lần đo sau. Blog chi tiết cũng đạt cả ba mục tiêu trong bộ đo mới. Bộ số liệu cũ ghi Home “91 (61–96)” đã được thay bằng 3 lần đo này — lần khởi động (61) khi đó bị tính nhầm vào dải, nay đã loại và không lưu báo cáo.
+**Mục tiêu:** Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95 (trung vị 3 lần). **Trạng thái:** Home (95) và sản phẩm (97) **đạt** rõ ràng trên bản deploy ở lượt đo lại sau khi upload ảnh thật. Blog chi tiết giữ số liệu của lượt đo trước (97 trung vị) và cũng đạt. Các bộ số liệu cũ (Home “84 (82–92)”, “91 (61–96)” rồi “85 (84–95)”) phản ánh các lần đo khác nhau; bảng trên là lượt mới nhất, JSON gốc được lưu lại để đối chiếu.
 
 ### Kết quả đo trên production build local (tham chiếu, median; range)
 

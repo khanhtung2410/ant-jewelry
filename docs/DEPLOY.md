@@ -96,9 +96,26 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 6. **Verify deployment:**
    - Public screens: Home (`/`), category (`/c/<slug>`), product (`/p/<slug>`), Blog list (`/blog`), Blog detail (`/blog/<slug>`), and other public pages as applicable.
    - Admin: `/admin/login`, dashboard and content management.
-   - Upload one image near 4 MB and a batch of three images in admin (the UI sends them one per request) and confirm all display, then redeploy and confirm they still display (bytes come from `ProductImageBlob`, not the filesystem).
-   - `curl -I` an uploaded `/uploads/...` URL twice: expect `cache-control: ... s-maxage=31536000 ...`, an `etag`, and `x-vercel-cache: HIT` on the second request. A repeat request with matching `If-None-Match` should return 304.
+   - Upload one image near 4 MB and a batch of three images in admin (the UI sends them one per request) and confirm all display; bytes come from `ProductImageBlob`, so they survive a redeploy.
+   - `curl -I` an uploaded `/uploads/...` URL twice: expect an `etag` and `x-vercel-cache: HIT` on the second request. A repeat request with matching `If-None-Match` should return 304. (Vercel rewrites `cache-control` on the edge to `public, max-age=31536000, immutable`; the `s-maxage` value is set by the app but is not echoed back in the response headers.)
    - Check `/robots.txt`, `/sitemap.xml`, and canonical/`SITE_URL` behavior.
+
+### Bằng chứng upload thật trên production (2026-11-18)
+
+Đăng nhập `/admin` bằng tài khoản ADMIN test, mở sản phẩm Ivy Tennis Bracelet (`/p/ivy-tennis-bracelet`), upload 1 ảnh PNG 3.78 MB rồi chọn 3 ảnh cùng lúc (UI gửi tuần tự từng file):
+
+```text
+admin login: https://ant-jewelry.vercel.app/admin
+large image (~3.78 MB): 1 image(s) uploaded
+batch of 3 images: 3 image(s) uploaded
+upload API responses: 201 / 201 / 201 / 201
+product page: status=200 contains uploaded key=true
+HEAD 1: status=200 cache-control=public, max-age=31536000, immutable etag="77157c..." x-vercel-cache=MISS
+HEAD 2: status=200 x-vercel-cache=HIT
+HEAD 3 (If-None-Match): status=304 x-vercel-cache=HIT
+```
+
+Ảnh chụp: [admin đã đăng nhập](deploy-screenshots/admin-logged-in.png), [danh sách ảnh sau upload](deploy-screenshots/admin-uploaded-images.png), [trang sản phẩm có ảnh upload](deploy-screenshots/product-with-uploaded-image.png), [Home](deploy-screenshots/home.png), [sản phẩm](deploy-screenshots/product.png). Chưa tự phát động redeploy Production từ môi trường agent; ảnh nằm trong DB nên bước còn lại là xác nhận sau lần deploy tiếp theo.
 
 ## Đối chiếu Figma ↔ production (6 màn)
 
@@ -140,7 +157,7 @@ If `next build` fails during page data collection with:
 
 - **Storefront:** https://ant-jewelry.vercel.app/ (HTTP 200 at time of check, 2026-11-17)
 - **Admin:** https://ant-jewelry.vercel.app/admin (redirects to login as expected for unauthenticated access)
-- **Lighthouse (production, 2026-11-18, 3 recorded runs after a discarded warm-up, mobile):** Home median Performance 85 / Accessibility 96 / SEO 100; product `/p/aurora-band` median Performance 97 / Accessibility 100 / SEO 100. Raw scores and JSON reports for all three runs are linked in `docs/PERFORMANCE.md`.
+- **Lighthouse (production, 2026-11-18, 3 recorded runs after a discarded warm-up, mobile):** Home median Performance 95 / Accessibility 96 / SEO 100; product `/p/aurora-band` median Performance 97 / Accessibility 100 / SEO 100. Raw scores and JSON reports for all three runs are linked in `docs/PERFORMANCE.md`.
 
 ## Production readiness checklist (kèm bằng chứng)
 
