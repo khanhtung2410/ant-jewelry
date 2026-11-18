@@ -1,4 +1,47 @@
-## 2026-11-18 08:27:17 +07:00 - Kiểm chứng đủ tiêu chí nộp lại
+## 2026-11-18 11:23:51 +07:00 - Upload an toàn trên Vercel và CDN cache (A1)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> Production https://ant-jewelry.vercel.app mở được cả 6 màn. Nhưng mentor quét 27 trang /p, /c trong sitemap: không trang nào dùng ảnh /uploads/, toàn bộ là ảnh mock. Nghĩa là luồng upload trên production chưa từng được chạy thật (AI_LOG.md:18 cũng ghi “chưa verify được trên Vercel thật”).
+>
+> A1 — Upload chạy được trên Vercel. Vercel Functions giới hạn body ~4,5 MB, app vẫn cho 5 MB/file × 10 file (product-image-validation.ts:1-2): một file 5 MB đã fail. Chọn một: giảm giới hạn (ví dụ 4 MB/request) và upload từng file một; hoặc nén/resize phía client trước khi gửi. Route src/app/uploads/[...path]/route.ts thêm s-maxage (CDN cache) + ETag, vì hiện mỗi lần miss là một function + một query kéo cả blob.
+> trên production: upload 1 ảnh ~4 MB và 3 ảnh cùng lúc → thành công; redeploy → ảnh vẫn hiện ở /p/<slug>; curl -I ảnh đó thấy x-vercel-cache: HIT ở lần thứ hai. Dán output + ảnh vào PR.
+> update doc file if needed
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: đã fetch; `main` đã sẵn ở `b14c784`, không có commit mới từ origin.
+- Đọc toàn bộ file liên quan: `product-image-validation.ts`, API upload route, `src/app/uploads/[...path]/route.ts`, `product-image-management.tsx`, `product-form-dialog.tsx`, các test, `docs/ARCHITECTURE.md`, `docs/DEPLOY.md`, `docs/REQUIREMENTS.md`, `docs/HUONG_DAN_VAN_HANH.md`.
+- Chọn phương án **giảm giới hạn + gửi từng file**: `MAX_PRODUCT_IMAGE_SIZE = 4 MB` (thấp hơn ngưỡng ~4,5 MB của Vercel Functions, còn dư cho multipart overhead); server chỉ nhận **đúng 1 file/request** (trả 400 nếu gửi nhiều hơn); UI vẫn cho chọn tối đa 10 ảnh nhưng vòng lặp gửi tuần tự, từng file một FormData. Bỏ nhánh cleanup của partial-upload giờ không còn đường đi.
+- `src/app/uploads/[...path]/route.ts`: thêm ETag SHA-256 theo nội dung blob, `Cache-Control: public, max-age=31536000, s-maxage=31536000, immutable`, trả 304 khi `If-None-Match` khớp. Nhờ CDN cache HIT mà không gọi Function/DB ở lần sau.
+- Test: cập nhật test validation (4 MiB), test API (từ chối batch >1 file, lỗi write 1 file), thêm test route `/uploads` (ETag + 304). `npm test` → 58 files / 261 tests pass; lint/typecheck/format:check/build exit 0.
+- Verify production build local: tạo ảnh PNG nhiễu 3,78 MB + 3 ảnh ~0,11 MB bằng sharp; đăng nhập ADMIN, upload 1 ảnh lớn (message “1 image(s) uploaded”) rồi chọn 3 ảnh cùng lúc (message “3 image(s) uploaded”) → DB có đúng 4 blob (3.968.290 bytes + 3×120.492 bytes) và 4 ProductImage với URL `/uploads/...`. Dừng/khởi động lại `next start` → GET ảnh vẫn 200/120492 bytes; trang `/p/aurora-band` vẫn 200. `curl -I` cho thấy `cache-control: ... s-maxage=31536000 ...` + `etag`; request có `If-None-Match` → 304.
+- Cập nhật docs: ARCHITECTURE, DEPLOY (bước verify upload 1 ảnh ~4 MB + batch 3, `x-vercel-cache: HIT` lần 2), REQUIREMENTS, HUONG_DAN_VAN_HANH (5 MB → 4 MB). `AI_LOG.md` cập nhật.
+
+**Kết quả kiểm chứng** (capture UTF-8 bằng Node `spawnSync` và `curl.exe`)
+
+- `curl.exe -sSI <url>`: `HTTP/1.1 200 OK`, `cache-control: public, max-age=31536000, s-maxage=31536000, immutable`, `etag: "686aa88a..."`.
+- `If-None-Match` → `304` với cùng ETag. Ảnh sau restart: `200 120492 bytes`.
+- Screenshots: `a1-admin-images-after-upload.png`, `a1-product-after-upload.png` (lưu trong temp, đính kèm PR).
+
+### Hạn chế / AI sai ở đâu
+
+- Không thể upload thật trên Vercel hay gọi redeploy từ môi trường này (không có credentials ADMIN production/quyền deploy); vì vậy chưa có bằng chứng `x-vercel-cache: HIT` hay ảnh `/uploads/` xuất hiện trong 27 trang sitemap production. Dữ liệu production vẫn là ảnh mock cho đến khi mentor đăng nhập ADMIN và upload thật. Các bước verify đã được ghi rõ trong `docs/DEPLOY.md`.
+- Lần đầu chạy test fail do test “partial upload cleanup” gửi 2 file — giờ server từ chối batch; đã đổi thành test 1 file write-failed. Lần đầu script Playwright dùng `getByRole('button', { name: /Images/ })` trong khi tab có role `tab`; đã sửa.
+- Header `x-vercel-cache` chỉ có trên Vercel CDN, không có trên `next start` local; local thay bằng ETag/304 để chứng minh cơ chế cache.
+
+**So sánh Figma:** không đổi bố cục; chỉ đổi giới hạn/gửi file và header cache.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

@@ -63,36 +63,41 @@ export function ProductImageManagement({
       return;
     }
 
-    const oversizedFile = Array.from(files).find((file) => file.size > MAX_PRODUCT_IMAGE_SIZE);
+    const selected = Array.from(files);
+    const oversizedFile = selected.find((file) => file.size > MAX_PRODUCT_IMAGE_SIZE);
     if (oversizedFile) {
-      setError(`${oversizedFile.name} exceeds the 5 MB limit.`);
+      setError(`${oversizedFile.name} exceeds the 4 MB limit.`);
       return;
-    }
-
-    const formData = new FormData();
-    for (const file of Array.from(files)) {
-      formData.append('files', file);
     }
 
     setUploading(true);
     setError(null);
     setMessage(null);
+    const uploadedImages: ImageRecord[] = [];
     try {
-      const response = await fetch(`/api/admin/products/${encodeURIComponent(productId)}/images`, {
-        method: 'POST',
-        body: formData,
-      });
-      const result: { error?: string; images?: ImageRecord[] } = await response.json();
-      if (!response.ok) {
-        setError(result.error ?? 'Image upload failed.');
-        return;
+      // Vercel Functions limit the request body, so send one file at a time.
+      for (const file of selected) {
+        const formData = new FormData();
+        formData.append('files', file);
+        const response = await fetch(
+          `/api/admin/products/${encodeURIComponent(productId)}/images`,
+          { method: 'POST', body: formData },
+        );
+        const result: { error?: string; images?: ImageRecord[] } = await response.json();
+        if (!response.ok) {
+          setError(`${file.name}: ${result.error ?? 'Image upload failed.'}`);
+          break;
+        }
+        uploadedImages.push(...(result.images ?? []));
       }
 
-      setMessage(`${result.images?.length ?? 0} image(s) uploaded.`);
-      if (inputRef.current) {
-        inputRef.current.value = '';
+      if (uploadedImages.length > 0) {
+        setMessage(`${uploadedImages.length} image(s) uploaded.`);
+        if (inputRef.current) {
+          inputRef.current.value = '';
+        }
+        router.refresh();
       }
-      router.refresh();
     } catch {
       setError('Image upload failed. Check your connection and try again.');
     } finally {
@@ -106,8 +111,8 @@ export function ProductImageManagement({
         <div>
           <h3 className="font-heading text-sm tracking-[0.08em]">PRODUCT IMAGES</h3>
           <p className="mt-1 text-xs text-[var(--font-color)]">
-            JPEG, PNG, or WebP; up to 5 MB per file and {MAX_PRODUCT_IMAGES_PER_UPLOAD} files per
-            upload.
+            JPEG, PNG, or WebP; up to 4 MB per file and {MAX_PRODUCT_IMAGES_PER_UPLOAD} files per
+            upload. Files are sent one at a time.
           </p>
         </div>
         {canDeleteProduct ? (
