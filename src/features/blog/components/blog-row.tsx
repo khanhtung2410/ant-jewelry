@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { BlogPost } from '@/features/shared/domain/domain';
-import { isExternalImageUrl } from '@/features/shared/lib/image-url';
+import { shouldSkipImageOptimizer } from '@/features/shared/lib/image-url';
 import { ActionButton } from '@/features/layout/components/action-button';
 
 interface BlogRowProps {
@@ -26,7 +26,7 @@ export function BlogRow({ post, className = '', headingLevel = 3 }: BlogRowProps
           alt={post.title}
           fill
           loading="lazy"
-          unoptimized={isExternalImageUrl(post.coverImageUrl)}
+          unoptimized={shouldSkipImageOptimizer(post.coverImageUrl)}
           sizes="(max-width: 640px) 100vw, 320px"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
         />

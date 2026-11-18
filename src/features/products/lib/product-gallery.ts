@@ -2,7 +2,7 @@ import type { Product, ProductImage } from '@/features/shared/domain/domain';
 
 export const GALLERY_THUMBNAIL_COUNT = 3;
 
-export { isExternalImageUrl } from '@/features/shared/lib/image-url';
+export { isExternalImageUrl, shouldSkipImageOptimizer } from '@/features/shared/lib/image-url';
 
 /**
  * Returns the gallery for a colour. Colours without their own photos share the

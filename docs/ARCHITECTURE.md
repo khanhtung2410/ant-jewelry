@@ -857,7 +857,7 @@ Phân chia trách nhiệm:
 | Next.js Route Handler / Server Actions | Authenticate and authorize uploads and image management; validate file content and coordinate cleanup |
 | Next.js storefront | Render image URLs read from the database |
 
-The server validates JPEG, PNG, and WebP signatures from file bytes and enforces a 4 MiB per-file limit (one file per request). Storage keys are validated before reading/serving to prevent path traversal. The serving route adds a content-based ETag and a one-year `s-maxage` so repeat requests are served from the CDN cache.
+The server validates JPEG, PNG, and WebP signatures from file bytes and enforces a 4 MiB per-file limit (one file per request). Uploads are resized with sharp to WebP at most 1600 px, then stored as bytes in `ProductImageBlob`; the UI serves `/uploads/...` with `unoptimized` (via `shouldSkipImageOptimizer`) to avoid the Vercel `/_next/image` cold-start/400 failures observed on large uploaded PNGs. Storage keys are validated before reading/serving to prevent path traversal. The serving route adds a content-based ETag and a one-year `s-maxage` so repeat requests are served from the CDN cache.
 
 `src/features/products/server/product-image-storage.ts` is the single storage helper: new uploads write bytes to `ProductImageBlob` and use `/uploads/<storageKey>` as the public URL; reads/deletes use the same row, with a best-effort filesystem fallback for legacy files. This avoids the read-only `cwd/uploads` and ephemeral `/tmp` problem on Vercel without introducing an external object store.
 

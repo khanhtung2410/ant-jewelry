@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useState } from 'react';
 import type { HeroSlide } from '@/features/shared/domain/domain';
-import { isExternalImageUrl } from '@/features/shared/lib/image-url';
+import { shouldSkipImageOptimizer } from '@/features/shared/lib/image-url';
 import { isSafeLinkHref } from '@/features/shared/lib/safe-url';
 import { ActionButton } from './action-button';
 import { ArrowButton } from './arrow-button';
@@ -37,7 +37,7 @@ export function HeroSlider({ slides }: HeroSliderProps) {
           src={activeSlide.imageUrl}
           alt={activeSlide.alt}
           fill
-          unoptimized={isExternalImageUrl(activeSlide.imageUrl)}
+          unoptimized={shouldSkipImageOptimizer(activeSlide.imageUrl)}
           sizes="100vw"
           priority
           loading="eager"

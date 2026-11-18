@@ -89,7 +89,7 @@ export async function POST(
 
   try {
     for (const file of validatedFiles) {
-      const stored = await uploadProductImage(product.id, file.bytes, file.type);
+      const stored = await uploadProductImage(product.id, file.bytes);
       uploaded.push({ ...stored, type: file.type });
     }
   } catch (error) {

@@ -6,7 +6,7 @@ import type { ProductImage } from '@/features/shared/domain/domain';
 import {
   GALLERY_THUMBNAIL_COUNT,
   getThumbnailWindowStart,
-  isExternalImageUrl,
+  shouldSkipImageOptimizer,
 } from '@/features/products/lib/product-gallery';
 import { ArrowButton } from '@/features/layout/components/arrow-button';
 
@@ -41,7 +41,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
           src={activeImage.url}
           alt={activeImage.alt}
           fill
-          unoptimized={isExternalImageUrl(activeImage.url)}
+          unoptimized={shouldSkipImageOptimizer(activeImage.url)}
           preload
           fetchPriority="high"
           sizes="(max-width: 1024px) 100vw, 50vw"
@@ -86,7 +86,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
                     fill
                     loading="lazy"
                     fetchPriority="low"
-                    unoptimized={isExternalImageUrl(image.url)}
+                    unoptimized={shouldSkipImageOptimizer(image.url)}
                     sizes="96px"
                     className="object-cover"
                   />
