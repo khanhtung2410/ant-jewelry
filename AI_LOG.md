@@ -1,4 +1,44 @@
-## 2026-11-18 14:22:55 +07:00 - Lockfile đồng bộ đa nền tảng và CI npm ci (D2)
+## 2026-11-18 15:17:05 +07:00 - Tự generate Prisma và dọn file SQLite phụ (D6, D7)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> D6 — Prisma client cũ sau khi pull. Khi mentor pull PR #84, npm test fail 4 test vì client chưa có model ProductImageBlob (Prisma 7 không tự generate). README đã ghi bước db:generate, nhưng nên thêm "postinstall": "prisma generate" (hoặc chạy prisma generate trong vitest.global-setup.ts) để không ai phải nhớ.
+> pull commit có migration mới → npm install → npm test pass mà không chạy tay lệnh nào khác.
+> D7 — Dọn file SQLite phụ. vitest.global-setup.ts chỉ xoá prisma/test.db; xoá luôn test.db-wal, test.db-shm, test.db-journal nếu có, để không còn dữ liệu cũ sót lại.
+>
+> update doc file if needed
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base + tạo branch mới `fix/prisma-postinstall-and-sqlite-cleanup` từ `origin/main` (`6fb3c00`, sau PR #91).
+- Đọc `package.json`, `prisma.config.ts`, `vitest.global-setup.ts`, README, DEPLOY.
+- **D6:** thêm script `postinstall: node scripts/generate-prisma.mjs`. Script cross-platform gọi `npx prisma generate`, đặt mặc định `DATABASE_URL=file:./prisma/dev.db` nếu chưa có (prisma.config.ts resolve env lúc load, fresh clone chưa có `.env`); generate chỉ đọc schema, không kết nối DB. Nhờ đó `npm install`/`npm ci` tự tạo client có model mới.
+- **D7:** global setup giờ xoá `prisma/test.db` cùng `test.db-wal`, `test.db-shm`, `test.db-journal` (vẫn kiểm tra path tuyệt đối và chỉ xoá file thường). Cập nhật README/DEPLOY giải thích postinstall và việc dọn companion files.
+- `AI_LOG.md` cập nhật.
+
+**Kết quả kiểm chứng** (fresh clone vào thư mục trống, capture UTF-8 bằng Node `spawnSync`)
+
+- `.env present before install: false`; `npm install` exit 0 với `> ant-jewelry@0.1.0 postinstall` và `✔ Generated Prisma Client (v7.10.1)`.
+- Tạo sẵn `prisma/test.db-wal`, `test.db-shm`, `test.db-journal` giả rồi chạy `npm test` **không gọi tay `db:generate`** → exit 0, `Test Files 60 passed (60)`, `Tests 264 passed (264)`.
+- Sau test: `test.db-wal`, `test.db-shm`, `test.db-journal` đều `exists: false`.
+
+### Hạn chế / AI sai ở đâu
+
+- Không dùng trực tiếp `"postinstall": "prisma generate"` vì trên fresh clone lỗi `PrismaConfigEnvError: Cannot resolve environment variable: DATABASE_URL` (đã gặp ở CI PR #91); cần script đặt default env trước khi gọi Prisma.
+- Postinstall chỉ generate client SQLite mặc định; production build vẫn dùng `db:generate:production` và migration riêng.
+
+**So sánh Figma:** không áp dụng.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

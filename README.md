@@ -80,8 +80,7 @@ npm run db:seed
 ```
 
 - `db:push` tạo schema SQLite từ `prisma/schema.prisma` (file `prisma/dev.db`).
-- **Prisma 7 không tự generate Prisma Client sau `db push`**, nên phải chạy riêng
-  `npm run db:generate` trước lần build/chạy đầu tiên (và mỗi lần đổi schema).
+- `npm install` / `npm ci` đã tự chạy `postinstall` → `prisma generate`, nên client luôn có model mới sau khi pull. Với Prisma 7, `db push` **không** tự generate; khi đổi schema trong lúc đang dev thì chạy thêm `npm run db:generate`.
 - `db:seed` nạp danh mục, sản phẩm, Blog, hero slides, Settings và hai tài khoản mẫu.
 - Seed chỉ chạy với SQLite (`DATABASE_URL` bắt đầu bằng `file:`) và từ chối database khác.
 
