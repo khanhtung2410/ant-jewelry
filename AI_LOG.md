@@ -1,4 +1,47 @@
-## 2026-11-18 13:44:39 +07:00 - Gộp B1, R3.3c, B2, B3 vào một PR
+## 2026-11-18 14:22:55 +07:00 - Lockfile đồng bộ đa nền tảng và CI npm ci (D2)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> all Verification command must have full output paste
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> D2 — npm ci chạy được. Lockfile vẫn thiếu package entry cho các bản @tailwindcss/oxide linux/darwin (chỉ có win32-x64-msvc, wasm32-wasi), nên npm ci trên Linux/macOS báo “not in sync”. Xoá node_modules + lockfile, chạy npm install bằng đúng npm 10.9.9 đã khai báo trong packageManager, commit lockfile mới.
+> trên máy Linux / CI: rm -rf node_modules && npm ci không lỗi. Có thể thêm GitHub Action chạy npm ci trên ubuntu-latest để chứng minh.
+>
+> update doc file if needed
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: PR #90 đã merge; fetch, reset `main` về `06e59b2`.
+- Kiểm tra lockfile cũ: chỉ có `node_modules/@tailwindcss/oxide`, `.../oxide-wasm32-wasi`, `.../oxide-win32-x64-msvc` → đúng mô tả thiếu linux/darwin. Kiểm tra `node --version` = v22.23.3, `npm --version` = 10.9.9 (khớp `packageManager`).
+- Xoá `node_modules` + `package-lock.json`, chạy `npm install` (exit 0) tạo lockfile mới với **19** entry `@tailwindcss/oxide*`, gồm linux-x64/arm64 (gnu + musl), darwin-x64/arm64, android-arm64, freebsd-x64, win32 variants. Sau đó xoá `node_modules` và chạy `npm ci` → exit 0.
+- Thêm `.github/workflows/npm-ci.yml`: `ubuntu-latest`, Node 22, `npm ci`, `npm run db:generate`, `npm run typecheck` — bằng chứng Linux/CI khi workflow chạy sau push (không chạy được locally).
+- Chạy lại đủ lệnh kiểm tra sau `npm ci`: `db:generate`, `lint`, `typecheck`, `format:check`, `test`, `build` → đều exit 0 (`npm test`: 60 files / 264 tests).
+- Toàn bộ output được capture bằng Node `spawnSync` UTF-8 vào file temp rồi ghép nguyên vẹn vào PR body (không dùng PowerShell redirect) theo yêu cầu “full output paste” và tránh mojibake. `AI_LOG.md` cập nhật.
+
+**Kết quả kiểm chứng**
+
+- `npm install` → `added 571 packages, and audited 578 packages in 8m`, exit 0.
+- `npm ci` → `added 571 packages ...`, exit 0.
+- 19 oxide entries có mặt trong lockfile mới (trước đó 3).
+- `npm run lint`, `npm run typecheck`, `npm run format:check`, `npm test`, `npm run build` → exit 0.
+
+### Hạn chế / AI sai ở đâu
+
+- GitHub Action chỉ mới được thêm; không thể tự chạy `ubuntu-latest` từ máy này, nên bằng chứng Linux là cấu hình workflow + lockfile có đầy đủ entry đa nền tảng, còn kết quả CI sẽ thấy sau khi PR được push.
+- `npm install` vẫn báo 16 high severity vulnerabilities từ cây dependency; không tự `npm audit fix` vì có thể đổi breaking ngoài phạm vi D2.
+- Sau `npm ci` phải chạy `npm run db:generate` (Prisma 7 không tự generate) — đã đưa vào workflow và README từ trước.
+
+**So sánh Figma:** không áp dụng (lockfile/CI).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

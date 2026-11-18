@@ -1,0 +1,23 @@
+name: npm ci (Linux)
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  npm-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: npm version
+        run: npm --version
+      - name: Clean install from lockfile
+        run: npm ci
+      - name: Generate Prisma Client (Prisma 7 does not do it automatically)
+        run: npm run db:generate
+      - name: Type check
+        run: npm run typecheck
