@@ -59,6 +59,19 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
    - Upload a product image in admin and confirm it displays, then redeploy and confirm the image still displays (bytes come from `ProductImageBlob`, not the filesystem).
    - Check `/robots.txt`, `/sitemap.xml`, and canonical/`SITE_URL` behavior.
 
+## Đối chiếu Figma ↔ production (6 màn)
+
+Đối chiếu theo bản thiết kế Figma/đặc tả `ANT_JEWELRY_SAD_v1.1.docx` (Figma gốc không được lưu trong repo). Ảnh chụp production lúc kiểm chứng 2026-11-18 nằm trong `docs/deploy-screenshots/`.
+
+| Màn hình | Figma / thiết kế đối chiếu | Production URL | Trạng thái | Ảnh chụp |
+|---|---|---|---|---|
+| Home | Hero 16:9, thanh điều hướng, 4 carousel danh mục (5 card/section), khối BLOG | `/` | 200 | [home](deploy-screenshots/home.png) |
+| Danh mục | Header/filter, danh sách sản phẩm theo `ProductType`, sort SEE MORE | `/c/wedding-ring` | 200 | [category](deploy-screenshots/category.png) |
+| Chi tiết sản phẩm | Gallery ảnh chính + thumbnail, thông tin/giá, YOU MIGHT ALSO LIKE | `/p/aurora-band` | 200 | [product](deploy-screenshots/product.png) |
+| Blog list | Tiêu đề, danh sách bài có ảnh bìa/tóm tắt, phân trang | `/blog` | 200 | [blog-list](deploy-screenshots/blog-list.png) |
+| Blog chi tiết | Tiêu bài, ảnh bìa above-the-fold, nội dung Markdown, OTHER BLOGS | `/blog/cach-chon-nhan-cuoi-phu-hop` | 200 | [blog-detail](deploy-screenshots/blog-detail.png) |
+| Admin | Trang đăng nhập (`/admin/login`), sau đó dashboard và các màn quản lý | `/admin/login` | 200 | [admin-login](deploy-screenshots/admin-login.png) |
+
 ## Vercel build error: `public.BlogPost` does not exist (P2021)
 
 If `next build` fails during page data collection with:
