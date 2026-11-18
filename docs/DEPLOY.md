@@ -117,6 +117,8 @@ HEAD 3 (If-None-Match): status=304 x-vercel-cache=HIT
 
 Ảnh chụp: [admin đã đăng nhập](deploy-screenshots/admin-logged-in.png), [danh sách ảnh sau upload](deploy-screenshots/admin-uploaded-images.png), [trang sản phẩm có ảnh upload](deploy-screenshots/product-with-uploaded-image.png), [Home](deploy-screenshots/home.png), [sản phẩm](deploy-screenshots/product.png). Chưa tự phát động redeploy Production từ môi trường agent; ảnh nằm trong DB nên bước còn lại là xác nhận sau lần deploy tiếp theo.
 
+**Lỗi optimizer đã gặp và cách xử lý:** ảnh PNG ~3,8 MB upload ở lượt trên có lúc trả `400 INVALID_IMAGE_OPTIMIZE_REQUEST` qua `/_next/image?...&w=256&q=75` (`uniqueContextId not found`, kèm cảnh báo Permissions-Policy không liên quan từ trình duyệt). Ảnh đã được upload mới sẽ được resize thành WebP ≤1600 px ngay khi lưu và component dùng `shouldSkipImageOptimizer()` để phục vụ trực tiếp `/uploads/...`, không còn phụ thuộc vào image optimizer. Ảnh PNG cũ trong DB vẫn đọc được bình thường.
+
 ## Đối chiếu Figma ↔ production (6 màn)
 
 Đối chiếu theo bản thiết kế Figma/đặc tả `ANT_JEWELRY_SAD_v1.1.docx` (Figma gốc không được lưu trong repo). Ảnh chụp production lúc kiểm chứng 2026-11-18 nằm trong `docs/deploy-screenshots/`.

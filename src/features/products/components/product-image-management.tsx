@@ -17,7 +17,7 @@ import {
   MAX_PRODUCT_IMAGE_SIZE,
   MAX_PRODUCT_IMAGES_PER_UPLOAD,
 } from '../lib/product-image-validation';
-import { isExternalImageUrl } from '../lib/product-gallery';
+import { shouldSkipImageOptimizer } from '../lib/product-gallery';
 
 type ImageRecord = {
   id: string;
@@ -174,7 +174,7 @@ export function ProductImageManagement({
                   src={image.url}
                   alt={image.alt}
                   fill
-                  unoptimized={isExternalImageUrl(image.url)}
+                  unoptimized={shouldSkipImageOptimizer(image.url)}
                   sizes="88px"
                   className="object-cover"
                 />

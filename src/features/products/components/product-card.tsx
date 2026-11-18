@@ -2,7 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { formatPrice } from '@/features/shared/lib/format-price';
 import type { ProductCardData } from '@/features/shared/domain/domain';
-import { isExternalImageUrl } from '@/features/products/lib/product-gallery';
+import { shouldSkipImageOptimizer } from '@/features/products/lib/product-gallery';
 
 interface ProductCardProps {
   product: ProductCardData;
@@ -32,7 +32,7 @@ export function ProductCard({ product, className = '' }: ProductCardProps) {
               src={frontImage.url}
               alt={frontImage.alt}
               fill
-              unoptimized={isExternalImageUrl(frontImage.url)}
+              unoptimized={shouldSkipImageOptimizer(frontImage.url)}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
               className="object-cover transition-opacity duration-300 group-hover:opacity-0"
             />
@@ -45,7 +45,7 @@ export function ProductCard({ product, className = '' }: ProductCardProps) {
               fill
               loading="lazy"
               fetchPriority="low"
-              unoptimized={isExternalImageUrl(hoverImage.url)}
+              unoptimized={shouldSkipImageOptimizer(hoverImage.url)}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
               className="object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100"
             />

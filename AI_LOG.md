@@ -1,4 +1,37 @@
-## 2026-11-18 15:53:46 +07:00 - Upload thật trên Vercel và Lighthouse sau upload (A1)
+## 2026-11-18 16:24:03 +07:00 - Bỏ image optimizer cho ảnh upload (A1 follow-up)
+
+### Prompt nguyên văn đã dùng
+
+> pull on origin main before upload to avoid conflict
+>
+> Error with Permissions-Policy header: Unrecognized feature: 'attribution-reporting'.
+> Error with Permissions-Policy header: Unrecognized feature: 'private-aggregation'.
+> Error with Permissions-Policy header: Unrecognized feature: 'join-ad-interest-group'.
+> Error with Permissions-Policy header: Unrecognized feature: 'run-ad-auction'.
+> Error with Permissions-Policy header: Unrecognized feature: 'browsing-topics'.
+> Resend failed for https://ant-jewelry.vercel.app/_next/image?url=%2Fuploads%2F...%2F627e03ee-....png&w=256&q=75: uniqueContextId not found
+> image:1  GET .../_next/image?...&w=256&q=75 400 (Bad Request)
+> Bad request INVALID_IMAGE_OPTIMIZE_REQUEST
+> on image 8 ivu tennis bracelet
+
+### Đã tự kiểm chứng
+
+- Theo yêu cầu, đã `git fetch origin` trước khi làm việc: PR #93 đã merge vào `origin/main`; stash các thay đổi đang dở, reset branch về `71e6708` rồi apply lại để tránh conflict.
+- Kiểm tra ảnh lỗi trên production: GET trực tiếp `/uploads/...png` → 200, `image/png`, 3.968.290 bytes, signature PNG hợp lệ; `/_next/image?...&w=256&q=75` lúc kiểm tra lại → 200 (w=640 cũng 200, w=1080 → 400 do ảnh nguồn chỉ 1100 px). Lỗi 400 lúc trước là lỗi optimizer nhất thời (`uniqueContextId not found`) trên Vercel, không phải file hỏng. Các dòng Permissions-Policy là cảnh báo của Chrome về feature không nhận diện, không phải lỗi ứng dụng.
+- Sửa triệt để: thêm `sharp@^0.35.5` dependency; `uploadProductImage()` resize ảnh về WebP tối đa 1600 px, quality 82, lưu blob với `contentType: image/webp`; bỏ tham số type không còn dùng. Thêm `isStoredUploadUrl()` / `shouldSkipImageOptimizer()` trong `image-url.ts`; các component (ProductGallery, ProductCard, ProductImageManagement, HeroSlider, BlogRow) dùng helper này để set `unoptimized` cho `/uploads/...` (vẫn tối ưu ảnh mock qua `/_next/image`).
+- Cập nhật test storage (dùng sharp tạo ảnh 2000×2000, kiểm tra output WebP ≤1600) và test image-url; cập nhật README, ARCHITECTURE, DEPLOY.
+- `npm test` → 60 files / 264 tests pass; lint/typecheck/format:check/build exit 0.
+
+### Hạn chế / AI sai ở đâu
+
+- 4 ảnh đã upload trước đó trên production vẫn là PNG lớn; không tự migrate sang WebP. Ảnh mới sẽ là WebP và không đi qua optimizer.
+- Lỗi `uniqueContextId not found` từ Next.js/Vercel image optimizer là ứng viên feedback (một diagnostic khó hiểu dẫn tới workaround bỏ optimizer cho ảnh tự upload); sẽ đưa vào reporting pass cuối cùng.
+
+**So sánh Figma:** không đổi bố cục; ảnh hiển thị trực tiếp nhỏ hơn nhờ resize.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

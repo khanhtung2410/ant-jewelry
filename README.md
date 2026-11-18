@@ -181,9 +181,10 @@ không truy cập Prisma trực tiếp.
 - Production: `prisma/postgresql/schema.prisma` và migrations trong
   `prisma/postgresql/migrations/`.
 - `src/features/shared/db/prisma.ts` giữ một `PrismaClient` dùng chung.
-- Ảnh sản phẩm upload được lưu dưới dạng blob trong database (`ProductImageBlob`) và phục vụ
-  qua route `/uploads/...`, nên vẫn còn sau redeploy trên Vercel. `PRODUCT_IMAGE_UPLOAD_DIR`
-  chỉ dùng để đọc/dọn ảnh legacy từ bản filesystem cũ.
+- Ảnh sản phẩm upload được resize về WebP (tối đa 1600 px) rồi lưu dưới dạng blob trong
+  `ProductImageBlob`, phục vụ trực tiếp qua `/uploads/...` (bỏ qua `/_next/image`) để tránh lỗi
+  optimizer trên Vercel; ảnh vẫn còn sau redeploy. `PRODUCT_IMAGE_UPLOAD_DIR` chỉ dùng để
+  đọc/dọn ảnh legacy từ bản filesystem cũ.
 
 Sau khi đổi schema local, chạy `npm run db:push` và `npm run db:generate` nếu Prisma Client
 chưa được cập nhật. Không dùng `prisma db push` cho production.

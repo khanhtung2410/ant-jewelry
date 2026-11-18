@@ -2,6 +2,7 @@
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import sharp from 'sharp';
 import { prisma } from '@/features/shared/db/prisma';
 import {
   InvalidProductImageStorageKeyError,
@@ -30,27 +31,31 @@ afterEach(async () => {
 });
 
 describe('database-backed local product image storage', () => {
-  it('uploads, reads and deletes image bytes in the database', async () => {
-    const bytes = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+  it('resizes, stores, reads and deletes image bytes in the database', async () => {
+    const bytes = await sharp({
+      create: { width: 2000, height: 2000, channels: 3, background: '#b8860b' },
+    })
+      .png()
+      .toBuffer();
 
-    const stored = await uploadProductImage('product-1', bytes, {
-      contentType: 'image/png',
-      extension: 'png',
-    });
+    const stored = await uploadProductImage('product-1', bytes);
     createdKeys.push(stored.storageKey);
 
-    expect(stored.storageKey).toMatch(/^products\/product-1\/.+\.png$/);
+    expect(stored.storageKey).toMatch(/^products\/product-1\/.+\.webp$/);
     expect(stored.url).toBe(`/uploads/${stored.storageKey}`);
 
     const blob = await prisma.productImageBlob.findUnique({
       where: { storageKey: stored.storageKey },
     });
-    expect(blob?.contentType).toBe('image/png');
-    expect(new Uint8Array(blob!.bytes)).toEqual(bytes);
+    expect(blob?.contentType).toBe('image/webp');
+    const metadata = await sharp(blob!.bytes).metadata();
+    expect(metadata.format).toBe('webp');
+    expect(metadata.width).toBeLessThanOrEqual(1600);
+    expect(metadata.height).toBeLessThanOrEqual(1600);
 
     await expect(readStoredProductImage(stored.storageKey)).resolves.toEqual({
-      bytes,
-      contentType: 'image/png',
+      bytes: new Uint8Array(blob!.bytes),
+      contentType: 'image/webp',
     });
 
     await deleteStoredProductImage(stored.storageKey);
