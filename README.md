@@ -66,7 +66,7 @@ Các biến trong `.env.example`:
 | `DATABASE_URL` | Có | `file:./prisma/dev.db` cho local; PostgreSQL cho production |
 | `AUTH_SECRET` | Có | Khóa ký session admin; không commit giá trị thật |
 | `SITE_URL` | Không | Mặc định `http://localhost:3000`; đặt origin thật khi deploy |
-| `PRODUCT_IMAGE_UPLOAD_DIR` | Không | Mặc định `./uploads`, nơi lưu ảnh sản phẩm upload |
+| `PRODUCT_IMAGE_UPLOAD_DIR` | Không | Chỉ đường dẫn legacy để đọc/dọn ảnh upload trước khi chuyển sang DB |
 | `DIRECT_URL` | Production (tùy chọn) | Không bắt buộc bởi schema/build hiện tại; có thể đặt nếu công cụ migration của bạn cần URL trực tiếp |
 
 `.env` và `.env.local` đã nằm trong `.gitignore`; chỉ `.env.example` được commit.
@@ -146,7 +146,7 @@ ant-jewelry/
 │   │   │   ├── (auth)/login/   # Đăng nhập admin
 │   │   │   └── (dashboard)/    # products, categories, blog, hero-slides, settings, users
 │   │   ├── api/admin/          # Route Handler upload ảnh sản phẩm
-│   │   └── uploads/            # Phục vụ file upload từ PRODUCT_IMAGE_UPLOAD_DIR
+│   │   └── uploads/            # Phục vụ blob ảnh từ ProductImageBlob (legacy: filesystem cũ)
 │   ├── features/
 │   │   ├── admin/              # Khung admin dùng chung
 │   │   ├── auth/               # Session, login, rate limit
@@ -235,9 +235,10 @@ migration mới `20261118100000_add_product_image_blobs` trước/sau khi deploy
 5. Kiểm tra `/robots.txt`, `/sitemap.xml`, đăng nhập admin, dữ liệu và upload ảnh sau deploy.
 
 Lưu ý: trên môi trường serverless/ephemeral (như Vercel), filesystem local không bền vững qua
-redeploy/instance mới; cần mount/storage bền vững có quyền ghi nếu muốn giữ ảnh upload. Nếu
-build báo `P2021: The table public.BlogPost does not exist`, chạy migration cho đúng DB
-trước/sau deploy. Chi tiết xem [`docs/DEPLOY.md`](docs/DEPLOY.md).
+redeploy/instance mới, nên ảnh upload được ghi vào `ProductImageBlob` trong database — không cần
+mount/storage riêng. Quyết định, đánh đổi và ngưỡng theo dõi dung lượng xem ở
+[`docs/DEPLOY.md`](docs/DEPLOY.md) mục “Storage decision record”. Nếu build báo
+`P2021: The table public.BlogPost does not exist`, chạy migration cho đúng DB trước/sau deploy.
 
 ## 8. Tài liệu
 
