@@ -6,6 +6,42 @@ Production target: **Vercel** (Next.js) + **PostgreSQL**. Uploaded product image
 
 **Important:** on Vercel the deployment root is read-only and `/tmp` is discarded between instances, so the app never writes uploads to `cwd/uploads`. The database is the durable local store; `PRODUCT_IMAGE_UPLOAD_DIR` is only a legacy read path for files uploaded by older versions. The production migration `20261118100000_add_product_image_blobs` creates the new table.
 
+## Storage decision record: product images in Postgres
+
+**Quyết định:** bytes ảnh sản phẩm được lưu trong bảng `ProductImageBlob` của chính database ứng dụng (PostgreSQL ở production, SQLite ở local/test) và phục vụ qua `/uploads/<storageKey>`.
+
+**Lịch sử quyết định:**
+
+- PR #61 (R6.2) từng thêm storage S3/R2 (`@aws-sdk/client-s3`, biến `S3_*`, URL public của bucket) để ảnh sống qua redeploy.
+- PR #62 revert lại toàn bộ workflow S3/R2 theo yêu cầu giữ luồng lưu trữ local/không thêm nhà cung cấp và secrets ngoài; code/docs trở về filesystem `PRODUCT_IMAGE_UPLOAD_DIR`.
+- PR #84 chuyển "local" sang **DB-backed local blobs**: Vercel có `cwd/uploads` chỉ đọc và `/tmp` mất khi đổi instance, nên filesystem không bền; database thì đã có sẵn và được backup. Không còn dependency hay biến `S3_*` nào trong repo.
+- PR #86 giới hạn 4 MB/file, gửi từng file một (Vercel Function ~4,5 MB/body) và thêm `s-maxage` + ETag cho `/uploads/[...path]`.
+
+**Đánh đổi (trade-offs):**
+
+- **Dung lượng DB:** ảnh nằm trong `bytea`, làm tăng kích thước backup và thời gian `pg_dump`/PITR; không có bucket riêng để tách dữ liệu nhị phân.
+- **Backup:** ảnh được backup cùng database (xem mục Migration/backup) — không cần backup filesystem riêng, nhưng restore DB là restore luôn ảnh.
+- **Chi phí Function + DB khi CDN miss:** mỗi lần cache miss chạy một Function và một query kéo blob từ DB. Đã giảm bằng `Cache-Control: s-maxage=31536000, immutable` và ETag/304; vẫn cần theo dõi tỉ lệ cache HIT và số invocation.
+- **Đổi lấy:** không thêm vendor/secrets, ít cấu hình hơn, nhất quán giữa local và production, ảnh tồn tại qua redeploy.
+
+**Giới hạn sẽ theo dõi (review định kỳ):**
+
+| Chỉ số | Ngưỡng hiện tại / cần theo dõi |
+|---|---|
+| Kích thước 1 file | Tối đa 4 MB (cứng trong code, do giới hạn body Vercel) |
+| Số file chọn 1 lần | Tối đa 10, gửi tuần tự từng request |
+| Tổng dung lượng blob | Cảnh báo ở 500 MB, review ở 1 GB (hoặc thấp hơn tùy gói DB); xem SQL dưới đây |
+| Cache HIT ratio của `/uploads/*` | Theo dõi `x-vercel-cache`; nếu HIT thấp kéo dài → review lại thiết kế |
+| Function invocations / DB read | Theo dõi sau mỗi đợt upload lớn; nếu tăng bất thường → kiểm tra header cache |
+
+```sql
+-- PostgreSQL: tổng số ảnh và dung lượng blob
+SELECT count(*) AS images, pg_size_pretty(coalesce(sum(length(bytes)), 0)::bigint) AS total_bytes
+FROM "ProductImageBlob";
+```
+
+Nếu vượt ngưỡng dung lượng hoặc cache HIT không cải thiện, mở lại phương án object storage (S3/R2) như một quyết định mới — không tự động bật lại trong PR này.
+
 ## Prerequisites
 
 - Vercel project connected to this repository (production environment).
@@ -25,7 +61,7 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 | `DIRECT_URL` | No | Optional; not required by the current PostgreSQL schema/build. Provide only if your migration/tooling setup needs it |
 | `PRODUCT_IMAGE_UPLOAD_DIR` | No | Legacy filesystem path used only to read/remove pre-migration uploads (default `./uploads`) |
 
-`vercel.json` runs `npm run build:production`: it generates the PostgreSQL Prisma client, applies pending migrations on **Production** Vercel builds (`scripts/migrate-production.mjs` → `prisma migrate deploy`), then runs `next build`. Preview builds skip migrations because Preview and Production are connected to the same database here; local builds also skip them. A production build now fails if the database is unreachable instead of deploying an app with no schema. Migrations can still be run manually (see below). Local dev/test use SQLite and local uploads unless configured otherwise.
+`vercel.json` runs `npm run build:production`: it generates the PostgreSQL Prisma client, applies pending migrations on **Production** Vercel builds (`scripts/migrate-production.mjs` → `prisma migrate deploy`), then runs `next build`. Preview builds skip migrations because Preview and Production are connected to the same database here; local builds also skip them. A production build now fails if the database is unreachable instead of deploying an app with no schema. Migrations can still be run manually (see below). Local dev/test use SQLite and write image bytes into that SQLite database's `ProductImageBlob` table — there is no filesystem upload path anymore; `PRODUCT_IMAGE_UPLOAD_DIR` only reads/removes legacy files from older versions.
 
 ## Vercel deployment sequence
 
@@ -100,7 +136,7 @@ If `next build` fails during page data collection with:
 
 - **Storefront:** https://ant-jewelry.vercel.app/ (HTTP 200 at time of check, 2026-11-17)
 - **Admin:** https://ant-jewelry.vercel.app/admin (redirects to login as expected for unauthenticated access)
-- **Lighthouse (production, 2026-11-17, 3 runs, mobile):** Home median Performance 84 / Accessibility 96 / SEO 100; product `/p/aurora-band` median Performance 89 / Accessibility 100 / SEO 100. See `docs/PERFORMANCE.md` for ranges and methodology.
+- **Lighthouse (production, 2026-11-18, 3 runs, mobile):** Home median Performance 91 / Accessibility 96 / SEO 100; product `/p/aurora-band` median Performance 96 / Accessibility 100 / SEO 100. See `docs/PERFORMANCE.md` for ranges and methodology.
 
 ## Production readiness checklist
 

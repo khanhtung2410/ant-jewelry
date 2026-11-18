@@ -1,4 +1,38 @@
-## 2026-11-18 12:08:37 +07:00 - Loader và popover xác nhận cho thao tác ảnh
+## 2026-11-18 12:44:27 +07:00 - Ghi lại quyết định lưu ảnh trong Postgres (A2)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> A2 — Ghi lại quyết định storage. Ghi vào docs/DEPLOY.md: quyết định lưu ảnh trong Postgres, lý do bỏ S3/R2 (#61 → revert #62), và đánh đổi (dung lượng DB, backup gồm cả ảnh, chi phí function khi CDN miss), kèm giới hạn dung lượng sẽ theo dõi. Sửa luôn DEPLOY.md:28 (“local uploads”), vì local giờ cũng ghi vào DB.
+> combine with current code status
+>
+> update doc file if needed
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: PR #87 đã merge; fetch, reset `main` về `05926b7`.
+- Đọc toàn bộ `docs/DEPLOY.md`, `README.md` và các đoạn AI_LOG liên quan đến #61/#62/#84/#86; đối chiếu với code hiện tại: `product-image-storage.ts` dùng `prisma.productImageBlob.create/findUnique/deleteMany`, không còn `@aws-sdk/client-s3` hay biến `S3_*`; validation 4 MB/file, 1 file/request; `/uploads/[...path]` có `s-maxage` + ETag.
+- `docs/DEPLOY.md`: thêm mục **“Storage decision record: product images in Postgres”** gồm quyết định, lịch sử (#61 thêm S3/R2 → #62 revert theo yêu cầu giữ luồng local/không thêm vendor & secrets → #84 chuyển sang DB-backed blobs vì Vercel read-only + /tmp ephemeral → #86 4 MB/gửi từng file + CDN cache), đánh đổi (dung lượng DB, backup/PITR gồm cả ảnh, Function + DB query khi CDN miss) và bảng ngưỡng theo dõi (4 MB/file, 10 file/request, warn 500 MB/review 1 GB, cache HIT ratio, function invocations) kèm SQL đếm/do dung lượng blob.
+- Sửa dòng `DEPLOY.md` cũ nói “Local dev/test use SQLite and local uploads” → local cũng ghi blob vào SQLite; cập nhật Lighthouse production trong DEPLOY từ 84/89 (2026-11-17) sang 91/96 (2026-11-18) cho khớp `PERFORMANCE.md`.
+- `README.md`: đổi mô tả `PRODUCT_IMAGE_UPLOAD_DIR` thành legacy read path, mô tả route `/uploads` phục vụ blob DB, và thay đoạn “cần mount/storage bền vững” bằng link tới decision record (vì DB đã đảm nhiệm).
+- Chỉ thay đổi tài liệu; chạy lại `npm run format:check` → exit 0.
+
+### Hạn chế / AI sai ở đâu
+
+- Lý do revert #62 trong AI_LOG gốc chỉ ghi yêu cầu “remove all of S3 storage workflow, change it back to local storage” của chủ dự án; decision record ghi trung thực là theo yêu cầu đó, không tự suy diễn lý do kỹ thuật ngoài những gì đã ghi nhận.
+- Ngưỡng 500 MB/1 GB là khuyến nghị để theo dõi, chưa phải số liệu đo được trên production; cần mentor điều chỉnh theo gói DB thực tế.
+
+**So sánh Figma:** không áp dụng (chỉ tài liệu vận hành).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
