@@ -25,5 +25,7 @@ jobs:
         run: npm run db:generate
       - name: Lint
         run: npm run lint
+      - name: Generate Next.js route types (needed by tsc on a clean checkout)
+        run: npx --no-install next typegen
       - name: Type check
         run: npm run typecheck
