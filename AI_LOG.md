@@ -1,4 +1,45 @@
-## 2026-11-18 12:44:27 +07:00 - Ghi lại quyết định lưu ảnh trong Postgres (A2)
+## 2026-11-18 13:10:24 +07:00 - Bằng chứng checklist deploy và số liệu Lighthouse nhất quán (R6.2b, R6.1b)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> use current branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> R6.2b — Checklist deploy có bằng chứng. DEPLOY.md:107-113: tick từng ô (env, SITE_URL, migration, ADMIN đầu tiên, upload qua redeploy, backup) và kèm bằng chứng: output db:migrate:status:production, ảnh trang admin đăng nhập bằng ADMIN vừa tạo, ảnh sản phẩm có ảnh upload sau redeploy. Preview đang dùng chung DB Production: tách DB, hoặc tắt Preview deploy, hoặc ghi rõ rủi ro (Preview có thể ghi vào dữ liệu thật).
+> R6.1b — Tài liệu hiệu năng nhất quán. PERFORMANCE.md: dải Home “61–96” mâu thuẫn với câu “đã loại lần 61”, nên ghi đủ 3 lần đo và trung vị. DEPLOY.md:102 vẫn ghi Home 84. Đính link báo cáo Lighthouse (JSON/HTML) của cả 3 lần đo.
+> measure at prod page too
+>
+> update doc file if needed
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ code base: PR #88 đã merge; fetch, reset `main` về `3c38270`.
+- **Đo lại production** (`https://ant-jewelry.vercel.app/`, mobile, simulated): 1 lần warm-up (bỏ, không lưu) + 3 lần lưu báo cáo JSON cho Home, sản phẩm, blog. Kết quả trung vị: Home **85** (3 lần: 95/85/84, A11y 96, SEO 100), sản phẩm **97** (99/97/97, 100/100), blog **97** (81/98/97, 98/100). 9 file JSON nằm trong `docs/lighthouse-reports/prod-{home,product,blog}-{1,2,3}.json`.
+- `docs/PERFORMANCE.md`: thay bộ số cũ “Home 91 (61–96)” (lần 61 từng bị tính nhầm vào dải dù đã nói loại) bằng bảng 3 lần đo + trung vị + link từng báo cáo JSON; ghi rõ lần warm-up bị loại. Sửa câu kết luận: Home 85 đạt sát ngưỡng, sản phẩm 97 đạt.
+- `docs/DEPLOY.md`: dòng Lighthouse đã cập nhật từ 84/89 sang 85/97 (phiên bản trước đó đã sửa 84/89 → 91/96; giờ cập nhật theo bộ đo mới). Thêm cảnh báo rủi ro **Preview dùng chung DB Production** (có thể ghi vào dữ liệu thật; nêu 3 lựa chọn tách DB / tắt Preview / chỉ xem không ghi).
+- Checklist deploy đổi thành bảng kèm trạng thái và bằng chứng: tick các mục có bằng chứng thật (6 màn HTTP 200 + ảnh chụp, canonical `SITE_URL` từ HTML production), giữ `[ ]` và nêu rõ bằng chứng cần mentor đính kèm cho env dashboard, output `db:migrate:status:production`, ảnh đăng nhập ADMIN thật, ảnh upload trên production sau redeploy, và test restore backup. Không tự tick khi không có bằng chứng production.
+- `AI_LOG.md` cập nhật. Chỉ thay docs + thêm báo cáo JSON; không đổi code ứng dụng.
+
+**Kết quả kiểm chứng** (capture UTF-8 bằng Node `spawnSync`)
+
+- `GET https://ant-jewelry.vercel.app/` → 200; HTML có `<link rel="canonical" href="https://ant-jewelry.vercel.app"/>` (6 lần xuất hiện origin).
+- Lighthouse 3 lần/page chạy exit 0, báo cáo JSON lưu trong repo; `npm run format:check` → exit 0.
+
+### Hạn chế / AI sai ở đâu
+
+- Không có credentials Vercel/PostgreSQL production (chỉ có OIDC token đã hết hạn), nên không chạy được `db:migrate:status:production`, không tạo/đăng nhập ADMIN thật và không redeploy production. Vì vậy checklist giữ một số ô `[ ]` thay vì tick giả; đây là điểm còn thiếu đúng yêu cầu “có bằng chứng”.
+- Số liệu Lighthouse dao động theo tải máy/CDN; Home 85 sát ngưỡng. Bộ đo trước đó (91/96) và bộ mới (85/97) khác nhau do điều kiện đo; tài liệu giữ bộ mới, có JSON gốc để đối chiếu.
+- Ảnh upload sau redeploy chỉ có bằng chứng local production build; production vẫn là ảnh mock vì chưa có ADMIN upload thật.
+
+**So sánh Figma:** không áp dụng (tài liệu và báo cáo đo).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
