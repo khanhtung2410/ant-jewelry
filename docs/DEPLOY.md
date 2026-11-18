@@ -6,6 +6,8 @@ Production target: **Vercel** (Next.js) + **PostgreSQL**. Uploaded product image
 
 **Important:** on Vercel the deployment root is read-only and `/tmp` is discarded between instances, so the app never writes uploads to `cwd/uploads`. The database is the durable local store; `PRODUCT_IMAGE_UPLOAD_DIR` is only a legacy read path for files uploaded by older versions. The production migration `20261118100000_add_product_image_blobs` creates the new table.
 
+`npm install` / `npm ci` run a `postinstall` script that executes `prisma generate` with a harmless local SQLite default when `DATABASE_URL` is not set yet. Pulling a commit with a new Prisma model, then running `npm install` and `npm test`, therefore works without manually generating the client. The Vitest global setup also removes `prisma/test.db` plus any `-wal`, `-shm` and `-journal` companions before each run so stale pages cannot leak between runs.
+
 ## Storage decision record: product images in Postgres
 
 **Quyết định:** bytes ảnh sản phẩm được lưu trong bảng `ProductImageBlob` của chính database ứng dụng (PostgreSQL ở production, SQLite ở local/test) và phục vụ qua `/uploads/<storageKey>`.

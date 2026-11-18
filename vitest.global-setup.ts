@@ -30,12 +30,15 @@ export default function setup() {
 
   // A plain `prisma db push` cannot recreate an existing SQLite file, while
   // --force-reset is blocked for AI agents. Delete only the verified test DB
-  // so the push can create a clean database without that flag.
-  if (existsSync(testDatabaseFile)) {
-    if (!statSync(testDatabaseFile).isFile()) {
-      throw new Error(`Refusing to delete non-file test database: ${testDatabaseFile}`);
+  // (and its journal/WAL companions, which may hold stale pages) so the push
+  // creates a clean database without that flag.
+  for (const suffix of ['', '-wal', '-shm', '-journal']) {
+    const file = `${testDatabaseFile}${suffix}`;
+    if (!existsSync(file)) continue;
+    if (!statSync(file).isFile()) {
+      throw new Error(`Refusing to delete non-file test database artifact: ${file}`);
     }
-    unlinkSync(testDatabaseFile);
+    unlinkSync(file);
   }
 
   // Both the Prisma CLI and PrismaClient resolve relative file: URLs from the
