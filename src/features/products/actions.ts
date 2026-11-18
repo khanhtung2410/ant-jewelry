@@ -86,6 +86,10 @@ export async function saveProduct(
   }
 
   const productId = String(formData.get('productId') ?? '');
+  if (!productId && !hasPermission(session.role, 'products:create')) {
+    return stateWithErrors(values, { form: ['You do not have permission to create products.'] });
+  }
+
   const existingProduct = productId
     ? await prisma.product.findUnique({
         where: { id: productId },
@@ -123,10 +127,6 @@ export async function saveProduct(
   });
   if (existingSlug && existingSlug.id !== productId) {
     return stateWithErrors(values, { slug: ['This slug is already in use.'] });
-  }
-
-  if (!productId && !hasPermission(session.role, 'products:create')) {
-    return stateWithErrors(values, { form: ['You do not have permission to create products.'] });
   }
 
   // EDITORs may manage products but cannot change prices; keep the stored price.

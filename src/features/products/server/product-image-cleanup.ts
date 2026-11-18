@@ -21,9 +21,17 @@ export async function enqueueProductImageDeletions(storageKeys: string[]): Promi
 }
 
 export async function processPendingProductImageDeletions(): Promise<void> {
-  const pending = await prisma.pendingImageDeletion.findMany({
-    orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-  });
+  let pending: Awaited<ReturnType<typeof prisma.pendingImageDeletion.findMany>>;
+  try {
+    pending = await prisma.pendingImageDeletion.findMany({
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+    });
+  } catch (error) {
+    // Even a DB failure while reading the queue must not fail the action that
+    // just queued an image deletion; the rows stay for a later retry.
+    console.error('Could not load pending product image deletions:', error);
+    return;
+  }
   const failures: Error[] = [];
 
   for (const deletion of pending) {

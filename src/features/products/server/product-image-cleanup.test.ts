@@ -4,7 +4,9 @@ const mocks = vi.hoisted(() => ({
   findMany: vi.fn(),
   deleteRow: vi.fn(async () => ({})),
   upsert: vi.fn(async () => ({})),
-  deleteStored: vi.fn(async (_storageKey: string) => {}),
+  deleteStored: vi.fn(async (storageKey: string) => {
+    void storageKey;
+  }),
   transaction: vi.fn(async (operations: Promise<unknown>[]) => Promise.all(operations)),
 }));
 
@@ -48,6 +50,17 @@ describe('pending product image cleanup', () => {
     expect(mocks.deleteStored).toHaveBeenCalledTimes(2);
     expect(mocks.deleteRow).toHaveBeenCalledTimes(1);
     expect(mocks.deleteRow).toHaveBeenCalledWith({ where: { id: 'row-ok' } });
+    expect(consoleError).toHaveBeenCalled();
+    consoleError.mockRestore();
+  });
+
+  it('does not throw when the queue itself cannot be read', async () => {
+    mocks.findMany.mockRejectedValueOnce(new Error('db down'));
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await expect(processPendingProductImageDeletions()).resolves.toBeUndefined();
+
+    expect(mocks.deleteStored).not.toHaveBeenCalled();
     expect(consoleError).toHaveBeenCalled();
     consoleError.mockRestore();
   });

@@ -16,7 +16,7 @@ describe('isExternalImageUrl', () => {
   it('keeps site paths and protocol-relative URLs on the optimizer', () => {
     expect(isExternalImageUrl('/uploads/ring.webp')).toBe(false);
     expect(isExternalImageUrl('//cdn.example.com/a.jpg')).toBe(false);
-    expect(isExternalImageUrl('/\cdn.example.com/a.jpg')).toBe(false);
+    expect(isExternalImageUrl('/\\cdn.example.com/a.jpg')).toBe(false);
     expect(isExternalImageUrl('data:image/png;base64,AAAA')).toBe(false);
   });
 });
