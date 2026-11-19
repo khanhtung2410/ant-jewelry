@@ -2,10 +2,7 @@ import { createHash } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
 import sharp from 'sharp';
 import { prisma } from '@/features/shared/db/prisma';
-import {
-  migrateLegacyBlobs,
-  reencodeLegacyBlob,
-} from '../../scripts/reencode-legacy-uploads.mjs';
+import { migrateLegacyBlobs, reencodeLegacyBlob } from '../../scripts/reencode-legacy-uploads.mjs';
 
 const createdKeys: string[] = [];
 
@@ -16,15 +13,16 @@ afterEach(async () => {
   createdKeys.length = 0;
 });
 
-async function png(width = 2000, height = 2000): Promise<Buffer> {
-  return sharp({
+async function png(width = 2000, height = 2000): Promise<Uint8Array<ArrayBuffer>> {
+  return (await sharp({
     create: { width, height, channels: 3, background: '#b8860b' },
   })
     .png()
-    .toBuffer();
+    .toBuffer()) as Uint8Array<ArrayBuffer>;
 }
 
-const sha256Hex = (bytes: Uint8Array) => createHash('sha256').update(bytes).digest('hex');
+const sha256Hex = (bytes: Uint8Array<ArrayBufferLike>) =>
+  createHash('sha256').update(bytes).digest('hex');
 
 describe('E1 legacy image re-encode', () => {
   it('turns a large PNG into WebP within 1600px and computes a sha256 etag', async () => {

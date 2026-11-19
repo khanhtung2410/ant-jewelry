@@ -16,10 +16,7 @@ const runtimeConfig = {
 
 describe('local image optimizer config', () => {
   it('accepts local image URLs that carry a query string', async () => {
-    for (const url of [
-      '/mock/products/ring-6.webp?v=2',
-      '/uploads/products/p-1/cover.webp?v=2',
-    ]) {
+    for (const url of ['/mock/products/ring-6.webp?v=2', '/uploads/products/p-1/cover.webp?v=2']) {
       const result = await ImageOptimizerCache.validateParams(
         { headers: { accept: 'image/webp' } } as Parameters<
           typeof ImageOptimizerCache.validateParams
@@ -29,7 +26,7 @@ describe('local image optimizer config', () => {
         false,
       );
 
-      expect(result.errorMessage, url).toBeUndefined();
+      expect('errorMessage' in result ? result.errorMessage : undefined, url).toBeUndefined();
     }
   });
 });
