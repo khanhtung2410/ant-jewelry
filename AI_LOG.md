@@ -1,4 +1,34 @@
-## 2026-11-19 23:45:50 +07:00 - Sửa finding #2/#3/#4: docs permissions, spec và AI_LOG
+## 2026-11-20 00:16:37 +07:00 - Sửa finding #5: ảnh screenshot chờ lazy load
+
+### Prompt nguyên văn đã dùng
+
+> read docs/reviews/2026-11-19-requesting-code-review-final.md
+> fix #5
+
+### Đã tự kiểm chứng
+
+- Fetch `origin/main` (`6ac98fd`), tạo branch `fix/screenshot-eager`; đọc lại file review và toàn bộ `e2e/ui-screenshots.spec.ts` trước khi sửa.
+- **TDD RED:** thêm hàm `assertImagesLoaded` (mọi ảnh có `src` bắt đầu `/` phải `complete && naturalWidth > 0`) rồi chạy `npm run test:screenshots` tới production với `SCREENSHOT_DIR` ở temp → **1 failed / 5 passed**, lỗi đúng nội dung `images not fully loaded: /mock/blog/cover-wedding-band.svg, /mock/blog/cover-diamond-cut.svg` (2 ảnh blog cover dưới fold).
+- **GREEN:** thêm `waitForImages()` — ép `image.loading = 'eager'` cho ảnh local, `document.fonts.ready`, rồi `image.decode()` (có fallback load/error, timeout 3s). Gọi helper ở cả 6 test (kể cả popover) trước `assertImagesLoaded`. Chạy lại: **6 passed**, regenerate 6 ảnh vào `docs/deploy-screenshots/`; đồng thời thay `expect(file).toBeTruthy()` (no-op) bằng `expect(existsSync(file)).toBe(true)`.
+- **Đối chiếu trung thực:** 6 PNG regenerate **byte-identical** với bản đã commit → ảnh cũ thực tế không bị trống; phát hiện #5 đúng là rủi ro tiềm ẩn, không phải lỗi nhìn thấy được. Đã ghi rõ điều này vào file review thay vì nhận định quá đà.
+- `docs/DEPLOY.md:195` mô tả lại đúng quy trình (eager + decode + assert). Verification gate: lint/typecheck/test (64 files / 289 tests)/format:check/build đều exit 0.
+
+### AI sai ở đâu
+
+- Ban đầu định tin reviewer rằng ảnh cũ có vùng trống; phải so sánh byte 6 PNG trước/sau mới thấy chúng giống hệt. Đã sửa lại ngôn ngữ trong review: "rủi ro đã được loại bỏ", không phải "ảnh cũ hỏng".
+- Lần đầu định chỉ đổi `loading` mà quên `decode()` → ảnh có thể `complete` nhưng chưa giải mã xong; đã thêm decode + fallback.
+- `SCREENSHOT_DIR` ở temp cho lượt RED để không ghi đè ảnh đã commit trong repo.
+
+### Hạn chế
+
+- Assert chỉ áp ảnh local (`src` bắt đầu `/`); ảnh external (nếu có) vẫn có thể trống nhưng hiện trang không dùng.
+- Không chạy lại E2E local (chỉ đổi file thuộc project screenshots + docs); gate đầy đủ vẫn chạy.
+
+**So sánh Figma:** không đổi; 6 ảnh 1920px vẫn là nguồn cho bảng R6.3.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
