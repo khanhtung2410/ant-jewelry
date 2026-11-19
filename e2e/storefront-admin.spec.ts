@@ -19,7 +19,7 @@ async function tabTo(page: Page, target: Locator) {
   throw new Error('Target was not reachable with the Tab key.');
 }
 
-test('storefront visitors can sort, choose a color, and contact the store', async ({ page }) => {
+test('storefront visitors can sort, choose a color, and contact the store', { tag: '@storefront' }, async ({ page }) => {
   await page.goto('/');
 
   await page
@@ -63,7 +63,7 @@ test('storefront visitors can sort, choose a color, and contact the store', asyn
   );
 });
 
-test('footer PRODUCTS opens a real category page', async ({ page }) => {
+test('footer PRODUCTS opens a real category page', { tag: '@storefront' }, async ({ page }) => {
   await page.goto('/');
 
   const footer = page.getByRole('contentinfo');
@@ -73,7 +73,7 @@ test('footer PRODUCTS opens a real category page', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
-test('blog pages expose one h1 and one OTHER BLOGS post', async ({ page }) => {
+test('blog pages expose one h1 and one OTHER BLOGS post', { tag: '@storefront' }, async ({ page }) => {
   await page.goto('/blog');
   await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
 
@@ -84,9 +84,10 @@ test('blog pages expose one h1 and one OTHER BLOGS post', async ({ page }) => {
   await expect(otherBlogs.getByRole('article')).toHaveCount(1);
 });
 
-test('header CONTACT trigger controls the shared dialog and the home h1 stays fixed', async ({
-  page,
-}) => {
+test(
+  'header CONTACT trigger controls the shared dialog and the home h1 stays fixed',
+  { tag: '@storefront' },
+  async ({ page }) => {
   await page.goto('/');
 
   const heading = page.getByRole('heading', { level: 1 });
@@ -123,7 +124,7 @@ test('header CONTACT trigger controls the shared dialog and the home h1 stays fi
   await expect(headerTrigger).toHaveAttribute('aria-expanded', 'false');
 });
 
-test('storefront pages do not scroll horizontally and keep the header sticky', async ({ page }) => {
+test('storefront pages do not scroll horizontally and keep the header sticky', { tag: '@storefront' }, async ({ page }) => {
   for (const width of [375, 768, 1280, 1920]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto('/');
@@ -142,9 +143,10 @@ test('storefront pages do not scroll horizontally and keep the header sticky', a
   }
 });
 
-test('keyboard users can open the PRODUCTS menu and reach every category link', async ({
-  page,
-}) => {
+test(
+  'keyboard users can open the PRODUCTS menu and reach every category link',
+  { tag: '@storefront' },
+  async ({ page }) => {
   await page.goto('/');
 
   const mainNav = page.getByRole('navigation', { name: 'Main navigation' });
