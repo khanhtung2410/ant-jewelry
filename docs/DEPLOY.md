@@ -117,7 +117,23 @@ HEAD 3 (If-None-Match): status=304 x-vercel-cache=HIT
 
 Ảnh chụp: [admin đã đăng nhập](deploy-screenshots/admin-logged-in.png), [danh sách ảnh sau upload](deploy-screenshots/admin-uploaded-images.png), [trang sản phẩm có ảnh upload](deploy-screenshots/product-with-uploaded-image.png), [Home](deploy-screenshots/home.png), [sản phẩm](deploy-screenshots/product.png). Chưa tự phát động redeploy Production từ môi trường agent; ảnh nằm trong DB nên bước còn lại là xác nhận sau lần deploy tiếp theo.
 
-**Lỗi optimizer đã gặp và cách xử lý:** ảnh PNG ~3,8 MB upload ở lượt trên có lúc trả `400 INVALID_IMAGE_OPTIMIZE_REQUEST` qua `/_next/image?...&w=256&q=75` (`uniqueContextId not found`, kèm cảnh báo Permissions-Policy không liên quan từ trình duyệt). Ảnh đã được upload mới sẽ được resize thành WebP ≤1600 px ngay khi lưu và component dùng `shouldSkipImageOptimizer()` để phục vụ trực tiếp `/uploads/...`, không còn phụ thuộc vào image optimizer. Ảnh PNG cũ trong DB vẫn đọc được bình thường.
+**Lỗi optimizer đã gặp và cách xử lý:** ảnh PNG ~3,8 MB upload ở lượt trên có lúc trả `400 INVALID_IMAGE_OPTIMIZE_REQUEST` qua `/_next/image?...&w=256&q=75` (`uniqueContextId not found`, kèm cảnh báo Permissions-Policy không liên quan từ trình duyệt). Ảnh đã được upload mới sẽ được resize thành WebP ≤1600 px ngay khi lưu và component dùng `shouldSkipImageOptimizer()` để phục vụ trực tiếp `/uploads/...`, không còn phụ thuộc vào image optimizer.
+
+### Migration ảnh legacy (E1)
+
+Các blob cũ vẫn là PNG và có thể vượt ngân sách LCP trên mobile 4G. Chạy một lần trên từng môi trường:
+
+```bash
+#_local (file:./prisma/dev.db trong .env)_
+node scripts/reencode-legacy-uploads.mjs --dry-run
+node scripts/reencode-legacy-uploads.mjs
+
+# production: đặt DATABASE_URL là chuỗi direct của Prisma Postgres, rồi chạy hai lệnh trên
+```
+
+Script dùng chung `resizeToStoredWebp()` với `uploadProductImage()`, ghi đè `bytes`/`contentType` và **giữ nguyên storage key** (đuôi `.png`). Vì nội dung đổi nhưng URL cũ có thể còn nằm trong CDN cache, script thêm `?v=2` vào `ProductImage.url`; route `/uploads/[...path]` bỏ qua query và ETag được tính lại từ bytes mới ở mỗi request. Sau khi chạy, kiểm tra mọi ảnh `/uploads/...` trên trang sản phẩm có `size_download < 400000` và chạy lại Lighthouse mobile cho trang đó (dùng `/p/ivy-tennis-bracelet`, trang có ảnh upload thật).
+
+**Kết quả kiểm chứng production 2026-11-19:** 4 ảnh `/uploads/...` trên `/p/ivy-tennis-bracelet` lần lượt 29.732 / 29.728 / 29.868 / 337.464 byte (đều <400 KB). Lighthouse mobile 3 lần: 93 / 91 / 100 → trung vị Performance **93**, Accessibility 100, SEO 100; báo cáo JSON trong [`docs/lighthouse-reports/`](lighthouse-reports/) (`prod-ivy-{1,2,3}.json`). Các ảnh production được thay bằng giao diện ADMIN vì agent không có `DATABASE_URL` production; script ở trên vẫn là cách chuẩn để migrate các blob còn lại sau khi deploy.
 
 ## Đối chiếu Figma ↔ production (6 màn)
 

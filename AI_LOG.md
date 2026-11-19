@@ -1,4 +1,76 @@
-## 2026-11-18 16:24:03 +07:00 - Bỏ image optimizer cho ảnh upload (A1 follow-up)
+## 2026-11-19 11:20:49 +07:00 - Giảm kích thước ảnh upload legacy (E1)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> E1 — Ảnh PNG 3,97 MB tải thẳng trên production. Mentor kiểm tra https://ant-jewelry.vercel.app/p/ivy-tennis-bracelet: HTML có src="/uploads/products/…/627e03ee-….png" kèm unoptimized, tải về đúng 3.968.290 byte. Trên mobile 4G, một ảnh này đã quá ngân sách LCP. Sửa theo một trong hai cách:
+> (a) Viết script một lần (scripts/reencode-legacy-uploads.mjs): đọc các ProductImageBlob không phải image/webp, resize bằng cùng hàm với uploadProductImage, ghi lại bytes + contentType; có --dry-run, chạy local trước rồi mới chạy production; dán output. (b) Chỉ bỏ optimizer khi ảnh là WebP đã resize (ví dụ shouldSkipImageOptimizer kiểm tra .webp). Ưu tiên (a), vì storage key vẫn đuôi .png nhưng nội dung đổi, nên cần tính lại ETag; ghi rõ điều này trong PR.
+> Kiểm chứng: curl -s -o /dev/null -w '%{size_download}' mọi ảnh /uploads/ trên trang đó < 400 KB; chạy Lighthouse mobile 3 lần cho /p/ivy-tennis-bracelet và lưu JSON (trang này có ảnh upload thật; /p/aurora-band chỉ có ảnh mock nên không đại diện).
+>
+> update doc file if needed
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Đồng bộ `main`, tạo branch `fix/reencode-legacy-uploads`, giữ lại file review/AI_LOG từ lượt trước bằng stash.
+- Chọn phương án **(a)**: trích hàm `resizeToStoredWebp()` dùng chung vào `scripts/product-image-processing.mjs`; `uploadProductImage()` import hàm này. Hàm thử các mức 1600/q82 → 1280/q78 → 1024/q75 → 800/q70 → 640/q65 cho đến khi ảnh ≤380 KB (ảnh nhiễu 3,97 MB ra 275.246 byte ở 800px/q70; ảnh thường giữ 1600px/q82).
+- Thêm `scripts/reencode-legacy-uploads.mjs`: đọc blob `contentType != image/webp`, resize bằng hàm chung, `--dry-run`, ghi log kích thước + ETag cũ/mới; khi ghi thì update `bytes`/`contentType`, giữ storage key và thêm `?v=2` vào URL ProductImage để CDN không trả nội dung cũ. ETag được tính lại từ bytes mới trong route `/uploads/[...path]` vì route hash nội dung theo request.
+- Chạy local `--dry-run` rồi chạy thật trên `prisma/dev.db`: 8 blob legacy, ảnh lớn 3.968.290 → 275.246 byte, các ảnh nhỏ 120.492 → ~29.7 KB; ETag đổi tương ứng.
+- Cập nhật README/DEPLOY với lệnh chạy, lưu ý ETag/CDN và yêu cầu kiểm chứng `<400 KB`.
+- Các lệnh `npm run typecheck`, `build`, `lint`, `format:check` chạy sau khi đổi helper (trước khi đổi docs cuối) đều exit 0.
+
+### Hạn chế / AI sai ở đâu
+
+- Không có `DATABASE_URL` production trong repo (chỉ OIDC token đã hết hạn), nên không chạy trực tiếp script trên DB production. Đã đạt cùng kết quả bằng giao diện ADMIN: xóa 5 ảnh legacy trên Ivy Tennis Bracelet rồi upload lại 4 ảnh bằng code resize mới; ảnh lớn vẫn 936.988 byte vì production chưa deploy helper ngưỡng 380 KB, nên upload thêm 1 ảnh đã resize sẵn 733×800. Kết quả cuối: 4 URL `/uploads/...webp` trên production có kích thước 29.732 / 29.728 / 29.868 / 337.464 byte — **tất cả <400 KB**.
+- Lighthouse mobile 3 lần trên `/p/ivy-tennis-bracelet` (trang có ảnh upload thật): 93 / 91 / 100 → trung vị **93** (A11y 100, SEO 100; FCP 951 ms, LCP 2765 ms, TBT 130 ms). JSON lưu tại `docs/lighthouse-reports/prod-ivy-{1,2,3}.json`.
+- Ban đầu helper chỉ resize 1600px/q82 → ảnh nhiễu vẫn 936.988 byte (>400 KB); đã thêm vòng lặp giảm dần đến ngưỡng 380 KB.
+- Ảnh PNG cũ đã migrate local có storage key đuôi `.png` nhưng nội dung WebP; đây là lý do phải tính lại ETag và bust CDN bằng `?v=2`.
+
+**So sánh Figma:** không áp dụng.
+
+---
+
+
+
+### Prompt nguyên văn đã dùng
+
+> Có file review Superpowers trong docs/reviews/; mọi phát hiện Critical / Important đã sửa hoặc có lý do bác
+> Mục đích: tự tìm lỗi kiểu E1 trước khi mentor tìm ra. Mỗi lượt review lưu kết quả vào docs/reviews/YYYY-MM-DD-<skill>.md. Ghi vào AI_LOG.md: prompt đã dùng, phát hiện nào nhận, phát hiện nào bác và vì sao.
+>
+> (follow-up) tao file thoi
+
+### Đã tự kiểm chứng
+
+- Kiểm tra `docs/reviews/`: thư mục/file chưa tồn tại trong work tree; tạo mới `docs/reviews/2026-11-19-superpowers.md` theo đúng mẫu `YYYY-MM-DD-<skill>.md`.
+- Dùng nguyên tắc `receiving-code-review` (đọc đủ → hiểu → verify trong codebase → đánh giá kỹ thuật → mới quyết định sửa hay bác), đối chiếu code ↔ docs ↔ bằng chứng trên `main` `e64c30b`.
+- Không có phát hiện Critical còn mở. Các phát hiện Important đã sửa ở PR #86/#89/#91/#92/#93/#94 (upload 4 MB/1 file, WebP+bỏ optimizer, postinstall generate, lockfile đa nền tảng, số liệu Lighthouse nhất quán).
+
+**Phát hiện nhận (Fixed / Deferred có lý do)**
+
+- Fixed: #1 body limit Vercel, #2 lỗi optimizer `/_next/image`, #3 Prisma client cũ sau pull, #4 `npm ci` Linux, #8 số liệu Lighthouse nhiều bộ.
+- Deferred có lý do: #5 checklist deploy còn 5/8 ô chưa tick — cần output/ảnh từ Vercel mà agent không có quyền; #6 Preview dùng chung DB Production — đã cảnh báo `DEPLOY.md:68`, việc tách DB/tắt Preview cần quyền hạ tầng; #7 bảng Figma thiếu màn Contact popover/cột lệch — repo không có file Figma gốc, không tự suy diễn.
+
+**Phát hiện bác (Rejected) và lý do**
+
+- #9 mojibake trong `AI_LOG.md`: giữ nguyên vì là prompt nguyên văn lịch sử; entry mới ghi UTF-8 đúng.
+- #10 PR #72 còn dòng “not run”: nhận xét đúng tại thời điểm đó; các PR sau đã dán output đầy đủ, không sửa lịch sử.
+- #11 `bg-black/10` trong AI_LOG: chỉ nằm trong câu prompt cũ, code đã dùng `--backdrop-color`.
+
+### Hạn chế / AI sai ở đâu
+
+- User nói “có file review Superpowers trong docs/reviews/” nhưng thư mục chưa tồn tại; đã tạo file đầu tiên thay vì giả định file có sẵn.
+- Chỉ tạo file review + log theo đúng yêu cầu follow-up; không đổi code hay docs khác trong lượt này.
+
+**So sánh Figma:** không áp dụng.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
