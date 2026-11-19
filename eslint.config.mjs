@@ -31,6 +31,9 @@ const eslintConfig = defineConfig([
     // Local tooling / prompt skill artifacts.
     '.opencode/**',
     '.github/prompts/**',
+    // Generated Playwright evidence (HTML report bundles + traces).
+    'playwright-report/**',
+    'test-results/**',
   ]),
 ]);
 

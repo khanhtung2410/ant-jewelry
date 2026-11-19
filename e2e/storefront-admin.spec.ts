@@ -233,6 +233,22 @@ test(
   },
 );
 
+test('hiding a product requires confirmation and cancel keeps it visible', async ({ page }) => {
+  await signIn(page, 'admin@antjewelry.local', 'Admin@123');
+  await page.goto('/admin/products?search=Aurora');
+
+  const row = page.getByRole('row').filter({ hasText: 'Aurora Band' });
+  await row.getByRole('button', { name: 'Ẩn' }).click();
+
+  const dialog = page.getByRole('dialog', { name: 'CONFIRM ACTION' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Hide' })).toBeVisible();
+
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(row.getByRole('button', { name: 'Ẩn' })).toBeVisible();
+});
+
 test('logout revokes the previous admin session cookie', async ({ page, context }) => {
   await signIn(page, 'admin@antjewelry.local', 'Admin@123');
 
@@ -291,4 +307,21 @@ test('EDITOR can save product details but cannot edit a product price', async ({
   const renamedRow = page.getByRole('row').filter({ hasText: 'Aurora Band (EDITOR rename)' });
   await renamedRow.getByRole('link', { name: 'Edit' }).click();
   await expect(page.getByRole('dialog').getByLabel('Price (VND)')).toHaveValue(originalPrice);
+});
+
+test('confirming hide changes the product status', async ({ page }) => {
+  await signIn(page, 'admin@antjewelry.local', 'Admin@123');
+  await page.goto('/admin/products?search=Aurora');
+
+  const row = page.getByRole('row').filter({ hasText: 'Aurora Band' });
+  await row.getByRole('button', { name: 'Ẩn' }).click();
+  const dialog = page.getByRole('dialog', { name: 'CONFIRM ACTION' });
+  await expect(dialog.getByRole('button', { name: 'Hide' })).toBeVisible();
+  await dialog.getByRole('button', { name: 'Hide' }).click();
+
+  await expect(row.getByRole('button', { name: 'Hiển thị' })).toBeVisible();
+
+  // Restore the seeded state: later projects run against the same E2E DB.
+  await row.getByRole('button', { name: 'Hiển thị' }).click();
+  await expect(row.getByRole('button', { name: 'Ẩn' })).toBeVisible();
 });
