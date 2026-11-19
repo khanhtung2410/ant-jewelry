@@ -16,6 +16,11 @@
   --focus-ring-color: #26564926;
   --popover-shadow-color: #00000047;
   --backdrop-color: #0000001a;
+  --backdrop-strong-color: #00000066;
+  --backdrop-dialog-color: #00000073;
+  --surface-overlay-color: #ffffff80;
+  --surface-overlay-soft: #ffffff1a;
+  --surface-overlay-strong: #ffffff26;
   --badge-success-bg: #dcfce7;
   --badge-success-text: #15803d;
   --badge-muted-bg: #f1f5f9;

@@ -1,4 +1,5 @@
-﻿import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+﻿import { createHash } from 'node:crypto';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -48,6 +49,7 @@ describe('database-backed local product image storage', () => {
       where: { storageKey: stored.storageKey },
     });
     expect(blob?.contentType).toBe('image/webp');
+    expect(blob?.etag).toBe(createHash('sha256').update(blob!.bytes).digest('hex'));
     const metadata = await sharp(blob!.bytes).metadata();
     expect(metadata.format).toBe('webp');
     expect(metadata.width).toBeLessThanOrEqual(1600);

@@ -42,7 +42,7 @@ export function AdminDialog({
       onClick={(event) => {
         if (event.target === event.currentTarget) close();
       }}
-      className={`m-auto max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] ${maxWidth} overflow-hidden rounded-xl border border-[var(--line)] bg-background p-0 text-foreground shadow-2xl backdrop:bg-black/45`}
+      className={`m-auto max-h-[calc(100vh-2rem)] w-[calc(100vw-2rem)] ${maxWidth} overflow-hidden rounded-xl border border-[var(--line)] bg-background p-0 text-foreground shadow-2xl backdrop:bg-[var(--backdrop-dialog-color)]`}
     >
       <div className="flex items-start justify-between gap-4 border-b border-[var(--line)] px-5 py-4">
         <div className="min-w-0">

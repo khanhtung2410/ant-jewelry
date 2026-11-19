@@ -120,6 +120,7 @@ model ProductImageBlob {
   storageKey  String   @id
   bytes       Bytes
   contentType String
+  etag        String?
   createdAt   DateTime @default(now())
 }
 

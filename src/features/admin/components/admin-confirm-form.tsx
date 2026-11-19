@@ -62,6 +62,7 @@ export function AdminConfirmForm({
           onConfirm={confirm}
           onCancel={cancel}
           confirmLabel="Delete"
+          danger
         />
       ) : null}
     </>

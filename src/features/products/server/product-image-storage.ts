@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { readFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import { resizeToStoredWebp } from '../../../../scripts/product-image-processing.mjs';
@@ -64,9 +64,26 @@ export async function uploadProductImage(
   const bytes = await resizeToStoredWebp(image);
   const storageKey = normalizeStorageKey(`products/${productId}/${randomUUID()}.webp`);
   await prisma.productImageBlob.create({
-    data: { storageKey, bytes, contentType: 'image/webp' },
+    data: { storageKey, bytes, contentType: 'image/webp', etag: imageEtag(bytes) },
   });
   return { storageKey, url: `/uploads/${storageKey}` };
+}
+
+/** SHA-256 hex without quotes, stored on the blob and used for conditional GETs. */
+export function imageEtag(bytes: Uint8Array): string {
+  return createHash('sha256').update(bytes).digest('hex');
+}
+
+/** Lightweight metadata read so a matching If-None-Match never loads the blob. */
+export async function getStoredProductImageMeta(
+  storageKey: string,
+): Promise<{ contentType: string; etag: string | null } | null> {
+  const key = normalizeStorageKey(storageKey);
+  const row = await prisma.productImageBlob.findUnique({
+    where: { storageKey: key },
+    select: { contentType: true, etag: true },
+  });
+  return row ?? null;
 }
 
 export async function deleteStoredProductImage(storageKey: string): Promise<void> {

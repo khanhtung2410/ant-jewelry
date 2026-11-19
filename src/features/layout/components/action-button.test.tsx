@@ -44,7 +44,7 @@ describe('ActionButton', () => {
 
     expect(html).toContain('<button');
     expect(html).toContain('disabled=""');
-    expect(html).toContain('cursor-not-allowed bg-white/50 text-foreground');
+    expect(html).toContain('cursor-not-allowed bg-[var(--surface-overlay-color)] text-foreground');
     expect(html).not.toContain('hover:bg-[var(--underline-color)]');
     expect(html).not.toContain('href="/collection"');
     expect(html).toContain('h-10 w-36');

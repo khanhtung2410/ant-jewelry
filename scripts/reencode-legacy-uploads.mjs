@@ -35,7 +35,7 @@ async function main() {
 
     await prisma.productImageBlob.update({
       where: { storageKey: blob.storageKey },
-      data: { bytes, contentType: 'image/webp' },
+      data: { bytes, contentType: 'image/webp', etag: afterEtag.replace(/"/g, '') },
     });
     // Storage keys keep their old .png suffix, so bust the CDN with a versioned
     // URL; the /uploads route ignores the query string and serves the new blob.

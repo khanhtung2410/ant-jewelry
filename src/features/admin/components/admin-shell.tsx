@@ -94,7 +94,7 @@ export function AdminShell({ session, children }: { session: AdminSession; child
           type="button"
           aria-label="Close navigation"
           onClick={() => setSidebarOpen(false)}
-          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-40 bg-[var(--backdrop-strong-color)] lg:hidden"
         />
       ) : null}
 
@@ -119,7 +119,7 @@ export function AdminShell({ session, children }: { session: AdminSession; child
             type="button"
             aria-label="Close navigation"
             onClick={() => setSidebarOpen(false)}
-            className="rounded-md p-1.5 text-white/80 transition hover:bg-white/10 hover:text-white lg:hidden"
+            className="rounded-md p-1.5 text-white/80 transition hover:bg-[var(--surface-overlay-soft)] hover:text-white lg:hidden"
           >
             <CloseIcon className="h-4 w-4" />
           </button>
@@ -139,8 +139,8 @@ export function AdminShell({ session, children }: { session: AdminSession; child
                   aria-current={active ? 'page' : undefined}
                   className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm tracking-[0.04em] transition ${
                     active
-                      ? 'bg-white/15 text-white'
-                      : 'text-white/75 hover:bg-white/10 hover:text-white'
+                      ? 'bg-[var(--surface-overlay-strong)] text-white'
+                      : 'text-white/75 hover:bg-[var(--surface-overlay-soft)] hover:text-white'
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
@@ -164,7 +164,7 @@ export function AdminShell({ session, children }: { session: AdminSession; child
           <form action={logoutAction} className="mt-3">
             <button
               type="submit"
-              className="flex w-full items-center justify-center gap-2 rounded-md border border-white/30 px-3 py-2 font-heading text-xs tracking-[0.08em] text-white/85 transition hover:bg-white/10 hover:text-white"
+              className="flex w-full items-center justify-center gap-2 rounded-md border border-white/30 px-3 py-2 font-heading text-xs tracking-[0.08em] text-white/85 transition hover:bg-[var(--surface-overlay-soft)] hover:text-white"
             >
               <LogoutIcon className="h-3.5 w-3.5" />
               Logout
