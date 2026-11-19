@@ -192,7 +192,7 @@ Ví dụ đã áp dụng 2026-11-19: trên `/p/ivy-tennis-bracelet`, 3 ảnh tes
 
 ## Đối chiếu Figma ↔ production (6 màn)
 
-Đối chiếu theo bản thiết kế Figma/đặc tả `ANT_JEWELRY_SAD_v1.1.docx` (**Figma gốc không có trong repo**, nên cột "Thiết kế" là mô tả từ SAD, chưa phải so sánh pixel). Sáu ảnh production bên dưới được tạo bằng `npm run test:screenshots` (Playwright, desktop **1920px**, chụp sau `networkidle` + font/ảnh eager tải xong) ngày **2026-11-19**, nằm trong `docs/deploy-screenshots/`. Lệnh chụp và cách dùng cho R6.3 được ghi trong `README.md` mục 6 và `CONTRIBUTING.md` mục Screenshots.
+Đối chiếu theo bản thiết kế Figma/đặc tả `ANT_JEWELRY_SAD_v1.1.docx` (**Figma gốc không có trong repo**, nên cột "Thiết kế" là mô tả từ SAD, chưa phải so sánh pixel). Sáu ảnh production bên dưới được tạo bằng `npm run test:screenshots` (Playwright, desktop **1920px**) ngày **2026-11-19**, nằm trong `docs/deploy-screenshots/`. Trước khi chụp, script đợi `networkidle` + font, **ép mọi ảnh local về `loading="eager"` rồi gọi `decode()`**, và assert `complete && naturalWidth > 0` cho từng ảnh — kể cả ảnh `loading="lazy"` dưới fold — nên không có vùng ảnh trống do chưa tải xong. Lệnh chụp và cách dùng cho R6.3 được ghi trong `README.md` mục 6 và `CONTRIBUTING.md` mục Screenshots.
 
 | Màn hình | Thiết kế đối chiếu (SAD) | Production URL | Chỗ lệch / lý do | Ảnh production 1920px |
 |---|---|---|---|---|
