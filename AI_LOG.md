@@ -1,4 +1,68 @@
-## 2026-11-19 20:06:10 +07:00 - Thêm tool mapping Superpowers vào AGENTS.md
+## 2026-11-19 21:43:14 +07:00 - Cập nhật docs theo codebase mới + ảnh 1920px
+
+### Prompt nguyên văn đã dùng
+
+> update doc with newest codebase, images
+
+### Đã tự kiểm chứng
+
+- Tiếp tục trên branch `ci/e2e-job` (PR #108) vì 6 ảnh 1920px vừa commit ở branch này; không tạo branch/PR mới.
+- Đọc toàn bộ các mục liên quan của `docs/DEPLOY.md` (storage decision record, optimizer/E1/E3, Figma↔production, deployment status, readiness checklist), `docs/PERFORMANCE.md`, `README.md` trước khi sửa.
+- **DEPLOY.md:**
+  - Lịch sử quyết định bổ sung #94, #98, #102, #104–#106, #108; trade-off ghi rõ 304 không kéo blob (từ #98) và rủi ro ảnh cũ trước #94 bị trả nguyên kích thước.
+  - Bảng R6.3 đổi thành đúng **6 màn theo checklist đợt 4** (Home, Category, Product, **Product + Contact popover**, Blog list, Blog detail), thay Admin bằng màn popover, thêm cột **"Chỗ lệch / lý do"**, link tới 6 file `*-1920.png` vừa chụp 2026-11-19. Ghi rõ Figma gốc không có trong repo → các ô "chờ đối chiếu" không tự đánh dấu khớp.
+  - Trạng thái deploy thêm smoke 8/8, a11y 0 serious/critical, 6 ảnh 1920px; checklist thêm dòng "6 màn R6.3 + ảnh đối chiếu" và dòng "E2E + a11y + smoke trên clone sạch/CI".
+- **PERFORMANCE.md:** thêm mục "Kiểm chứng tự động mới" với output có thật (27 E2E, axe 0 serious/critical, smoke 8/8, screenshots 1920px, CI job); **giữ nguyên số Lighthouse cũ** và ghi rõ chưa đo lại sau #98–#108.
+- **README.md:** bảng scripts thêm `test:smoke:production` và `test:screenshots`.
+- Ảnh: dùng đúng 6 file `docs/deploy-screenshots/*-1920.png` đã commit trong PR #108 (xác minh chiều rộng 1920px bằng sharp ở lượt trước).
+
+### AI sai ở đâu
+
+- **Định tạo branch mới theo rule chung:** lần này sẽ làm mất ảnh trong PR #108 (ảnh nằm ở branch đó). Đã giữ nguyên branch hiện tại và cập nhật docs ngay trong PR đang mở.
+- **Định ghi "hiệu năng cải thiện" sau các PR mới:** không có lượt đo Lighthouse mới; đã giữ số liệu cũ và thêm câu chú thích rõ ràng thay vì suy diễn.
+- **Bảng R6.3 cũ có dòng Admin:** checklist đợt 4 yêu cầu 6 màn gồm Product + Contact popover; đã thay dòng Admin bằng màn popover và chuyển ảnh admin thành ghi chú riêng.
+
+### Hạn chế
+
+- Chưa có Figma gốc trong repo nên cột "Chỗ lệch / lý do" chỉ liệt kê 2 lệch đã biết (carousel 5 card, OTHER BLOGS 1 bài); các màn còn lại chờ mentor đối chiếu.
+- Không chạy lại Lighthouse, không tick các ô production cần quyền Vercel/PostgreSQL.
+
+**So sánh Figma:** cập nhật bảng đối chiếu với ảnh production 1920px mới; không tự kết luận khớp/ lệch khi thiếu file Figma.
+
+---
+
+
+
+### Prompt nguyên văn đã dùng
+
+> T6 — Chạy trong CI. Thêm job e2e vào .github/workflows/npm-ci.yml: npx playwright install --with-deps chromium → npm run test:e2e; khi fail thì upload playwright-report/ và trace làm artifact.
+> Ảnh chụp trong PR giao diện lấy từ Playwright (page.screenshot, desktop 1920px) để chụp đúng lúc trang đã tải xong; dùng luôn cho bảng R6.3.
+
+### Đã tự kiểm chứng
+
+- Fetch `origin/main` (`10de149`, sau PR #107); tạo branch `ci/e2e-job`; đọc toàn bộ workflow,playwright configs và mục R6.3 trong DEPLOY.md trước khi đổi.
+- **CI:** thêm job `e2e` (checkout/setup-node/cache/npm ci → `npx playwright install --with-deps chromium` → `npm run test:e2e`), upload artifact `playwright-report/` + `test-results/` với `if: failure()`. Để artifact có nội dung thật: config local thêm reporter `list` + `html(open: never)` và `use.trace: 'retain-on-failure'` (mặc định không có trace khi không retry).
+- **Screenshot:** thêm `playwright.screenshots.config.ts` (desktop 1920×1080, `BASE_URL`, không webServer), `e2e/ui-screenshots.spec.ts` (6 màn R6.3: Home, Category, Product, Product+Contact popover, Blog list, Blog detail; chờ `networkidle` + `document.fonts.ready` + ảnh eager xong rồi `page.screenshot({ fullPage: true, animations: 'disabled' })`), script `test:screenshots`; cả smoke lẫn screenshots đều nằm trong `testIgnore` của config local.
+- **Screenshot RED → GREEN:** lần đầu Home timeout vì `Promise.all` đợi cả ảnh `loading="lazy"` dưới fold (không bao giờ load). Đã bỏ lazy image + `Promise.race` với timeout 3s. Chạy lại với `SCREENSHOT_DIR` ngoài repo: **6 passed (16.8s)**, 6 file PNG đều **1920px** chiều rộng (verify bằng sharp).
+- `npx playwright test --list` → vẫn `Total: 27 tests in 2 files` (không lọt smoke/screenshots).
+- README mục 6 và CONTRIBUTING mục Screenshots ghi rõ lệnh chụp 1920px cho R6.3.
+
+### AI sai ở đâu
+
+- **Tưởng default Playwright đã có `playwright-report/` và trace:** thực tế reporter mặc định là list và trace `off` khi không retry → artifact CI sẽ rỗng. Đã thêm HTML reporter + `trace: 'retain-on-failure'` và đưa `test-results/` vào artifact.
+- **Chụp Home đợi mọi ảnh (kể cả lazy):** test đỏ 60s; đọc error-context thấy evaluate treo. Đã giới hạn ảnh eager + timeout 3s thay vì tăng timeout test.
+- **Ghi output capture sai đường dẫn ở lượt trước (`\s` escape):** lượt này dùng đường dẫn riêng, kiểm tra tồn tại 6 file trước khi báo pass.
+
+### Hạn chế
+
+- Không chạy được GitHub Actions locally; chỉ kiểm tra cấu hình YAML bằng Prettier + suy luận step. Artifact upload chỉ xác nhận bằng cấu hình, không phải log CI thật.
+- Không commit ảnh chụp vào repo (đã chụp vào temp để kiểm chứng); contributor sẽ chạy lệnh khi làm PR giao diện/R6.3.
+
+**So sánh Figma:** cung cấp cơ chế chụp 1920px cho bảng R6.3; không tự đánh giá độ lệch thiết kế.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

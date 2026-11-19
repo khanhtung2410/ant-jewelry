@@ -254,6 +254,17 @@ Liệt kê các kiểm tra đã chạy và kết quả.
 - [ ] Kiểm tra thủ công (nếu cần), nêu môi trường và kết quả
 
 ## Screenshots (nếu là UI)
+
+Ảnh giao diện phải lấy từ Playwright, không chụp tay lúc trang chưa tải xong:
+
+```bash
+BASE_URL=https://ant-jewelry.vercel.app npm run test:screenshots
+```
+
+Lệnh chụp desktop 1920px cho 6 màn (Home, Category, Product, Product + Contact popover, Blog list,
+Blog detail) vào `docs/deploy-screenshots/`, dùng luôn cho bảng R6.3 trong `DEPLOY.md`. Ghi rõ
+`BASE_URL`, thời điểm chụp và file ảnh trong PR.
+
 | Trước | Sau |
 |---|---|
 | <ảnh> | <ảnh> |

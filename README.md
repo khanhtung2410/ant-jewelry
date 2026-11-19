@@ -123,6 +123,8 @@ npm run start
 | `npm test` | Vitest unit test (dùng database test riêng) |
 | `npm run test:watch` | Vitest watch mode |
 | `npm run test:e2e` | Playwright E2E; tự reset DB E2E và chạy `next build && next start` |
+| `npm run test:smoke:production` | Smoke production chỉ đọc, dùng `BASE_URL` (chạy sau mỗi deploy) |
+| `npm run test:screenshots` | Chụp 6 ảnh desktop 1920px cho bảng R6.3 (Playwright) |
 | `npm run format` / `npm run format:check` | Prettier ghi / kiểm tra |
 | `npm run db:push` | Đồng bộ schema SQLite local |
 | `npm run db:seed` | Nạp dữ liệu mẫu SQLite local |
@@ -236,6 +238,12 @@ npm run test:e2e
   chỉ GET): 6 màn public trả 200 + một `h1` + canonical đúng, mọi ảnh `/uploads/` trên
   `/p/ivy-tennis-bracelet` có ETag và < 400 KB, `robots.txt` / `sitemap.xml` đúng. Smoke spec
   được loại khỏi `npm run test:e2e` (`testIgnore`). Dán output vào PR production.
+- **Ảnh cho PR giao diện / bảng R6.3:** chạy
+  `BASE_URL=https://ant-jewelry.vercel.app npm run test:screenshots`. Playwright chụp desktop
+  **1920px** sau khi `networkidle` + font/ảnh eager đã tải xong (không chụp tay lúc trang chưa xong).
+  Output mặc định vào `docs/deploy-screenshots/` (đổi bằng `SCREENSHOT_DIR`), gồm 6 file
+  `home/category/product/product-contact-popover/blog-list/blog-detail-1920.png` — dùng luôn cho
+  bảng đối chiếu Figma ↔ production. Smoke và screenshots đều nằm ngoài `npm run test:e2e`.
 
 Khi thay đổi UI, kiểm tra thêm thủ công các luồng bị ảnh hưởng và ghi rõ trong Pull Request.
 

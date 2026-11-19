@@ -67,3 +67,13 @@ Các thay đổi giữ nguyên hành vi UI (carousel vẫn cuộn/điều hướ
 - `sitemap.xml` liệt kê danh mục/sản phẩm hiển thị và Blog đã xuất bản; `robots.txt` cho phép storefront và loại trừ admin/API.
 
 `SITE_URL` phải trỏ tới origin production chính thức khi deploy (xem `.env.example`, `docs/DEPLOY.md`).
+
+## Kiểm chứng tự động mới (2026-11-19, code hiện tại)
+
+Các số Lighthouse ở trên là của lượt đo 2026-11-18; **không có lần đo Lighthouse mới** sau các PR #98–#108 nên không được ghi là đã cải thiện. Những kiểm chứng mới có output thực:
+
+- **E2E local:** `npm run test:e2e` → 27 pass trên 2 project (`desktop-chrome` + `pixel-7`). Bộ axe (`@axe-core/playwright`) chạy trên Home, Category, Product, Blog list, Blog detail và contact popover ở cả hai project → **0 lỗi serious/critical**.
+- **Smoke production:** `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` → **8/8 pass**: 6 màn 200 + đúng 1 `h1` + canonical đúng; ảnh `/uploads/` trên `/p/ivy-tennis-bracelet` có ETag và < 400 KB; `robots.txt`/`sitemap.xml` đúng. Chạy sau mỗi deploy.
+- **Ảnh đối chiếu:** `npm run test:screenshots` tạo 6 ảnh desktop 1920px (chờ `networkidle` + font/ảnh eager) trong `docs/deploy-screenshots/`; dùng cho bảng R6.3 trong `docs/DEPLOY.md`.
+- **CI:** job `e2e` trong `.github/workflows/npm-ci.yml` chạy browser + `npm run test:e2e` và upload `playwright-report/`, `test-results/` (trace) khi fail.
+- **Đánh đổi E3 vẫn mở:** ảnh upload được phục vụ `unoptimized` ở mọi kích thước (card, thumbnail 96px, admin 88px); nguyên nhân 400 optimizer đã tìm thấy và sửa cấu hình (`images.localPatterns`), nhưng chưa sinh bản 480px nên chưa bật lại optimizer. Chi tiết + số đo trong `docs/DEPLOY.md` mục S3/E3.

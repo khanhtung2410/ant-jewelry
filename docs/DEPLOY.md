@@ -18,12 +18,18 @@ Production target: **Vercel** (Next.js) + **PostgreSQL**. Uploaded product image
 - PR #62 revert lại toàn bộ workflow S3/R2 theo yêu cầu giữ luồng lưu trữ local/không thêm nhà cung cấp và secrets ngoài; code/docs trở về filesystem `PRODUCT_IMAGE_UPLOAD_DIR`.
 - PR #84 chuyển "local" sang **DB-backed local blobs**: Vercel có `cwd/uploads` chỉ đọc và `/tmp` mất khi đổi instance, nên filesystem không bền; database thì đã có sẵn và được backup. Không còn dependency hay biến `S3_*` nào trong repo.
 - PR #86 giới hạn 4 MB/file, gửi từng file một (Vercel Function ~4,5 MB/body) và thêm `s-maxage` + ETag cho `/uploads/[...path]`.
+- PR #94 resize ảnh mới thành WebP ≤1600 px lúc lưu và phục vụ mọi `/uploads/...` dạng `unoptimized` (bỏ `/_next/image`).
+- PR #98 lưu hash SHA-256 vào `ProductImageBlob.etag`: 304 đọc metadata trước, **không kéo blob**; hỗ trợ `W/"…"` và danh sách ETag.
+- PR #102 tìm ra nguyên nhân thật của 400 optimizer (xem mục S3) và chỉnh `images.localPatterns` cho phép query string; vẫn giữ `unoptimized` cho ảnh upload vì lý do kích thước.
+- PR #104–#106: E2E chạy được trên clone sạch, có thêm Pixel 7 + axe a11y, và smoke production chỉ đọc.
+- PR #108: E2E chạy trong CI kèm artifact report/trace; ảnh chụp 1920 px bằng Playwright cho bảng R6.3.
 
 **Đánh đổi (trade-offs):**
 
 - **Dung lượng DB:** ảnh nằm trong `bytea`, làm tăng kích thước backup và thời gian `pg_dump`/PITR; không có bucket riêng để tách dữ liệu nhị phân.
 - **Backup:** ảnh được backup cùng database (xem mục Migration/backup) — không cần backup filesystem riêng, nhưng restore DB là restore luôn ảnh.
-- **Chi phí Function + DB khi CDN miss:** mỗi lần cache miss chạy một Function và một query kéo blob từ DB. Đã giảm bằng `Cache-Control: s-maxage=31536000, immutable` và ETag/304; vẫn cần theo dõi tỉ lệ cache HIT và số invocation.
+- **Chi phí Function + DB khi CDN miss:** mỗi lần cache miss chạy một Function và một query kéo blob từ DB. Đã giảm bằng `Cache-Control: s-maxage=31536000, immutable` và ETag/304 (từ PR #98 đọc hash từ DB trước nên 304 không kéo bytes); vẫn cần theo dõi tỉ lệ cache HIT và số invocation.
+- **Ảnh cũ trước #94:** vẫn là PNG gốc nếu chưa chạy script E1 bên dưới; từ #94 các URL `/uploads/` đều `unoptimized` nên ảnh cũ được trả nguyên kích thước. Đây là lý do E1 là việc bắt buộc, không phải tùy chọn, trên môi trường có ảnh upload cũ.
 - **Đổi lấy:** không thêm vendor/secrets, ít cấu hình hơn, nhất quán giữa local và production, ảnh tồn tại qua redeploy.
 
 **Giới hạn sẽ theo dõi (review định kỳ):**
@@ -186,16 +192,18 @@ Ví dụ đã áp dụng 2026-11-19: trên `/p/ivy-tennis-bracelet`, 3 ảnh tes
 
 ## Đối chiếu Figma ↔ production (6 màn)
 
-Đối chiếu theo bản thiết kế Figma/đặc tả `ANT_JEWELRY_SAD_v1.1.docx` (Figma gốc không được lưu trong repo). Ảnh chụp production lúc kiểm chứng 2026-11-18 nằm trong `docs/deploy-screenshots/`.
+Đối chiếu theo bản thiết kế Figma/đặc tả `ANT_JEWELRY_SAD_v1.1.docx` (**Figma gốc không có trong repo**, nên cột "Thiết kế" là mô tả từ SAD, chưa phải so sánh pixel). Sáu ảnh production bên dưới được tạo bằng `npm run test:screenshots` (Playwright, desktop **1920px**, chụp sau `networkidle` + font/ảnh eager tải xong) ngày **2026-11-19**, nằm trong `docs/deploy-screenshots/`. Lệnh chụp và cách dùng cho R6.3 được ghi trong `README.md` mục 6 và `CONTRIBUTING.md` mục Screenshots.
 
-| Màn hình | Figma / thiết kế đối chiếu | Production URL | Trạng thái | Ảnh chụp |
+| Màn hình | Thiết kế đối chiếu (SAD) | Production URL | Chỗ lệch / lý do | Ảnh production 1920px |
 |---|---|---|---|---|
-| Home | Hero 16:9, thanh điều hướng, 4 carousel danh mục (5 card/section), khối BLOG | `/` | 200 | [home](deploy-screenshots/home.png) |
-| Danh mục | Header/filter, danh sách sản phẩm theo `ProductType`, sort SEE MORE | `/c/wedding-ring` | 200 | [category](deploy-screenshots/category.png) |
-| Chi tiết sản phẩm | Gallery ảnh chính + thumbnail, thông tin/giá, YOU MIGHT ALSO LIKE | `/p/aurora-band` | 200 | [product](deploy-screenshots/product.png) |
-| Blog list | Tiêu đề, danh sách bài có ảnh bìa/tóm tắt, phân trang | `/blog` | 200 | [blog-list](deploy-screenshots/blog-list.png) |
-| Blog chi tiết | Tiêu bài, ảnh bìa above-the-fold, nội dung Markdown, OTHER BLOGS | `/blog/cach-chon-nhan-cuoi-phu-hop` | 200 | [blog-detail](deploy-screenshots/blog-detail.png) |
-| Admin | Trang đăng nhập (`/admin/login`), sau đó dashboard và các màn quản lý | `/admin/login` | 200 | [admin-login](deploy-screenshots/admin-login.png) |
+| Home | Hero 16:9, thanh điều hướng, carousel danh mục, khối BLOG | `/` | **Lệch đã biết:** mỗi carousel 5 card (đổi từ 10); chờ mentor duyệt. Ảnh mobile 940px cũ không thay thế được bản desktop này | [home-1920](deploy-screenshots/home-1920.png) |
+| Danh mục | Header/filter, danh sách theo `ProductType`, sort, SEE MORE | `/c/wedding-ring` | Chưa phát hiện lệch so với SAD; chờ đối chiếu Figma gốc | [category-1920](deploy-screenshots/category-1920.png) |
+| Chi tiết sản phẩm | Gallery ảnh chính + thumbnail, thông tin/giá, YOU MIGHT ALSO LIKE | `/p/aurora-band` | Chưa phát hiện lệch so với SAD; trang dùng ảnh mock (không đại diện ảnh upload) | [product-1920](deploy-screenshots/product-1920.png) |
+| Sản phẩm + Contact popover | Nút ORDER NOW mở dialog CONTACT US (phone/Facebook/Instagram) | `/p/aurora-band` (bấm ORDER NOW) | Màn này trước đây bị thiếu trong bảng; đã chụp từ dialog thật, không phải chèn tay | [product-contact-popover-1920](deploy-screenshots/product-contact-popover-1920.png) |
+| Blog list | Tiêu đề, danh sách bài có ảnh bìa/tóm tắt, phân trang | `/blog` | Chưa phát hiện lệch so với SAD; chờ đối chiếu Figma gốc | [blog-list-1920](deploy-screenshots/blog-list-1920.png) |
+| Blog chi tiết | Tiêu bài, ảnh bìa above-the-fold, Markdown, OTHER BLOGS | `/blog/cach-chon-nhan-cuoi-phu-hop` | **Lệch đã biết:** khối OTHER BLOGS chỉ 1 bài theo Figma | [blog-detail-1920](deploy-screenshots/blog-detail-1920.png) |
+
+Ảnh admin (`admin-login.png`, `admin-logged-in.png`) vẫn nằm trong cùng thư mục nhưng **không tính vào 6 màn R6.3** theo checklist đợt 4. Cột "Chỗ lệch / lý do" chỉ ghi những gì đã kiểm chứng được; các ô "chờ đối chiếu Figma gốc" không được tự đánh dấu khớp khi chưa có file thiết kế.
 
 ## Vercel build error: `public.BlogPost` does not exist (P2021)
 
@@ -222,9 +230,11 @@ If `next build` fails during page data collection with:
 
 ## Current deployment status (verified)
 
-- **Storefront:** https://ant-jewelry.vercel.app/ (HTTP 200 at time of check, 2026-11-17)
+- **Storefront:** https://ant-jewelry.vercel.app/ (HTTP 200 at time of check, 2026-11-17; re-checked 2026-11-19 by the read-only smoke suite)
 - **Admin:** https://ant-jewelry.vercel.app/admin (redirects to login as expected for unauthenticated access)
-- **Lighthouse (production, 2026-11-18, 3 recorded runs after a discarded warm-up, mobile):** Home median Performance 95 / Accessibility 96 / SEO 100; product `/p/aurora-band` median Performance 97 / Accessibility 100 / SEO 100. Raw scores and JSON reports for all three runs are linked in `docs/PERFORMANCE.md`.
+- **Lighthouse (production, 2026-11-18, 3 recorded runs after a discarded warm-up, mobile):** Home median Performance 95 / Accessibility 96 / SEO 100; product `/p/aurora-band` median Performance 97 / Accessibility 100 / SEO 100. Raw scores and JSON reports for all three runs are linked in `docs/PERFORMANCE.md`. Chưa đo lại Lighthouse sau các PR #98–#108; các số này là của lượt đo cũ.
+- **Smoke production 2026-11-19:** `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` → **8/8 pass**: 6 màn public trả 200, đúng 1 `h1`, canonical đúng; ảnh `/uploads/` trên `/p/ivy-tennis-bracelet` có ETag và < 400 KB; `robots.txt` / `sitemap.xml` đúng. Chạy lệnh này sau mỗi lần deploy và dán output vào PR production.
+- **A11y / mobile 2026-11-19:** E2E local 27 test (desktop + Pixel 7), trong đó axe có **0 lỗi serious/critical** trên 6 màn. `npm run test:screenshots` tạo 6 ảnh 1920px đã dùng cho bảng R6.3 ở trên.
 
 ## Production readiness checklist (kèm bằng chứng)
 
@@ -235,7 +245,8 @@ If `next build` fails during page data collection with:
 | `SITE_URL` đúng origin production | [x] | `curl https://ant-jewelry.vercel.app/` có `<link rel="canonical" href="https://ant-jewelry.vercel.app"/>` (6 lần xuất hiện origin trong HTML) |
 | Migration đã áp dụng, status sạch | [ ] | Cần output thật của `npm run db:migrate:status:production` (chạy với `DATABASE_URL` direct). Không thể tự lấy từ môi trường agent |
 | ADMIN đầu tiên bằng email thật | [ ] | Cần ảnh trang admin sau khi đăng nhập bằng tài khoản ADMIN vừa tạo (`db:create-admin:production`) |
-| 6 màn public + admin mở được | [x] | Bảng đối chiếu Figma ↔ production ở trên, 6 ảnh chụp kèm HTTP 200 |
+| 6 màn R6.3 mở được + ảnh đối chiếu | [x] | Bảng đối chiếu ở trên: 6 ảnh 1920px từ `npm run test:screenshots` (2026-11-19); smoke production 8/8 pass cùng ngày; admin/login vẫn có ảnh riêng nhưng không tính vào 6 màn |
+| E2E + a11y + smoke chạy được trên clone sạch / CI | [x] | `npm run test:e2e` 27 pass (desktop + Pixel 7, axe 0 serious/critical); job `e2e` trong `.github/workflows/npm-ci.yml` upload report/trace khi fail; smoke production 8/8 pass |
 | Upload ảnh qua redeploy vẫn còn | [ ] | Cần ảnh `/p/<slug>` có ảnh `/uploads/...` **trên production sau redeploy**. Bằng chứng local (production build): [`docs/a1-screenshots/product-after-upload.png`](a1-screenshots/product-after-upload.png), upload ~4 MB + batch 3 ảnh vào DB rồi restart `next start` → ảnh vẫn 200 |
 | Backup/restore đã test | [ ] | Quy trình/pg_dump được mô tả ở mục Migration/backup; chưa có bản ghi test restore ngoài production |
 
