@@ -10,6 +10,8 @@ Apply these automatically to **every** user request — do not wait to be told:
 4. Add an entry to `AI_LOG.md` following the established format: prompt used verbatim, what was self-verified, **"AI sai ở đâu"** with concrete examples, and limitations.
 5. Create the PR with `gh`, using a Conventional Commits title and a body that follows `docs/CONTRIBUTING.md`.
 6. Capture all check-command output via Node `spawnSync` in UTF-8 (`NO_COLOR=1`), never PowerShell redirection — PowerShell writes UTF-16 here and characters like `✓ ─ │ · —` become mojibake in code blocks.
+7. **Verification before completion** (`verification-before-completion`): before opening a PR and before the final response, re-run the full check set from `docs/CONTRIBUTING.md` (`npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`, `npm run build`) plus a production check where access exists. Record the **full output with exit code**; write "đạt/pass" only when that output is attached. Never claim success from a previous run or from an agent report.
+8. **When creating a PR with `gh`, always give the user the PR link in the final response.**
 
 ### Code review records
 
