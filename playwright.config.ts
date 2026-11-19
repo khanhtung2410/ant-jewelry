@@ -20,14 +20,19 @@ export default defineConfig({
   webServer: {
     // Reset the dedicated E2E database, then exercise the production build so
     // `npm run test:e2e` never touches prisma/dev.db and always tests `next start`.
+    // `e2e/reset-database.ts` deletes only the verified prisma/e2e.db (and its
+    // companions) then runs plain `prisma db push` + seed. Prisma 7 blocks
+    // --force-reset for AI agents, so this mirrors vitest.global-setup.ts.
     command:
-      'npx prisma db push --force-reset && npx prisma db seed && npm run build && npm run start -- --hostname 127.0.0.1 --port 3100',
+      'npx tsx e2e/reset-database.ts && npm run build && npm run start -- --hostname 127.0.0.1 --port 3100',
 
     url: baseURL,
     reuseExistingServer: false,
     timeout: 300_000,
     env: {
       DATABASE_URL: E2E_DATABASE_URL,
+      // A clean clone has no .env; E2E must not depend on a developer secret.
+      AUTH_SECRET: 'e2e-only-auth-secret-not-for-production',
       NEXT_TELEMETRY_DISABLED: '1',
     },
   },
