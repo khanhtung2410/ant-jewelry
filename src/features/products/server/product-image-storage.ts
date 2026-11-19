@@ -3,11 +3,10 @@ import 'server-only';
 import { randomUUID } from 'node:crypto';
 import { readFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
-import sharp from 'sharp';
+import { resizeToStoredWebp } from '../../../../scripts/product-image-processing.mjs';
 import { prisma } from '@/features/shared/db/prisma';
 
 const storageKeySegmentPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
-const MAX_STORED_IMAGE_DIMENSION = 1600;
 const contentTypeByExtension: Record<string, string> = {
   jpg: 'image/jpeg',
   jpeg: 'image/jpeg',
@@ -62,16 +61,7 @@ export async function uploadProductImage(
 ): Promise<{ storageKey: string; url: string }> {
   // Store a bounded WebP so the file can be served directly from /uploads
   // without the Next.js image optimizer (which can fail on Vercel cold starts).
-  const bytes = await sharp(image)
-    .rotate()
-    .resize({
-      width: MAX_STORED_IMAGE_DIMENSION,
-      height: MAX_STORED_IMAGE_DIMENSION,
-      fit: 'inside',
-      withoutEnlargement: true,
-    })
-    .webp({ quality: 82 })
-    .toBuffer();
+  const bytes = await resizeToStoredWebp(image);
   const storageKey = normalizeStorageKey(`products/${productId}/${randomUUID()}.webp`);
   await prisma.productImageBlob.create({
     data: { storageKey, bytes, contentType: 'image/webp' },

@@ -181,10 +181,14 @@ không truy cập Prisma trực tiếp.
 - Production: `prisma/postgresql/schema.prisma` và migrations trong
   `prisma/postgresql/migrations/`.
 - `src/features/shared/db/prisma.ts` giữ một `PrismaClient` dùng chung.
-- Ảnh sản phẩm upload được resize về WebP (tối đa 1600 px) rồi lưu dưới dạng blob trong
-  `ProductImageBlob`, phục vụ trực tiếp qua `/uploads/...` (bỏ qua `/_next/image`) để tránh lỗi
-  optimizer trên Vercel; ảnh vẫn còn sau redeploy. `PRODUCT_IMAGE_UPLOAD_DIR` chỉ dùng để
-  đọc/dọn ảnh legacy từ bản filesystem cũ.
+- Ảnh sản phẩm upload được resize về WebP (tối đa 1600 px, tự giảm dần đến khi ≤380 KB) rồi lưu
+  dưới dạng blob trong `ProductImageBlob`, phục vụ trực tiếp qua `/uploads/...` (bỏ qua
+  `/_next/image`) để tránh lỗi optimizer trên Vercel; ảnh vẫn còn sau redeploy.
+  `PRODUCT_IMAGE_UPLOAD_DIR` chỉ dùng để đọc/dọn ảnh legacy từ bản filesystem cũ.
+- Ảnh cũ còn lưu dạng PNG có thể migrate một lần bằng
+  `node scripts/reencode-legacy-uploads.mjs --dry-run` (xem trước) rồi bỏ `--dry-run` để ghi.
+  Script dùng chung hàm resize với upload, cập nhật bytes/contentType và thêm `?v=2` vào URL ảnh
+  để CDN không trả nội dung cũ; ETag được tính lại từ bytes mới ở mỗi request.
 
 Sau khi đổi schema local, chạy `npm run db:push` và `npm run db:generate` nếu Prisma Client
 chưa được cập nhật. Không dùng `prisma db push` cho production.
