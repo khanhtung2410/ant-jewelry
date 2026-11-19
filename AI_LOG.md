@@ -1,4 +1,31 @@
-## 2026-11-19 19:12:42 +07:00 - Smoke test production chỉ đọc (T5)
+## 2026-11-19 20:06:10 +07:00 - Thêm tool mapping Superpowers vào AGENTS.md
+
+### Prompt nguyên văn đã dùng
+
+> https://github.com/obra/superpowers/blob/main/docs/README.opencode.md
+> read and add to tools
+
+### Đã tự kiểm chứng
+
+- Fetch tài liệu Superpowers for OpenCode (raw markdown), đọc toàn bộ phần Installation / Usage / Updating / How It Works / Tool Mapping / Troubleshooting.
+- Kiểm tra môi trường thật: `opencode --version` → **1.18.35 (V1)**; `opencode2` không tồn tại; `~/.config/opencode/opencode.jsonc` đang dùng đúng key V1 `"plugin": ["superpowers@git+..."]`. Không đổi config global vì V1 key đã đúng.
+- Thêm mục **"Tools — Superpowers for OpenCode"** vào `AGENTS.md`: nguồn tài liệu, key cấu hình theo phiên bản, lệnh verify plugin, bảng ánh xạ công cụ thực tế của harness (`skill` bare id, `subagent` + `agent`/`sessionID`, không có todo tool, `shell` thay `bash`, `grep`/`glob`, `webfetch`/`websearch`), độ ưu tiên skill, và cách pin/cập nhật/migrate V2.
+- Không sửa mã nguồn hay cấu hình dependency nào khác.
+
+### AI sai ở đâu
+
+- **Ban đầu định đổi `plugin` → `plugins` theo hướng dẫn V2:** kiểm tra phiên bản mới thấy CLI là 1.18.35 nên key V1 trong config global đã đúng; nếu đổi theo V2 có thể làm mất plugin. Đã ghi rõ điều kiện "chỉ đổi khi V2 2.0.4+" vào AGENTS.md.
+- **Giả định tool mapping V1 (`task`/`bash`) áp dụng ở đây:** harness này phơi bày `subagent`/`shell`; đã ghi bảng theo công cụ thực tế, không chép máy móc tài liệu.
+
+### Hạn chế
+
+- Không cài đặt lại plugin, không xóa cache; chỉ ghi tài liệu. Không có thay đổi hành vi ứng dụng.
+
+**So sánh Figma:** không áp dụng.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

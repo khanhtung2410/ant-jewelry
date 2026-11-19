@@ -13,6 +13,37 @@ Apply these automatically to **every** user request — do not wait to be told:
 7. **Verification before completion** (`verification-before-completion`): before opening a PR and before the final response, re-run the full check set from `docs/CONTRIBUTING.md` (`npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`, `npm run build`) plus a production check where access exists. Record the **full output with exit code**; write "đạt/pass" only when that output is attached. Never claim success from a previous run or from an agent report.
 8. **When creating a PR with `gh`, always give the user the PR link in the final response.**
 
+### Tools — Superpowers for OpenCode
+
+Source of truth: <https://github.com/obra/superpowers/blob/main/docs/README.opencode.md>.
+
+- **Verified local setup:** OpenCode CLI is **1.18.35 (V1)**, so the global config at
+  `~/.config/opencode/opencode.jsonc` correctly uses the V1 key:
+  `"plugin": ["superpowers@git+https://github.com/obra/superpowers.git"]`. Do **not** switch to
+  the V2 `plugins` key unless OpenCode **2.0.4+** is installed (`opencode2` is not available here).
+- **Verify the plugin is loaded:** ask "Tell me about your superpowers", or list skills with the
+  native `skill` tool. Logs: `opencode run --print-logs "hello" 2>&1 | grep -i superpowers`.
+- **Tool mapping used by this harness** (skills describe actions, not tool names):
+
+  | Skill action | Tool here |
+  |---|---|
+  | List / load a skill | `skill` tool with the **bare id** (`superpowers:brainstorming` → `id: "brainstorming"`) |
+  | Subagent (general-purpose) | `subagent` with `agent: "general"` (or `"explore"`); continue with `sessionID` |
+  | Create todo / mark complete | **no todo tool** — track the plan in a markdown file or the harness plan facility |
+  | Read a file | `read` |
+  | Create / edit / delete files | `write`, `edit`, `shell` (use `patch` with `patchText` when available) |
+  | Run a shell command | `shell` (`command`, `workdir`, `timeout`, `background`) — not `bash` |
+  | Search file contents / names | `grep`, `glob` |
+  | Fetch a URL / search the web | `webfetch`, `websearch` |
+
+- **Skill priority:** project `.opencode/skills/` > personal `~/.config/opencode/skills/` >
+  bundled Superpowers skills. Use distinct names for personal/project skills — on V1, a bundled
+  skill can win a name collision.
+- **Updating:** pin a release in the spec (`...git#v7.0.2`) if needed; if updates do not appear,
+  clear OpenCode's package cache or reinstall the plugin. Migrating to V2 means changing `plugin`
+  to `plugins` and removing the old `~/.config/opencode/plugins/superpowers.js` and
+  `~/.config/opencode/skills/superpowers` symlinks.
+
 ### Code review records
 
 - After **every** review round (any review produced by a skill such as `requesting-code-review`, or a self-review done with `superpowers`), save the complete result to `docs/reviews/YYYY-MM-DD-<skill>.md` — `<skill>` is the skill id you actually used without the `superpowers:` prefix; a self-review uses `superpowers`. Use the date you run the review, in the agent's local time. Keep one file per review round; do not overwrite a previous round.
