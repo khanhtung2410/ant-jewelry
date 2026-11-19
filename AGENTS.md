@@ -1,3 +1,12 @@
+## Project rules for coding agents
+
+### Code review records
+
+- After **every** review round (any review produced by a skill such as `requesting-code-review`, or a self-review done with `superpowers`), save the complete result to `docs/reviews/YYYY-MM-DD-<skill>.md` — `<skill>` is the skill id you actually used without the `superpowers:` prefix; a self-review uses `superpowers`. Use the date you run the review, in the agent's local time. Keep one file per review round; do not overwrite a previous round.
+- For **every** finding, the file must state `file:line`, severity (`Critical` / `Important` / `Minor`), reproduction steps, and an explicit decision: **Accepted** (fixed in this PR or scheduled in a named follow-up PR/branch) or **Rejected** (with the concrete reason). Never silently drop a finding, and never accept an AI suggestion without re-reading the real source yourself first.
+- In `AI_LOG.md`, prepend a new entry containing: the **verbatim prompt used**, **which findings were accepted** (with the PR/branch they go to), and **which findings were rejected and why**. Link to the review file.
+- These rules are project-owned text, not Next.js managed blocks — place them outside the `<!-- BEGIN:... -->` / `<!-- END:... -->` markers so `next dev` preserves them.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
