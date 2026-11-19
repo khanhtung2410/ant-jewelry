@@ -1,4 +1,44 @@
-## 2026-11-19 12:05:32 +07:00 - Dọn ảnh test production và thêm quy tắc hygiene (E2)
+## 2026-11-19 12:18:56 +07:00 - Đánh đổi E3 và debug optimizer theo S3
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> E3 — Một kích thước 1600px cho mọi chỗ. Card sản phẩm (sizes 20vw–50vw), thumbnail 96px và ảnh admin 88px đều tải bản 1600px vì đã unoptimized. Khi danh mục có nhiều ảnh upload thật, trang /c/<slug> sẽ nặng gấp nhiều lần. Cách làm: lúc upload sinh thêm bản nhỏ (ví dụ 480px) và dùng bản đó cho card/thumbnail; hoặc tìm nguyên nhân thật của 400 INVALID_IMAGE_OPTIMIZE_REQUEST rồi bật lại optimizer.
+> Không bắt buộc trong đợt này. Ít nhất ghi đánh đổi này vào bản ghi quyết định storage trong DEPLOY.md, kèm số đo dung lượng một trang /c/ có ảnh upload.
+>
+> S3 — Tìm nguyên nhân thật của lỗi optimizer (superpowers:systematic-debugging). Áp dụng cho 400 INVALID_IMAGE_OPTIMIZE_REQUEST (E3): đi đủ các bước tái hiện → giả thuyết → kiểm chứng từng giả thuyết, trước khi chọn cách "bỏ optimizer". Dán lại các bước vào PR.
+>
+> update doc file if needed
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Dùng skill `systematic-debugging`, tạo branch `debug/image-optimizer-s3` từ `origin/main` (`11e6fac`).
+- **Phase 1 — tái hiện/evidence:** ảnh giữ lại trên production GET 200, `image/webp`, 337.464 byte, sharp metadata 733×800. `/_next/image?url=<encoded>&w=256&q=75` → 200 JPEG 13.350 byte; w=384/640/750/828/1080/1920 đều 200 (Next clamp theo nguồn). Mock `/mock/products/ring-6.webp` cũng 200 ở w=256/640/1080.
+- **Phase 2 — pattern:** So sánh request có/không query trong `url`: control 200; `?v=2` 400; `?foo=bar` 400; `?` (rỗng) 200; cache-bust ở **ngoài** (`&cb=99`) 200; mock ảnh + `?v=2` cũng 400. Khác biệt duy nhất là query có dấu `=` nằm trong giá trị `url`.
+- **Phase 3 — giả thuyết:**
+  - Bác “file hỏng” (sharp đọc được metadata), bác “w > nguồn” (w=1920 vẫn 200), bác “file quá lớn” (PNG 3,97 MB từng 200 ở w=256).
+  - Chấp nhận: Next optimizer trả 400 khi `url` inner có query chứa `=` — tái hiện 5/5 với `?cb=1..5` và 3/3 với `?v=2`, `?foo=bar`, mock. Hệ quả: script E1 thêm `?v=2` để bust CDN; nếu bật lại optimizer phải strip query trước khi tạo URL.
+  - Chưa tái hiện: lỗi gốc mentor không có query, kèm `uniqueContextId not found`/`Resend failed`. 5 request cache-bust liên tiếp đều 200 → ghi nhận là timing/cold-start của Vercel, không khẳng định root cause.
+- **Phase 4 — quyết định:** không bật lại optimizer trong đợt này (E3 không bắt buộc). Ghi đánh đổi + số đo vào `docs/DEPLOY.md`: `/c/other-jewelry` HTML 60.994 byte, 3 request ảnh (2 mock 6.966+776 byte, 1 upload 337.464 byte ≈97,8% tổng ảnh); bản 480px cùng ảnh chỉ 98.912 byte (~96,6 KB). Với 5 card upload thật → ~1,7 MB thay vì ~0,5 MB nếu có bản nhỏ.
+- Output capture UTF-8 bằng Node, không PowerShell redirect.
+
+### Hạn chế / AI sai ở đâu
+
+- Không ép lại được lỗi `uniqueContextId not found` ban đầu; theo systematic-debugging, ghi nhận là environmental/timing-dependent thay vì giả vờ đã tìm ra root cause.
+- Không đổi code; E3 chỉ là ghi chú đánh đổi theo yêu cầu. Hướng làm bản 480px để cho phép bật lại optimizer cần PR riêng.
+- Không đụng dữ liệu production trong lượt này (không upload/xóa ảnh).
+
+**So sánh Figma:** không áp dụng.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
