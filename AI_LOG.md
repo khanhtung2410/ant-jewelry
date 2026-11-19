@@ -1,4 +1,35 @@
-## 2026-11-20 01:26:26 +07:00 - Kiểm tra codebase + production (lượt cuối)
+## 2026-11-20 01:51:09 +07:00 - Sửa docs theo code + đo lại Lighthouse trong PR #114
+
+### Prompt nguyên văn đã dùng
+
+> update doc file to match current code
+> rerun light house
+> any change add to pr 114
+
+### Đã tự kiểm chứng
+
+- Giữ nguyên branch `review/final-check-2026-11-20` (PR #114), không tạo PR/branch mới theo yêu cầu.
+- **Docs:** sửa 4 chỗ `REQUIREMENTS.md` còn "Staff chỉ xem" (`:257,:269,:865,:977`) theo `PERMISSIONS.md`; đổi `:1318` sang DB-backed `ProductImageBlob`; sửa `PERFORMANCE.md` (preamble lỗi thời + `:29` + E2E 27→30); đổi 27→30 tại `DEPLOY.md` (2 chỗ) và `README.md`. Kiểm tra grep: không còn "chỉ xem/chỉ đọc" cho EDITOR ở các mục đã chốt, không còn "27 test".
+- **Lighthouse lần 2 (v3):** chạy lại 12 lần (3 warmup + 9 lưu) bằng cùng script/flags, lưu `prod-*-v3-*.json`. Kết quả ổn định: Home 94 (89–94), Product 94 (94–95), Blog 93 (92–93); TBT 170–290 ms, CLS 0 ở cả 9 lần — xác nhận lượt v2 là nhiễu máy, không phải regression. `PERFORMANCE.md` thêm mục "lượt 2 (v3)" làm baseline; `DEPLOY.md` cập nhật; v2 giữ lại nhưng ghi rõ "loại làm baseline".
+- File review `2026-11-20-requesting-code-review.md` có mục "Cập nhật trong cùng PR #114": finding #1–#4 → Fixed, #13 → khẳng định Rejected bằng số liệu v3, #5 vẫn mở.
+- Bộ lệnh mục V: lint/typecheck/test (64 files / 295 tests)/format:check/build đều exit 0.
+
+### AI sai ở đâu
+
+- **Lần đầu đo Lighthouse (v2) mình đã nghiêng về "nhiễu" nhưng không có bằng chứng đủ mạnh:** phải chạy lần 2 trên máy yên tĩnh mới khẳng định được; trước đó đã cẩn trọng không ghi regression, nay có số liệu ổn định để bác hẳn.
+- **Reviewer #114 chỉ ra 4+1 chỗ docs sót sau khi mình đã đánh dấu finding #2/#3 "Fixed":** bài học là phải grep toàn bộ tài liệu sau mỗi lần sửa, không tin bảng trạng thái. Lần này đã grep lại trước khi báo xong.
+- **Không tạo PR mới:** yêu cầu "add to pr 114" — đã đẩy commit lên đúng branch đang mở.
+
+### Hạn chế
+
+- Finding #5 (token màu không tương đương, focus ring đỏ→xanh) vẫn mở ở `fix/token-equivalence`; đây là thay đổi code/UI nên không gộp vào PR docs này.
+- Không có credentials DB production; các ô `[ ]` trong DEPLOY.md giữ nguyên.
+
+**So sánh Figma:** không đổi bố cục; chỉ cập nhật số liệu và mô tả tài liệu.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

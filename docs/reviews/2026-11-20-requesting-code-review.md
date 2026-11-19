@@ -60,3 +60,14 @@ E2E: 30 tests pass (18 desktop-chrome + 12 pixel-7) — evidence from PR #113
 - Không có credentials DB production → không kiểm tra migration status, nội dung DB, hay dữ liệu test tồn đọng. Các ô `[ ]` trong DEPLOY.md giữ nguyên.
 - Không có Figma gốc → không đối chiếu pixel cho 6 màn R6.3.
 - Đây là lượt review; **không sửa code hay dữ liệu production**, mọi phát hiện chỉ ghi quyết định và nhánh follow-up.
+
+## Cập nhật trong cùng PR #114
+
+Người dùng yêu cầu "update doc file to match current code / rerun light house / any change add to pr 114", nên các mục docs đã được sửa ngay trong PR này (không mở PR mới):
+
+- **Finding #1 → Fixed:** 4 chỗ `REQUIREMENTS.md` (`:257`, `:269`, `:865`, `:977`) đã đổi từ "Staff chỉ xem" sang mô hình quyền hiện hành.
+- **Finding #2 → Fixed:** `PERFORMANCE.md` preamble và `:29` đã chỉ rõ lượt 2026-11-18 là cũ, lượt mới nằm ở mục đo lại.
+- **Finding #3 → Fixed:** số E2E 27 → **30** (18 desktop + 12 pixel-7) tại `PERFORMANCE.md`, `DEPLOY.md` (2 chỗ) và `README.md`.
+- **Finding #4 → Fixed:** `REQUIREMENTS.md:1318` đổi sang DB-backed `ProductImageBlob` qua `/uploads/[...path]`.
+- **Finding #13 (Lighthouse) → khẳng định Rejected bằng dữ liệu mới:** chạy lại Lighthouse lần 2 (v3, 3 lần + warm-up mỗi trang) trên máy yên tĩnh: Home **94** (89–94), Product **94** (94–95), Blog **93** (92–93), TBT 170–290 ms, CLS 0 ở cả 9 lần. Điều này chứng minh lượt v2 (Home 74, TBT 3.690 ms) là nhiễu đo. `PERFORMANCE.md` ghi v3 là baseline hiện tại; `DEPLOY.md` cập nhật theo.
+- **Finding #5 (color drift) vẫn mở** → `fix/token-equivalence` (không sửa trong PR docs này). Các minor #6–#9 vẫn theo nhánh đã đặt ở bảng trên.

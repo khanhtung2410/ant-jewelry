@@ -26,7 +26,7 @@ Mỗi trang được đo **1 lần khởi động (bỏ qua, không lưu báo c�
 | Sản phẩm | 97 | 99 | 94 | **97** | [1](lighthouse-reports/prod-product-1.json) · [2](lighthouse-reports/prod-product-2.json) · [3](lighthouse-reports/prod-product-3.json) |
 | Blog chi tiết | 81 | 98 | 97 | **97** | [1](lighthouse-reports/prod-blog-1.json) · [2](lighthouse-reports/prod-blog-2.json) · [3](lighthouse-reports/prod-blog-3.json) |
 
-**Mục tiêu:** Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95 (trung vị 3 lần). **Trạng thái:** Home (95) và sản phẩm (97) **đạt** rõ ràng trên bản deploy ở lượt đo lại sau khi upload ảnh thật. Blog chi tiết giữ số liệu của lượt đo trước (97 trung vị) và cũng đạt. Các bộ số liệu cũ (Home “84 (82–92)”, “91 (61–96)” rồi “85 (84–95)”) phản ánh các lần đo khác nhau; bảng trên là lượt mới nhất, JSON gốc được lưu lại để đối chiếu.
+**Mục tiêu:** Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95 (trung vị 3 lần). **Trạng thái:** Home (95) và sản phẩm (97) **đạt** rõ ràng trên bản deploy ở lượt đo lại sau khi upload ảnh thật. Blog chi tiết giữ số liệu của lượt đo trước (97 trung vị) và cũng đạt. Các bộ số liệu cũ (Home “84 (82–92)”, “91 (61–96)” rồi “85 (84–95)”) phản ánh các lần đo khác nhau; bảng trên là lượt 2026-11-18; lượt mới nhất là "Đo lại production 2026-11-20 — lượt 2 (v3)" bên dưới, JSON gốc được lưu lại để đối chiếu.
 
 ### Kết quả đo trên production build local (tham chiếu, median; range)
 
@@ -68,7 +68,9 @@ Các thay đổi giữ nguyên hành vi UI (carousel vẫn cuộn/điều hướ
 
 `SITE_URL` phải trỏ tới origin production chính thức khi deploy (xem `.env.example`, `docs/DEPLOY.md`).
 
-## Đo lại production 2026-11-20 (sau PR #108–#112)
+## Đo lại production 2026-11-20 — lượt 1 (nhiễu, v2)
+
+Lượt này có độ phân tán lớn (xem bên dưới); giữ lại làm bằng chứng nhưng **không dùng làm baseline**. Bảng cập nhật nhất là lượt 2 (v3) ngay sau đây.
 
 Chạy Lighthouse 13.6.0 với Chrome của Playwright, mobile + simulated throttling, **bỏ 1 lần khởi động rồi lưu 3 lần** cho mỗi trang (cùng cách với lượt 2026-11-18). JSON gốc: `prod-{home,product,blog}-v2-{1,2,3}.json` trong [`docs/lighthouse-reports/`](lighthouse-reports/).
 
@@ -89,11 +91,23 @@ product v2-1: perf=86 ...  product v2-2: perf=78 ... product v2-3: perf=87 ...
 blog v2-1: perf=74 ...     blog v2-2: perf=73 ...    blog v2-3: perf=76 ...
 ```
 
-## Kiểm chứng tự động mới (2026-11-19, code hiện tại)
+## Đo lại production 2026-11-20 — lượt 2 (v3, ổn định)
 
-Các số Lighthouse ở trên là của lượt đo 2026-11-18; **không có lần đo Lighthouse mới** sau các PR #98–#108 nên không được ghi là đã cải thiện. Những kiểm chứng mới có output thực:
+Chạy lại cùng quy trình (Lighthouse 13.6.0, Chrome Playwright, mobile, simulated throttling, bỏ 1 warm-up, lưu 3 lần) trên máy yên tĩnh hơn. JSON gốc: `prod-{home,product,blog}-v3-{1,2,3}.json` trong [`docs/lighthouse-reports/`](lighthouse-reports/).
 
-- **E2E local:** `npm run test:e2e` → 27 pass trên 2 project (`desktop-chrome` + `pixel-7`). Bộ axe (`@axe-core/playwright`) chạy trên Home, Category, Product, Blog list, Blog detail và contact popover ở cả hai project → **0 lỗi serious/critical**.
+| Trang | Performance (median; range) | Accessibility | SEO | FCP / LCP / TBT median |
+|---|---:|---:|---:|---|
+| Home (`/`) | **94** (89–94) | 96 | 100 | 0.9 s / 2.8 s / 210 ms |
+| Sản phẩm (`/p/aurora-band`) | **94** (94–95) | 100 | 100 | 0.9 s / 2.5 s / 190 ms |
+| Blog chi tiết | **93** (92–93) | 98 | 100 | 0.9 s / 2.7 s / 210 ms |
+
+Lần này TBT chỉ 170–290 ms và CLS = 0 ở cả 9 lần, sát với lượt 2026-11-18 (TBT ~148 ms). Điều đó xác nhận lượt v2 (TBT tới 3.690 ms, CLS 0,516) là **nhiễu môi trường đo**, không phải regression từ PR #108–#113. Cả ba trang **đạt** mục tiêu Performance ≥ 85 / A11y ≥ 90 / SEO ≥ 95. Đây là baseline hiện tại.
+
+## Kiểm chứng tự động khác (2026-11-19 → 2026-11-20)
+
+Bảng Lighthouse ngay trước mục này là lượt đo 2026-11-18; lượt đo mới nhất (2026-11-20, sau PR #108–#113) nằm ở mục "Đo lại production" phía trên — xem ở đó trước khi đánh giá hiệu năng. Những kiểm chứng tự động khác có output thực:
+
+- **E2E local:** `npm run test:e2e` → 30 pass trên 2 project (`desktop-chrome` 18 + `pixel-7` 12). Bộ axe (`@axe-core/playwright`) chạy trên Home, Category, Product, Blog list, Blog detail và contact popover ở cả hai project → **0 lỗi serious/critical**.
 - **Smoke production:** `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` → **8/8 pass**: 6 màn 200 + đúng 1 `h1` + canonical đúng; ảnh `/uploads/` trên `/p/ivy-tennis-bracelet` có ETag và < 400 KB; `robots.txt`/`sitemap.xml` đúng. Chạy sau mỗi deploy.
 - **Ảnh đối chiếu:** `npm run test:screenshots` tạo 6 ảnh desktop 1920px (chờ `networkidle` + font/ảnh eager) trong `docs/deploy-screenshots/`; dùng cho bảng R6.3 trong `docs/DEPLOY.md`.
 - **CI:** job `e2e` trong `.github/workflows/npm-ci.yml` chạy browser + `npm run test:e2e` và upload `playwright-report/`, `test-results/` (trace) khi fail.
