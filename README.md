@@ -123,6 +123,8 @@ npm run start
 | `npm test` | Vitest unit test (dùng database test riêng) |
 | `npm run test:watch` | Vitest watch mode |
 | `npm run test:e2e` | Playwright E2E; tự reset DB E2E và chạy `next build && next start` |
+| `npm run test:smoke:production` | Smoke production chỉ đọc, dùng `BASE_URL` (chạy sau mỗi deploy) |
+| `npm run test:screenshots` | Chụp 6 ảnh desktop 1920px cho bảng R6.3 (Playwright) |
 | `npm run format` / `npm run format:check` | Prettier ghi / kiểm tra |
 | `npm run db:push` | Đồng bộ schema SQLite local |
 | `npm run db:seed` | Nạp dữ liệu mẫu SQLite local |

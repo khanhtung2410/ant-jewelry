@@ -1,4 +1,37 @@
-## 2026-11-19 20:17:45 +07:00 - Chạy E2E trong CI + screenshot Playwright (T6)
+## 2026-11-19 21:43:14 +07:00 - Cập nhật docs theo codebase mới + ảnh 1920px
+
+### Prompt nguyên văn đã dùng
+
+> update doc with newest codebase, images
+
+### Đã tự kiểm chứng
+
+- Tiếp tục trên branch `ci/e2e-job` (PR #108) vì 6 ảnh 1920px vừa commit ở branch này; không tạo branch/PR mới.
+- Đọc toàn bộ các mục liên quan của `docs/DEPLOY.md` (storage decision record, optimizer/E1/E3, Figma↔production, deployment status, readiness checklist), `docs/PERFORMANCE.md`, `README.md` trước khi sửa.
+- **DEPLOY.md:**
+  - Lịch sử quyết định bổ sung #94, #98, #102, #104–#106, #108; trade-off ghi rõ 304 không kéo blob (từ #98) và rủi ro ảnh cũ trước #94 bị trả nguyên kích thước.
+  - Bảng R6.3 đổi thành đúng **6 màn theo checklist đợt 4** (Home, Category, Product, **Product + Contact popover**, Blog list, Blog detail), thay Admin bằng màn popover, thêm cột **"Chỗ lệch / lý do"**, link tới 6 file `*-1920.png` vừa chụp 2026-11-19. Ghi rõ Figma gốc không có trong repo → các ô "chờ đối chiếu" không tự đánh dấu khớp.
+  - Trạng thái deploy thêm smoke 8/8, a11y 0 serious/critical, 6 ảnh 1920px; checklist thêm dòng "6 màn R6.3 + ảnh đối chiếu" và dòng "E2E + a11y + smoke trên clone sạch/CI".
+- **PERFORMANCE.md:** thêm mục "Kiểm chứng tự động mới" với output có thật (27 E2E, axe 0 serious/critical, smoke 8/8, screenshots 1920px, CI job); **giữ nguyên số Lighthouse cũ** và ghi rõ chưa đo lại sau #98–#108.
+- **README.md:** bảng scripts thêm `test:smoke:production` và `test:screenshots`.
+- Ảnh: dùng đúng 6 file `docs/deploy-screenshots/*-1920.png` đã commit trong PR #108 (xác minh chiều rộng 1920px bằng sharp ở lượt trước).
+
+### AI sai ở đâu
+
+- **Định tạo branch mới theo rule chung:** lần này sẽ làm mất ảnh trong PR #108 (ảnh nằm ở branch đó). Đã giữ nguyên branch hiện tại và cập nhật docs ngay trong PR đang mở.
+- **Định ghi "hiệu năng cải thiện" sau các PR mới:** không có lượt đo Lighthouse mới; đã giữ số liệu cũ và thêm câu chú thích rõ ràng thay vì suy diễn.
+- **Bảng R6.3 cũ có dòng Admin:** checklist đợt 4 yêu cầu 6 màn gồm Product + Contact popover; đã thay dòng Admin bằng màn popover và chuyển ảnh admin thành ghi chú riêng.
+
+### Hạn chế
+
+- Chưa có Figma gốc trong repo nên cột "Chỗ lệch / lý do" chỉ liệt kê 2 lệch đã biết (carousel 5 card, OTHER BLOGS 1 bài); các màn còn lại chờ mentor đối chiếu.
+- Không chạy lại Lighthouse, không tick các ô production cần quyền Vercel/PostgreSQL.
+
+**So sánh Figma:** cập nhật bảng đối chiếu với ảnh production 1920px mới; không tự kết luận khớp/ lệch khi thiếu file Figma.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
