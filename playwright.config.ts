@@ -8,16 +8,20 @@ export default defineConfig({
   testMatch: '**/*.spec.ts',
   // The production smoke suite has its own config and BASE_URL; it must never
   // be picked up by the local E2E run.
-  testIgnore: '**/production.smoke.spec.ts',
+  testIgnore: ['**/production.smoke.spec.ts', '**/ui-screenshots.spec.ts'],
   fullyParallel: false,
   workers: 1,
   timeout: 60_000,
   expect: {
     timeout: 15_000,
   },
+  // Always emit an HTML report; retain traces on failure so CI can upload them
+  // as artifacts when `npm run test:e2e` fails.
+  reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL,
     headless: true,
+    trace: 'retain-on-failure',
   },
   projects: [
     {
