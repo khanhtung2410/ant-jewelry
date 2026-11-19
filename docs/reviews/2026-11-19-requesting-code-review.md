@@ -260,3 +260,34 @@ npm run format:check  exit=0
 npm test              62 files / 286 tests pass
 npm run build         exit=0
 ```
+
+---
+
+## S5 — Liên kết phát hiện ↔ PR và danh sách phát hiện bị bác
+
+Bằng chứng kiểm chứng cuối cùng: [`2026-11-19-verification-before-completion.md`](2026-11-19-verification-before-completion.md).
+
+### Liên kết phát hiện ↔ PR
+
+| Phát hiện | Quyết định | PR / nhánh |
+|---|---|---|
+| B4 (màu cứng), B5 (danger + focus trap), B6 (lưu ETag) | Sửa | [#98](https://github.com/khanhtung2410/ant-jewelry/pull/98) |
+| 1.1 ETag `*`, 1.2 sharp pixel cap, 2.3 next-path, 3.1 price ≤ Int max | Sửa | [#100](https://github.com/khanhtung2410/ant-jewelry/pull/100) |
+| 4.1 category metadata, 4.2 H1, 4.3 canonical | Sửa | [#100](https://github.com/khanhtung2410/ant-jewelry/pull/100) |
+| 1.3 corrupt image → 415, 1.4/2.8 upload+origin tests, 2.6 stale-token logout, 2.7/3.3 last-admin DB test, 3.4 admin-redirect tests, 4.6 optimizer tests | Sửa | [#101](https://github.com/khanhtung2410/ant-jewelry/pull/101) |
+| E1 re-encode (PNG → WebP) + B6 backfill etag cho blob WebP cũ | Sửa | [#102](https://github.com/khanhtung2410/ant-jewelry/pull/102) |
+| 2.1 XFF, 2.2 rate-limit TOCTOU | Hoãn (có thật nhưng cần đổi thiết kế) | `security/auth-hardening` |
+| 3.2 blog image sync, 3.6 Category.type unique | Hoãn | `fix/blog-image-sync`, `db/category-type-unique` |
+| 4.4 contact link, 4.5 image dimensions, 4.7 metadata test, 4.9 SITE_URL | Hoãn | `fix/contact-links`, `perf/image-dimensions`, `test/seo`, `fix/seo-config` |
+| 3.5 action args validation | Bác cho PR này, hoãn riêng | `refactor/action-args-validation` |
+
+### Phát hiện bị bác (kèm lý do)
+
+| Phát hiện | Lý do bác |
+|---|---|
+| 2.4 — luôn chạy `bcrypt.compare` kể cả khi rate-limited | Nhánh nhanh áp dụng như nhau dù email có tồn tại hay không; response vốn công bố trạng thái rate-limit → không rò rỉ tài khoản. Chỉ là lệch văn bản invariant. |
+| 2.5 — stale token qua proxy là lỗ hổng | Mọi page/action gọi lại `getAdminSession()` nên không khai thác được. Đã ghi chú trong `docs/PERMISSIONS.md`: proxy là UX redirect, không phải authorization. |
+| 3.5 — Zod cho mọi đối số Server Action | Mọi ghi dùng `where` ghép + kiểm tra tồn tại + permission → không có bypass. Phạm vi quá lớn so với lợi ích defense-in-depth; theo dõi riêng. |
+| 4.8 — rủi ro crawler do `content-visibility` | Đánh đổi hiệu năng có chủ đích; carousel đầu không defer và mọi URL sản phẩm có trong sitemap. |
+| 2.1 (bác một phần) — XFF spoof | Vercel ghi đè `x-forwarded-for` nên bypass không xảy ra trên production hiện tại; vẫn giữ là rủi ro tính di động. |
+| 4.7 (bác một phần) — "không có test sitemap" | `queries.test.ts:372-412` đã có test DB thật gọi `sitemap()`; chỉ phần canonical/OG/Twitter là còn thiếu. |

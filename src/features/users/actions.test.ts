@@ -156,7 +156,6 @@ describe('saveUserAccess last-active-ADMIN invariant', () => {
   const emailA = 'last-admin-a@antjewelry.local';
   const emailB = 'last-admin-b@antjewelry.local';
   let adminA: string;
-  let adminB: string | undefined;
 
   async function makeAdmin(email: string): Promise<string> {
     const user = await prisma.user.create({
@@ -215,7 +214,7 @@ describe('saveUserAccess last-active-ADMIN invariant', () => {
   });
 
   it('allows demotion while another active ADMIN remains', async () => {
-    adminB = await makeAdmin(emailB);
+    await makeAdmin(emailB);
 
     await saveUserAccess(accessState(adminA, 'ADMIN'), formDataFor(adminA, 'EDITOR'));
 

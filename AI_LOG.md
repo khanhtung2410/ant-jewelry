@@ -1,4 +1,38 @@
-## 2026-11-19 15:12:06 +07:00 - Tìm root cause optimizer và TDD E1/B6 (S3/S4)
+## 2026-11-19 15:34:05 +07:00 - Kiểm chứng trước khi báo xong (S5)
+
+### Prompt nguyên văn đã dùng
+
+> S5 — Kiểm chứng trước khi báo xong (superpowers:verification-before-completion). Trước khi mở PR và trước khi nộp đợt: chạy lại đủ lệnh ở mục V và kiểm tra trên production. Chỉ ghi "đạt" khi có output đi kèm.
+> Kết quả mong đợi: một file docs/reviews/… cho S1, các PR sửa lỗi liên kết tới phát hiện tương ứng, và danh sách phát hiện đã bác kèm lý do.
+>
+> add this to agent rules, when create new pr givee user the link to that prr
+
+### Đã tự kiểm chứng
+
+- Load skill `verification-before-completion`; fetch `origin/main` (`5531960`, sau PR #102); tạo branch `docs/verification-s5`.
+- Thêm rule vào `AGENTS.md`: chạy lại đủ 5 lệnh từ `docs/CONTRIBUTING.md` + production check trước khi mở PR / trước khi trả lời; chỉ ghi "đạt" khi có output kèm exit code; **luôn đưa link PR cho user khi tạo PR bằng `gh`**.
+- Lần chạy bộ lệnh đầu: lint exit 0 nhưng có 1 warning `adminB is assigned a value but never used` (từ PR #101); format:check exit 1 do file script tạm `check-production.mjs` chưa format. **Không ghi "đạt"** ở thời điểm này.
+- Sửa warning (`bỏ biến adminB, chỉ gọi makeAdmin(emailB)`), xóa 4 file script/output tạm, rồi **chạy lại bộ lệnh lần 2** — output đầy đủ lưu trong `docs/reviews/2026-11-19-verification-before-completion.md`: lint/typecheck/format:check/build exit 0, test 64 files / 289 tests, lint không còn warning.
+- Production check read-only trên `https://ant-jewelry.vercel.app`: home/category/blog/terms/sitemap/robots đều 200; category canonical `/c/wedding-ring`, blog `/blog`, terms `/terms`; upload image 200 `image/webp` 319.809 byte với ETag, conditional GET → 304; `/_next/image` với inner `?v=2` → 200 (không còn 400).
+- Bổ sung vào `docs/reviews/2026-11-19-requesting-code-review.md`: bảng liên kết phát hiện ↔ PR (#98, #100, #101, #102 + các nhánh hoãn) và bảng 6 phát hiện bị bác kèm lý do (2.4, 2.5, 3.5, 4.8, 2.1 một phần, 4.7 một phần).
+- Capture mọi output bằng Node `spawnSync` UTF-8 / `NO_COLOR=1`.
+
+### AI sai ở đâu
+
+- **Lần đầu chạy verification đã ghi nhận sai lệch:** lint exit 0 nhưng còn warning và format:check exit 1. Nếu dừng ở đó và nói "đạt" thì là báo cáo sai. Đã sửa nguyên nhân (biến unused + file tạm) và chạy lại từ đầu.
+- **Giả định "mục V" là một mục tên V trong docs:** tìm kiếm cho thấy không có mục tên V; thực tế là checklist Testing / "Trước khi mở PR" trong `docs/CONTRIBUTING.md`. Đã dùng bộ 5 lệnh đó và ghi rõ trong file review.
+- **Không có quyền Vercel/DB production:** không chạy được `db:migrate:status:production`; production check chỉ là HTTP read-only. Ghi rõ hạn chế thay vì nói đã kiểm tra xong hạ tầng.
+
+### Hạn chế
+
+- Không tạo/sửa dữ liệu production; không có cleanup phải làm.
+- Các phát hiện hoãn vẫn mở theo lịch S1; S5 chỉ kiểm chứng artifacts và trạng thái hiện tại.
+
+**So sánh Figma:** không áp dụng.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
