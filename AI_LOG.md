@@ -1,4 +1,42 @@
-## 2026-11-19 12:18:56 +07:00 - Đánh đổi E3 và debug optimizer theo S3
+## 2026-11-19 12:59:56 +07:00 - Dọn màu cứng, danger confirm và ETag gọn (B4-B6)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> Nhỏ trong UI admin (gộp một PR)
+> B4 — Màu cứng mới. confirm-popover.tsx:39 dùng bg-black/40, ngay sau PR #90 đã đưa backdrop về token. Dùng token (thêm --backdrop-strong-color nếu cần độ đậm khác). admin-shell.tsx:97 và admin-dialog.tsx:45 cũng còn bg-black/40, backdrop:bg-black/45.
+> Rà lại: grep -rnE "(bg|backdrop:bg)-(black|white)/" src không còn kết quả.
+> B5 — Nút xác nhận xóa. Nút "Delete" trong ConfirmPopover dùng màu brand xanh, giống nút thường. Thao tác xóa nên dùng kiểu danger như AdminActionButton variant="danger". Thêm focus trap: hiện Tab vẫn đi ra các nút phía sau popover, dù có aria-modal="true".
+> B6 — Không bắt buộc: ETag/304. uploads/[...path]/route.ts đọc cả blob từ DB rồi mới so If-None-Match, nên 304 vẫn tốn một query kéo bytes. Comment ở dòng 18 ghi là không đọc lại blob, chưa chính xác. Có thể lưu hash vào ProductImageBlob lúc upload và chỉ select hash trước. Nên xử lý thêm W/"…" và danh sách nhiều ETag.
+>
+> update doc file if needed
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Fetch `origin/main` (`116ae42`, sau PR #97), tạo branch `fix/admin-ui-tokens-and-confirm`.
+- **B4:** thêm token `--backdrop-strong-color`, `--backdrop-dialog-color`, `--surface-overlay-color/-soft/-strong` trong `globals.css`; thay mọi `bg-black/40`, `backdrop:bg-black/45`, `bg-white/50`, `hover:bg-white/10`, `bg-white/15` trong confirm-popover, admin-shell, admin-dialog, action-button, arrow-button (cả expectation test). `grep -rnE "(bg|backdrop:bg)-(black|white)/" src` → **0 kết quả**.
+- **B5:** ConfirmPopover có prop `danger` (AdminConfirmForm truyền cho nút Delete), nút dùng style red outline theo `AdminActionButton variant="danger"`; thêm focus trap trên Tab/Shift+Tab trong dialog, focus vẫn bắt đầu ở Cancel và Escape/backdrop vẫn hủy. Thêm test static render cho danger style.
+- **B6:** thêm cột `etag String?` vào `ProductImageBlob` (cả schema SQLite/PostgreSQL + migration `20261119130000_add_product_image_blob_etag`); `uploadProductImage` và script migrate lưu SHA-256 hex; `getStoredProductImageMeta()` đọc `contentType`/`etag` trước; route `/uploads/[...path]` trả 304 **không đọc blob** khi hash khớp, hỗ trợ `W/"…"` và danh sách ETag; ảnh legacy chưa có hash vẫn tính từ bytes. Sửa comment không chính xác. Thêm test route (304 no blob read, weak/list ETag) và test storage (etag được lưu).
+- Cập nhật `docs/DEPLOY.md` mô tả ETag lưu trong DB; `AI_LOG.md` ghi nhận.
+- `npm run db:generate`, `db:push`.exit 0; lint/typecheck/format:check/test (60 files / 267 tests)/build đều exit 0.
+
+### Hạn chế / AI sai ở đâu
+
+- Lần đầu test route fail do mock module không export `imageEtag`; dùng `importOriginal` để giữ exports thật. Prettier cũng bắt 3 file UI; đã chạy `prettier --write`.
+- Migration thêm cột nullable nên ảnh cũ có `etag = null`; route vẫn tính ETag từ bytes cho những ảnh đó, không có downtime.
+- Không chạy migration production từ repo; migration file đã có trong `prisma/postgresql/migrations/` để Vercel/deploy áp dụng.
+
+**So sánh Figma:** không đổi bố cục; màu nền/mờ giữ nguyên giá trị thông qua token, nút Delete đổi sang danger.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

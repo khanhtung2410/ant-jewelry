@@ -13,5 +13,21 @@ describe('ConfirmPopover', () => {
     expect(html).toContain('Delete this image?');
     expect(html).toContain('Cancel');
     expect(html).toContain('Delete');
+    expect(html).not.toContain('border-red-200');
+  });
+
+  it('uses the danger style for destructive confirmation', () => {
+    const html = renderToStaticMarkup(
+      <ConfirmPopover
+        message="Delete?"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+        confirmLabel="Delete"
+        danger
+      />,
+    );
+
+    expect(html).toContain('border-red-200');
+    expect(html).toContain('text-red-700');
   });
 });
