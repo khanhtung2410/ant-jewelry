@@ -1,4 +1,40 @@
-## 2026-11-19 16:59:55 +07:00 - Mobile Pixel 7 + axe a11y E2E (T4)
+## 2026-11-19 19:12:42 +07:00 - Smoke test production chỉ đọc (T5)
+
+### Prompt nguyên văn đã dùng
+
+> T5 — Smoke test production. File e2e/production.smoke.spec.ts chỉ đọc, chạy với BASE_URL=https://ant-jewelry.vercel.app: 6 màn trả 200, có h1; mọi ảnh /uploads/ trên /p/ivy-tennis-bracelet < 400 KB; robots.txt, sitemap.xml, canonical đúng. Không đăng nhập, không ghi dữ liệu.
+> Chạy sau mỗi lần deploy; dán output vào PR production (thay cho các lệnh curl chạy tay).
+> create new branch
+
+### Đã tự kiểm chứng
+
+- Fetch `origin/main` (`fd2eb7e`, sau PR #105); tạo branch `test/production-smoke`.
+- Đọc toàn bộ `playwright.config.ts`, `package.json`, E2E specs trước khi đổi.
+- **RED:** chạy smoke với `BASE_URL=http://127.0.0.1:9` → 8/8 fail (`ERR_UNSAFE_PORT` / `ECONNREFUSED`), chứng minh test thực sự kiểm tra endpoint chứ không tự pass.
+- Thêm `playwright.production.config.ts` (không có `webServer`, baseURL lấy từ `BASE_URL`, mặc định Vercel), `testIgnore` trong config local, script `test:smoke:production`, và `e2e/production.smoke.spec.ts`:
+  - 6 màn public (home, category, product mock, blog list, blog detail, product có ảnh upload): status 200, đúng 1 `h1`, canonical khớp `BASE_URL + path`.
+  - Mọi `img[src*="/uploads/"]` trên `/p/ivy-tennis-bracelet`: GET 200, content-type ảnh, có ETag, `body.byteLength < 400_000`.
+  - `robots.txt` có `User-agent`/`Sitemap`; `sitemap.xml` có `<urlset>`, `/p/`, `/c/`.
+- **GREEN:** `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` → **8 passed (27.6s)**. Output đầy đủ dán vào PR.
+- Kiểm tra isolation: `npx playwright test --list` → `Total: 27 tests in 2 files`, smoke **không** nằm trong local E2E.
+- README mục 6 ghi lệnh chạy sau deploy; capture output bằng Node `spawnSync` UTF-8.
+
+### AI sai ở đâu
+
+- **Ban đầu định gộp smoke vào `playwright.config.ts`:** nếu làm vậy `npm run test:e2e` sẽ chạy smoke với baseURL local `127.0.0.1:3100` (sai mục đích) hoặc kéo webServer lên vô ích. Đã tách config riêng + `testIgnore` và kiểm chứng bằng `--list`.
+- **Script capture ghi nhầm đường dẫn** do escape `\s` trong template string Node → file nằm ở `opencodesmoke-output.txt`; đã đọc đúng file và sẽ dán output thật vào PR, không suy diễn.
+- **Không giả định production lỗi:** chạy RED với port giả trước, rồi chạy thật; 8/8 pass nên không có chỉnh sửa production nào được thực hiện.
+
+### Hạn chế
+
+- Smoke chỉ GET, không đăng nhập, không ghi/xóa dữ liệu; không thay thế được kiểm tra dữ liệu nội bộ (E2 khóa dữ liệu test trên production vẫn cần quyền ADMIN).
+- Phụ thuộc mạng tới Vercel; chạy trong CI cần network + BASE_URL đúng. Không tạo artifact/report trong repo.
+
+**So sánh Figma:** không áp dụng.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

@@ -6,6 +6,9 @@ const baseURL = 'http://127.0.0.1:3100';
 export default defineConfig({
   testDir: './e2e',
   testMatch: '**/*.spec.ts',
+  // The production smoke suite has its own config and BASE_URL; it must never
+  // be picked up by the local E2E run.
+  testIgnore: '**/production.smoke.spec.ts',
   fullyParallel: false,
   workers: 1,
   timeout: 60_000,

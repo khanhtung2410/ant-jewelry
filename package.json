@@ -17,6 +17,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:smoke:production": "playwright test --config playwright.production.config.ts",
     "test:watch": "vitest",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",

@@ -226,6 +226,16 @@ npm run test:e2e
   `pixel-7` (`devices['Pixel 7']`, chạy lại các test gắn `@storefront` + `@a11y`). Tổng 27 test.
 - `e2e/accessibility.spec.ts` dùng `@axe-core/playwright` để assert **0 lỗi serious/critical**
   trên Home, Category, Product, Blog list, Blog detail và contact popover (quét ở cả 2 project).
+- **Smoke production (chỉ đọc):** chạy sau mỗi lần deploy, thay cho các lệnh `curl` thủ công:
+
+  ```bash
+  BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production
+  ```
+
+  Dùng `playwright.production.config.ts` (không khởi động server, không đụng DB, không đăng nhập,
+  chỉ GET): 6 màn public trả 200 + một `h1` + canonical đúng, mọi ảnh `/uploads/` trên
+  `/p/ivy-tennis-bracelet` có ETag và < 400 KB, `robots.txt` / `sitemap.xml` đúng. Smoke spec
+  được loại khỏi `npm run test:e2e` (`testIgnore`). Dán output vào PR production.
 
 Khi thay đổi UI, kiểm tra thêm thủ công các luồng bị ảnh hưởng và ghi rõ trong Pull Request.
 
