@@ -99,9 +99,9 @@ Alias `@/*` trong `tsconfig.json` trỏ về `src/*`. Đặt code gần route ho
 - Không gọi database trực tiếp từ component phía trình duyệt; database chỉ được truy cập trong server-side code, Server Action, query function hoặc route handler.
 - Giữ query function và Server Action trong module server-side tương ứng; tránh lặp lại logic giữa các route.
 
-### Database (đã chốt công nghệ, chưa cấu hình)
+### Database (Prisma 7, đã cấu hình)
 
-- Đã chốt **Prisma**; local dev dùng **SQLite**, production dùng **PostgreSQL**. Work tree chưa có schema, migration hoặc Prisma Client; không tạo schema/migration ngoài task tương ứng.
+- **Prisma 7** đã cài; local dev dùng **SQLite** (`prisma/dev.db`), production dùng **PostgreSQL**. Schema và migration nằm trong `prisma/` (SQLite) và `prisma/postgresql/` (PostgreSQL); Prisma Client được generate tự động bởi `postinstall`. Mọi thay đổi schema phải có migration tương ứng.
 - Khi Database được bổ sung, mọi query phải dùng **parameterized query**, không nối chuỗi:
 
   ```ts
@@ -118,7 +118,7 @@ Alias `@/*` trong `tsconfig.json` trỏ về `src/*`. Đặt code gần route ho
 ### Validation
 
 - Validate dữ liệu không đáng tin cậy ở server, gồm body, query param, `FormData` và dữ liệu từ bên ngoài.
-- Dùng **Zod** cho schema validation; đặt schema gần Server Action hoặc module nghiệp vụ sử dụng. Zod chưa được cài trong work tree hiện tại, bổ sung khi làm phase Database/Server Action.
+- Dùng **Zod** (đã cài, `^4`) cho schema validation; đặt schema gần Server Action hoặc module nghiệp vụ sử dụng.
 
 ### Testing
 

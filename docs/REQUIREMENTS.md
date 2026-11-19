@@ -42,7 +42,7 @@
  
 ### 1.1. Mục đích của hệ thống
  
-ANT JEWELRY là website giới thiệu các sản phẩm trang sức. Hệ thống cho phép khách hàng tham khảo thông tin sản phẩm theo danh mục, đọc các bài viết Blog, xem số điện thoại và các liên kết Facebook, Instagram để liên hệ trực tiếp với ANT JEWELRY. Phía nội bộ, hệ thống hỗ trợ quản trị viên (Admin) quản lý sản phẩm, danh mục, Blog, hero slide, Settings và tài khoản; nhân viên (Staff, triển khai với role `EDITOR`) chỉ xem sản phẩm và quản lý Blog.
+ANT JEWELRY là website giới thiệu các sản phẩm trang sức. Hệ thống cho phép khách hàng tham khảo thông tin sản phẩm theo danh mục, đọc các bài viết Blog, xem số điện thoại và các liên kết Facebook, Instagram để liên hệ trực tiếp với ANT JEWELRY. Phía nội bộ, hệ thống hỗ trợ quản trị viên (Admin) quản lý sản phẩm, danh mục, Blog, hero slide, Settings và tài khoản; nhân viên (Staff, triển khai với role `EDITOR`) xem/cập nhật/ẩn sản phẩm (trừ giá và tạo/xóa), quản lý danh mục, Blog và hero slide.
  
 Theo phạm vi do chủ dự án làm rõ (SAD mục 1.1, 2.2.2), website **không** hỗ trợ giỏ hàng, đặt hàng trực tuyến, thanh toán, giao dịch trực tuyến hay đặt thiết kế/sản xuất theo yêu cầu riêng.
  
@@ -52,7 +52,7 @@ Theo phạm vi do chủ dự án làm rõ (SAD mục 1.1, 2.2.2), website **khô
 |---|---|---|---|
 | OBJ-01 | Cho phép khách hàng xem danh sách, danh mục, chi tiết sản phẩm và sắp xếp theo giá hoặc tên | AC-004 đến AC-010 | Đã quan sát |
 | OBJ-02 | Cung cấp nội dung Blog để khách hàng tìm hiểu thông tin liên quan đến trang sức | AC-011, AC-012 | Đã quan sát |
-| OBJ-03 | Hỗ trợ Admin quản lý sản phẩm, danh mục, Blog, hero slide, Settings và tài khoản nội bộ; Staff (EDITOR) xem sản phẩm và quản lý Blog | AC-023 đến AC-036 | Đã xác định; ma trận quyền đã chốt tại mục 3.3 |
+| OBJ-03 | Hỗ trợ Admin quản lý sản phẩm, danh mục, Blog, hero slide, Settings và tài khoản nội bộ; Staff (EDITOR) xem/cập nhật/ẩn sản phẩm (trừ giá), quản lý danh mục/Blog/hero slide | AC-023 đến AC-036 | Đã xác định; ma trận quyền đã chốt tại mục 3.3 |
 | OBJ-04 | Làm cơ sở cho phát triển, kiểm thử và nghiệm thu hệ thống | Toàn bộ mục 11 và 12 | Đề xuất |
  
 ### 1.3. Phạm vi dự án
@@ -62,7 +62,7 @@ Phạm vi được phân loại theo mức độ xác nhận của SAD (mục 2.
 | Phân loại | Nội dung |
 |---|---|
 | **Trong phạm vi – Đã quan sát trên website công khai** | Trang chủ; danh sách sản phẩm; xem sản phẩm theo danh mục; sắp xếp theo giá và tên; chi tiết sản phẩm (hình ảnh, thông tin, thông số); danh sách và chi tiết Blog; số điện thoại và liên kết Facebook, Instagram; điều hướng giữa các trang |
-| **Trong phạm vi – Đã xác định (chủ dự án xác nhận ở mức nhóm chức năng)** | Quản trị sản phẩm (ADMIN), Blog (ADMIN và EDITOR), danh mục/hero slide/Settings/tài khoản (ADMIN); vai trò `ADMIN` và `EDITOR` (`EDITOR` ánh xạ actor Staff của SAD) |
+| **Trong phạm vi – Đã xác định (chủ dự án xác nhận ở mức nhóm chức năng)** | Quản trị sản phẩm (ADMIN), Blog (ADMIN và EDITOR), danh mục/hero slide (ADMIN và EDITOR), Settings/tài khoản (ADMIN); vai trò `ADMIN` và `EDITOR` (`EDITOR` ánh xạ actor Staff của SAD) |
 | **Ngoài phạm vi** | Giỏ hàng; đặt hàng trực tuyến; thanh toán trực tuyến; giao dịch trực tuyến; sản phẩm thiết kế/sản xuất theo yêu cầu riêng |
 | **Đề xuất mở rộng (không bắt buộc ở phiên bản hiện tại)** | Quản lý tồn kho; khuyến mãi; bảo hành; vận chuyển; chăm sóc khách hàng |
 | **TBC** | Các vấn đề còn lại tại Phụ lục A (ma trận quyền đã chốt tại mục 3.3) |
@@ -77,7 +77,7 @@ Bảng dưới ghi các quyết định đã được chốt cho phiên bản tr
 |---|---|
 | Kiến trúc | Một Next.js App Router + TypeScript strict. Read bằng Server Components; mutation bằng Server Actions; Route Handlers chỉ dùng cho upload. Không NestJS, không tầng REST API riêng. |
 | Dữ liệu | Prisma. SQLite cho development, PostgreSQL cho production. Validate bằng Zod. |
-| Vai trò | `ADMIN` toàn quyền. `EDITOR` chỉ xem sản phẩm (kể cả giá, chỉ đọc) và quản lý Blog; không tạo/sửa/xóa/ẩn sản phẩm, không sửa giá, không quản lý danh mục/hero slide, không vào Settings / Users. `EDITOR` ánh xạ actor Staff của SAD. |
+| Vai trò | `ADMIN` toàn quyền. `EDITOR` xem/cập nhật/ẩn sản phẩm (trừ giá và tạo/xóa), quản lý danh mục, Blog và hero slide; không vào Settings / Users. `EDITOR` ánh xạ actor Staff của SAD. Ma trận chi tiết, đã cập nhật theo quyết định #41, tại `docs/PERMISSIONS.md`. |
 | Khách liên hệ | Không có Inquiry hoặc form gửi yêu cầu. Nút "ORDER NOW" mở Contact popover gồm số điện thoại, Facebook và Instagram lấy từ Settings. |
 | Giá | Số nguyên VND (`Int`), hiển thị dạng `10.000.000`, không ký hiệu tiền tệ. |
 | Responsive | Figma chỉ có desktop 1920px; tự thiết kế mobile/tablet nhất quán với style và đính kèm ảnh chụp trong PR. |
@@ -118,7 +118,7 @@ Bảng dưới ghi các quyết định đã được chốt cho phiên bản tr
 | Customer | Khách hàng/khách truy cập website |
 | Admin | Quản trị viên hệ thống; trong triển khai dùng role `ADMIN` |
 | Staff | Nhân viên vận hành; trong triển khai dùng role `EDITOR` |
-| EDITOR | Role nội bộ chỉ xem sản phẩm (kể cả giá, chỉ đọc) và quản lý Blog; không quản lý sản phẩm/danh mục/hero slide/Settings/Users; ánh xạ actor Staff của SAD |
+| EDITOR | Role nội bộ xem/cập nhật/ẩn sản phẩm (không giá, không tạo/xóa), quản lý danh mục, Blog và hero slide; không vào Settings/Users; ánh xạ actor Staff của SAD |
 | Product (Sản phẩm) | Sản phẩm trang sức |
 | Product Type (Loại sản phẩm) | Loại trang sức, ví dụ Ring (nhẫn), Necklace (dây chuyền) |
 | Category (Danh mục) | Danh mục kinh doanh, ví dụ Wedding Bands, Engagement, Everyday, Ready to ship |
@@ -187,7 +187,7 @@ Quy mô dữ liệu và lưu lượng truy cập chưa có số liệu khảo s�
 Hệ thống gồm hai phân hệ:
  
 - **Phân hệ công khai (Customer):** Trang chủ, danh sách và chi tiết sản phẩm, Blog, số điện thoại và liên kết Facebook, Instagram để liên hệ trực tiếp. Không yêu cầu đăng nhập.
-- **Phân hệ quản trị (Admin, Staff) – đã triển khai:** Đăng nhập; ADMIN quản lý sản phẩm, danh mục, hình ảnh, giá, Blog, hero slide, Settings và tài khoản/phân quyền; EDITOR (Staff) chỉ xem sản phẩm và quản lý Blog. Ma trận quyền chi tiết tại mục 3.3.
+- **Phân hệ quản trị (Admin, Staff) – đã triển khai:** Đăng nhập; ADMIN quản lý sản phẩm, danh mục, hình ảnh, giá, Blog, hero slide, Settings và tài khoản/phân quyền; EDITOR (Staff) xem/cập nhật/ẩn sản phẩm (trừ giá), quản lý danh mục, Blog và hero slide. Ma trận quyền chi tiết tại `docs/PERMISSIONS.md`.
 ```mermaid
 flowchart LR
     C["Customer<br/>(khách truy cập)"]
@@ -260,7 +260,7 @@ Qua đối chiếu ngày 05/11/2026, các nội dung sau xuất hiện trên web
  
 ### 3.2. Các tác nhân (Actors) và trách nhiệm
  
-SAD xác định **3 actor**: Customer, Admin, Staff. **SAD không có vai trò Manager**; tài liệu này không tự thêm vai trò đó. Vai trò "Employee" tương ứng với **Staff**. Trong triển khai, hai role nội bộ dùng tên `ADMIN` và `EDITOR`; `EDITOR` ánh xạ actor Staff, chỉ xem sản phẩm (kể cả giá, chỉ đọc) và quản lý Blog; không tạo/sửa/xóa/ẩn sản phẩm, không quản lý danh mục/hero slide, không vào Settings / Users. Ma trận quyền chi tiết tại mục 3.3.
+SAD xác định **3 actor**: Customer, Admin, Staff. **SAD không có vai trò Manager**; tài liệu này không tự thêm vai trò đó. Vai trò "Employee" tương ứng với **Staff**. Trong triển khai, hai role nội bộ dùng tên `ADMIN` và `EDITOR`; `EDITOR` ánh xạ actor Staff, xem/cập nhật/ẩn sản phẩm (không giá, không tạo/xóa), quản lý danh mục, Blog và hero slide; không vào Settings / Users. Ma trận quyền chi tiết tại `docs/PERMISSIONS.md`.
  
 | Actor | Mô tả | Trách nhiệm | Phạm vi quyền | Trạng thái |
 |---|---|---|---|---|
@@ -276,12 +276,12 @@ Ma trận dưới đây là mô hình phân quyền đang triển khai; thay th�
 |---|---|---|---|---|
 | Xem nội dung công khai (trang chủ, sản phẩm, Blog, liên hệ) | Có | Có | Có | FR-001 đến FR-011 |
 | Đăng nhập/đăng xuất khu vực quản trị | Không | Có | Có | FR-033, FR-034 |
-| Xem danh sách/chi tiết sản phẩm trong khu vực quản trị | Không | Có | Có (chỉ đọc, kể cả giá) | FR-020, FR-021 |
-| Thêm/sửa/xóa/ẩn sản phẩm | Không | Có | Không | FR-022 đến FR-024 |
-| Quản lý hình ảnh, giá sản phẩm | Không | Có | Không | FR-025, FR-026 |
-| Quản lý danh mục | Không | Có | Không | FR-027 |
+| Xem danh sách/chi tiết sản phẩm trong khu vực quản trị | Không | Có | Có | FR-020, FR-021 |
+| Thêm/sửa/xóa/ẩn sản phẩm | Không | Có | Có (sửa/ẩn, **không** tạo/xóa) | FR-022 đến FR-024 |
+| Quản lý hình ảnh, giá sản phẩm | Không | Có | Có (ảnh; **không** giá) | FR-025, FR-026 |
+| Quản lý danh mục | Không | Có | Có | FR-027 |
 | Quản lý Blog | Không | Có | Có | FR-028 đến FR-032 |
-| Quản lý hero slide | Không | Có | Không | FR-001 |
+| Quản lý hero slide | Không | Có | Có | FR-001 |
 | Quản lý Settings | Không | Có | Không | FR-003 |
 | Quản lý tài khoản nội bộ, phân quyền | Không | Có | Không | FR-035, FR-036 |
 
@@ -468,14 +468,14 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
  
 ### 4.4. MOD-06 – Quản trị sản phẩm (khu vực quản trị)
  
-> **Lưu ý chung cho MOD-06:** "quản trị sản phẩm và Blog" được chủ dự án xác định ở mức **nhóm chức năng**; quyền của từng vai trò theo ma trận đã chốt tại mục 3.3 (ADMIN quản lý sản phẩm; EDITOR chỉ xem). Chi tiết thao tác xóa/ẩn và trạng thái hiển thị vẫn TBC (OI-005). Luồng bên dưới là luồng đề xuất theo UC-11 của SAD, chưa xác minh trên hệ thống thực. Luồng thay thế chung cho mọi yêu cầu của module: người dùng chưa đăng nhập bị từ chối (HTTP 401); người dùng không đủ quyền bị từ chối (HTTP 403).
+> **Lưu ý chung cho MOD-06:** "quản trị sản phẩm và Blog" được chủ dự án xác định ở mức **nhóm chức năng**; quyền của từng vai trò theo ma trận đã chốt tại mục 3.3 (ADMIN toàn quyền; EDITOR xem/sửa/ẩn, ảnh/danh mục/hero slide, không giá/tạo/xóa). Chi tiết thao tác xóa/ẩn và trạng thái hiển thị vẫn TBC (OI-005). Luồng bên dưới là luồng đề xuất theo UC-11 của SAD, chưa xác minh trên hệ thống thực. Luồng thay thế chung cho mọi yêu cầu của module: người dùng chưa đăng nhập bị từ chối (HTTP 401); người dùng không đủ quyền bị từ chối (HTTP 403).
  
 #### FR-020 – Xem danh sách sản phẩm quản trị
  
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Admin/Staff được phân quyền xem danh sách sản phẩm trong khu vực quản trị. |
-| Actor | Admin, Staff (EDITOR chỉ đọc) |
+| Actor | Admin, Staff (EDITOR: trừ giá/tạo/xóa sản phẩm) |
 | Tiền điều kiện | Đã đăng nhập; có quyền xem sản phẩm. |
 | Luồng chính | 1. Người dùng mở mục quản lý sản phẩm.<br>2. Hệ thống hiển thị danh sách sản phẩm. Việc danh sách quản trị có hiển thị cả sản phẩm đã ẩn/xóa mềm hay không: TBC (OI-005). |
 | Luồng thay thế | Theo luồng thay thế chung của module. |
@@ -490,7 +490,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Thuộc tính | Nội dung |
 |---|---|
 | Mô tả | Người có quyền xem đầy đủ thông tin một sản phẩm trong khu vực quản trị (kể cả giá, hình ảnh, trạng thái). |
-| Actor | Admin, Staff (EDITOR chỉ đọc) |
+| Actor | Admin, Staff (EDITOR: trừ giá/tạo/xóa sản phẩm) |
 | Tiền điều kiện | Như FR-020; sản phẩm được chọn tồn tại. |
 | Luồng chính | 1. Người dùng chọn một sản phẩm trong danh sách.<br>2. Hệ thống hiển thị đầy đủ thông tin sản phẩm. |
 | Luồng thay thế | Theo luồng chung; sản phẩm không tồn tại: HTTP 404. |
@@ -1234,21 +1234,21 @@ Sitemap dưới đây chốt route cho Storefront và khu vực Admin. Cột **M
 | Overlay trên `/p/[slug]` (không phải route riêng) | Product + Contact popover | Popover "ORDER NOW": chỉ số điện thoại và link Facebook/Instagram; không có form liên hệ | Công khai |
 | `/blog` | Blog list | Thẻ bài viết (ảnh, tiêu đề, tóm tắt, "LEARN MORE") | Công khai |
 | `/blog/[slug]` | Blog detail | Tiêu đề; ngày đăng; nội dung; ảnh; khối "OTHER BLOGS" | Công khai |
-| `/terms-and-conditions` | — | Điều khoản và điều kiện | Công khai |
-| `/privacy-policy` | — | Chính sách bảo mật | Công khai |
-| `/shipping-and-return` | — | Vận chuyển và Đổi trả | Công khai |
+| `/terms` | — | Điều khoản và điều kiện | Công khai |
+| `/privacy` | — | Chính sách bảo mật | Công khai |
+| `/ship` | — | Vận chuyển và Đổi trả | Công khai |
 | `/jewelry-care` | — | Chăm sóc trang sức | Công khai |
 | `/admin/login` | — | Đăng nhập quản trị; nhập thông tin xác thực; thông báo lỗi | Công khai (chưa xác thực) |
-| `/admin/products/*` | — | Danh sách; biểu mẫu thêm/sửa; hình ảnh; giá; xác nhận xóa/ẩn | ADMIN; EDITOR (chỉ xem) |
-| `/admin/categories/*` | — | Danh sách; biểu mẫu thêm/sửa/xóa danh mục | ADMIN |
+| `/admin/products/*` | — | Danh sách; biểu mẫu thêm/sửa; hình ảnh; giá; xác nhận xóa/ẩn | ADMIN; EDITOR (xem/sửa/ẩn, ảnh; không giá/tạo/xóa) |
+| `/admin/categories/*` | — | Danh sách; biểu mẫu thêm/sửa/xóa danh mục | ADMIN, EDITOR |
 | `/admin/blog/*` | — | Danh sách; biểu mẫu thêm/sửa bài viết; trạng thái `DRAFT`/`PUBLISHED` | ADMIN, EDITOR |
-| `/admin/hero-slides/*` | — | Danh sách; biểu mẫu thêm/sửa/xóa hero slide | ADMIN |
+| `/admin/hero-slides/*` | — | Danh sách; biểu mẫu thêm/sửa/xóa hero slide | ADMIN, EDITOR |
 | `/admin/settings` | — | Cấu hình website: thông tin cửa hàng, số điện thoại, link Facebook/Instagram | ADMIN |
 | `/admin/users/*` | — | Danh sách tài khoản; gán role `ADMIN`/`EDITOR` | ADMIN |
 
 **Contact popover:** không phải route riêng; mở từ nút "ORDER NOW" trên `/p/[slug]` dưới dạng overlay, chỉ hiển thị số điện thoại và link Facebook/Instagram, không có form gửi liên hệ (BR-003).
 
-**Phân quyền route Admin:** `ADMIN` có toàn quyền. `EDITOR` chỉ được xem sản phẩm (read-only, kể cả giá) và quản lý Blog; không được truy cập/quản lý products (thao tác ghi), categories, hero slides, Settings hoặc Users. Quyền được kiểm tra ở phía máy chủ; chi tiết theo ma trận tại mục 3.3.
+**Phân quyền route Admin:** `ADMIN` có toàn quyền. `EDITOR` được xem/sửa/ẩn sản phẩm (không giá, không tạo/xóa), quản lý ảnh sản phẩm, danh mục, Blog và hero slide; không vào Settings hoặc Users. Quyền được kiểm tra ở phía máy chủ; ma trận cập nhật tại `docs/PERMISSIONS.md`.
 
 **Đối chiếu Figma:** sitemap phủ đủ 6 màn: Home (`/`), Category (`/c/[slug]`), Product (`/p/[slug]`), Product + Contact popover (overlay trên `/p/[slug]`), Blog list (`/blog`), Blog detail (`/blog/[slug]`).
 
@@ -1265,11 +1265,11 @@ SAD mục 2.5 nêu phương án công nghệ **đề xuất**; đây **không** 
 | Ứng dụng | Next.js App Router + TypeScript strict | Giao diện công khai, quản trị và server-side logic | Đã chốt (2026-11-09) |
 | Read path | React Server Components | Đọc dữ liệu và render phía server | Đã chốt |
 | Mutation path | Server Actions; Route Handlers chỉ cho upload | Xử lý form, mutation và upload | Đã chốt |
-| Cơ sở dữ liệu | SQLite (dev) / PostgreSQL (production) | Lưu trữ dữ liệu | Đã chốt; chưa cấu hình |
-| ORM | Prisma | Truy vấn và quản lý dữ liệu | Đã chốt; chưa cấu hình |
-| Validation | Zod | Validate input tại server boundary | Đã chốt; chưa cài đặt |
+| Cơ sở dữ liệu | SQLite (dev) / PostgreSQL (production) | Lưu trữ dữ liệu | Đã cấu hình (schema + migration trong `prisma/`) |
+| ORM | Prisma 7 | Truy vấn và quản lý dữ liệu | Đã cài; client generate qua `postinstall` |
+| Validation | Zod 4 | Validate input tại server boundary | Đã cài đặt |
 | Xác thực | JWT | Xác thực người dùng nội bộ | Đề xuất; TBC (OI-021) |
-| Lưu trữ hình ảnh | Local filesystem (`/uploads`, served by the app) | Lưu hình ảnh sản phẩm | Đã triển khai cho ảnh sản phẩm (lưu local); chính sách ảnh Blog còn TBC (OI-018). Quan sát: ảnh Blog hiện nằm ở đường dẫn dạng `/storage/images/blog/{mã}.webp` trên chính tên miền |
+| Lưu trữ hình ảnh | DB-backed local blobs (`ProductImageBlob`), phục vụ qua `/uploads/[...path]` | Lưu bytes ảnh sản phẩm (WebP ≤1600px/380KB); filesystem chỉ là đường đọc legacy | Đã triển khai; quyết định chi tiết tại `docs/DEPLOY.md` mục Storage decision record. Ảnh Blog dùng URL, chính sách còn TBC (OI-018) |
 | Quản lý mã nguồn | Git / GitHub | Quản lý phiên bản | Đang sử dụng |
 
 Không có Backend hoặc tầng REST API tách biệt: read đi qua Server Components, mutation đi qua Server Actions, Route Handlers chỉ dùng cho upload. Hệ thống phải xử lý dữ liệu Unicode (UTF-8) để lưu và hiển thị tiếng Việt có dấu (NVARCHAR trong SAD không có trong PostgreSQL; OI-017).
@@ -1328,7 +1328,7 @@ Không có endpoint cho giỏ hàng, đặt hàng, thanh toán hoặc thiết k�
 | ID | Ràng buộc | Nguồn | Trạng thái |
 |---|---|---|---|
 | TC-01 | Frontend sử dụng Next.js | ASM-007, SAD 2.5 | Định hướng theo yêu cầu dự án |
-| TC-02 | Không có backend tách biệt; server-side nằm trong Next.js. Prisma với SQLite (dev) / PostgreSQL (production); validate bằng Zod. JWT vẫn là đề xuất; ảnh sản phẩm lưu trên local filesystem và phục vụ qua `/uploads`, ảnh Blog còn TBC | SAD 2.5; quyết định 2026-11-09 | Đã chốt phần kiến trúc/dữ liệu và lưu ảnh sản phẩm; JWT và ảnh Blog còn TBC |
+| TC-02 | Không có backend tách biệt; server-side nằm trong Next.js. Prisma 7 với SQLite (dev) / PostgreSQL (production), schema/migration đã có; validate bằng Zod 4. JWT vẫn là đề xuất; ảnh sản phẩm lưu trong `ProductImageBlob` và phục vụ qua `/uploads/[...path]`, ảnh Blog còn TBC | SAD 2.5; quyết định 2026-11-09 | Đã chốt phần kiến trúc/dữ liệu và lưu ảnh sản phẩm; JWT và ảnh Blog còn TBC |
 | TC-03 | Hệ quản trị CSDL phải hỗ trợ lưu tiếng Việt có dấu; quy ước kiểu chuỗi phải thống nhất (SAD dùng cả VARCHAR và NVARCHAR trong khi PostgreSQL không có NVARCHAR) | SAD A.1 đến A.7 | TBC (OI-017) |
 | TC-04 | Giao diện công khai responsive cho máy tính, máy tính bảng và điện thoại | NFR-001 | Đã xác định |
 | TC-05 | Định danh bản ghi dùng UUID dạng chuỗi 36 ký tự | SAD A.1, A.6, A.7 | Theo SAD; TBC (OI-017, OI-018) |
@@ -1548,7 +1548,7 @@ Danh sách giữ nguyên mã của các vấn đề cần xác nhận còn hiệ
  
 | ID | Nội dung cần xác nhận | Mức độ | Yêu cầu liên quan | Nguồn |
 |---|---|---|---|---|
-| OI-004 | Ma trận quyền Admin/Staff (kể cả nhu cầu có vai trò quản lý trung gian). **Đã chốt:** `ADMIN` toàn quyền; `EDITOR` (Staff) chỉ xem sản phẩm (read-only, kể cả giá) và quản lý Blog; không quản lý sản phẩm/danh mục/hero slide/Settings/Users (mục 3.3) | Cao | FR-036; UC-20; toàn bộ MOD-06 đến MOD-08 | SAD |
+| OI-004 | Ma trận quyền Admin/Staff (kể cả nhu cầu có vai trò quản lý trung gian). **Đã chốt:** `ADMIN` toàn quyền; `EDITOR` (Staff) xem/sửa/ẩn sản phẩm (không giá, không tạo/xóa), quản lý ảnh, danh mục, Blog và hero slide; không vào Settings/Users (`docs/PERMISSIONS.md`) | Cao | FR-036; UC-20; toàn bộ MOD-06 đến MOD-08 | SAD |
 | OI-005 | Các thao tác quản trị sản phẩm được hỗ trợ; xóa mềm hay ẩn | Cao | FR-020 đến FR-024; UC-11 | SAD |
 | OI-006 | Các thao tác quản trị Blog và trạng thái xuất bản | Trung bình | FR-028 đến FR-032; UC-15 | SAD |
 | OI-008 | Cấu trúc giá, đơn vị tiền và lịch sử thay đổi giá | Cao (đề xuất) | FR-026; UC-14 | SAD |
@@ -1556,7 +1556,7 @@ Danh sách giữ nguyên mã của các vấn đề cần xác nhận còn hiệ
 | OI-010 | Thông số bản nhẫn/đá áp dụng cho nhóm sản phẩm nào | Trung bình | FR-009; UC-05 | SAD |
 | OI-011 | URL Routing chính thức | Trung bình | FR-002, FR-007 | SAD |
 | OI-012 | Chỉ tiêu hiệu năng và trình duyệt cần hỗ trợ | Trung bình | NFR-002, NFR-004 | SAD |
-| OI-013 | Công nghệ Backend, cơ sở dữ liệu và lưu trữ ảnh chính thức. **Đã chốt:** không backend tách biệt; Prisma + SQLite (dev) / PostgreSQL (production); ảnh sản phẩm lưu trên local filesystem (phục vụ qua `/uploads`) | Trung bình (đề xuất) | Mục 9.2; TC-02 | SAD |
+| OI-013 | Công nghệ Backend, cơ sở dữ liệu và lưu trữ ảnh chính thức. **Đã chốt:** không backend tách biệt; Prisma 7 + SQLite (dev) / PostgreSQL (production); ảnh sản phẩm lưu trong `ProductImageBlob` (DB), phục vụ qua `/uploads/[...path]`; xem `docs/DEPLOY.md` | Trung bình (đề xuất) | Mục 9.2; TC-02 | SAD |
 | OI-014 | Tên chính thức (ANT JEWELRY hay ANT JEWELRY; tên miền antjewelry.vn; website hiển thị "AntJewelry") và mô tả vai trò hệ thống ("giới thiệu sản phẩm" hay "kinh doanh trang sức trực tuyến") | Trung bình | Mục 1.5; ASM-001 | SAD |
 | OI-015 | Quan hệ `product_detail` và `product_price` tạo vòng tham chiếu; hướng tham chiếu chuẩn; `price_id` có phải "giá hiện tại" | Cao | FR-022, FR-026; mục 8.4 | SAD |
 | OI-016 | Trường `currency` chứa mã tiền tệ hay số tiền; kiểu và độ chính xác; đơn vị tiền hiển thị. **Đã chốt:** giá là số nguyên VND (`Int`), hiển thị `10.000.000`, không ký hiệu tiền tệ | Cao | FR-004, FR-006, FR-026 | SAD |
@@ -1591,7 +1591,7 @@ Danh sách giữ nguyên mã của các vấn đề cần xác nhận còn hiệ
 | 8 | Đặt hàng | Không có đặt hàng trực tuyến (BR-003) | Trang chi tiết có nút "ORDER NOW"; không thấy giỏ hàng hay thanh toán | Đã chốt: "ORDER NOW" mở Contact popover, không tạo đơn (OI-031) |
 | 9 | Nội dung bổ sung ở chi tiết sản phẩm | Không có | Khối "quyền lợi khi mua"; khối "YOU MIGHT ALSO LIKE" (sản phẩm liên quan) | Ngoài SAD (OI-032) |
 | 10 | Blog | Danh sách và chi tiết; dữ liệu `blog` không có ngày đăng (OI-024) | Danh sách: 3 bài, không phân trang, không ngày đăng. Chi tiết: có ngày đăng và khối "OTHER BLOGS"; ảnh `.webp` | Bổ sung dữ kiện cho OI-024 |
-| 11 | Lưu trữ ảnh | Local filesystem cho ảnh sản phẩm (`/uploads`) | Ảnh Blog nằm ở đường dẫn dạng `/storage/images/blog/…` trên chính tên miền | Ảnh sản phẩm đã triển khai lưu local; ảnh Blog còn chờ quyết định (OI-018, OI-030) |
+| 11 | Lưu trữ ảnh | DB-backed `ProductImageBlob`, phục vụ qua `/uploads/[...path]` | Ảnh Blog nằm ở đường dẫn dạng `/storage/images/blog/…` trên chính tên miền | Ảnh sản phẩm lưu trong DB (xem `docs/DEPLOY.md`); filesystem chỉ đọc legacy; ảnh Blog còn chờ quyết định (OI-018, OI-030) |
 | 12 | Tên hệ thống | "ANT JEWELRY" (OI-014: có thể là "ANT JEWELRY") | Tên miền `antjewelry.vn`; tiêu đề trang "AntJewelry"; nhãn hiệu sản phẩm "Ant Jewelry" | Bổ sung dữ kiện cho OI-014 |
 | 13 | Chân trang | Không nhắc | Điều khoản và điều kiện; Chính sách bảo mật; Vận chuyển và Đổi trả; Chăm sóc trang sức | Ngoài SAD (OI-028) |
 | 14 | Ngôn ngữ | Tài liệu tiếng Việt | Nhãn giao diện tiếng Anh; nội dung Blog tiếng Việt | Cần xác nhận (OI-029) |
