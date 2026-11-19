@@ -1,4 +1,49 @@
-## 2026-11-19 12:59:56 +07:00 - Dọn màu cứng, danger confirm và ETag gọn (B4-B6)
+## 2026-11-19 13:40:15 +07:00 - Hỗ trợ npm 12 bằng allowScripts (D8)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> D8 — Chạy được với npm 12. npm 12 chặn install script của dependency nếu không khai báo. Clone sạch + npm ci báo chặn better-sqlite3, prisma, @prisma/engines, esbuild, nên npm test fail ở bước seed (thiếu native binding). Thêm "allowScripts" cho 4 package này vào package.json, hoặc ghi trong README: "bắt buộc npm 10.x", kèm lệnh npm install-scripts approve … cho ai dùng npm 12. sharp mới thêm cũng nên kiểm tra trên npm 12.
+> Clone mới, npm 12: npm ci && npm test pass mà không phải approve tay.
+>
+> update doc file if needed
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Fetch `origin/main` (`ea9efdd`, sau PR #98), tạo branch `fix/npm12-allow-scripts`.
+- Chạy npm 12.2.1 (`npx --yes npm@12.2.1`) trong repo: `install-scripts ls` liệt kê đúng 4 package bị chặn: `better-sqlite3@12.11.1`, `esbuild@0.28.2`, `prisma@7.10.1`, `@prisma/engines@7.10.1`.
+- Dùng `npm@12 install-scripts approve better-sqlite3 esbuild prisma @prisma/engines` để ghi `allowScripts` dạng pinned vào `package.json` (đúng format npm 12), không sửa tay.
+- Kiểm tra `sharp@0.35.5`: lockfile có `hasInstallScript` = false (dùng optional prebuilt), không cần approve; không có trong danh sách pending của npm 12.
+- Cập nhật README/DEPLOY: npm 10+ (đã thử npm 12), ý nghĩa `packageManager`, lệnh `npm install-scripts ls` khi nâng dependency.
+- Capture output bằng Node `spawnSync`, không PowerShell redirect.
+
+**Kết quả kiểm chứng fresh clone với npm 12.2.1**
+
+```text
+clone: exit=0
+npm 12 pending scripts: No packages with unreviewed install scripts.
+npm 12 ci: added 569 packages, exit 0, chạy postinstall (prisma generate)
+npm 12 test: Test Files 60 passed (60), Tests 267 passed (267), exit 0
+```
+
+`better-sqlite3` native binding và `sharp` đều dùng được (test storage/resize chạy pass); không cần approve tay.
+
+### Hạn chế / AI sai ở đâu
+
+- `allowScripts` pinned theo đúng version trong lockfile; khi nâng dependency phải chạy lại `npm install-scripts ls`/approve (đã ghi trong README).
+- Không đổi `engines.npm` (`>=10.0.0`) và `packageManager` (10.9.9); npm 12 dùng trực tiếp vẫn chạy nhờ allowScripts.
+
+**So sánh Figma:** không áp dụng.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

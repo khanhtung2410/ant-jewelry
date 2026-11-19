@@ -46,7 +46,7 @@ Nếu vượt ngưỡng dung lượng hoặc cache HIT không cải thiện, m�
 
 ## Prerequisites
 
-- Vercel project connected to this repository (production environment).
+- Vercel project connected to this repository (production environment). CLI nên dùng npm 10.9.9 (`packageManager`); npm 12 cũng được hỗ trợ vì `package.json` đã khai báo `allowScripts` cho `better-sqlite3`, `esbuild`, `prisma`, `@prisma/engines`. Kiểm tra lại bằng `npm install-scripts ls` sau mỗi lần nâng dependency.
 - PostgreSQL database with an application URL (`DATABASE_URL`). A separate direct URL (`DIRECT_URL`) is optional and not required by the current schema/build.
 - A real, monitored owner email for the first ADMIN (not `admin@antjewelry.local`).
 - Decide whether production starts empty or needs the demo catalogue. `npm run db:seed` is local SQLite only; production may use `npm run db:seed:production`, which seeds categories, products, blog posts, hero slides and settings but **never** the demo users.
