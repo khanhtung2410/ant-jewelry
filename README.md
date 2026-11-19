@@ -222,6 +222,11 @@ npm run test:e2e
   npm run test:e2e
   ```
 
+- `npm run test:e2e` chạy **2 project**: `desktop-chrome` (9 luồng storefront/admin cũ) và
+  `pixel-7` (`devices['Pixel 7']`, chạy lại các test gắn `@storefront` + `@a11y`). Tổng 27 test.
+- `e2e/accessibility.spec.ts` dùng `@axe-core/playwright` để assert **0 lỗi serious/critical**
+  trên Home, Category, Product, Blog list, Blog detail và contact popover (quét ở cả 2 project).
+
 Khi thay đổi UI, kiểm tra thêm thủ công các luồng bị ảnh hưởng và ghi rõ trong Pull Request.
 
 ## 7. Deploy production

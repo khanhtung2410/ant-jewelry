@@ -51,7 +51,7 @@ export function HeroSlider({ slides }: HeroSliderProps) {
         {isSafeLinkHref(activeSlide.linkUrl) ? (
           <ActionButton
             href={activeSlide.linkUrl}
-            aria-label={`Explore ${activeSlide.title}`}
+            aria-label={`EXPLORE NOW: ${activeSlide.title}`}
             className="absolute bottom-8 left-1/2 -translate-x-1/2 text-[10px] sm:text-xs lg:text-sm"
           >
             EXPLORE NOW

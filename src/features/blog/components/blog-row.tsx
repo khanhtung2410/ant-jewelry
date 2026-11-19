@@ -46,7 +46,7 @@ export function BlogRow({ post, className = '', headingLevel = 3 }: BlogRowProps
 
         <ActionButton
           href={`/blog/${post.slug}`}
-          ariaLabel={`Read more about ${post.title}`}
+          ariaLabel={`LEARN MORE about ${post.title}`}
           className="absolute bottom-0 left-1/2 -translate-x-1/2 text-sm"
         >
           LEARN MORE

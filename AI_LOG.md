@@ -1,4 +1,39 @@
-## 2026-11-19 16:11:27 +07:00 - E2E chạy được trên clone sạch (T1)
+## 2026-11-19 16:59:55 +07:00 - Mobile Pixel 7 + axe a11y E2E (T4)
+
+### Prompt nguyên văn đã dùng
+
+> T4 — Mobile + a11y. Thêm project Pixel 7 (devices['Pixel 7']) chạy lại các test storefront. Thêm @axe-core/playwright: 0 lỗi serious/critical trên Home, Category, Product, Blog list, Blog detail, Contact popover.
+
+### Đã tự kiểm chứng
+
+- Load skill `test-driven-development`; fetch `origin/main` (`20899d7`, sau PR #104); tạo branch `test/mobile-a11y-e2e`.
+- **RED commit `3d80c15`:** viết `e2e/accessibility.spec.ts` (6 test axe, tag `@a11y`) + tag `@storefront` cho 6 test storefront trước khi đổi config/dependency. `npm run typecheck` đỏ đúng lý do: `TS2307 Cannot find module '@axe-core/playwright'`.
+- **GREEN:** `npm install -D @axe-core/playwright` (4.14.0, không có install script → npm 12 không chặn); `playwright.config.ts` thêm `projects`: `desktop-chrome` + `pixel-7` (`devices['Pixel 7']`, `grep: /@storefront|@a11y/`); baseURL/headless giữ ở `use` chung.
+- Chạy axe: desktop ban đầu đỏ với `label-content-name-mismatch` (aria-label không chứa text nhìn thấy). Đọc file thật và sửa 3 chỗ:
+  - `hero-slider.tsx`: `Explore <title>` → `EXPLORE NOW: <title>`
+  - `blog-row.tsx`: `Read more about <title>` → `LEARN MORE about <title>`
+  - `header.tsx`: `Open/Close main navigation` → `MENU/CLOSE main navigation` (chỉ lỗi trên Pixel vì MENU button chỉ hiện ở mobile)
+- Pixel 7 cũng đỏ 4 luồng do UI responsive: footer thu gọn thành accordion (phải bấm nút `HOME`), nav desktop ẩn (dùng `Mobile navigation` sau khi bấm `MENU`), mobile menu không tự đóng khi focus rời. Đã chỉnh test theo project (`test.info().project.name === 'pixel-7'`) thay vì bỏ qua test.
+- Kết quả cuối: `npm run test:e2e` → **27 passed (59.8s)** = 15 desktop + 12 pixel-7; trong đó 12 test axe (6 trang × 2 project) đều 0 serious/critical.
+- Bộ lệnh mục Testing: lint/typecheck/test (64 files / 289 tests)/format:check/build đều exit 0. README mục 6 ghi rõ 2 project + axe.
+
+### AI sai ở đâu
+
+- **Tưởng axe chỉ đỏ trên mobile:** thực tế desktop cũng có 3 violation `label-content-name-mismatch` ở hero + blog rows. Phải đọc thông báo axe (kèm target selector + HTML) chứ không đoán.
+- **Test mobile dùng selector desktop:** 4 luồng Pixel timeout/assert đỏ vì footer HOME thu gọn, header nav `hidden md:block`. Đã sửa test để mở accordion / dùng mobile nav thay vì skip.
+- **Giả định mobile menu tự đóng như desktop:** `MobileProductsMenu` không có handler đóng khi focus rời; phải bấm lại nút PRODUCTS để đóng rồi mới assert. Đọc `header.tsx:317-363` mới thấy.
+- **Bấm CONTACT `.first()` trên mobile chọn nút header bị ẩn:** đổi về footer trigger sau khi mở cột HOME.
+
+### Hạn chế
+
+- Axe chỉ chặn violation `serious`/`critical` theo đúng yêu cầu; các violation `minor`/`moderate` vẫn được phép (không phải 0 lỗi tuyệt đối).
+- Không chạy Lighthouse lại; không đổi `{@link content-visibility}` hay thiết kế mobile. Không tạo dữ liệu production.
+
+**So sánh Figma:** không đổi bố cục; chỉ đổi accessible name (text nhìn thấy giữ nguyên).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
