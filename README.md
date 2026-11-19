@@ -208,11 +208,19 @@ npm run test:e2e
 - `npm test` chạy trên `prisma/test.db` nhờ `vitest.setup.ts`; global setup kiểm tra đường dẫn,
   xoá đúng file test, tạo schema bằng `prisma db push` (không dùng `--force-reset`) rồi seed.
   Cách này chạy được cả khi AI agent bị Prisma chặn lệnh reset, và **không đụng `prisma/dev.db`**.
-- **E2E** dùng Playwright. `playwright.config.ts` tự reset `prisma/e2e.db`, build production
-  và chạy `next start` trên `http://127.0.0.1:3100`, nên E2E kiểm tra đúng bundle production
-  và cũng không đụng `dev.db`.
-- Test E2E cần Chromium của Playwright:
-  `npx playwright install chromium` (chỉ cần một lần).
+- **E2E** dùng Playwright. `playwright.config.ts` gọi `e2e/reset-database.ts`: script kiểm tra
+  `E2E_DATABASE_URL` trỏ đúng `prisma/e2e.db`, xoá đúng file đó (kèm `-wal`/`-shm`/`-journal`),
+  rồi chạy `prisma db push` + `db seed` **không dùng `--force-reset`** (Prisma 7 chặn cờ này với
+  AI agent). Sau đó build production và chạy `next start` trên `http://127.0.0.1:3100`, nên E2E
+  kiểm tra đúng bundle production và không đụng `dev.db`.
+- Test E2E cần Chromium của Playwright: chạy `npx playwright install chromium` **một lần sau
+  `npm ci` trên clone mới**. Chuỗi đầy đủ:
+
+  ```bash
+  npm ci
+  npx playwright install chromium
+  npm run test:e2e
+  ```
 
 Khi thay đổi UI, kiểm tra thêm thủ công các luồng bị ảnh hưởng và ghi rõ trong Pull Request.
 
