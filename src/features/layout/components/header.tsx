@@ -87,7 +87,7 @@ export function SiteHeader({ categories, settings }: SiteHeaderProps) {
             type="button"
             aria-expanded={menuOpen}
             aria-controls={menuOpen ? mobileMenuId : undefined}
-            aria-label={menuOpen ? 'Close main navigation' : 'Open main navigation'}
+            aria-label={`${menuOpen ? 'CLOSE' : 'MENU'} main navigation`}
             onClick={toggleMobileMenu}
             className="inline-flex items-center gap-2 border border-line px-3 py-2 font-heading text-xs uppercase tracking-[0.12em] transition-colors hover:bg-product-image focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-line md:hidden"
           >

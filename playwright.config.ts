@@ -13,10 +13,22 @@ export default defineConfig({
     timeout: 15_000,
   },
   use: {
-    ...devices['Desktop Chrome'],
     baseURL,
     headless: true,
   },
+  projects: [
+    {
+      name: 'desktop-chrome',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      // Mobile pass: rerun the storefront flows and the axe checks on a real
+      // mobile device profile. Admin-only flows stay on desktop.
+      name: 'pixel-7',
+      use: { ...devices['Pixel 7'] },
+      grep: /@storefront|@a11y/,
+    },
+  ],
   webServer: {
     // Reset the dedicated E2E database, then exercise the production build so
     // `npm run test:e2e` never touches prisma/dev.db and always tests `next start`.
