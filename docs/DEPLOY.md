@@ -135,6 +135,17 @@ Script dùng chung `resizeToStoredWebp()` với `uploadProductImage()`, ghi đè
 
 **Kết quả kiểm chứng production 2026-11-19:** 4 ảnh `/uploads/...` trên `/p/ivy-tennis-bracelet` lần lượt 29.732 / 29.728 / 29.868 / 337.464 byte (đều <400 KB). Lighthouse mobile 3 lần: 93 / 91 / 100 → trung vị Performance **93**, Accessibility 100, SEO 100; báo cáo JSON trong [`docs/lighthouse-reports/`](lighthouse-reports/) (`prod-ivy-{1,2,3}.json`). Các ảnh production được thay bằng giao diện ADMIN vì agent không có `DATABASE_URL` production; script ở trên vẫn là cách chuẩn để migrate các blob còn lại sau khi deploy.
 
+## Production test hygiene (quy tắc bắt buộc)
+
+Khi chạy thử nghiệm trên production (đăng nhập ADMIN test, upload ảnh, tạo/sửa sản phẩm, bài viết, hero slide, tài khoản tạm…):
+
+1. Dọn dữ liệu thử ngay sau khi test bằng giao diện ADMIN (hoặc script được phê duyệt). Không để ảnh/test record nằm lại trên sản phẩm thật.
+2. Nếu cần giữ một record làm bằng chứng cho checklist deploy (ví dụ ảnh upload để verify “sau redeploy ảnh vẫn hiện”), chỉ giữ **đúng một** và ghi rõ trong PR: sản phẩm nào, storage key/URL nào, kích thước và lý do giữ.
+3. Mọi PR có test production phải có mục “Production cleanup” nêu lệnh/thao tác đã dọn và trạng thái còn lại. Không được chỉ dán output rồi bỏ dữ liệu thử.
+4. Ưu tiên dùng một sản phẩm ẩn riêng cho test; nếu buộc dùng sản phẩm thật, phải dọn trước khi merge PR.
+
+Ví dụ đã áp dụng 2026-11-19: trên `/p/ivy-tennis-bracelet`, 3 ảnh test trùng nội dung đã xóa; giữ lại đúng ảnh `/uploads/products/cmwk5l3wx002x84wmecz7pzfv/c2f7b4a5-02d7-463b-96e1-e9ac019a2f09.webp` (337.464 byte) làm bằng chứng redeploy cho R6.2b ý 4.
+
 ## Đối chiếu Figma ↔ production (6 màn)
 
 Đối chiếu theo bản thiết kế Figma/đặc tả `ANT_JEWELRY_SAD_v1.1.docx` (Figma gốc không được lưu trong repo). Ảnh chụp production lúc kiểm chứng 2026-11-18 nằm trong `docs/deploy-screenshots/`.
