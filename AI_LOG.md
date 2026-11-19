@@ -1,4 +1,36 @@
-## 2026-11-19 22:02:10 +07:00 - Kiểm tra toàn diện codebase + production (superpower)
+## 2026-11-19 23:07:45 +07:00 - Sửa finding #1: xác nhận khi ẩn sản phẩm
+
+### Prompt nguyên văn đã dùng
+
+> read docs/reviews/2026-11-19-requesting-code-review-final.md
+> add popover confirm to an button (finding #1)
+> check if you can use component that is already in code to avoid dup code
+
+### Đã tự kiểm chứng
+
+- Đọc toàn bộ file review; fetch `origin/main` (`b29b11a`, sau PR #109), tạo branch `fix/hide-confirmation`.
+- **Kiểm tra tái dùng trước khi viết:** `AdminConfirmForm` (`src/features/admin/components/admin-confirm-form.tsx`) đã là component dùng chung cho mọi xóa (blog/category/hero slide/product image), nội bộ gồm `ConfirmPopover` + `AdminStatusToast` + form + focus restore. Không tạo component mới; chỉ thêm 3 prop `confirmLabel` / `danger` / `pendingMessage` (mặc định giữ nguyên hành vi Delete) và dùng lại cho chiều Ẩn.
+- **TDD RED:** thêm E2E `hiding a product requires confirmation and cancel keeps it visible` → fail đúng lý do `waiting for getByRole('dialog', { name: 'CONFIRM ACTION' })` (không có dialog). Sau đó GREEN: wrap form Ẩn bằng `AdminConfirmForm` với `confirmLabel="Hide"`, `danger={false}`, `pendingMessage="Hiding…"`; giữ nút "Hiển thị" không confirm (có thể đảo ngược). Thêm E2E confirm-path và khôi phục trạng thái sau test.
+- **Lỗi lint lộ ra:** sau khi chạy E2E, ESLint quét cả `playwright-report/**` (JS bundle của HTML reporter thêm ở T6) → 133 errors. Đã thêm `playwright-report/**` và `test-results/**` vào `globalIgnores` trong `eslint.config.mjs` (cả hai đã nằm trong `.gitignore` nhưng ESLint không đọc `.gitignore`).
+- **E2E flaky thật sự là do test mình:** full suite 28 pass/1 fail ở pixel-7; chạy riêng thì pass. Nguyên nhân: test confirm-hide để sản phẩm Aurora ở trạng thái HIDDEN trong `prisma/e2e.db`, project pixel-7 chạy sau và không tìm thấy link Aurora. Đã thêm bước khôi phục visibility cuối test → full suite **29 passed**.
+- Bộ lệnh mục V: lint/typecheck/test (64 files / 289 tests)/format:check/build đều exit 0; E2E 29 pass.
+
+### AI sai ở đâu
+
+- **Ban đầu định viết component confirm riêng cho Ẩn:** user nhắc kiểm tra component có sẵn; đã đổi sang tái dùng `AdminConfirmForm` + 3 prop, tránh nhân bản popover/toast/focus logic.
+- **Không khôi phục trạng thái sau E2E confirm-hide:** làm fail pixel-7 trong full suite nhưng pass khi chạy riêng — phải đọc kỹ output full suite thay vì tin lượt chạy riêng.
+- **Không ngờ ESLint quét artifact Playwright:** HTML reporter (T6) tạo `playwright-report/trace/assets/*.js`; lint đỏ 133 errors. Đã sửa ignore config thay vì tắt rule.
+
+### Hạn chế
+
+- Chỉ wrap chiều Ẩn; "Hiển thị" vẫn không confirm theo đúng phạm vi FR-024/NFR-017.
+- Chưa sửa finding #2 (EDITOR permissions) vì cần quyết định chủ sở hữu; các finding #3–#8 vẫn mở theo file review.
+
+**So sánh Figma:** không đổi bố cục; popover dùng style không-danger cho Ẩn.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

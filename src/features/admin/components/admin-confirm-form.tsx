@@ -5,9 +5,9 @@ import { useFormStatus } from 'react-dom';
 import { AdminStatusToast } from './admin-status-toast';
 import { ConfirmPopover } from './confirm-popover';
 
-function PendingToast() {
+function PendingToast({ message }: { message: string }) {
   const { pending } = useFormStatus();
-  return pending ? <AdminStatusToast message="Deleting…" /> : null;
+  return pending ? <AdminStatusToast message={message} /> : null;
 }
 
 /**
@@ -20,11 +20,17 @@ export function AdminConfirmForm({
   confirmMessage,
   children,
   className = '',
+  confirmLabel = 'Delete',
+  danger = true,
+  pendingMessage = 'Deleting…',
 }: {
   action: (formData: FormData) => void;
   confirmMessage: string;
   children: ReactNode;
   className?: string;
+  confirmLabel?: string;
+  danger?: boolean;
+  pendingMessage?: string;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const confirmedRef = useRef(false);
@@ -54,15 +60,15 @@ export function AdminConfirmForm({
     <>
       <form ref={formRef} action={action} className={className} onSubmit={handleSubmit}>
         {children}
-        <PendingToast />
+        <PendingToast message={pendingMessage} />
       </form>
       {open ? (
         <ConfirmPopover
           message={confirmMessage}
           onConfirm={confirm}
           onCancel={cancel}
-          confirmLabel="Delete"
-          danger
+          confirmLabel={confirmLabel}
+          danger={danger}
         />
       ) : null}
     </>

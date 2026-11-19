@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { VISIBILITY_STATUS, visibilityStatus } from '@/constants/statuses';
+import { AdminConfirmForm } from '@/features/admin/components/admin-confirm-form';
 import { SavedNotice } from '@/features/admin/components/form-controls';
 import {
   AdminActionButton,
@@ -180,14 +181,31 @@ export function ProductManagement({
                               <AdminActionLink href={selectedHref} aria-haspopup="dialog">
                                 Edit
                               </AdminActionLink>
-                              <form action={toggleProductVisibility.bind(null, product.id)}>
-                                <AdminActionButton
-                                  type="submit"
-                                  className="w-[6rem] whitespace-nowrap"
+                              {product.status === visibilityStatus.VISIBLE ? (
+                                <AdminConfirmForm
+                                  action={toggleProductVisibility.bind(null, product.id)}
+                                  confirmMessage={`Hide “${product.name}”?`}
+                                  confirmLabel="Hide"
+                                  danger={false}
+                                  pendingMessage="Hiding…"
                                 >
-                                  {product.status === visibilityStatus.VISIBLE ? 'Ẩn' : 'Hiển thị'}
-                                </AdminActionButton>
-                              </form>
+                                  <AdminActionButton
+                                    type="submit"
+                                    className="w-[6rem] whitespace-nowrap"
+                                  >
+                                    Ẩn
+                                  </AdminActionButton>
+                                </AdminConfirmForm>
+                              ) : (
+                                <form action={toggleProductVisibility.bind(null, product.id)}>
+                                  <AdminActionButton
+                                    type="submit"
+                                    className="w-[6rem] whitespace-nowrap"
+                                  >
+                                    Hiển thị
+                                  </AdminActionButton>
+                                </form>
+                              )}
                             </>
                           )}
                         </AdminTableActions>
