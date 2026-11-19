@@ -117,7 +117,7 @@ HEAD 3 (If-None-Match): status=304 x-vercel-cache=HIT
 
 Ảnh chụp: [admin đã đăng nhập](deploy-screenshots/admin-logged-in.png), [danh sách ảnh sau upload](deploy-screenshots/admin-uploaded-images.png), [trang sản phẩm có ảnh upload](deploy-screenshots/product-with-uploaded-image.png), [Home](deploy-screenshots/home.png), [sản phẩm](deploy-screenshots/product.png). Chưa tự phát động redeploy Production từ môi trường agent; ảnh nằm trong DB nên bước còn lại là xác nhận sau lần deploy tiếp theo.
 
-**Lỗi optimizer đã gặp và cách xử lý:** ảnh PNG ~3,8 MB upload ở lượt trên có lúc trả `400 INVALID_IMAGE_OPTIMIZE_REQUEST` qua `/_next/image?...&w=256&q=75` (`uniqueContextId not found`, kèm cảnh báo Permissions-Policy không liên quan từ trình duyệt). Ảnh đã được upload mới sẽ được resize thành WebP ≤1600 px ngay khi lưu và component dùng `shouldSkipImageOptimizer()` để phục vụ trực tiếp `/uploads/...`, không còn phụ thuộc vào image optimizer.
+**Lỗi optimizer đã gặp và cách xử lý:** ảnh PNG ~3,8 MB upload ở lượt trên có lúc trả `400 INVALID_IMAGE_OPTIMIZE_REQUEST` qua `/_next/image?...&w=256&q=75` (`uniqueContextId not found`, kèm cảnh báo Permissions-Policy không liên quan từ trình duyệt). Ảnh mới được resize thành WebP ≤1600 px ngay khi lưu và component dùng `shouldSkipImageOptimizer()` để phục vụ trực tiếp `/uploads/...`. Nguyên nhân thật của 400 đã được tìm và sửa ở mục S3 bên dưới (`images.localPatterns` mặc định chặn query string); quyết định giữ `unoptimized` cho ảnh upload vẫn đúng vì lý do kích thước (E3), không còn vì sợ lỗi 400.
 
 ### Migration ảnh legacy (E1)
 
@@ -151,22 +151,27 @@ cùng ảnh nếu có bản 480px webp q80: 98998 bytes (~96.6 KB, giảm ~70%)
 
 Với 5 card upload thật cùng kích thước, phần ảnh sẽ ~1,7 MB thay vì ~0,5 MB nếu có bản 480 px. Hướng xử lý khi đợt sau cần: sinh thêm biến thể nhỏ lúc upload (storage key phụ, ví dụ `-480.webp`) và dùng cho card/thumbnail, hoặc bật lại optimizer sau khi xử lý xong nguyên nhân bên dưới.
 
-### Điều tra lỗi 400 INVALID_IMAGE_OPTIMIZE_REQUEST (S3)
+### Điều tra lỗi 400 INVALID_IMAGE_OPTIMIZE_REQUEST (S3 — nguyên nhân thật)
 
-Áp dụng quy trình systematic-debugging: tái hiện → giả thuyết → kiểm chứng từng biến số → kết luận.
+Bản ghi đầy đủ các bước systematic-debugging: [`docs/reviews/2026-11-19-systematic-debugging.md`](reviews/2026-11-19-systematic-debugging.md).
 
-1. **Tái hiện/evidence:** direct GET ảnh upload → 200, `image/webp`, 337.464 byte, sharp đọc được `733×800`. `/_next/image?url=<encoded path>&w=256&q=75` → 200 image/jpeg 13.350 byte; các `w` 384/640/750/828/1080/1920 đều 200 (Next tự clamp theo chiều ảnh nguồn).
-2. **Giả thuyết bị bác:** (a) file hỏng — bác vì sharp đọc được metadata; (b) `w` lớn hơn ảnh nguồn — bác vì `w=1920` vẫn 200; (c) kích thước file quá lớn — bác vì ảnh PNG 3,97 MB từng trả 200 ở `w=256`.
-3. **Giả thuyết được xác nhận cho lỗi có thể tái hiện:** giá trị `url` truyền vào `/_next/image` có chứa **query string có dấu `=`** → 400 cho mọi nguồn ảnh.
-   ```text
-   inner url + '?v=2'    -> 400 INVALID_IMAGE_OPTIMIZE_REQUEST
-   inner url + '?foo=bar'-> 400
-   inner url + '?'       -> 200
-   outer ?cb=99          -> 200
-   mock image + '?v=2'   -> 400  (loại ảnh upload ra khỏi nguyên nhân)
-   ```
-   Hệ quả: script migration E1 thêm `?v=2` vào `ProductImage.url` để bust CDN; nếu bật lại optimizer thì phải bỏ query trước khi tạo URL `/_next/image` (hiện dùng `unoptimized` nên không ảnh hưởng).
-4. **Phần chưa tái hiện được:** lỗi ban đầu của mentor là URL **không có query** kèm `uniqueContextId not found` / `Resend failed`. Năm request cache-bust liên tiếp ở `w=256` đều 200; không ép được lỗi lại. Đây là hành vi nhất thời/phụ thuộc ngữ cảnh Vercel (cold start), không phải dữ liệu ảnh. Theo quy trình, ghi nhận là “environmental/timing-dependent”, giữ cơ chế xử lý hiện tại (serving trực tiếp) thay vì giả sử đã hiểu root cause.
+1. **Đọc error:** chuỗi `INVALID_IMAGE_OPTIMIZE_REQUEST` và `uniqueContextId not found` **không tồn tại trong mã nguồn Next.js 16.4.5** (`grep` toàn `node_modules/next` và `playwright-core` chỉ thấy `uniqueContextId` trong protocol type của Playwright). Next.js trả `400 "url" parameter is not allowed` (`image-optimizer.js:235-238`). Vậy chuỗi mentor thấy là của lớp Vercel edge, không phải của app.
+2. **Tái hiện ổn định (local production build, `next start`):** truyền các biến thể vào inner `url` của `/_next/image?...&w=256&q=75`.
+
+   | Inner `url` | Trước fix | Sau fix |
+   |---|---|---|
+   | `/mock/...webp` | 200 | 200 |
+   | `/mock/...webp?v=2` | **400** | **200** |
+   | `/mock/...webp?foo=bar` | **400** | **200** |
+   | `/mock/...webp?` (query rỗng) | 200 | 200 |
+   | `/mock/...webp` + outer `&cb=99` | 200 | 200 |
+   | `/uploads/...?v=2` | **400** | 404 (key giả; đã tới bước fetch ảnh nguồn) |
+
+3. **Pattern:** chỉ khác biệt là `search` của inner URL khác `""`. Dấu `?` rỗng cho `search === ""` nên vẫn 200 — khớp chính xác điều kiện so sánh trong Next.js.
+4. **Root cause:** bản build của Next 16 chèn mặc định `images.localPatterns = [{ pathname: '**', search: '' }]` (đọc được trong `.next/required-server-files.json`). `match-local-pattern.js:25-28` so sánh `pattern.search !== url.search` → mọi local URL có query sẽ bị từ chối. Gọi trực tiếp `ImageOptimizerCache.validateParams()` với config build xác nhận: `?v=2`/`?foo=bar` -> `"url" parameter is not allowed`; không query và `?` -> OK.
+5. **Giả thuyết bị bác:** file hỏng (sharp đọc được metadata); `w` vượt ảnh nguồn (w=1920 vẫn 200); kích thước file (PNG 3,97 MB từng 200); cold-start Vercel (lỗi tái hiện 100% local, không phải ngẫu nhiên).
+6. **Fix root cause:** `next.config.ts` khai báo `images.localPatterns: [{ pathname: '**' }]` — bỏ trường `search` nên mọi path local được phép với mọi query. Giữ nguyên quyết định dùng `unoptimized` cho `/uploads/...` (chờ E3 bản 480 px); config này chỉ đảm bảo optimizer **không còn trả 400** nếu được bật lại. Test `src/test/image-optimizer-config.test.ts` chuyển từ đỏ sang xanh; HTTP repro ở bước 2 cũng xanh.
+7. **Phần không tái hiện được:** URL không query kèm `uniqueContextId not found` của mentor vẫn là lớp edge Vercel; không ép lại được và không có trong source. Không giả vờ đã giải thích được phần này — ghi nhận là platform-specific, không ảnh hưởng fix ở trên.
 
 ## Production test hygiene (quy tắc bắt buộc)
 

@@ -1,60 +1,87 @@
 import 'dotenv/config';
 import { createHash } from 'node:crypto';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { PrismaClient } from '@prisma/client';
 import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { resizeToStoredWebp } from './product-image-processing.mjs';
 
-const dryRun = process.argv.includes('--dry-run');
-const url = process.env.DATABASE_URL;
-if (!url) throw new Error('DATABASE_URL is required (use a direct connection for production).');
+const etag = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
-const prisma =
-  url.startsWith('file:') || url.startsWith('sqlite:')
-    ? new PrismaClient({ adapter: new PrismaBetterSqlite3({ url }) })
-    : new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
+/** E1: re-encode an old blob with the same helper used by new uploads. */
+export async function reencodeLegacyBlob(bytes) {
+  const resized = await resizeToStoredWebp(bytes);
+  return { bytes: resized, contentType: 'image/webp', etag: etag(resized) };
+}
 
-const etag = (bytes) => `"${createHash('sha256').update(bytes).digest('hex')}"`;
-
-async function main() {
+/**
+ * E1 + B6: re-encode non-WebP blobs, and backfill the ETag on legacy WebP
+ * blobs that predate the etag column so conditional GETs stop loading bytes.
+ */
+export async function migrateLegacyBlobs(prisma, { dryRun = false, log = console.log } = {}) {
   const blobs = await prisma.productImageBlob.findMany({
-    where: { contentType: { not: 'image/webp' } },
+    where: {
+      OR: [{ contentType: { not: 'image/webp' } }, { etag: null }],
+    },
     orderBy: { storageKey: 'asc' },
   });
-  console.log(`mode: ${dryRun ? 'dry-run' : 'write'}`);
-  console.log(`legacy non-webp blobs: ${blobs.length}`);
+  log(`mode: ${dryRun ? 'dry-run' : 'write'}`);
+  log(`legacy blobs to process: ${blobs.length}`);
 
   for (const blob of blobs) {
-    const bytes = await resizeToStoredWebp(blob.bytes);
-    const beforeEtag = etag(blob.bytes);
-    const afterEtag = etag(bytes);
-    console.log(
-      `${blob.storageKey}: ${blob.bytes.length} -> ${bytes.length} bytes, ETag ${beforeEtag} -> ${afterEtag}`,
+    const needsResize = blob.contentType !== 'image/webp';
+    const beforeEtag = blob.etag ?? etag(blob.bytes);
+    const result = needsResize
+      ? await reencodeLegacyBlob(blob.bytes)
+      : { bytes: blob.bytes, contentType: blob.contentType, etag: etag(blob.bytes) };
+
+    log(
+      `${blob.storageKey}: ${blob.bytes.length} -> ${result.bytes.length} bytes, ETag ${beforeEtag} -> ${result.etag}`,
     );
     if (dryRun) continue;
 
     await prisma.productImageBlob.update({
       where: { storageKey: blob.storageKey },
-      data: { bytes, contentType: 'image/webp', etag: afterEtag.replace(/"/g, '') },
+      data: { bytes: result.bytes, contentType: result.contentType, etag: result.etag },
     });
-    // Storage keys keep their old .png suffix, so bust the CDN with a versioned
-    // URL; the /uploads route ignores the query string and serves the new blob.
-    const rows = await prisma.productImage.findMany({
-      where: { storageKey: blob.storageKey },
-      select: { id: true, url: true },
-    });
-    for (const row of rows) {
-      await prisma.productImage.update({
-        where: { id: row.id },
-        data: { url: row.url.includes('?v=') ? row.url : `${row.url}?v=2` },
+
+    if (needsResize) {
+      // Storage keys keep their old .png suffix, so bust the CDN with a
+      // versioned URL; the /uploads route ignores the query string.
+      const rows = await prisma.productImage.findMany({
+        where: { storageKey: blob.storageKey },
+        select: { id: true, url: true },
       });
+      for (const row of rows) {
+        await prisma.productImage.update({
+          where: { id: row.id },
+          data: { url: row.url.includes('?v=') ? row.url : `${row.url}?v=2` },
+        });
+      }
     }
   }
-  console.log(dryRun ? 'dry-run complete; no rows written' : `migrated ${blobs.length} blob(s)`);
+
+  log(dryRun ? 'dry-run complete; no rows written' : `migrated ${blobs.length} blob(s)`);
+  return blobs.length;
 }
 
-try {
-  await main();
-} finally {
-  await prisma.$disconnect();
+async function runCli() {
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error('DATABASE_URL is required (use a direct connection for production).');
+
+  const prisma =
+    url.startsWith('file:') || url.startsWith('sqlite:')
+      ? new PrismaClient({ adapter: new PrismaBetterSqlite3({ url }) })
+      : new PrismaClient({ adapter: new PrismaPg({ connectionString: url }) });
+
+  try {
+    await migrateLegacyBlobs(prisma, { dryRun: process.argv.includes('--dry-run') });
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await runCli();
 }

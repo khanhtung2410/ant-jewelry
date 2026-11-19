@@ -1,4 +1,41 @@
-## 2026-11-19 14:49:39 +07:00 - Xử lý phát hiện S1 bằng test tái hiện (S2)
+## 2026-11-19 15:12:06 +07:00 - Tìm root cause optimizer và TDD E1/B6 (S3/S4)
+
+### Prompt nguyên văn đã dùng
+
+> S3 — Tìm nguyên nhân thật của lỗi optimizer (superpowers:systematic-debugging). Áp dụng cho 400 INVALID_IMAGE_OPTIMIZE_REQUEST (E3): đi đủ các bước tái hiện → giả thuyết → kiểm chứng từng giả thuyết, trước khi chọn cách "bỏ optimizer". Dán lại các bước vào PR.
+> S4 — Sửa lỗi theo TDD (superpowers:test-driven-development). E1 và B6: viết test fail trước (ví dụ: blob PNG cũ → script re-encode → contentType = image/webp, kích thước ≤ 1600px), rồi mới sửa code. Commit test và code riêng để thấy test đỏ trước
+>
+> create new branch and commit
+
+### Đã tự kiểm chứng
+
+- Load `systematic-debugging` + `test-driven-development`; fetch `origin/main` (`ae39b89`); tạo branch (commit RED được chuyển sang `fix/optimizer-root-cause-s3` sau khi phát hiện commit đầu lọt vào `main` do branch bị đổi ngoài).
+- **S3 Phase 1:** `grep` toàn `node_modules/next` → `INVALID_IMAGE_OPTIMIZE_REQUEST` **không tồn tại**; `uniqueContextId` chỉ có trong Playwright protocol type. Next 16.4.5 trả `400 "url" parameter is not allowed` (`image-optimizer.js:235-238`).
+- **S3 Phase 1 (repro):** build + `next start`, 7 request `/_next/image`: `?v=2` / `?foo=bar` → 400; `?` rỗng, outer `&cb=99`, control → 200. Lỗi tái hiện 100% local → bác giả thuyết cold-start Vercel.
+- **S3 Phase 2/3:** `.next/required-server-files.json` chứa `images.localPatterns = [{ pathname: '**', search: '' }]`; gọi trực tiếp `ImageOptimizerCache.validateParams()` với config đó → `?v=2` bị từ chối. `match-local-pattern.js:25-28` so sánh `pattern.search !== url.search`; bỏ trường `search` → tất cả OK. Root cause xác nhận.
+- **S3 Phase 4:** `next.config.ts` thêm `images.localPatterns: [{ pathname: '**' }]`; HTTP repro sau rebuild: `?v=2`/`?foo=bar` 400 → **200**, upload path 400 → 404 (đã tới fetch nguồn). Giữ `unoptimized` cho `/uploads/...` theo E3 (lý do kích thước, không còn lý do lỗi 400).
+- **S4 TDD:** commit RED `6cb30bb` gồm 3 test fail đúng lý do: config 400, `reencodeLegacyBlob is not a function`, `migrateLegacyBlobs is not a function`. Sau đó commit GREEN: export 2 hàm từ `scripts/reencode-legacy-uploads.mjs`, tách CLI vào guard `import.meta.url`, mở rộng selection thành `OR: [contentType != webp, etag = null]` (E1 + backfill B6), chỉ thêm `?v=2` khi nội dung thực đổi. 3 test xanh.
+- Ghi đủ 4 phase S3 vào `docs/reviews/2026-11-19-systematic-debugging.md`; cập nhật `docs/DEPLOY.md` thay kết luận "timing/cold-start" cũ bằng root cause thật.
+- Capture mọi output bằng Node `spawnSync` UTF-8 / `NO_COLOR=1`.
+
+### AI sai ở đâu
+
+- **Kết luận cũ trong S1/DEPLOY sai:** từng ghi nhận 400 là "nhất thời/phụ thuộc Vercel (cold start)". Thực tế tái hiện 100% local và có root cause trong config (`localPatterns.search = ''`). Phải sửa lại tài liệu, không giữ kết luận cũ.
+- **Chuỗi lỗi của mentor sai về nguồn gốc:** `INVALID_IMAGE_OPTIMIZE_REQUEST` / `uniqueContextId not found` không có trong Next.js 16.4.5; đó là lớp Vercel edge. Phần này vẫn **không giải thích được** — ghi rõ là platform-specific thay vì giả vờ đã tìm ra.
+- **Người viết lọt commit RED vào `main`:** do branch bị chuyển ngoài giữa lượt; đã tạo `fix/optimizer-root-cause-s3` từ commit đó và đưa `main` về `origin/main` trước khi tiếp tục. Không force-push `origin/main`.
+- **2 lỗi TypeScript trong test mới** (`errorMessage` trên union type, `Buffer<ArrayBufferLike>` khi tạo blob) — phát hiện ở `npm run build`, đã sửa bằng `'errorMessage' in result` và cast `Uint8Array<ArrayBuffer>`; không phải lỗi production.
+
+### Hạn chế
+
+- Không bật lại optimizer cho ảnh upload; E3 vẫn chờ bản 480 px. Config mới chỉ xóa lỗi 400, không đổi hành vi render.
+- Không chạy migration script trên production (không có `DATABASE_URL` production); chỉ test DB local + dry-run path.
+- Không tạo dữ liệu production nào.
+
+**So sánh Figma:** không áp dụng.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
