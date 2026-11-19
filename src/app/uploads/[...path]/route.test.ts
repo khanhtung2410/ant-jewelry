@@ -53,6 +53,18 @@ describe('GET /uploads/[...path]', () => {
     expect(mocks.readStoredProductImage).not.toHaveBeenCalled();
   });
 
+  it('falls back to a binary content type for a 304 on a row with an empty content type', async () => {
+    mocks.getStoredProductImageMeta.mockResolvedValueOnce({ contentType: '', etag: hash });
+
+    const response = await GET(
+      new Request('http://localhost/uploads/test', { headers: { 'if-none-match': etag } }),
+      context,
+    );
+
+    expect(response.status).toBe(304);
+    expect(response.headers.get('content-type')).toBe('application/octet-stream');
+  });
+
   it('accepts weak, comma-separated and wildcard If-None-Match values', async () => {
     mocks.getStoredProductImageMeta.mockResolvedValue({ contentType: 'image/webp', etag: hash });
 

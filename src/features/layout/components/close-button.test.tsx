@@ -10,7 +10,7 @@ describe('CloseButton', () => {
     expect(html).toContain('type="button"');
     expect(html).toContain('aria-label="Close"');
     expect(html).toContain('h-[30px] w-[30px]');
-    expect(html).toContain('hover:border-red-800');
+    expect(html).toContain('hover:border-[var(--danger-strong)]');
     expect(html).toContain('hover:bg-[var(--button-bg-hover)]');
     expect(html).toContain('d="M6 18L18 6M6 6l12 12"');
   });

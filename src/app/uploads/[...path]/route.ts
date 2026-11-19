@@ -34,7 +34,7 @@ export async function GET(
       return new Response(null, {
         status: 304,
         headers: {
-          'Content-Type': meta?.contentType ?? 'application/octet-stream',
+          'Content-Type': meta?.contentType || 'application/octet-stream',
           'Cache-Control': CACHE_CONTROL,
           ETag: formatEtag(storedHash),
           'X-Content-Type-Options': 'nosniff',

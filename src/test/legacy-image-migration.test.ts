@@ -2,7 +2,11 @@ import { createHash } from 'node:crypto';
 import { afterEach, describe, expect, it } from 'vitest';
 import sharp from 'sharp';
 import { prisma } from '@/features/shared/db/prisma';
-import { migrateLegacyBlobs, reencodeLegacyBlob } from '../../scripts/reencode-legacy-uploads.mjs';
+import {
+  migrateLegacyBlobs,
+  reencodeLegacyBlob,
+  withVersionQuery,
+} from '../../scripts/reencode-legacy-uploads.mjs';
 
 const createdKeys: string[] = [];
 
@@ -33,6 +37,18 @@ describe('E1 legacy image re-encode', () => {
     expect(metadata.width).toBeLessThanOrEqual(1600);
     expect(metadata.height).toBeLessThanOrEqual(1600);
     expect(result.etag).toBe(sha256Hex(result.bytes));
+  });
+});
+
+describe('versioned CDN URL', () => {
+  it('adds v=2 without breaking an existing query string', () => {
+    expect(withVersionQuery('/uploads/products/p-1/a.png')).toBe('/uploads/products/p-1/a.png?v=2');
+    expect(withVersionQuery('/uploads/products/p-1/a.png?foo=1')).toBe(
+      '/uploads/products/p-1/a.png?foo=1&v=2',
+    );
+    expect(withVersionQuery('/uploads/products/p-1/a.png?v=2')).toBe(
+      '/uploads/products/p-1/a.png?v=2',
+    );
   });
 });
 

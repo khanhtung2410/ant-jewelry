@@ -125,7 +125,10 @@ export function ProductImageManagement({
             action={deleteProduct.bind(null, productId)}
             confirmMessage={`Delete "${productName}" and all its images?`}
           >
-            <button type="submit" className="text-xs text-red-700 underline underline-offset-2">
+            <button
+              type="submit"
+              className="text-xs text-[var(--danger-text)] underline underline-offset-2"
+            >
               Delete product
             </button>
           </AdminConfirmForm>
@@ -151,12 +154,12 @@ export function ProductImageManagement({
         </button>
       </div>
       {error ? (
-        <p role="alert" className="mt-2 text-sm text-red-700">
+        <p role="alert" className="mt-2 text-sm text-[var(--danger-text)]">
           {error}
         </p>
       ) : null}
       {message ? (
-        <p role="status" className="mt-2 text-sm text-emerald-800">
+        <p role="status" className="mt-2 text-sm text-[var(--success-text)]">
           {message}
         </p>
       ) : null}
@@ -253,7 +256,7 @@ export function ProductImageManagement({
                     action={deleteProductImage.bind(null, productId, image.id)}
                     confirmMessage="Delete this product image?"
                   >
-                    <button type="submit" className="text-red-700 underline">
+                    <button type="submit" className="text-[var(--danger-text)] underline">
                       Delete
                     </button>
                   </AdminConfirmForm>

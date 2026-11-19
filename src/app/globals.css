@@ -33,6 +33,11 @@
   --badge-info-text: #1e40af;
   --badge-unknown-bg: #e5e7eb;
   --badge-unknown-text: #374151;
+  --danger-border: #fecaca;
+  --danger-text: var(--badge-danger-text);
+  --danger-bg: var(--badge-danger-bg);
+  --danger-strong: #991b1b;
+  --success-text: #047857;
 
   /* Montserrat (content) and Roboto Mono (headings/nav) are loaded in src/app/layout.tsx. */
   --font-body-family: var(--font-montserrat), 'Montserrat', Arial, Helvetica, sans-serif;
