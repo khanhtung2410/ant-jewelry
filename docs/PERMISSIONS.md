@@ -39,3 +39,4 @@ This document defines the current admin roles and permissions for Ant Jewelry (G
 - Unit tests live in `src/features/shared/lib/permissions.test.ts`.
 - Server-side checks must use these helpers (or equivalent permission checks) before performing protected admin mutations or rendering restricted admin sections.
 - UI hiding is not sufficient for authorization; protected actions must be enforced on the server.
+- `src/proxy.ts` is a **UX redirect only**, not an authorization layer: it validates the signed session's shape/expiry at the edge but does not re-read the account. Every admin page and Server Action must call `getAdminSession()` (which re-checks `locked`, role and `sessionVersion` against the DB) before granting access. Never treat a request that passed the proxy as authorized.

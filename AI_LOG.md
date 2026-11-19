@@ -1,4 +1,43 @@
-## 2026-11-19 13:40:15 +07:00 - Hỗ trợ npm 12 bằng allowScripts (D8)
+## 2026-11-19 14:14:21 +07:00 - Review toàn dự án theo 4 vùng (S1)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> S1 — Review toàn dự án (superpowers:requesting-code-review). Chạy trên toàn bộ main (base = commit đầu tiên), mỗi lượt một vùng: (1) upload + phục vụ ảnh (api/admin/products/…/images, uploads/[...path], product-image-*); (2) auth + phân quyền (permissions, login rate limit, sessionVersion); (3) Server Actions + validate Zod; (4) storefront + SEO.
+> Mỗi phát hiện ghi: file:dòng · mức độ (Critical / Important / Minor) · cách tái hiện · quyết định (sửa ở PR nào / bác vì sao). Không nhận bừa mọi gợi ý của AI.
+>
+> check very carefully
+>
+> update doc file if needed
+> add to ai log
+
+### Đã tự kiểm chứng
+
+- Load `requesting-code-review` skill; fetch `origin/main` (`6e5f758`, sau PR #99); base = commit đầu `5e19d3f8`; tạo branch `docs/full-code-review-s1`.
+- Dispatch 4 reviewer `general` độc lập (upload/auth/actions/storefront), mỗi reviewer đọc toàn bộ file trong phạm vi, output theo template: file:line · severity · reproduction · why · fix, kèm danh sách behavior bỏ qua và verdict.
+- **Không nhận bừa:** tự đọc lại mã thật cho mọi finding trước khi quyết định. Kết quả: 0 Critical, 3 Important, 25 Minor; 7 sửa trong PR này, 15 hoãn có nhánh/PR cụ thể, 6 bác kèm lý do — ghi đầy đủ trong `docs/CODE_REVIEW.md`.
+- Capture output encoding: mọi lệnh kiểm tra đều capture bằng Node `spawnSync` (`FORCE_COLOR=0`, `NO_COLOR=1`), không dùng PowerShell redirect; đọc file UTF-8 bằng `read`/Node thay vì `Get-Content` (lần đầu `Get-Content` 4 trang tĩnh bị mojibake tiếng Việt, đã đọc lại bằng `read`).
+- Fix trong PR này: ETag `*` (RFC 9110), `limitInputPixels` cho sharp, price ≤ Prisma Int max, shared `resolveAdminNextPath`, `generateMetadata` cho `/c/[slug]`, H1 duy nhất trên home, canonical cho 5 trang tĩnh. Thêm/sửa test tương ứng.
+- `docs/PERMISSIONS.md`: làm rõ proxy chỉ là UX redirect, không phải authorization.
+- Kiểm tra: lint/typecheck/format:check/test (61 files / 270 tests)/build đều exit 0.
+
+### Hạn chế / AI sai ở đâu
+
+- Reviewer auth chấm 2 Important (XFF spoof, race check→record) đúng về mặt thiết kế nhưng **premise không đúng với Vercel** (XFF bị ghi đè). Đã hạ xuống "hoãn sang PR bảo mật riêng" thay vì sửa vội trong PR review; đọc kỹ mới thấy vậy.
+- Reviewer storefront bác bỏ các tối ưu `content-visibility` là rủi ro crawler — thực tế có chủ đích và mọi URL đều có trong sitemap, nên **bác lại gợi ý của reviewer**.
+- Lần đầu viết `next-path` helper quên chặn `..`, test fail (`/admin/../../settings` vẫn qua); đã thêm check và chạy lại toàn bộ.
+- Khi viết `docs/CODE_REVIEW.md` lọt vài ký tự lạ (각 / 不一致 / мất); đã sửa lại tiếng Việt.
+
+**So sánh Figma:** không đổi bố cục (chỉ chuyển H1 từ sr-only trong HeroSlider sang sr-only trong `<main>`, không đổi hiển thị).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

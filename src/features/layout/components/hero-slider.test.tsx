@@ -61,14 +61,12 @@ describe('HeroSlider', () => {
     expect(html).not.toContain('aria-label="Next slide" disabled=""');
   });
 
-  it('keeps a fixed ANT JEWELRY heading while slide copy stays per-slide', () => {
+  it('leaves the single page H1 to the home page while slide copy stays per-slide', () => {
     const html = renderToStaticMarkup(<HeroSlider slides={slides} />);
 
-    expect(html.match(/<h1/g)).toHaveLength(1);
-    expect(html).toContain('<h1>ANT JEWELRY</h1>');
+    expect(html).not.toContain('<h1');
     expect(html).toContain('<p>Collection 1</p>');
     expect(html).toContain('<p>Collection description 1</p>');
-    expect(html).not.toContain('<h1>Collection 1</h1>');
   });
 
   it('does not render the explore link when the stored url has control characters', () => {

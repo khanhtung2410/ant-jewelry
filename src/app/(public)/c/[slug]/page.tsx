@@ -1,6 +1,8 @@
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import { Prisma } from '@prisma/client';
 import { Suspense } from 'react';
-import { getCategories } from '@/features/shared/queries';
+import { getCategories, getCategoryBySlug } from '@/features/shared/queries';
 import { CategoryPageContent } from './category-page-content';
 
 export async function generateStaticParams() {
@@ -14,6 +16,31 @@ export async function generateStaticParams() {
     }
     throw error;
   }
+}
+
+export async function generateMetadata(props: PageProps<'/c/[slug]'>): Promise<Metadata> {
+  const { slug } = await props.params;
+  let category: Awaited<ReturnType<typeof getCategoryBySlug>>;
+  try {
+    category = await getCategoryBySlug(slug);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2021') {
+      notFound();
+    }
+    throw error;
+  }
+  if (!category) notFound();
+
+  const title = `${category.name} | ANT JEWELRY`;
+  const description = `Explore ${category.name} jewelry at ANT JEWELRY.`;
+  const url = `/c/${category.slug}`;
+  return {
+    title: category.name,
+    description,
+    alternates: { canonical: url },
+    openGraph: { type: 'website', siteName: 'ANT JEWELRY', title, description, url },
+    twitter: { card: 'summary', title, description },
+  };
 }
 
 export default function CategoryPage(props: PageProps<'/c/[slug]'>) {

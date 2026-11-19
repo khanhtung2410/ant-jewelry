@@ -18,7 +18,9 @@ export async function resizeToStoredWebp(image) {
   ];
   let last = Buffer.alloc(0);
   for (const { dimension, quality } of targets) {
-    last = await sharp(image)
+    // Bound decoded pixels: a tiny compressed file can declare a huge IHDR and
+    // exhaust Function memory before resize. 16MP is well above our 1600px target.
+    last = await sharp(image, { limitInputPixels: 16_000_000 })
       .rotate()
       .resize({
         width: dimension,

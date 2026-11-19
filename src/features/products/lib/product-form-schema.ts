@@ -20,7 +20,9 @@ export const productFormSchema = z.object({
     .refine(
       (value) => Number.isSafeInteger(value) && value > 0,
       'Price must be a positive integer.',
-    ),
+    )
+    // Product.price is a Prisma Int; larger values throw an unhandled DB error.
+    .refine((value) => value <= 2_147_483_647, 'Price is too large.'),
   description: z.string().trim().min(1, 'Description is required.'),
   details: z.string().superRefine((value, context) => {
     value.split(/\r?\n/).forEach((line, index) => {

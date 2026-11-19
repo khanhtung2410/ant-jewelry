@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { LoginForm } from '@/features/admin/components/login-form';
+import { resolveAdminNextPath } from '@/features/auth/next-path';
 import { getAdminSession } from '@/features/auth/session';
 
 export const metadata: Metadata = {
@@ -13,14 +14,6 @@ export const instant = false;
 type LoginPageProps = {
   searchParams?: Promise<{ next?: string | string[] }>;
 };
-
-function resolveNextPath(nextParam: string | string[] | undefined): string {
-  const value = Array.isArray(nextParam) ? nextParam[0] : nextParam;
-  if (!value || !value.startsWith('/admin') || value.startsWith('/admin/login')) {
-    return '/admin';
-  }
-  return value;
-}
 
 export default function AdminLoginPage({ searchParams }: LoginPageProps) {
   return (
@@ -37,7 +30,7 @@ async function AdminLoginContent({ searchParams }: LoginPageProps) {
   }
 
   const params = (await searchParams) ?? {};
-  const nextPath = resolveNextPath(params.next);
+  const nextPath = resolveAdminNextPath(Array.isArray(params.next) ? params.next[0] : params.next);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[linear-gradient(180deg,var(--background)_0%,var(--surface-muted)_100%)] px-4 py-10">

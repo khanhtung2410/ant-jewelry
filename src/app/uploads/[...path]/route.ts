@@ -9,10 +9,13 @@ import {
 const CACHE_CONTROL = 'public, max-age=31536000, s-maxage=31536000, immutable';
 const formatEtag = (hash: string) => `"${hash}"`;
 
-/** Handles W/"..." weak validators and comma-separated If-None-Match lists. */
+/** Handles `*`, W/"..." weak validators and comma-separated If-None-Match lists. */
 function etagMatches(header: string | null, etag: string): boolean {
   if (!header) return false;
-  return header.split(',').some((value) => value.trim().replace(/^W\//, '') === etag);
+  return header.split(',').some((value) => {
+    const candidate = value.trim();
+    return candidate === '*' || candidate.replace(/^W\//, '') === etag;
+  });
 }
 
 export async function GET(

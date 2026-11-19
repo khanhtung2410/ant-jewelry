@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Jewelry Care',
   description: 'Hướng dẫn bảo quản và chăm sóc trang sức ANT JEWELRY.',
+  alternates: { canonical: '/jewelry-care' },
 };
 
 export default function JewelryCarePage() {

@@ -36,6 +36,7 @@ export default async function Home() {
 
   return (
     <main className="space-y-12 pb-16 sm:space-y-16">
+      <h1 className="sr-only">ANT JEWELRY</h1>
       <HeroSlider slides={heroSlides} />
 
       <div className="mx-auto w-full max-w-7xl space-y-14 px-4 sm:px-6 lg:px-8">

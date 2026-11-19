@@ -8,8 +8,6 @@ import { isSafeLinkHref } from '@/features/shared/lib/safe-url';
 import { ActionButton } from './action-button';
 import { ArrowButton } from './arrow-button';
 
-const homeHeading = 'ANT JEWELRY';
-
 interface HeroSliderProps {
   slides: HeroSlide[];
 }
@@ -46,7 +44,6 @@ export function HeroSlider({ slides }: HeroSliderProps) {
         />
 
         <div className="sr-only">
-          <h1>{homeHeading}</h1>
           <p>{activeSlide.title}</p>
           <p>{activeSlide.subtitle}</p>
         </div>

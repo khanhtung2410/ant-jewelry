@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Terms and Conditions',
   description: 'Điều khoản và điều kiện sử dụng website ANT JEWELRY.',
+  alternates: { canonical: '/terms' },
 };
 
 export default function TermsPage() {

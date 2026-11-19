@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description: 'Chính sách quyền riêng tư của ANT JEWELRY.',
+  alternates: { canonical: '/privacy' },
 };
 
 export default function PrivacyPage() {
