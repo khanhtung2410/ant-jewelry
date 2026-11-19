@@ -16,6 +16,8 @@ const contentTypeByExtension: Record<string, string> = {
 
 export class InvalidProductImageStorageKeyError extends Error {}
 export class StoredProductImageNotFoundError extends Error {}
+/** Thrown when magic bytes pass but sharp cannot decode the file. */
+export class InvalidProductImageError extends Error {}
 
 function normalizeStorageKey(storageKey: string): string {
   const segments = storageKey.split('/').filter(Boolean);
@@ -61,7 +63,13 @@ export async function uploadProductImage(
 ): Promise<{ storageKey: string; url: string }> {
   // Store a bounded WebP so the file can be served directly from /uploads
   // without the Next.js image optimizer (which can fail on Vercel cold starts).
-  const bytes = await resizeToStoredWebp(image);
+  // Magic-byte checks cannot detect a truncated/corrupt payload. Surface a
+  // distinct error so the route can answer 415 instead of a misleading 500.
+  const bytes = await resizeToStoredWebp(image).catch((error: unknown) => {
+    throw new InvalidProductImageError('The uploaded image is corrupt or unsupported.', {
+      cause: error,
+    });
+  });
   const storageKey = normalizeStorageKey(`products/${productId}/${randomUUID()}.webp`);
   await prisma.productImageBlob.create({
     data: { storageKey, bytes, contentType: 'image/webp', etag: imageEtag(bytes) },

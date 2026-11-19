@@ -10,15 +10,26 @@ vi.mock('next/image', () => ({
     src,
     alt,
     className,
+    unoptimized,
+    sizes,
     'aria-hidden': ariaHidden,
   }: {
     src: string;
     alt: string;
     className?: string;
+    unoptimized?: boolean;
+    sizes?: string;
     'aria-hidden'?: boolean | 'true' | 'false';
   }) => (
     // eslint-disable-next-line @next/next/no-img-element -- next/image is mocked in this Node test.
-    <img src={src} alt={alt} className={className} aria-hidden={ariaHidden} />
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      aria-hidden={ariaHidden}
+      data-unoptimized={String(unoptimized ?? false)}
+      data-sizes={sizes}
+    />
   ),
 }));
 
@@ -102,6 +113,22 @@ describe('ProductCard', () => {
     );
 
     expect(countImages(html)).toBe(1);
+  });
+
+  it('skips the optimizer for uploaded images but keeps mock images on it', () => {
+    const mockHtml = renderToStaticMarkup(
+      <ProductCard product={makeProduct({ images: [frontImage] })} />,
+    );
+    expect(mockHtml).toContain('data-unoptimized="false"');
+    expect(mockHtml).toContain(
+      'data-sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"',
+    );
+
+    const uploaded: ProductImage = { ...frontImage, url: '/uploads/products/p-1/cover.webp' };
+    const uploadHtml = renderToStaticMarkup(
+      <ProductCard product={makeProduct({ images: [uploaded] })} />,
+    );
+    expect(uploadHtml).toContain('data-unoptimized="true"');
   });
 
   it('renders a second, hover-only image when the gallery has another photo', () => {

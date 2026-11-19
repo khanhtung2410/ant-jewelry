@@ -1,4 +1,56 @@
-## 2026-11-19 14:14:21 +07:00 - Review toàn dự án theo 4 vùng (S1)
+## 2026-11-19 14:49:39 +07:00 - Xử lý phát hiện S1 bằng test tái hiện (S2)
+
+### Prompt nguyên văn đã dùng
+
+> pull origin in main branch to get latest code base first
+> read the whole files
+> create new branch, commit current changes
+> create pr body, title follow contributing.md rules using gh
+> avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> S2 — Xử lý phát hiện (superpowers:receiving-code-review). Với từng phát hiện ở S1, kiểm chứng trên code thật trước khi sửa (đọc code, viết test tái hiện). Phát hiện sai thì ghi lý do bác vào file review.
+> Mục "AI sai ở đâu" trong AI_LOG.md phải có ví dụ từ lượt review này.
+>
+> add this rule into context so other can follow and user dont need to repeaat
+> -pull origin in main branch to get latest code base first
+> -read the whole files
+> -update doc file if needed
+> -add to ai log follow format
+> -create pr body, title follow contributing.md rules using gh
+> -avoid: output các lệnh kiểm tra bị PowerShell ghi dạng UTF-16 rồi bị đọc sai encoding, nên các ký tự như ✓, ─, │, ·, — trong code block bị mojibake
+>
+> update doc file if needed
+> add to ai log follow format
+
+### Đã tự kiểm chứng
+
+- Load skill `receiving-code-review`; fetch `origin/main` (`d3ef112`, sau PR #100 đã merge); tạo branch `fix/review-findings-s2`.
+- Thêm "Standing working agreement" vào `AGENTS.md` (pull main trước, đọc toàn bộ file, update docs, AI_LOG theo format, PR bằng `gh`, capture output bằng `spawnSync`) để các agent sau không cần nhắc lại.
+- Đọc toàn bộ file liên quan của từng phát hiện S1; với 2 lỗi logic viết test tái hiện **trước khi sửa** và xác nhận test đỏ:
+  - `product-image-storage.test.ts`: PNG signature+IHDR nhưng IDAT rỗng → sharp ném lỗi thô, kỳ vọng `InvalidProductImageError`.
+  - `session.test.ts`: cookie token version 0 trong khi DB version 1 → `updateMany` vẫn tăng version, kỳ vọng conditional `where`.
+- Sửa: `uploadProductImage` bọc lỗi sharp thành `InvalidProductImageError`, route upload trả **415** (thay vì 500); `revokeAdminSession` dùng `where: { id, sessionVersion }` nên token cũ không vô hiệu session hiện tại.
+- Bổ sung test cho các phát hiện thiếu coverage: upload route (null session 403, thiếu/sai Origin 403, 404, 413, 415, EDITOR được 201), `admin-redirect.test.ts`, last-admin real-DB (1 ADMIN bị chặn / 2 ADMIN được hạ quyền), optimizer cho ProductCard + ProductDetail (`data-unoptimized`, `data-sizes`).
+- Ghi toàn bộ trạng thái S2 vào `docs/reviews/2026-11-19-requesting-code-review.md`, kèm bảng 27 phát hiện và phần "Phát hiện AI sai ở lượt S2 này".
+- Capture mọi output bằng Node `spawnSync` UTF-8 / `NO_COLOR=1`, không PowerShell redirect.
+
+### AI sai ở đâu
+
+- **Reviewer S1 (mục 1.4/2.8) sai:** kỳ vọng EDITOR bị từ chối upload ảnh (403). `permissions.ts:30` cấp `products:update` cho EDITOR và `canManageProducts()` dùng permission đó → EDITOR **được** upload. Test đầu tiên của chính người viết cũng kỳ vọng 403 và bị đỏ (201); đã đọc `permissions.ts`, sửa thành assert 201 và ghi lý do bác vào file review.
+- **Reviewer S1 (mục 4.7) sai:** nhận định "không có test nào cho nội dung sitemap". Thực tế `queries.test.ts:372-412` có test DB thật gọi `sitemap()` và assert loại trừ sản phẩm thuộc category ẩn. Chỉ phần canonical/OG/Twitter là còn thiếu.
+- **Người viết S2 sai khi se test integration (2.7):** (a) giả định "chỉ có một ADMIN" nhưng DB test có ADMIN seed → phải tạm khóa các ADMIN khác rồi hoàn trả ở `afterAll`; (b) giả định lỗi last-admin nằm ở `message` nhưng `users/actions.ts:195` trả ở `fieldErrors.form` → assertion đỏ, đã đọc code và sửa.
+- **Reviewer S1 (mục 2.1) premise sai với môi trường triển khai:** giả định proxy nối thêm XFF; Vercel ghi đè XFF nên bypass không xảy ra trên production hiện tại. Vẫn giữ là rủi ro tính di động, không bác hoàn toàn.
+
+### Hạn chế
+
+- 8 phát hiện vẫn hoãn đúng lịch S1 (2.2, 3.2, 3.6, 4.4, 4.5, 4.9 + phần metadata của 4.7 + 2.1) vì cần đổi thiết kế/migration/UI; S2 chỉ kiểm chứng và ghi rõ trạng thái, không tự mở rộng phạm vi.
+- Không chạy Lighthouse sau khi đổi test optimizer (không đổi render); không tạo dữ liệu production nào.
+
+**So sánh Figma:** không áp dụng (không đổi giao diện).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

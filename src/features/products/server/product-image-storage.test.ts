@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import sharp from 'sharp';
 import { prisma } from '@/features/shared/db/prisma';
 import {
+  InvalidProductImageError,
   InvalidProductImageStorageKeyError,
   StoredProductImageNotFoundError,
   deleteStoredProductImage,
@@ -63,6 +64,18 @@ describe('database-backed local product image storage', () => {
     await deleteStoredProductImage(stored.storageKey);
     await expect(readStoredProductImage(stored.storageKey)).rejects.toBeInstanceOf(
       StoredProductImageNotFoundError,
+    );
+  });
+
+  it('reports a corrupt image as InvalidProductImageError, not a raw sharp failure', async () => {
+    // PNG signature + IHDR tag (passes detectProductImageType) but no valid
+    // image data, so sharp throws while decoding.
+    const corrupt = new Uint8Array(40);
+    corrupt.set([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a], 0);
+    corrupt.set([0x49, 0x48, 0x44, 0x52], 12);
+
+    await expect(uploadProductImage('product-1', corrupt)).rejects.toBeInstanceOf(
+      InvalidProductImageError,
     );
   });
 

@@ -209,3 +209,54 @@ npm run build         exit=0
 ## Đánh đổi khi clone production
 
 Các phát hiện Important về rate-limit (2.1, 2.2) được hoãn có chủ đích: trên Vercel, XFF bị ghi đè nên 2.1 không xảy ra; 2.2 cần counter nguyên tử (DB/Redis) làm thay đổi hạ tầng. Cả hai được theo dõi trong `security/auth-hardening`, không bị "bác" vô lý. Các phát hiện bị bác (2.4, 2.5, 3.5, 4.8) đều có phân tích rõ lý do ở trên.
+
+---
+
+## S2 — Kiểm chứng lại bằng test tái hiện (receiving-code-review)
+
+Ngày chạy: 2026-11-19. Prompt nguyên văn: xem `AI_LOG.md` mục `2026-11-19 14:14:21 +07:00 - Review toàn dự án theo 4 vùng (S1)` và entry S2 ngay trên nó. Quy trình: đọc toàn bộ file liên quan → viết test tái hiện → chạy để xác nhận test **đỏ** → sửa → chạy lại đến khi **xanh** → ghi quyết định.
+
+### Kết quả kiểm chứng từng phát hiện
+
+| Mục | Kiểm chứng trên code thật | Quyết định S2 |
+|---|---|---|
+| 1.1, 1.2, 2.3, 3.1, 4.1, 4.2, 4.3 | Đã sửa ở PR #100; đọc lại thấy đúng hành vi | Giữ nguyên, không làm lại |
+| 1.3 | Test tái hiện `uploadProductImage()` với PNG có signature+IHDR nhưng IDAT rỗng → sharp ném lỗi thô | **Confirmed & Fixed**: `InvalidProductImageError` + route trả 415 (thay vì 500) |
+| 1.4 | Đọc `route.test.ts`: thiếu thật các case 403 (null session, thiếu/sai Origin), 413, 415, 404 | **Confirmed**: bổ sung 5 test. Riêng phần "EDITOR phải bị 403" → **Rejected** (xem bên dưới) |
+| 2.1 | `client-ip.ts` lấy hop đầu XFF; Vercel ghi đè XFF nên bypass không xảy ra trên production | **Rejected cho triển khai hiện tại**; vẫn theo dõi tính di động ở `security/auth-hardening` |
+| 2.2 | `login-rate-limit.ts` count rồi `recordFailedLogin` ở hai lệnh riêng → TOCTOU có thật | **Confirmed, still deferred** → `security/auth-hardening` (cần counter nguyên tử) |
+| 2.4 | Nhánh rate-limited trả sớm trước bcrypt; áp dụng như nhau cho mọi email | **Rejected** (giữ nguyên): không rò rỉ tồn tại tài khoản |
+| 2.5 | Proxy chỉ kiểm tra chữ ký/hạn; mọi page/action gọi lại `getAdminSession()` | **Rejected** dưới dạng lỗ hổng; ghi chú đã có trong `docs/PERMISSIONS.md` |
+| 2.6 | Test tái hiện với token cookie `sessionVersion=0` trong khi DB đã ở `1` → `updateMany` vẫn tăng version | **Confirmed & Fixed**: conditional `where: { id, sessionVersion }`; token cũ không còn vô hiệu session hiện tại |
+| 2.7, 3.3 | Đọc `users/actions.test.ts`: chỉ có unit test `wouldRemoveLastActiveAdmin` | **Confirmed**: thêm 2 integration test dùng DB thật (1 ADMIN → bị chặn; 2 ADMIN → được hạ quyền) |
+| 2.8 | `session.test.ts` không test `revokeAdminSession`; upload route thiếu case auth/origin | **Confirmed**: thêm test conditional revoke + các test auth/origin ở 1.4 |
+| 3.2 | `saveBlogPost` commit post rồi mới `deleteMany`/`createMany` ảnh → lỗi create để bài không ảnh | **Confirmed, still deferred** → `fix/blog-image-sync` (cần gói transaction) |
+| 3.4 | Helper đúng nhưng không có test | **Confirmed**: thêm `admin-redirect.test.ts` (external, `//`, path khác, query cleanup) |
+| 3.5 | Mọi ghi dùng `where` ghép + kiểm tra tồn tại + permission | **Rejected** (giữ nguyên); theo dõi riêng ở `refactor/action-args-validation` |
+| 3.6 | `schema.prisma:60` `type String` không có `@unique`; check `findFirst` dễ race | **Confirmed, still deferred** → `db/category-type-unique` |
+| 4.4 | `settings.ts` trả `''` khi thiếu row; contact popover render `href=""` / `tel:` | **Confirmed, still deferred** → `fix/contact-links` |
+| 4.5 | Blog cover `<img>` không có width/height; markdown inline `<img>` cũng không | **Confirmed, still deferred** → `perf/image-dimensions` |
+| 4.6 | Mock `next/image` trong 2 test sản phẩm bỏ `unoptimized`/`sizes` | **Confirmed**: mock phát thêm `data-unoptimized`/`data-sizes` + test `/uploads` vs `/mock` |
+| 4.7 | Reviewer nói "không có test nào cho nội dung sitemap" — **sai**, `queries.test.ts:372-412` gọi `sitemap()` và assert loại trừ sản phẩm ẩn | **Rejected một phần**: phần sitemap đã có test; phần canonical/OG/Twitter vẫn thiếu → `test/seo` |
+| 4.8 | Carousel đầu không defer + mọi URL có trong sitemap | **Rejected** (giữ nguyên) |
+| 4.9 | `site-url.ts` fallback `http://localhost:3000` khi thiếu `SITE_URL` | **Confirmed, still deferred** → `fix/seo-config` |
+
+### Phát hiện AI sai ở lượt S2 này
+
+1. **1.4/2.8 — "EDITOR phải bị từ chối upload (403)": sai.** `permissions.ts:30` cấp `products:update` cho EDITOR và `canManageProducts()` dùng permission đó (`permissions.ts:49-50`). EDITOR được phép upload ảnh sản phẩm. Test ban đầu của chính người viết kỳ vọng 403 → thực tế trả 201; đã sửa test thành assert 201 + ghi nhận ở đây.
+2. **4.7 — "không có test sitemap": sai.** `src/features/shared/queries/queries.test.ts:372` có test DB thật gọi `sitemap()` và kiểm tra sản phẩm thuộc category ẩn không xuất hiện. Chỉ đúng với phần metadata/canonical.
+3. **Giả định của người viết khi viết test integration (2.7): sai ở 2 chỗ.** (a) DB test có sẵn ADMIN seed nên "sole ADMIN" không đúng → phải tạm khóa các ADMIN khác rồi hoàn trả; (b) lỗi last-admin được trả ở `fieldErrors.form`, không phải `message` (`users/actions.ts:195`). Cả hai đã đọc code và sửa lại sau khi test đỏ.
+
+### Kiểm chứng sau S2
+
+```text
+reproduction (trước khi sửa): 2 test mới FAIL đúng kỳ vọng
+  - corrupt image -> TypeError thô thay vì InvalidProductImageError
+  - stale token   -> updateMany vẫn tăng sessionVersion
+
+npm run lint          exit=0
+npm run typecheck     exit=0
+npm run format:check  exit=0
+npm test              62 files / 286 tests pass
+npm run build         exit=0
+```
