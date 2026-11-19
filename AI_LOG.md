@@ -1,4 +1,35 @@
-## 2026-11-20 00:54:28 +07:00 - Sửa finding #6/#7/#8 + đo lại Lighthouse production
+## 2026-11-20 01:26:26 +07:00 - Kiểm tra codebase + production (lượt cuối)
+
+### Prompt nguyên văn đã dùng
+
+> use superpower tool to carefully check code base and production
+> use admin account i give you to test
+
+### Đã tự kiểm chứng
+
+- Load `requesting-code-review` + `verification-before-completion`; fetch `origin/main` (`5bd146f`, sau PR #113), tạo branch `review/final-check-2026-11-20`.
+- Dispatch 3 reviewer blind (diff #110–#113 + UI/tests/deps; core auth/upload/data; docs/evidence). Đọc lại file thật cho mọi finding quan trọng.
+- **Production (Playwright, ADMIN do user cung cấp từ lượt trước, không lưu credential):** login OK; 7 màn admin 200 + h1 đúng; Users truy cập được (ADMIN); delete-confirm focus Cancel → Tab Delete → Escape đóng, bản ghi còn; Ẩnconfirm có nút Hide, Escape giữ trạng thái; 2 ảnh upload trên `/p/ivy-tennis-bracelet`; logout OK; 0 `window.confirm`; 0 console error / HTTP 5xx. Chi tiết trong `docs/reviews/2026-11-20-requesting-code-review.md`.
+- **Codebase:** không có Critical. Important đều là docs: 4 chỗ `REQUIREMENTS.md` còn "Staff chỉ xem" sót từ finding #2; `PERFORMANCE.md:92-94` tự mâu thuẫn sau khi thêm lượt đo mới; số E2E 27 vs thực tế 30 ở 4 file; `REQUIREMENTS.md:1318` còn "filesystem implemented". Minor: token màu không tương đương (focus ring đỏ → xanh), helper CDN query chưa xử lý `?v=1`/fragment, nhánh update URL trong migration chưa có test, prop `busy` vô chủ, E2E DB bẩn, comment rate-limit sai.
+- Bộ lệnh mục V: lint/typecheck/test (64 files / 295 tests)/format:check/build đều exit 0.
+
+### AI sai ở đâu
+
+- **Reviewer #1 và #3 cùng phát hiện tài liệu tự mâu thuẫn sau chính PR sửa lỗi trước đó:** finding #2/#3 được đánh dấu "Fixed" nhưng vẫn sót 4+1 chỗ. Bài học: phải grep lại toàn bộ tài liệu sau khi sửa, không chỉ tin bảng trạng thái.
+- **Mình từng ghi "tokenization không đổi giao diện" ở finding #8:** reviewer chỉ ra focus ring đổi từ đỏ sang xanh và neutral shades đổi giá trị. Đã đổi quyết định thành Accepted (cần sửa/ghi nhận), không giữ nhận định cũ.
+- **Reviewer docs chấm 27 E2E là stale:** con số 30 được ghi trong AI_LOG nhưng 4 file docs không theo kịp — không được giả định mọi nơi đã đồng bộ.
+- **Không tin lời reviewer "regression performance":** đã tự parse 24 JSON + đối chiếu độ phân tán trước khi bác (xem finding #13).
+
+### Hạn chế
+
+- Không có credentials DB production; không kiểm tra migration status/dữ liệu tồn đọng. Không có Figma gốc để so pixel.
+- Lượt này chỉ review + ghi quyết định; không sửa code hay dữ liệu production. Các nhánh follow-up được đặt tên trong file review.
+
+**So sánh Figma:** không đổi; bảng R6.3 vẫn dùng 6 ảnh 1920px đã commit.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
