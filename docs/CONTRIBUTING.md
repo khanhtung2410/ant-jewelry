@@ -126,6 +126,7 @@ Alias `@/*` trong `tsconfig.json` trỏ về `src/*`. Đặt code gần route ho
 - E2E dùng **Playwright**; cài browser Chromium bằng `npx playwright install chromium`, sau đó chạy `npm run test:e2e`. Lệnh này tạo schema và seed riêng trong `prisma/e2e.db` trước khi khởi động ứng dụng, không dùng database local của Vitest.
 - Với thay đổi giao diện hoặc logic hiện có, kiểm tra thủ công các luồng bị ảnh hưởng và ghi rõ trong Pull Request.
 - Ưu tiên kiểm thử hàm thuần, validation schema và hành vi server-side có thể tái hiện ổn định.
+- **Production test hygiene:** mọi dữ liệu tạo ra khi test trên production (ảnh upload, sản phẩm, bài viết, tài khoản tạm) phải được dọn ngay sau khi test, trừ một ảnh/record được giữ lại làm bằng chứng redeploy — khi đó ghi rõ trong PR đó là ảnh/record nào. Nếu không dọn được, nêu rõ lý do và người chịu trách nhiệm dọn trong PR. Xem thêm `docs/DEPLOY.md` mục “Production test hygiene”.
 
 ### Format & Lint
 

@@ -1,4 +1,32 @@
-## 2026-11-19 11:20:49 +07:00 - Giảm kích thước ảnh upload legacy (E1)
+## 2026-11-19 12:05:32 +07:00 - Dọn ảnh test production và thêm quy tắc hygiene (E2)
+
+### Prompt nguyên văn đã dùng
+
+> E2 — Ảnh test nằm trên sản phẩm thật. Ivy Tennis Bracelet trên production đang có 4 ảnh upload thử: 1 PNG 3,97 MB và 3 bản giống hệt nhau, đều 120.492 byte, nội dung "ANT JEWELRY · mock image". Xóa các ảnh này qua admin, hoặc dùng một sản phẩm ẩn riêng cho test. Giữ một ảnh để làm bằng chứng redeploy (R6.2b ý 4) thì ghi rõ là ảnh nào.
+> Quy tắc từ giờ: test trên production thì dọn dữ liệu sau khi test, và ghi việc dọn vào PR.
+> add rule to docs/ file
+> use admin test account that i give you
+
+### Đã tự kiểm chứng
+
+- Fetch `origin/main` (`7402a63`, sau PR #95), tạo branch `docs/production-test-cleanup`.
+- Dùng tài khoản ADMIN test do người dùng cung cấp (không ghi secrets vào repo/log): đăng nhập `/admin`, mở iframe sản phẩm Ivy Tennis Bracelet, tab Images.
+- Xóa 3 ảnh test trùng nội dung qua popover xác nhận trong ứng dụng: `00dd2583-…`, `8ff37dbd-…`, `65388a83-…` (URL `/uploads/...webp`). Lần đầu script xóa có một ảnh chưa cập nhật ngay do Server Action chạy chậm; đã kiểm tra lại danh sách ảnh trong admin và xóa bổ sung ảnh còn lại. Không đụng vào ảnh cover/gallery mock gốc của sản phẩm.
+- Giữ lại đúng **1 ảnh** làm bằng chứng redeploy: `/uploads/products/cmwk5l3wx002x84wmecz7pzfv/c2f7b4a5-02d7-463b-96e1-e9ac019a2f09.webp` (337.464 byte, WebP). Kiểm chứng: HTML `/p/ivy-tennis-bracelet` chỉ còn 1 URL `/uploads/...`, GET 200, 337.464 byte (<400 KB), `ALL_UNDER_400KB=true`.
+- Thêm quy tắc vào `docs/CONTRIBUTING.md` (mục Testing) và `docs/DEPLOY.md` (mục mới “Production test hygiene”): dọn dữ liệu sau test, chỉ giữ 1 record làm bằng chứng và ghi rõ trong PR, ưu tiên sản phẩm ẩn riêng.
+- Capture output bằng Node/Playwright, không dùng PowerShell redirect.
+
+### Hạn chế / AI sai ở đâu
+
+- Không có quyền dọn trực tiếp DB production; dùng giao diện ADMIN là phương án được người dùng chấp nhận.
+- Lần đầu kiểm tra sau xóa vẫn thấy ảnh `65388a83` do độ trễ Server Action/CDN; đã đợi và kiểm tra lại thay vì xóa lặp nhiều lần.
+- Ảnh giữ lại là ảnh test có nội dung nhiễu, được dùng làm bằng chứng kỹ thuật (kích thước + cache), không phải ảnh catalogue thật.
+
+**So sánh Figma:** không áp dụng.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
