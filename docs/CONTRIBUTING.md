@@ -275,6 +275,8 @@ Liệt kê các kiểm tra đã chạy và kết quả.
 
 ### Review
 
+- Sau **mỗi lượt review** (dùng skill review hoặc tự review), lưu toàn bộ kết quả vào `docs/reviews/YYYY-MM-DD-<skill>.md` (xem quy định chi tiết trong `AGENTS.md`). Mỗi phát hiện phải có `file:line`, mức độ, cách tái hiện và quyết định **Accepted** (kèm PR/nhánh) hoặc **Rejected** (kèm lý do).
+- Thêm một entry mới trong `AI_LOG.md` ghi prompt nguyên văn đã dùng, phát hiện nào nhận (kèm PR/nhánh) và phát hiện nào bác vì sao, kèm link tới file review.
 - Tuân theo yêu cầu review và kiểm tra bắt buộc được cấu hình cho repository.
 - Tác giả không tự merge PR của mình (trừ hotfix khẩn cấp, phải báo team).
 

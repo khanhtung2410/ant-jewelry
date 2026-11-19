@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Shipping and Return',
   description: 'Chính sách vận chuyển và đổi trả của ANT JEWELRY.',
+  alternates: { canonical: '/ship' },
 };
 
 export default function ShippingAndReturnPage() {

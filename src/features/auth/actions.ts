@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '@/features/shared/db/prisma';
 import { DUMMY_PASSWORD_HASH } from '@/features/shared/lib/password';
 import { getClientIp } from './client-ip';
+import { resolveAdminNextPath } from './next-path';
 import {
   handleAuthActionError,
   invalidCredentialsState,
@@ -20,17 +21,13 @@ function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
-function resolveNextPath(nextValue: FormDataEntryValue | null): string {
-  return typeof nextValue === 'string' && nextValue.startsWith('/admin') ? nextValue : '/admin';
-}
-
 export async function loginAction(_prevState: LoginState, formData: FormData): Promise<LoginState> {
   const emailValue = formData.get('email');
   const passwordValue = formData.get('password');
 
   const email = typeof emailValue === 'string' ? normalizeEmail(emailValue) : '';
   const password = typeof passwordValue === 'string' ? passwordValue : '';
-  const nextPath = resolveNextPath(formData.get('next'));
+  const nextPath = resolveAdminNextPath(formData.get('next'));
 
   if (!email || !password) {
     return invalidCredentialsState();

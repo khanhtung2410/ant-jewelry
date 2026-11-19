@@ -53,10 +53,10 @@ describe('GET /uploads/[...path]', () => {
     expect(mocks.readStoredProductImage).not.toHaveBeenCalled();
   });
 
-  it('accepts weak and comma-separated If-None-Match values', async () => {
+  it('accepts weak, comma-separated and wildcard If-None-Match values', async () => {
     mocks.getStoredProductImageMeta.mockResolvedValue({ contentType: 'image/webp', etag: hash });
 
-    for (const header of [`W/${etag}`, `"other", ${etag}`, `W/"other", W/${etag}`]) {
+    for (const header of ['*', `W/${etag}`, `"other", ${etag}`, `W/"other", W/${etag}`]) {
       const response = await GET(
         new Request('http://localhost/uploads/test', { headers: { 'if-none-match': header } }),
         context,

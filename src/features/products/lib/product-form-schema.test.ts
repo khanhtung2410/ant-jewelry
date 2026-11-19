@@ -40,6 +40,13 @@ describe('productFormSchema', () => {
     }
   });
 
+  it('rejects prices above the Prisma Int maximum', () => {
+    const result = productFormSchema.safeParse({ ...validProduct, price: '3.000.000.000' });
+    expect(result.success).toBe(false);
+    if (result.success) return;
+    expect(result.error.issues.map((issue) => issue.message)).toContain('Price is too large.');
+  });
+
   it('validates detail lines and parses them into key/value pairs', () => {
     expect(
       productFormSchema.safeParse({ ...validProduct, details: 'Incomplete detail' }).success,
