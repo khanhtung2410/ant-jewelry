@@ -151,3 +151,78 @@ describe('saveUserAccess session version', () => {
     }
   });
 });
+
+describe('saveUserAccess last-active-ADMIN invariant', () => {
+  const emailA = 'last-admin-a@antjewelry.local';
+  const emailB = 'last-admin-b@antjewelry.local';
+  let adminA: string;
+  let adminB: string | undefined;
+
+  async function makeAdmin(email: string): Promise<string> {
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name: email,
+        passwordHash: oldPasswordHash,
+        role: 'ADMIN',
+        locked: false,
+      },
+      select: { id: true },
+    });
+    return user.id;
+  }
+
+  // The guard counts every active ADMIN in the DB, including seed accounts.
+  // Temporarily lock pre-existing ones so adminA is genuinely the last one.
+  let otherActiveAdmins: string[] = [];
+
+  beforeAll(async () => {
+    const existing = await prisma.user.findMany({
+      where: { role: 'ADMIN', locked: false },
+      select: { id: true },
+    });
+    otherActiveAdmins = existing.map((user) => user.id);
+    if (otherActiveAdmins.length > 0) {
+      await prisma.user.updateMany({
+        where: { id: { in: otherActiveAdmins } },
+        data: { locked: true },
+      });
+    }
+    adminA = await makeAdmin(emailA);
+  });
+
+  afterAll(async () => {
+    await prisma.user.deleteMany({ where: { email: { in: [emailA, emailB] } } });
+    if (otherActiveAdmins.length > 0) {
+      await prisma.user.updateMany({
+        where: { id: { in: otherActiveAdmins } },
+        data: { locked: false },
+      });
+    }
+  });
+
+  it('refuses to demote or lock the sole active ADMIN and leaves the row unchanged', async () => {
+    for (const formData of [formDataFor(adminA, 'EDITOR'), formDataFor(adminA, 'ADMIN', true)]) {
+      const state = await saveUserAccess(accessState(adminA, 'ADMIN'), formData);
+
+      expect(state.fieldErrors.form?.[0]).toMatch(/at least one active admin/i);
+      const stored = await prisma.user.findUnique({
+        where: { id: adminA },
+        select: { role: true, locked: true },
+      });
+      expect(stored).toEqual({ role: 'ADMIN', locked: false });
+    }
+  });
+
+  it('allows demotion while another active ADMIN remains', async () => {
+    adminB = await makeAdmin(emailB);
+
+    await saveUserAccess(accessState(adminA, 'ADMIN'), formDataFor(adminA, 'EDITOR'));
+
+    const stored = await prisma.user.findUnique({
+      where: { id: adminA },
+      select: { role: true },
+    });
+    expect(stored?.role).toBe('EDITOR');
+  });
+});

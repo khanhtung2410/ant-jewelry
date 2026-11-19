@@ -1,5 +1,16 @@
 ## Project rules for coding agents
 
+### Standing working agreement (every task)
+
+Apply these automatically to **every** user request — do not wait to be told:
+
+1. Pull the latest `main` from `origin` first (`git fetch origin` + reset/branch from `origin/main`), then create a new branch for the work.
+2. Read the **whole** relevant files before editing; never patch from a snippet or assumption.
+3. Update docs when behavior or configuration changes.
+4. Add an entry to `AI_LOG.md` following the established format: prompt used verbatim, what was self-verified, **"AI sai ở đâu"** with concrete examples, and limitations.
+5. Create the PR with `gh`, using a Conventional Commits title and a body that follows `docs/CONTRIBUTING.md`.
+6. Capture all check-command output via Node `spawnSync` in UTF-8 (`NO_COLOR=1`), never PowerShell redirection — PowerShell writes UTF-16 here and characters like `✓ ─ │ · —` become mojibake in code blocks.
+
 ### Code review records
 
 - After **every** review round (any review produced by a skill such as `requesting-code-review`, or a self-review done with `superpowers`), save the complete result to `docs/reviews/YYYY-MM-DD-<skill>.md` — `<skill>` is the skill id you actually used without the `superpowers:` prefix; a self-review uses `superpowers`. Use the date you run the review, in the agent's local time. Keep one file per review round; do not overwrite a previous round.

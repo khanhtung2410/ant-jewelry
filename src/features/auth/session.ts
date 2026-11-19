@@ -83,8 +83,11 @@ export async function revokeAdminSession(): Promise<void> {
 
   if (session) {
     try {
+      // Only a token that still matches the stored version may revoke a
+      // session. Otherwise a stale copied token could bump the version and
+      // invalidate the user's current, legitimate sessions.
       await prisma.user.updateMany({
-        where: { id: session.userId },
+        where: { id: session.userId, sessionVersion: session.sessionVersion },
         data: { sessionVersion: { increment: 1 } },
       });
     } catch (error) {

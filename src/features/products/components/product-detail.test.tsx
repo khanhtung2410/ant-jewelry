@@ -9,15 +9,26 @@ vi.mock('next/image', () => ({
     src,
     alt,
     className,
+    unoptimized,
+    sizes,
     'aria-hidden': ariaHidden,
   }: {
     src: string;
     alt: string;
     className?: string;
+    unoptimized?: boolean;
+    sizes?: string;
     'aria-hidden'?: boolean | 'true' | 'false';
   }) => (
     // eslint-disable-next-line @next/next/no-img-element -- next/image is mocked in this Node test.
-    <img src={src} alt={alt} className={className} aria-hidden={ariaHidden} />
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      aria-hidden={ariaHidden}
+      data-unoptimized={String(unoptimized ?? false)}
+      data-sizes={sizes}
+    />
   ),
 }));
 
@@ -102,6 +113,25 @@ describe('ProductDetail', () => {
     expect(html).toContain('aria-haspopup="dialog"');
     expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain('role="dialog"');
+  });
+
+  it('skips the optimizer for uploaded gallery images but keeps mock images on it', () => {
+    const mockHtml = renderToStaticMarkup(
+      <ProductDetail product={makeProduct()} categoryName="Wedding Ring" settings={settings} />,
+    );
+    expect(mockHtml).toContain('data-unoptimized="false"');
+
+    const uploaded = image('uploaded-front', '/uploads/products/p-1/cover.webp', true);
+    const uploadedProduct = {
+      ...makeProduct(),
+      images: [uploaded],
+      colors: [{ ...gold, images: [uploaded] }],
+    };
+    const uploadHtml = renderToStaticMarkup(
+      <ProductDetail product={uploadedProduct} categoryName="Wedding Ring" settings={settings} />,
+    );
+    expect(uploadHtml).toContain('/uploads/products/p-1/cover.webp');
+    expect(uploadHtml).toContain('data-unoptimized="true"');
   });
 
   it('renders every colour as a labelled swatch and starts with the first colour gallery', () => {

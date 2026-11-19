@@ -6,7 +6,10 @@ import {
   detectProductImageType,
 } from '@/features/products/lib/product-image-validation';
 import { enqueueProductImageDeletions } from '@/features/products/server/product-image-cleanup';
-import { uploadProductImage } from '@/features/products/server/product-image-storage';
+import {
+  InvalidProductImageError,
+  uploadProductImage,
+} from '@/features/products/server/product-image-storage';
 import { revalidateProductPages } from '@/features/products/server/product-revalidation';
 
 type ValidatedFile = {
@@ -93,6 +96,9 @@ export async function POST(
       uploaded.push({ ...stored, type: file.type });
     }
   } catch (error) {
+    if (error instanceof InvalidProductImageError) {
+      return jsonError('The image file is corrupt or unsupported.', 415);
+    }
     // A single-file request cannot leave a partially uploaded object behind;
     // the metadata-error branch below handles cleanup after a successful write.
     console.error('Product image upload failed:', error);
