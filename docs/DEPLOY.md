@@ -135,6 +135,39 @@ Script dùng chung `resizeToStoredWebp()` với `uploadProductImage()`, ghi đè
 
 **Kết quả kiểm chứng production 2026-11-19:** 4 ảnh `/uploads/...` trên `/p/ivy-tennis-bracelet` lần lượt 29.732 / 29.728 / 29.868 / 337.464 byte (đều <400 KB). Lighthouse mobile 3 lần: 93 / 91 / 100 → trung vị Performance **93**, Accessibility 100, SEO 100; báo cáo JSON trong [`docs/lighthouse-reports/`](lighthouse-reports/) (`prod-ivy-{1,2,3}.json`). Các ảnh production được thay bằng giao diện ADMIN vì agent không có `DATABASE_URL` production; script ở trên vẫn là cách chuẩn để migrate các blob còn lại sau khi deploy.
 
+### Đánh đổi E3: một kích thước cho mọi chỗ
+
+Vì ảnh `/uploads/...` được phục vụ `unoptimized`, card sản phẩm, thumbnail 96 px và ảnh admin 88 px đều tải cùng một blob WebP đã resize (~1600 px hoặc ngưỡng 380 KB), thay vì bản nhỏ. Đây là đánh đổi có chủ đích để tránh lỗi optimizer (xem bên dưới); khi một danh mục có nhiều ảnh upload thật, trang `/c/<slug>` sẽ tăng theo số ảnh × kích thước blob.
+
+**Số đo thực tế 2026-11-19** (production, `/c/other-jewelry` đang có 1 ảnh upload thật):
+
+```text
+page: /c/other-jewelry status=200 html=60994 bytes
+image requests: 3 (2 mock svg: 6966 + 776 bytes; 1 upload: 337464 bytes)
+total image bytes: 345206
+upload image bytes: 337464 (≈97.8% tổng bytes ảnh)
+cùng ảnh nếu có bản 480px webp q80: 98998 bytes (~96.6 KB, giảm ~70%)
+```
+
+Với 5 card upload thật cùng kích thước, phần ảnh sẽ ~1,7 MB thay vì ~0,5 MB nếu có bản 480 px. Hướng xử lý khi đợt sau cần: sinh thêm biến thể nhỏ lúc upload (storage key phụ, ví dụ `-480.webp`) và dùng cho card/thumbnail, hoặc bật lại optimizer sau khi xử lý xong nguyên nhân bên dưới.
+
+### Điều tra lỗi 400 INVALID_IMAGE_OPTIMIZE_REQUEST (S3)
+
+Áp dụng quy trình systematic-debugging: tái hiện → giả thuyết → kiểm chứng từng biến số → kết luận.
+
+1. **Tái hiện/evidence:** direct GET ảnh upload → 200, `image/webp`, 337.464 byte, sharp đọc được `733×800`. `/_next/image?url=<encoded path>&w=256&q=75` → 200 image/jpeg 13.350 byte; các `w` 384/640/750/828/1080/1920 đều 200 (Next tự clamp theo chiều ảnh nguồn).
+2. **Giả thuyết bị bác:** (a) file hỏng — bác vì sharp đọc được metadata; (b) `w` lớn hơn ảnh nguồn — bác vì `w=1920` vẫn 200; (c) kích thước file quá lớn — bác vì ảnh PNG 3,97 MB từng trả 200 ở `w=256`.
+3. **Giả thuyết được xác nhận cho lỗi có thể tái hiện:** giá trị `url` truyền vào `/_next/image` có chứa **query string có dấu `=`** → 400 cho mọi nguồn ảnh.
+   ```text
+   inner url + '?v=2'    -> 400 INVALID_IMAGE_OPTIMIZE_REQUEST
+   inner url + '?foo=bar'-> 400
+   inner url + '?'       -> 200
+   outer ?cb=99          -> 200
+   mock image + '?v=2'   -> 400  (loại ảnh upload ra khỏi nguyên nhân)
+   ```
+   Hệ quả: script migration E1 thêm `?v=2` vào `ProductImage.url` để bust CDN; nếu bật lại optimizer thì phải bỏ query trước khi tạo URL `/_next/image` (hiện dùng `unoptimized` nên không ảnh hưởng).
+4. **Phần chưa tái hiện được:** lỗi ban đầu của mentor là URL **không có query** kèm `uniqueContextId not found` / `Resend failed`. Năm request cache-bust liên tiếp ở `w=256` đều 200; không ép được lỗi lại. Đây là hành vi nhất thời/phụ thuộc ngữ cảnh Vercel (cold start), không phải dữ liệu ảnh. Theo quy trình, ghi nhận là “environmental/timing-dependent”, giữ cơ chế xử lý hiện tại (serving trực tiếp) thay vì giả sử đã hiểu root cause.
+
 ## Production test hygiene (quy tắc bắt buộc)
 
 Khi chạy thử nghiệm trên production (đăng nhập ADMIN test, upload ảnh, tạo/sửa sản phẩm, bài viết, hero slide, tài khoản tạm…):
