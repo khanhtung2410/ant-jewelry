@@ -1,4 +1,39 @@
-## 2026-11-19 15:34:05 +07:00 - Kiểm chứng trước khi báo xong (S5)
+## 2026-11-19 16:11:27 +07:00 - E2E chạy được trên clone sạch (T1)
+
+### Prompt nguyên văn đã dùng
+
+> Repo đã có playwright.config.ts và 9 test trong e2e/storefront-admin.spec.ts, chạy trên production build với DB riêng prisma/e2e.db. Nhưng các tính năng của đợt 3–4 (upload, xóa ảnh, popover xác nhận, toast tiến độ) chưa có test E2E nào; #87 kiểm tra bằng script Playwright chạy tay rồi không commit lại.
+>
+> T1 — npm run test:e2e chạy được trên clone sạch. playwright.config.ts:24 chạy prisma db push --force-reset: Prisma 7 chặn cờ này khi agent AI gọi, giống lỗi đã sửa ở vitest.global-setup.ts (#75). Làm theo cùng cách: xóa đúng file prisma/e2e.db (và -wal/-shm/-journal), rồi db push không cờ. README ghi thêm npx playwright install chromium.
+> Clone mới: npm ci → npx playwright install chromium → npm run test:e2e → 9/9 pass; dán output.
+
+### Đã tự kiểm chứng
+
+- Load `systematic-debugging` + `verification-before-completion`; fetch `origin/main` (`29c5942`); tạo branch `fix/e2e-clean-clone`.
+- **Phase 1 reproduce:** chạy `npm run test:e2e` trước sửa → exit 1, webServer báo `Prisma Migrate detected that it was invoked by OpenCode` / `As an AI agent, you are forbidden from performing this action`. Nguyên nhân đúng như mô tả: cờ `--force-reset` ở `playwright.config.ts:24`.
+- **Phase 2 reference:** đọc toàn bộ `vitest.global-setup.ts` (fix #75) + `e2e/database.ts` + `playwright.config.ts` + README mục Kiểm thử.
+- **Phase 4 fix:** thêm `e2e/reset-database.ts` — copy đúng pattern #75: kiểm tra schema tồn tại, `E2E_DATABASE_URL` phải là `file:` và resolve đúng `prisma/e2e.db` (nếu lệch thì throw, không xoá nhầm `dev.db`), xoá file + `-wal`/`-shm`/`-journal` (chỉ file thường), rồi `npx prisma db push` + `db seed` **không cờ** với `DATABASE_URL` tuyệt đối. `playwright.config.ts` gọi `npx tsx e2e/reset-database.ts && npm run build && npm run start ...`. README mục 6 ghi rõ chuỗi clone mới `npm ci → npx playwright install chromium → npm run test:e2e`.
+- Lần chạy local sau fix: webServer khởi động được; 9 test đỏ chỉ vì thiếu Chromium → đã chạy `npx playwright install chromium` → 9/9 pass.
+- **Clone sạch thật** (`git clone` branch này → `npm ci` → `npx playwright install chromium` → `npm run test:e2e`): 3 lệnh đầu exit 0, e2e exit 0, **9 passed (1.5m)**. Output đầy đủ đã dán vào PR.
+- Bộ lệnh mục Testing (`lint/typecheck/test/format:check/build`) sau cùng đều exit 0.
+
+### AI sai ở đâu
+
+- **Chạy local 9/9 xong tưởng xong:** clone sạch lại fail 3/9 ở `signIn` với `AUTH_SECRET is not configured` — vì máy dev có `.env` (gitignored) còn clone thì không. Phải thêm `AUTH_SECRET` test-only vào `webServer.env` của Playwright; E2E không được phụ thuộc secret của máy cá nhân. Đã sửa, commit --amend, rồi chạy lại clone sạch.
+- **Giả định README đã đủ chromium:** README đã có dòng `npx playwright install chromium` từ trước, nhưng nằm rời rạc ở cuối mục 6. Đã viết lại thành chuỗi lệnh clone mới rõ ràng thay vì chỉ thêm một dòng trùng.
+- **Script tạm gây format:check đỏ** ở các đợt trước: lần này capture output bằng file trong temp, không tạo file trong repo.
+
+### Hạn chế
+
+- Cảnh báo `Next.js ignored package-lock.json ... outside the current Git repository` xuất hiện vì clone vào thư mục temp ngoài repo; không ảnh hưởng 9/9. Không đổi `turbopack.root` chỉ để dọn cảnh báo này.
+- Đúng như phần mô tả, E2E cho upload / xoá ảnh / popover xác nhận / toast tiến độ (đợt 3–4) **vẫn chưa có**; #87 dùng script chạy tay không commit. T1 chỉ giải quyết việc chạy được 9 test hiện có trên clone sạch; các luồng đó cần PR E2E riêng.
+- Không đụng `prisma/dev.db`; script chỉ xoá `prisma/e2e.db` đã kiểm tra đường dẫn. Không tạo dữ liệu production.
+
+**So sánh Figma:** không áp dụng.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
