@@ -254,7 +254,7 @@ Qua đối chiếu ngày 05/11/2026, các nội dung sau xuất hiện trên web
 | Chủ dự án / đơn vị vận hành ANT JEWELRY | Người quyết định phạm vi, phê duyệt yêu cầu và đóng các OI | Phạm vi và quyền hạn Admin/Staff |
 | Customer | Người dùng cuối của phân hệ công khai | Tìm hiểu sản phẩm và liên hệ trực tiếp với cửa hàng |
 | Admin | Người dùng nội bộ quản lý hệ thống | Kiểm soát nội dung, tài khoản, quyền |
-| Staff | Người dùng nội bộ vận hành | Xem sản phẩm (chỉ đọc) và quản lý Blog |
+| Staff | Người dùng nội bộ vận hành | Xem/sửa/ẩn sản phẩm (không giá, không tạo/xóa), quản lý ảnh/danh mục/Blog/hero slide |
 | Nhóm BA, phát triển, kiểm thử | Xây dựng và nghiệm thu hệ thống | Yêu cầu rõ ràng, kiểm thử được, không mâu thuẫn |
 | Dịch vụ lưu trữ hình ảnh | Thành phần bên ngoài, mới ở mức đề xuất (SAD mục 4.1) | Không được mô hình hóa như Actor |
  
@@ -266,7 +266,7 @@ SAD xác định **3 actor**: Customer, Admin, Staff. **SAD không có vai trò 
 |---|---|---|---|---|
 | **Customer** | Người truy cập website để xem thông tin sản phẩm và liên hệ trực tiếp | Xem sản phẩm, danh mục, Blog, số điện thoại và liên kết Facebook, Instagram | Truy cập công khai, không cần tài khoản. Không tạo đơn hàng, không thanh toán | Đã xác định |
 | **Admin** | Quản trị viên, quản lý và kiểm soát hoạt động hệ thống | Quản lý sản phẩm, danh mục, Blog, hero slide, Settings và người dùng | Toàn quyền trong khu vực quản trị | Vai trò và ma trận quyền đã chốt (mục 3.3) |
-| **Staff** | Nhân viên tham gia vận hành và hỗ trợ website | Xem sản phẩm (chỉ đọc, kể cả giá); tạo/sửa/xuất bản bài viết Blog | Chỉ quyền xem sản phẩm và quản lý Blog; không mặc định có cùng quyền với Admin | Vai trò và ma trận quyền đã chốt (mục 3.3) |
+| **Staff** | Nhân viên tham gia vận hành và hỗ trợ website | Xem/sửa/ẩn sản phẩm (giá chỉ đọc); tạo/sửa/xuất bản bài viết Blog; quản lý ảnh, danh mục, hero slide | Không tạo/xóa sản phẩm, không đổi giá, không vào Settings/Users; không mặc định có cùng quyền với Admin | Vai trò và ma trận quyền đã chốt (mục 3.3, `docs/PERMISSIONS.md`) |
 
 ### 3.3. Ma trận quyền (đã chốt)
 
@@ -862,7 +862,7 @@ Tài liệu còn 16 use case; các mã và tên còn lại được giữ nguyê
 | UC-07 | Xem chi tiết Blog | Customer | FR-011 | Đã quan sát | Có |
 | UC-08 | Xem thông tin liên hệ | Customer | FR-003 | Đã quan sát | Chưa có (Sơ bộ) |
 | UC-10 | Đăng nhập / Đăng xuất | Admin, Staff | FR-033, FR-034 | TBC | Có |
-| UC-11 | Quản lý sản phẩm | Admin (quản lý); Staff (chỉ xem) | FR-020 đến FR-024 | TBC | Có |
+| UC-11 | Quản lý sản phẩm | Admin (quản lý); Staff (xem/sửa/ẩn, không giá/tạo/xóa) | FR-020 đến FR-024 | TBC | Có |
 | UC-12 | Quản lý danh mục | Admin | FR-027 | TBC | Chưa có (Sơ bộ) |
 | UC-13 | Quản lý hình ảnh sản phẩm | Admin | FR-025 | TBC | Chưa có (Sơ bộ) |
 | UC-14 | Quản lý giá sản phẩm | Admin | FR-026 | TBC | Chưa có (Sơ bộ) |
@@ -974,7 +974,7 @@ Tài liệu còn 16 use case; các mã và tên còn lại được giữ nguyê
  
 | Thuộc tính | Nội dung |
 |---|---|
-| Primary Actor | Admin (quản lý); Staff (chỉ xem sản phẩm) |
+| Primary Actor | Admin (quản lý); Staff (xem/sửa/ẩn sản phẩm, không giá/tạo/xóa) |
 | Điều kiện tiên quyết | Đã đăng nhập (UC-10) và có quyền xem/quản lý sản phẩm. |
 | Main Success Scenario | 1. Người dùng xem danh sách sản phẩm quản trị (FR-020).<br>2. Người dùng chọn thao tác: thêm (FR-022), xem chi tiết (FR-021), cập nhật (FR-023) hoặc xóa/ẩn (FR-024).<br>3. Với thêm/cập nhật: người dùng nhập hoặc chỉnh sửa thông tin sản phẩm (name, brand, type, short_description), hình ảnh (UC-13) và giá (UC-14).<br>4. Hệ thống kiểm tra và lưu dữ liệu.<br>5. Hệ thống thông báo kết quả. |
 | Alternative Flows | 1a. Người dùng không có quyền: hệ thống từ chối thao tác (NFR-008).<br>4a. Dữ liệu không hợp lệ: hệ thống thông báo lỗi; quy tắc kiểm tra TBC. |
@@ -1315,7 +1315,7 @@ Không có endpoint cho giỏ hàng, đặt hàng, thanh toán hoặc thiết k�
  
 | Dịch vụ | Mục đích | Phạm vi | Trạng thái |
 |---|---|---|---|
-| Lưu trữ hình ảnh local (filesystem) | Lưu ảnh sản phẩm; ảnh Blog chưa xác định | FR-025, FR-032 | Đã triển khai cho ảnh sản phẩm; Blog còn TBC |
+| Lưu trữ ảnh DB-backed (`ProductImageBlob`) | Lưu bytes ảnh sản phẩm, phục vụ qua `/uploads/[...path]`; ảnh Blog dùng URL, chưa xác định | FR-025, FR-032 | Đã triển khai cho ảnh sản phẩm (xem `docs/DEPLOY.md`); filesystem chỉ đọc legacy; Blog còn TBC |
 | Facebook, Instagram | Chỉ là liên kết ngoài từ khối liên hệ | FR-003 | Đã quan sát |
 | Cổng thanh toán, đơn vị vận chuyển | Không tích hợp | Ngoài phạm vi (BR-004) | Ngoài phạm vi |
  

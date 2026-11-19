@@ -232,9 +232,9 @@ If `next build` fails during page data collection with:
 
 - **Storefront:** https://ant-jewelry.vercel.app/ (HTTP 200 at time of check, 2026-11-17; re-checked 2026-11-19 by the read-only smoke suite)
 - **Admin:** https://ant-jewelry.vercel.app/admin (redirects to login as expected for unauthenticated access)
-- **Lighthouse production:** lượt 2026-11-18 (3 lần, bỏ warm-up): Home median Performance 95 / A11y 96 / SEO 100; product 97 / 100 / 100. **Đo lại 2026-11-20** sau PR #108–#112: Home 74 (30–85), product 86 (78–87), blog 74 (73–76); A11y/SEO không đổi. Lần đo mới có một lần Home TBT 3.690 ms / CLS 0,516 nên dao động lớn, chưa đủ để kết luận regression — xem phân tích và JSON trong `docs/PERFORMANCE.md` mục "Đo lại production 2026-11-20".
+- **Lighthouse production:** lượt 2026-11-18 (3 lần, bỏ warm-up): Home median Performance 95 / A11y 96 / SEO 100; product 97 / 100 / 100. Đo lại 2026-11-20 lượt 1 (v2): Home 74 (30–85), product 86, blog 74 — có một lần Home TBT 3.690 ms / CLS 0,516 nên **loại làm baseline**. **Đo lại 2026-11-20 lượt 2 (v3, máy yên tĩnh):** Home **94** (89–94), product **94** (94–95), blog **93** (92–93); TBT 170–290 ms, CLS 0 — cả 3 trang đạt mục tiêu, xác nhận lượt v2 là nhiễu. JSON và bảng chi tiết trong `docs/PERFORMANCE.md` mục "Đo lại production 2026-11-20 — lượt 2".
 - **Smoke production 2026-11-19:** `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` → **8/8 pass**: 6 màn public trả 200, đúng 1 `h1`, canonical đúng; ảnh `/uploads/` trên `/p/ivy-tennis-bracelet` có ETag và < 400 KB; `robots.txt` / `sitemap.xml` đúng. Chạy lệnh này sau mỗi lần deploy và dán output vào PR production.
-- **A11y / mobile 2026-11-19:** E2E local 27 test (desktop + Pixel 7), trong đó axe có **0 lỗi serious/critical** trên 6 màn. `npm run test:screenshots` tạo 6 ảnh 1920px đã dùng cho bảng R6.3 ở trên.
+- **A11y / mobile 2026-11-19 → 2026-11-20:** E2E local 30 test (18 desktop + 12 Pixel 7), trong đó axe có **0 lỗi serious/critical** trên 6 màn. `npm run test:screenshots` tạo 6 ảnh 1920px đã dùng cho bảng R6.3 ở trên.
 
 ## Production readiness checklist (kèm bằng chứng)
 
@@ -247,7 +247,7 @@ If `next build` fails during page data collection with:
 | Script E1/B6 backfill ảnh legacy đã chạy | [ ] | Bắt buộc nếu DB có blob cũ: chạy `node scripts/reencode-legacy-uploads.mjs --dry-run` rồi lệnh thật với `DATABASE_URL` direct; dán output số blob + ETag mới. Cho đến khi chạy, các blob có `etag = NULL` vẫn phải đọc bytes để trả 304 (đúng nhưng chậm hơn). Không nằm trong `prisma migrate deploy` vì cần sharp + cập nhật URL `?v=2` |
 | ADMIN đầu tiên bằng email thật | [ ] | Cần ảnh trang admin sau khi đăng nhập bằng tài khoản ADMIN vừa tạo (`db:create-admin:production`) |
 | 6 màn R6.3 mở được + ảnh đối chiếu | [x] | Bảng đối chiếu ở trên: 6 ảnh 1920px từ `npm run test:screenshots` (2026-11-19); smoke production 8/8 pass cùng ngày; admin/login vẫn có ảnh riêng nhưng không tính vào 6 màn |
-| E2E + a11y + smoke chạy được trên clone sạch / CI | [x] | `npm run test:e2e` 27 pass (desktop + Pixel 7, axe 0 serious/critical); job `e2e` trong `.github/workflows/npm-ci.yml` upload report/trace khi fail; smoke production 8/8 pass |
+| E2E + a11y + smoke chạy được trên clone sạch / CI | [x] | `npm run test:e2e` 30 pass (18 desktop + 12 Pixel 7, axe 0 serious/critical); job `e2e` trong `.github/workflows/npm-ci.yml` upload report/trace khi fail; smoke production 8/8 pass |
 | Upload ảnh qua redeploy vẫn còn | [ ] | Cần ảnh `/p/<slug>` có ảnh `/uploads/...` **trên production sau redeploy**. Bằng chứng local (production build): [`docs/a1-screenshots/product-after-upload.png`](a1-screenshots/product-after-upload.png), upload ~4 MB + batch 3 ảnh vào DB rồi restart `next start` → ảnh vẫn 200 |
 | Backup/restore đã test | [ ] | Quy trình/pg_dump được mô tả ở mục Migration/backup; chưa có bản ghi test restore ngoài production |
 
