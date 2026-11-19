@@ -1,4 +1,38 @@
-## 2026-11-19 21:43:14 +07:00 - Cập nhật docs theo codebase mới + ảnh 1920px
+## 2026-11-19 22:02:10 +07:00 - Kiểm tra toàn diện codebase + production (superpower)
+
+### Prompt nguyên văn đã dùng
+
+> use superpower tool to carefully check code base and production
+> use admin account i give you to test
+>
+> (account supplied in chat: ADMIN `khanhtungdaoduy2410@gmail.com`; mật khẩu thử đầu sai, user gửi lại mật khẩu đúng. Không lưu mật khẩu vào repo.)
+
+### Đã tự kiểm chứng
+
+- Load `requesting-code-review` + `verification-before-completion`; fetch `origin/main` (`6679a0e`, sau PR #108), tạo branch `review/full-check-admin`.
+- Dispatch 3 reviewer độc lập (core/auth+upload, admin UI+E2E+CI, docs/process), read-only, không cho biết kết quả lẫn nhau. **Đọc lại mã thật** mọi finding trước khi ghi quyết định.
+- **Production (Playwright, tài khoản ADMIN do user cung cấp):** login thành công sau khi dùng mật khẩu đúng; 7 màn admin trả 200 với h1 đúng (Dashboard/Products/Categories/Blog/Hero Slides/Settings/Users); price input không readonly (ADMIN); dialog định danh đóng bằng Escape; `/admin/blog` confirm xóa mở với focus ở Cancel, style danger, Escape đóng, **0** `window.confirm`; logout về login; **0** console error / HTTP 5xx. Chi tiết output trong `docs/reviews/2026-11-19-requesting-code-review-final.md`.
+- **Codebase:** xác nhận trên code thật: nút Ẩn không confirm (`product-management.tsx:183-190`); EDITOR permissions rộng hơn `REQUIREMENTS.md:279-286`; `AI_LOG.md` có 52/137 heading trùng, 1.735 dòng lặp; E1/B6 backfill vẫn là bước tay.
+- Bộ lệnh mục V chạy lại: lint/typecheck/test (64 files / 289 tests)/format:check/build đều exit 0.
+- Ghi 11 findings kèm **Accepted/Rejected** và PR/nhánh tiếp theo vào file review mới (không ghi đè file S1).
+
+### AI sai ở đâu
+
+- **Dùng mật khẩu đầu tiên user gửi (17 chữ số) → production trả "Invalid email or password."** Không đoán sửa trong code hay DB; báo lại và chờ user gửi mật khẩu đúng (16 chữ số). Lần thử đầu để lại 2 bản ghi `LoginAttempt` trên production (log hệ thống, không phải dữ liệu nội dung).
+- **Định tự sửa quyền EDITOR theo REQUIREMENTS.md:** reviewer chấm Critical, nhưng lịch sử #41/S1 đã chọn mô hình rộng hơn và chỉ mới bác riêng phần upload. Đã ghi là **cần quyết định chủ sở hữu**, không tự đổi code — đúng tinh thần "không nhận bừa gợi ý AI".
+- **Reviewer admin UI chấm "Critical" cho lỗi Ẩn không confirm:** mức độ Acceptance/Critical hợp lý vì AC-054 nói "100%", nhưng đã ghi rõ đây là lỗi acceptance chưa sửa, không tự nhận là đã xong.
+- **Reviewer docs chấm screenshot có thể trống ảnh dưới fold:** chưa soi trực quan từng file nên ghi "cần kiểm chứng thêm", không khẳng định chắc chắn.
+
+### Hạn chế
+
+- Không có credentials DB production → không kiểm tra migration status, nội dung dữ liệu, hay dọn dữ liệu test; không tick các ô `[ ]` trong DEPLOY.md.
+- Không sửa code/dữ liệu production trong lượt này; chỉ review + ghi quyết định. Không có file Figma gốc để đối chiếu pixel.
+
+**So sánh Figma:** không đổi; 6 ảnh 1920px đã có trong PR #108.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
