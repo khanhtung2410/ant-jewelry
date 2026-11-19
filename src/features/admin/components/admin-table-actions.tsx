@@ -6,7 +6,8 @@ const actionClassName =
 const actionVariantClassNames = {
   default:
     'border-[var(--line)] hover:border-[var(--underline-color)] hover:text-[var(--underline-color)]',
-  danger: 'border-red-200 text-red-700 hover:border-red-700',
+  danger:
+    'border-[var(--danger-border)] text-[var(--danger-text)] hover:border-[var(--danger-text)]',
 };
 
 export function AdminTableActions({

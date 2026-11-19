@@ -9,6 +9,13 @@ import { resizeToStoredWebp } from './product-image-processing.mjs';
 
 const etag = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
+/** Add the CDN-bust version without breaking an existing query string. */
+export function withVersionQuery(url) {
+  const [path, query = ''] = url.split('?');
+  if (query.split('&').some((part) => part.split('=')[0] === 'v')) return url;
+  return `${path}?${query ? `${query}&` : ''}v=2`;
+}
+
 /** E1: re-encode an old blob with the same helper used by new uploads. */
 export async function reencodeLegacyBlob(bytes) {
   const resized = await resizeToStoredWebp(bytes);
@@ -56,7 +63,7 @@ export async function migrateLegacyBlobs(prisma, { dryRun = false, log = console
       for (const row of rows) {
         await prisma.productImage.update({
           where: { id: row.id },
-          data: { url: row.url.includes('?v=') ? row.url : `${row.url}?v=2` },
+          data: { url: withVersionQuery(row.url) },
         });
       }
     }

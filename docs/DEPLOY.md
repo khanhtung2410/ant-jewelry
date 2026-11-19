@@ -232,7 +232,7 @@ If `next build` fails during page data collection with:
 
 - **Storefront:** https://ant-jewelry.vercel.app/ (HTTP 200 at time of check, 2026-11-17; re-checked 2026-11-19 by the read-only smoke suite)
 - **Admin:** https://ant-jewelry.vercel.app/admin (redirects to login as expected for unauthenticated access)
-- **Lighthouse (production, 2026-11-18, 3 recorded runs after a discarded warm-up, mobile):** Home median Performance 95 / Accessibility 96 / SEO 100; product `/p/aurora-band` median Performance 97 / Accessibility 100 / SEO 100. Raw scores and JSON reports for all three runs are linked in `docs/PERFORMANCE.md`. Chưa đo lại Lighthouse sau các PR #98–#108; các số này là của lượt đo cũ.
+- **Lighthouse production:** lượt 2026-11-18 (3 lần, bỏ warm-up): Home median Performance 95 / A11y 96 / SEO 100; product 97 / 100 / 100. **Đo lại 2026-11-20** sau PR #108–#112: Home 74 (30–85), product 86 (78–87), blog 74 (73–76); A11y/SEO không đổi. Lần đo mới có một lần Home TBT 3.690 ms / CLS 0,516 nên dao động lớn, chưa đủ để kết luận regression — xem phân tích và JSON trong `docs/PERFORMANCE.md` mục "Đo lại production 2026-11-20".
 - **Smoke production 2026-11-19:** `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` → **8/8 pass**: 6 màn public trả 200, đúng 1 `h1`, canonical đúng; ảnh `/uploads/` trên `/p/ivy-tennis-bracelet` có ETag và < 400 KB; `robots.txt` / `sitemap.xml` đúng. Chạy lệnh này sau mỗi lần deploy và dán output vào PR production.
 - **A11y / mobile 2026-11-19:** E2E local 27 test (desktop + Pixel 7), trong đó axe có **0 lỗi serious/critical** trên 6 màn. `npm run test:screenshots` tạo 6 ảnh 1920px đã dùng cho bảng R6.3 ở trên.
 
@@ -244,6 +244,7 @@ If `next build` fails during page data collection with:
 | Vercel + PostgreSQL provisioned, env vars đúng, không lọt secret | [ ] | Cần ảnh/xuất danh sách biến trong Vercel dashboard (đã che giá trị). Repo chỉ có `.env.example`; production render được dữ liệu → gián tiếp chứng tỏ `DATABASE_URL` hoạt động |
 | `SITE_URL` đúng origin production | [x] | `curl https://ant-jewelry.vercel.app/` có `<link rel="canonical" href="https://ant-jewelry.vercel.app"/>` (6 lần xuất hiện origin trong HTML) |
 | Migration đã áp dụng, status sạch | [ ] | Cần output thật của `npm run db:migrate:status:production` (chạy với `DATABASE_URL` direct). Không thể tự lấy từ môi trường agent |
+| Script E1/B6 backfill ảnh legacy đã chạy | [ ] | Bắt buộc nếu DB có blob cũ: chạy `node scripts/reencode-legacy-uploads.mjs --dry-run` rồi lệnh thật với `DATABASE_URL` direct; dán output số blob + ETag mới. Cho đến khi chạy, các blob có `etag = NULL` vẫn phải đọc bytes để trả 304 (đúng nhưng chậm hơn). Không nằm trong `prisma migrate deploy` vì cần sharp + cập nhật URL `?v=2` |
 | ADMIN đầu tiên bằng email thật | [ ] | Cần ảnh trang admin sau khi đăng nhập bằng tài khoản ADMIN vừa tạo (`db:create-admin:production`) |
 | 6 màn R6.3 mở được + ảnh đối chiếu | [x] | Bảng đối chiếu ở trên: 6 ảnh 1920px từ `npm run test:screenshots` (2026-11-19); smoke production 8/8 pass cùng ngày; admin/login vẫn có ảnh riêng nhưng không tính vào 6 màn |
 | E2E + a11y + smoke chạy được trên clone sạch / CI | [x] | `npm run test:e2e` 27 pass (desktop + Pixel 7, axe 0 serious/critical); job `e2e` trong `.github/workflows/npm-ci.yml` upload report/trace khi fail; smoke production 8/8 pass |

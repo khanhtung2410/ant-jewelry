@@ -233,6 +233,35 @@ test(
   },
 );
 
+test('delete confirmation traps focus and Escape cancels without deleting', async ({ page }) => {
+  const nativeDialogs: string[] = [];
+  page.on('dialog', (dialog) => {
+    nativeDialogs.push(dialog.message());
+    void dialog.dismiss();
+  });
+  await signIn(page, 'admin@antjewelry.local', 'Admin@123');
+  await page.goto('/admin/blog');
+
+  const deleteButton = page.getByRole('button', { name: 'Delete', exact: true }).first();
+  await expect(deleteButton).toBeVisible();
+  await deleteButton.click();
+
+  const dialog = page.getByRole('dialog', { name: 'CONFIRM ACTION' });
+  await expect(dialog).toBeVisible();
+  const cancel = dialog.getByRole('button', { name: 'Cancel' });
+  const confirm = dialog.getByRole('button', { name: 'Delete' });
+  await expect(cancel).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(confirm).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(cancel).toBeFocused();
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toBeHidden();
+  await expect(deleteButton, 'record still exists after Escape').toBeVisible();
+  expect(nativeDialogs, 'no window.confirm').toEqual([]);
+});
+
 test('hiding a product requires confirmation and cancel keeps it visible', async ({ page }) => {
   await signIn(page, 'admin@antjewelry.local', 'Admin@123');
   await page.goto('/admin/products?search=Aurora');

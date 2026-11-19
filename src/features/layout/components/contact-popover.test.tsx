@@ -52,7 +52,7 @@ describe('ContactPopover', () => {
     expect(html).toContain('href="tel:0900000000"');
     expect(html).toContain('0900 000 000');
     expect(html).toContain('ANT JEWELRY');
-    expect(html).toContain('hover:border-red-800');
+    expect(html).toContain('hover:border-[var(--danger-strong)]');
     expect(html).toContain('rounded-3xl');
   });
 });

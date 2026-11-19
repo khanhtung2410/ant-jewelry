@@ -1,4 +1,37 @@
-## 2026-11-20 00:16:37 +07:00 - Sửa finding #5: ảnh screenshot chờ lazy load
+## 2026-11-20 00:54:28 +07:00 - Sửa finding #6/#7/#8 + đo lại Lighthouse production
+
+### Prompt nguyên văn đã dùng
+
+> read docs/reviews/2026-11-19-requesting-code-review-final.md
+> fix #6,7,8 and reevaluate light house performance in prod
+
+### Đã tự kiểm chứng
+
+- Fetch `origin/main` (`1d32010`, sau PR #112), tạo branch `fix/review-6-7-8-and-lighthouse`; đọc lại file review + toàn bộ file liên quan trước khi sửa.
+- **#6 test gap:** cài `jsdom`, `@testing-library/react`, `@testing-library/user-event`; thêm 4 test jsdom cho `ConfirmPopover` (focus ban đầu, Tab wrap, Escape/backdrop/Cancel/Confirm, busy, không giật focus khi re-render) + 1 E2E desktop (focus → Tab → wrap → Escape → bản ghi còn, 0 `window.confirm`). **Chứng minh test bắt regression:** xóa tạm dòng `cancelRef.current?.focus()` → 1 test đỏ; khôi phục → xanh.
+- **#7:** thêm dòng checklist "Script E1/B6 backfill ảnh legacy đã chạy" (mặc định `[ ]`) vào `docs/DEPLOY.md` kèm lệnh dry-run/lệnh thật và lý do không đưa vào migration SQL.
+- **#8:** (a) `??` → `||` cho content-type 304 + test (RED trước: expected `application/octet-stream`, got `''`); (b) export `withVersionQuery()` trong script migration, xử lý URL đã có query + test (RED trước: `not a function`); (c) thêm token `--danger-*`/`--success-text`, thay palette classes trong confirm-popover/admin-table-actions/product-image-management/close-button/arrow-button và cập nhật test assertions; (d) tách effect initial-focus khỏi keydown, callback qua `onCancelRef` — có test re-render (RED trước khi sửa).
+- **E2E:** full suite **30 passed**. Lần đầu test confirm E2E đỏ do assert đếm số `row` bị nhiễu khi chạy cả suite; đổi sang assert nút Delete của bản ghi vẫn còn → xanh.
+- **Lighthouse production 2026-11-20:** 12 lần chạy (1 warmup + 3 lưu × 3 trang), Lighthouse 13.6.0, Chrome Playwright, mobile + simulate throttling; JSON `prod-*-v2-{1,2,3}.json`. Performance median: Home **74** (30–85), Product **86** (78–87), Blog **74** (73–76); A11y/SEO ổn định 96/98/100. Home có 1 lần TBT 3.690 ms & CLS 0,516 (2 lần kia 410/1.000 ms, CLS 0) → **nhiễu máy/mạng, chưa kết luận regression**; đã ghi rõ trong `PERFORMANCE.md` và `DEPLOY.md`, không tự ghi "đạt".
+
+### AI sai ở đâu
+
+- **Ban đầu dùng `fireEvent.keyDown` để test Tab:** jsdom không thực hiện di chuyển focus mặc định của trình duyệt → test đỏ giả. Đổi sang `userEvent.tab()` thì đúng; đây là lỗi công cụ test, không phải lỗi component.
+- **Quên `cleanup()` giữa các test jsdom:** dẫn tới "found multiple elements Cancel/Delete". Đã thêm `afterEach(cleanup)`.
+- **Assert E2E đếm số row:** pass khi chạy riêng, fail trong full suite do dữ liệu thay đổi bởi luồng khác; đổi sang assert bản ghi mục tiêu vẫn tồn tại. Không tin vào kết quả lượt chạy riêng.
+- **Định kết luận "Performance suy giảm sau PR #108–#112":** dữ liệu 3 lần chạy có độ phân tán quá lớn (Home 30–85, CLS 0→0,516); đã ghi là cần đo lại trên máy yên tĩnh/CI thay vì báo regression.
+
+### Hạn chế
+
+- Lighthouse chạy trên máy dev có Chrome của người dùng mở; kết quả Performance chưa đại diện cho môi trường yên tĩnh. Không sửa code hiệu năng khi chưa có bằng chứng regression.
+- Không chạy migration E1/B6 trên production (không có credentials DB); checklist vẫn `[ ]`.
+- Không đổi logic permission hay dữ liệu production.
+
+**So sánh Figma:** token `--danger-*` chỉ đổi giá trị màu danger bằng biến tương đương, không đổi bố cục.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

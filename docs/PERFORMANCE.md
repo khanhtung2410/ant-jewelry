@@ -68,6 +68,27 @@ Các thay đổi giữ nguyên hành vi UI (carousel vẫn cuộn/điều hướ
 
 `SITE_URL` phải trỏ tới origin production chính thức khi deploy (xem `.env.example`, `docs/DEPLOY.md`).
 
+## Đo lại production 2026-11-20 (sau PR #108–#112)
+
+Chạy Lighthouse 13.6.0 với Chrome của Playwright, mobile + simulated throttling, **bỏ 1 lần khởi động rồi lưu 3 lần** cho mỗi trang (cùng cách với lượt 2026-11-18). JSON gốc: `prod-{home,product,blog}-v2-{1,2,3}.json` trong [`docs/lighthouse-reports/`](lighthouse-reports/).
+
+| Trang | Performance (median; range) | Accessibility | SEO | FCP / LCP / TBT median |
+|---|---:|---:|---:|---|
+| Home (`/`) | **74** (30–85) | 96 | 100 | 1.0 s / 3.0 s / 1.000 ms |
+| Sản phẩm (`/p/aurora-band`) | **86** (78–87) | 100 | 100 | 1.0 s / 2.8 s / 410 ms |
+| Blog chi tiết | **74** (73–76) | 98 | 100 | 1.0 s / 3.0 s / 950 ms |
+
+**Đọc kết quả thận trọng:** số Accessibility/SEO ổn định và khớp lượt cũ, nhưng Performance dao động lớn — Home có một lần TBT **3.690 ms** và CLS **0,516** trong khi 2 lần kia TBT 410/1.000 ms và CLS 0. Lượt 2026-11-18 ghi TBT Home ~150 ms. Đây là dấu hiệu **nhiễu từ máy chạy đo/mạng lúc đó**, chưa đủ bằng chứng để kết luận code bị chậm lại sau #108–#112. Cần đo lại trên máy/CI yên tĩnh (hoặc thêm nhiều lần lặp) trước khi coi 74 là mức基线 mới. Không tự ghi "đạt" cho Home ở lượt này.
+
+### Output thô (trích)
+
+```text
+home warmup: perf=49 accessibility=96 seo=100
+home v2-1:   perf=85 ...   home v2-2: perf=30 ...   home v2-3: perf=74 ...
+product v2-1: perf=86 ...  product v2-2: perf=78 ... product v2-3: perf=87 ...
+blog v2-1: perf=74 ...     blog v2-2: perf=73 ...    blog v2-3: perf=76 ...
+```
+
 ## Kiểm chứng tự động mới (2026-11-19, code hiện tại)
 
 Các số Lighthouse ở trên là của lượt đo 2026-11-18; **không có lần đo Lighthouse mới** sau các PR #98–#108 nên không được ghi là đã cải thiện. Những kiểm chứng mới có output thực:

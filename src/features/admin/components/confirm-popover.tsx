@@ -28,13 +28,23 @@ export function ConfirmPopover({
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const onCancelRef = useRef(onCancel);
 
   useEffect(() => {
+    onCancelRef.current = onCancel;
+  }, [onCancel]);
+
+  // Initial focus is one-shot; re-running it on every parent render would yank
+  // focus from Confirm back to Cancel.
+  useEffect(() => {
     cancelRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         event.preventDefault();
-        onCancel();
+        onCancelRef.current();
         return;
       }
       if (event.key !== 'Tab') return;
@@ -57,7 +67,7 @@ export function ConfirmPopover({
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onCancel]);
+  }, []);
 
   return (
     <div
@@ -95,7 +105,7 @@ export function ConfirmPopover({
             disabled={busy}
             className={`rounded-md px-3 py-2 text-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
               danger
-                ? 'border border-red-200 text-red-700 hover:border-red-700 hover:bg-red-50'
+                ? 'border border-[var(--danger-border)] text-[var(--danger-text)] hover:border-[var(--danger-text)] hover:bg-[var(--danger-bg)]'
                 : 'bg-[var(--underline-color)] text-background hover:opacity-95'
             }`}
           >
