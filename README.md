@@ -25,7 +25,7 @@ Actions cho mutation, Route Handlers cho upload ảnh sản phẩm. Không có b
 
 ## 2. Chạy local từ clone mới
 
-Yêu cầu: **Node.js 22** (xem `engines.node` và `packageManager` trong `package.json`), **npm** và **Git**.
+Yêu cầu: **Node.js 22** (xem `engines.node` trong `package.json`), **npm 10 trở lên** (đã kiểm chứng cả npm 12) và **Git**. `packageManager` ghi npm 10.9.9 để corepack dùng phiên bản thống nhất; nếu dùng trực tiếp npm 12 thì vẫn chạy được vì `allowScripts` đã được khai báo trong `package.json` cho các dependency cần install script (`better-sqlite3`, `esbuild`, `prisma`, `@prisma/engines`). Khi nâng cấp dependency, chạy `npm install-scripts ls` để xem script nào cần phê duyệt mới.
 
 ```bash
 git clone https://github.com/khanhtung2410/ant-jewelry.git
