@@ -83,3 +83,13 @@ Không tự deploy cấu hình; kết luận dựa trên request HTTP read-only 
 | F5 — script migrate không atomic (không bắt buộc) | `scripts/reencode-legacy-uploads.ts`: xuất `LEGACY_MIGRATION_BATCH_SIZE = 50`, đọc theo lô có cursor `storageKey`, gộp blob update + mọi URL update vào một `prisma.$transaction`. TDD: test RED (transaction chưa được gọi, `take` chưa có) rồi GREEN 7/7. `DEPLOY.md` ghi rõ không còn cửa sổ crash giữa hai bước. | **Accepted (fixed)** |
 
 Không đổi schema; F5 không cần migration bổ sung. Hạn chế: F4 chỉ sửa tài liệu — không ngăn được người viết sau chép số sang file khác, trừ quy ước được ghi rõ.
+
+## Cập nhật T2 (2026-11-20, branch `test/e2e-upload-coverage`)
+
+| Hạng mục | Bằng chứng | Quyết định |
+|---|---|---|
+| `e2e/product-upload.spec.ts` (mới) | Test 1: ADMIN đăng nhập, mở tab Images, `setInputFiles` 1 PNG nhiễu ~3,8 MB (tạo bằng sharp) + 2 PNG nhỏ; MutationObserver thu toast "Uploading 1/3", "2/3", "3/3"; đúng 3 POST `/images` trả 201; trang `/p/eclipse-pave-band` chứa 3 URL `/uploads/...webp`; mỗi ảnh GET 200, `image/webp`, < 400 KB, có ETag, `If-None-Match` → 304. Dọn trong `finally` bằng Prisma/E2E DB. | **Accepted (fixed)** |
+| Test 2 | File > 4 MB (buffer PNG giả 4 MB + 1) → `role="alert"` chứa "exceeds the 4 MB limit", không có POST nào được gửi. | **Accepted (fixed)** |
+| Tài liệu | README, `DEPLOY.md`, `PERFORMANCE.md`: 30 → 32 E2E (20 desktop + 12 pixel-7). | **Accepted (fixed)** |
+
+Hai vướng mắc khi chạy: (1) origin check của route so với `request.url` chỉ khớp khi trình duyệt dùng `http://localhost:3100`, không phải `127.0.0.1` — test dùng hostname `localhost` rõ ràng; (2) gallery chỉ render một cửa sổ thumbnail nên assert sự hiện diện của 3 URL trong HTML trang (cả dạng encoded) thay vì chỉ 3 `img src`. Không đổi code production cho route.

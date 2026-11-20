@@ -226,7 +226,7 @@ npm run test:e2e
   ```
 
 - `npm run test:e2e` chạy **2 project**: `desktop-chrome` (9 luồng storefront/admin cũ) và
-  `pixel-7` (`devices['Pixel 7']`, chạy lại các test gắn `@storefront` + `@a11y`). Tổng 30 test (18 desktop + 12 pixel-7).
+  `pixel-7` (`devices['Pixel 7']`, chạy lại các test gắn `@storefront` + `@a11y`). Tổng 32 test (20 desktop + 12 pixel-7). 2 test desktop mới trong `e2e/product-upload.spec.ts` phủ upload ảnh ADMIN và chặn file > 4 MB.
 - `e2e/accessibility.spec.ts` dùng `@axe-core/playwright` để assert **0 lỗi serious/critical**
   trên Home, Category, Product, Blog list, Blog detail và contact popover (quét ở cả 2 project).
 - **Smoke production (chỉ đọc):** chạy sau mỗi lần deploy, thay cho các lệnh `curl` thủ công:
