@@ -12,6 +12,7 @@ Apply these automatically to **every** user request — do not wait to be told:
 6. Capture all check-command output via Node `spawnSync` in UTF-8 (`NO_COLOR=1`), never PowerShell redirection — PowerShell writes UTF-16 here and characters like `✓ ─ │ · —` become mojibake in code blocks.
 7. **Verification before completion** (`verification-before-completion`): before opening a PR and before the final response, re-run the full check set from `docs/CONTRIBUTING.md` (`npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`, `npm run build`) plus a production check where access exists. Record the **full output with exit code**; write "đạt/pass" only when that output is attached. Never claim success from a previous run or from an agent report.
 8. **When creating a PR with `gh`, always give the user the PR link in the final response.**
+9. **No Han/CJK characters in anything you write** — docs files, code/comments/identifiers, PR titles and bodies, or commit messages. Vietnamese and English are used in this project; stray CJK (for example from translation or autocomplete) is a defect. Check changed files before committing: `rg -n '\p{Han}' <changed-files>` must return nothing. Do not rewrite historical verbatim content solely to enforce this rule without asking.
 
 ### Tools — Superpowers for OpenCode
 
@@ -43,6 +44,21 @@ Source of truth: <https://github.com/obra/superpowers/blob/main/docs/README.open
   clear OpenCode's package cache or reinstall the plugin. Migrating to V2 means changing `plugin`
   to `plugins` and removing the old `~/.config/opencode/plugins/superpowers.js` and
   `~/.config/opencode/skills/superpowers` symlinks.
+
+### Figma reference (design source)
+
+URL: <https://www.figma.com/design/tdTs89ynAQUSvUzAEnMhj8/Jewelry-website?node-id=226-469&t=55RAOytzUFHgsR49-0>
+
+Frame-name → page mapping supplied by the project owner:
+
+| Figma frame | Page in this repo |
+|---|---|
+| `blog-1` | Blog detail (`/blog/[slug]`) |
+| `blog-2` | Blog list (`/blog`) |
+| `product-1` | Product detail (`/p/[slug]`) |
+| `product-2` | Product detail with the contact popover open from ORDER NOW (owner wrote "peoduct-2" — typo) |
+
+Use these frames when comparing production screenshots to the design (R6.3 table in `docs/DEPLOY.md`). The Figma file is not stored in the repo, so comparisons are by link/screenshot, not by pixel diff against a committed source.
 
 ### Code review records
 

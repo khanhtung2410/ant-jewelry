@@ -1,4 +1,40 @@
-## 2026-11-20 10:39:55 +07:00 - A3: tắt Preview deploy bằng vercel.json
+## 2026-11-20 10:53:22 +07:00 - Thêm rule ngôn ngữ + Figma vào AGENTS.md
+
+### Prompt nguyên văn đã dùng
+
+> add to agent rules:
+> make sure there are  no chinese character when you write docs file, code, pr or commit
+> add to context figmaa site
+> https://www.figma.com/design/tdTs89ynAQUSvUzAEnMhj8/Jewelry-website?node-id=226-469&t=55RAOytzUFHgsR49-0
+> blog-1: detail blog page
+> blog-2: /blog (blog list) page
+> product-1: detail product site
+> peoduct-2: detail product with popover showing
+
+### Đã tự kiểm chứng
+
+- Fetch `origin/main` (`26e922b`, sau PR #116), tạo branch `docs/agent-rules-figma`; đọc toàn bộ `AGENTS.md` trước khi sửa.
+- Thêm rule số 9 vào Standing working agreement: **không được có ký tự Han/CJK** trong docs, code/comment/identifier, PR title/body hay commit message (dự án dùng tiếng Việt + tiếng Anh); kiểm tra bằng `rg -n '\p{Han}' <changed-files>` trước khi commit; không tự sửa nội dung lịch sử nguyên văn khi chưa hỏi.
+- Thêm mục **Figma reference** vào AGENTS.md: URL do người dùng cung cấp + bảng ánh xạ `blog-1` → Blog detail, `blog-2` → `/blog`, `product-1` → Product detail, `product-2` → Product detail với popover mở từ ORDER NOW. Ghi chú người dùng viết "peoduct-2" (lỗi chính tả) và Figma không có trong repo nên chỉ so bằng link/ảnh, không pixel-diff với file commit.
+- Kiểm tra `rg -n '\p{Han}' AGENTS.md` → không có kết quả; rule tự thỏa mãn.
+- Theo yêu cầu tiếp theo, rà soát toàn repo (trừ `node_modules`, `.next`, artifact test) bằng `rg -n '\p{Han}|\p{Hangul}|\p{Cyrillic}'`: tìm thấy 6 dòng trong `AI_LOG.md`, `docs/PERFORMANCE.md`, `docs/reviews/2026-11-19-superpowers.md`, `docs/reviews/2026-11-20-requesting-code-review.md`. Đã dịch/xóa từng chỗ (ký tự lạ → mô tả bằng tiếng Việt, ký tự Han nghĩa là "baseline" → baseline, ký tự Han nghĩa là "thiết kế" → thiết kế, ký tự Han nghĩa là "đều phải" → đều phải), đồng thời cập nhật finding #12 thành Fixed. Quét lại → 0 kết quả. Không đụng vào prompt nguyên văn khác.
+- Bộ lệnh mục V: lint/typecheck/test (64 files / 295 tests)/format:check/build đều exit 0.
+
+### AI sai ở đâu
+
+- Trước đây từng lọt ký tự lạ (ký tự CJK và Cyrillic) vào docs/AI_LOG do gõ nhầm/autocomplete; rule mới được thêm để ngăn tái diễn. Theo yêu cầu mới, các ký tự đó đã được rà soát và dịch/xóa trong chính PR này, kể cả ở file review lịch sử.
+- Không có Vercel CLI/Figma API trong phiên này nên không tự kiểm tra quyền truy cập link Figma; chỉ ghi nguyên văn URL do người dùng cung cấp.
+
+### Hạn chế
+
+- Rule chỉ áp dụng cho nội dung mới; không quét toàn repo để sửa lịch sử.
+- Không đổi code hay cấu hình deploy.
+
+**So sánh Figma:** chỉ thêm link + ánh xạ frame vào context; chưa chụp/đối chiếu ảnh mới.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
@@ -629,7 +665,7 @@
 - Reviewer auth chấm 2 Important (XFF spoof, race check→record) đúng về mặt thiết kế nhưng **premise không đúng với Vercel** (XFF bị ghi đè). Đã hạ xuống "hoãn sang PR bảo mật riêng" thay vì sửa vội trong PR review; đọc kỹ mới thấy vậy.
 - Reviewer storefront bác bỏ các tối ưu `content-visibility` là rủi ro crawler — thực tế có chủ đích và mọi URL đều có trong sitemap, nên **bác lại gợi ý của reviewer**.
 - Lần đầu viết `next-path` helper quên chặn `..`, test fail (`/admin/../../settings` vẫn qua); đã thêm check và chạy lại toàn bộ.
-- Khi viết file review lọt vài ký tự lạ (각 / 不一致 / мất); đã sửa lại tiếng Việt.
+- Khi viết file review lọt vài ký tự lạ (ký tự CJK/Hangul/Cyrillic); đã sửa lại tiếng Việt.
 
 ### Phát hiện nhận / bác (theo rule mới trong AGENTS.md)
 

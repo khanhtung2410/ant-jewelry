@@ -80,7 +80,7 @@ Chạy Lighthouse 13.6.0 với Chrome của Playwright, mobile + simulated throt
 | Sản phẩm (`/p/aurora-band`) | **86** (78–87) | 100 | 100 | 1.0 s / 2.8 s / 410 ms |
 | Blog chi tiết | **74** (73–76) | 98 | 100 | 1.0 s / 3.0 s / 950 ms |
 
-**Đọc kết quả thận trọng:** số Accessibility/SEO ổn định và khớp lượt cũ, nhưng Performance dao động lớn — Home có một lần TBT **3.690 ms** và CLS **0,516** trong khi 2 lần kia TBT 410/1.000 ms và CLS 0. Lượt 2026-11-18 ghi TBT Home ~150 ms. Đây là dấu hiệu **nhiễu từ máy chạy đo/mạng lúc đó**, chưa đủ bằng chứng để kết luận code bị chậm lại sau #108–#112. Cần đo lại trên máy/CI yên tĩnh (hoặc thêm nhiều lần lặp) trước khi coi 74 là mức基线 mới. Không tự ghi "đạt" cho Home ở lượt này.
+**Đọc kết quả thận trọng:** số Accessibility/SEO ổn định và khớp lượt cũ, nhưng Performance dao động lớn — Home có một lần TBT **3.690 ms** và CLS **0,516** trong khi 2 lần kia TBT 410/1.000 ms và CLS 0. Lượt 2026-11-18 ghi TBT Home ~150 ms. Đây là dấu hiệu **nhiễu từ máy chạy đo/mạng lúc đó**, chưa đủ bằng chứng để kết luận code bị chậm lại sau #108–#112. Cần đo lại trên máy/CI yên tĩnh (hoặc thêm nhiều lần lặp) trước khi coi 74 là mức baseline mới. Không tự ghi "đạt" cho Home ở lượt này.
 
 ### Output thô (trích)
 
