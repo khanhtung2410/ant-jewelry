@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import sharp from 'sharp';
+import type { PrismaClient } from '@prisma/client';
 import { prisma } from '@/features/shared/db/prisma';
 import {
+  LEGACY_MIGRATION_BATCH_SIZE,
   migrateLegacyBlobs,
   reencodeLegacyBlob,
   withVersionQuery,
@@ -97,6 +99,59 @@ describe('B6 etag backfill', () => {
     expect(afterWebp?.etag).toBe(sha256Hex(webp));
     expect(afterPng?.contentType).toBe('image/webp');
     expect(afterPng?.etag).toBe(sha256Hex(afterPng!.bytes));
+  });
+
+  it('writes the blob and all URL updates in one transaction', async () => {
+    const bytes = await png(400, 400);
+    const blob = {
+      storageKey: 'products/p-1/atomic.png',
+      contentType: 'image/png',
+      etag: null,
+      bytes,
+    };
+    const image = { id: 'image-atomic', url: `/uploads/${blob.storageKey}` };
+    const operations: { kind: string }[] = [];
+    const transaction = vi.fn(async (ops: Promise<unknown>[]) => {
+      const results = (await Promise.all(ops)) as { kind: string }[];
+      operations.push(...results);
+    });
+    const fakePrisma = {
+      productImageBlob: {
+        findMany: vi.fn().mockResolvedValueOnce([blob]).mockResolvedValueOnce([]),
+        update: vi.fn(async () => ({ kind: 'blob' })),
+      },
+      productImage: {
+        findMany: vi.fn(async () => [image]),
+        update: vi.fn(async () => ({ kind: 'url' })),
+      },
+      $transaction: transaction,
+    } as unknown as PrismaClient;
+
+    await migrateLegacyBlobs(fakePrisma, { log: () => {} });
+
+    expect(transaction).toHaveBeenCalledTimes(1);
+    expect(operations.map((op) => op.kind)).toEqual(['blob', 'url']);
+  });
+
+  it('reads blobs in bounded batches instead of loading every row at once', async () => {
+    const bytes = await png(400, 400);
+    const blob = {
+      storageKey: 'products/p-1/batched.png',
+      contentType: 'image/png',
+      etag: null,
+      bytes,
+    };
+    const findMany = vi.fn().mockResolvedValueOnce([blob]).mockResolvedValueOnce([]);
+    const fakePrisma = {
+      productImageBlob: { findMany, update: vi.fn(async () => ({})) },
+      productImage: { findMany: vi.fn(async () => []), update: vi.fn(async () => ({})) },
+      $transaction: vi.fn(async (ops: Promise<unknown>[]) => Promise.all(ops)),
+    } as unknown as PrismaClient;
+
+    await migrateLegacyBlobs(fakePrisma, { log: () => {} });
+
+    expect(findMany).toHaveBeenCalledTimes(2);
+    expect(findMany.mock.calls[0][0].take).toBe(LEGACY_MIGRATION_BATCH_SIZE);
   });
 
   it('updates the ProductImage CDN URL when a legacy blob is re-encoded', async () => {

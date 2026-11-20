@@ -74,3 +74,12 @@ Người dùng chỉ ra lý do E3 tự mâu thuẫn: "giữ `unoptimized` vì k�
 | Docs `DEPLOY.md:23,32,138,158,170,191`, `PERFORMANCE.md:133`, `ARCHITECTURE.md:860`, file review S3 mục 3 | Một lý do thống nhất: `unoptimized` là workaround cho lỗi 400 chưa rõ; giờ đã bỏ sau khi đo | **Accepted (fixed)** |
 
 Không tự deploy cấu hình; kết luận dựa trên request HTTP read-only tới optimizer trên production. Hạn chế: chưa đo lại tổng bytes của `/c/other-jewelry` sau deploy thực tế (cần deploy code đã bỏ skip); số đo ảnh cho thấy giảm ~96% cho một ảnh.
+
+## Cập nhật F4 và F5 (2026-11-20, branch `fix/f4-f5-lighthouse-migration`)
+
+| Finding | Hành động | Quyết định |
+|---|---|---|
+| F4 — số Lighthouse "mới nhất" không thống nhất, lặp lần thứ ba | `docs/PERFORMANCE.md` là nơi duy nhất giữ số: làm rõ mục v4 là baseline, gộp số ivy vào đó, bỏ số cũ ở mục tổng hợp. `DEPLOY.md` (mục "Current deployment status" và phần ivy) chỉ còn link tới `PERFORMANCE.md`; grep lại toàn `docs/` và `README.md` để không còn câu "v3 mới nhất". Việc lặp lỗi được ghi vào rule: mỗi lần đo phải grep mọi chỗ nhắc tới số cũ. | **Accepted (fixed)** |
+| F5 — script migrate không atomic (không bắt buộc) | `scripts/reencode-legacy-uploads.ts`: xuất `LEGACY_MIGRATION_BATCH_SIZE = 50`, đọc theo lô có cursor `storageKey`, gộp blob update + mọi URL update vào một `prisma.$transaction`. TDD: test RED (transaction chưa được gọi, `take` chưa có) rồi GREEN 7/7. `DEPLOY.md` ghi rõ không còn cửa sổ crash giữa hai bước. | **Accepted (fixed)** |
+
+Không đổi schema; F5 không cần migration bổ sung. Hạn chế: F4 chỉ sửa tài liệu — không ngăn được người viết sau chép số sang file khác, trừ quy ước được ghi rõ.

@@ -26,7 +26,7 @@ Mỗi trang được đo **1 lần khởi động (bỏ qua, không lưu báo c�
 | Sản phẩm | 97 | 99 | 94 | **97** | (đã xoá) |
 | Blog chi tiết | 81 | 98 | 97 | **97** | (đã xoá) |
 
-**Mục tiêu:** Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95 (trung vị 3 lần). **Trạng thái:** Home (95) và sản phẩm (97) **đạt** rõ ràng trên bản deploy ở lượt đo lại sau khi upload ảnh thật. Blog chi tiết giữ số liệu của lượt đo trước (97 trung vị) và cũng đạt. Các bộ số liệu cũ (Home “84 (82–92)”, “91 (61–96)” rồi “85 (84–95)”) phản ánh các lần đo khác nhau; bảng trên là lượt 2026-11-18; lượt mới nhất là "Đo lại production 2026-11-20 — lượt 3 (v4)" bên dưới. Báo cáo gốc của các lượt cũ đã được xoá khỏi repo.
+**Mục tiêu:** Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95 (trung vị 3 lần). **Trạng thái:** số liệu mới nhất là lượt v4 ở mục "Đo lại production 2026-11-20 — lượt 3 (v4)" bên dưới — đây là nơi duy nhất trong repo giữ số Lighthouse hiện tại; các bảng lịch sử phía trên chỉ để giải thích. File khác (kể cả `DEPLOY.md`) chỉ link tới mục đó thay vì chép lại số. Báo cáo gốc của các lượt cũ đã bị xoá khỏi repo.
 
 ### Kết quả đo trên production build local (tham chiếu, median; range)
 
@@ -105,7 +105,7 @@ Lần này TBT chỉ 170–290 ms và CLS = 0 ở cả 9 lần, sát với lư�
 
 ## Đo lại production 2026-11-20 — lượt 3 (v4, sau PR #119/#120)
 
-Chạy lại cùng quy trình (Lighthouse 13.6.0, Chrome Playwright headless shell, mobile, simulated throttling, 3 lần mỗi trang) trên production sau khi token layer và E2E isolation được merge. Báo cáo gốc: `prod-{home,product,blog}-v4-{1,2,3}.json.gz` trong [`docs/lighthouse-reports/`](lighthouse-reports/) (nén gzip để giảm dung lượng repo). Bộ ivy (3 lần trên `/p/ivy-tennis-bracelet`) cũng được giữ dưới dạng `prod-ivy-{1,2,3}.json.gz`.
+Chạy lại cùng quy trình (Lighthouse 13.6.0, Chrome Playwright headless shell, mobile, simulated throttling, 3 lần mỗi trang) trên production sau khi token layer và E2E isolation được merge. Báo cáo gốc: `prod-{home,product,blog}-v4-{1,2,3}.json.gz` trong [`docs/lighthouse-reports/`](lighthouse-reports/) (nén gzip để giảm dung lượng repo). Bộ ivy (3 lần trên `/p/ivy-tennis-bracelet`) cũng được giữ dưới dạng `prod-ivy-{1,2,3}.json.gz`; trung vị Performance **93** (91–100), Accessibility 100, SEO 100. Đây là nơi duy nhất ghi số ivy; `DEPLOY.md` chỉ link tới đây.
 
 | Trang | Performance (median; range) | Accessibility | Best practices | SEO | FCP / LCP / TBT median | CLS |
 |---|---:|---:|---:|---:|---|---:|
@@ -124,7 +124,7 @@ TBT 30–207 ms và CLS = 0 ở cả 9 lần, xác nhận lượt v2 vẫn là n
 
 ## Kiểm chứng tự động khác (2026-11-19 → 2026-11-20)
 
-Bảng Lighthouse ngay trước mục này là lượt đo 2026-11-18; lượt đo mới nhất (2026-11-20, sau PR #108–#113) nằm ở mục "Đo lại production" phía trên — xem ở đó trước khi đánh giá hiệu năng. Những kiểm chứng tự động khác có output thực:
+Bảng Lighthouse ngay trước mục này là lượt đo 2026-11-18; số liệu mới nhất nằm ở mục "Đo lại production 2026-11-20 — lượt 3 (v4)" phía trên — xem ở đó trước khi đánh giá hiệu năng. Những kiểm chứng tự động khác có output thực:
 
 - **E2E local:** `npm run test:e2e` → 30 pass trên 2 project (`desktop-chrome` 18 + `pixel-7` 12). Bộ axe (`@axe-core/playwright`) chạy trên Home, Category, Product, Blog list, Blog detail và contact popover ở cả hai project → **0 lỗi serious/critical**.
 - **Smoke production:** `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` → **8/8 pass**: 6 màn 200 + đúng 1 `h1` + canonical đúng; ảnh `/uploads/` trên `/p/ivy-tennis-bracelet` có ETag và < 400 KB; `robots.txt`/`sitemap.xml` đúng. Chạy sau mỗi deploy.
