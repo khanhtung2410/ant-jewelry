@@ -12,7 +12,7 @@ const requiredRuleTokens = [
   'mentor checklist',
   'owner feedback',
   'historical',
-  '##',
+  'immediately below the new `---`',
 ];
 
 describe('Superpowers process guard', () => {
@@ -56,14 +56,46 @@ describe('Superpowers process guard', () => {
     }
   });
 
-  it('keeps an AI_LOG header above every verbatim-prompt heading', () => {
-    const lines = read('AI_LOG.md').split('\n');
+  it('keeps an AI_LOG header directly above every verbatim-prompt heading it owns', () => {
+    // Normalize CRLF: an exact heading comparison silently skips every line on Windows otherwise.
+    const content = read('AI_LOG.md').replace(/\r\n/g, '\n');
+    const lines = content.split('\n');
+    const separators = lines.reduce<number[]>((found, line, index) => {
+      if (line.trim() === '---') found.push(index);
+      return found;
+    }, []);
+
+    // The prepended entry and the entry it must preserve are the first three sections.
+    // Older entries predate this rule and are outside the prepend regression this guard owns.
+    const protectedEnd = separators[2] ?? lines.length;
     let sawHeader = false;
-    for (const line of lines) {
-      if (line.startsWith('## ')) sawHeader = true;
-      if (line === '### Prompt nguyên văn đã dùng') {
-        expect(sawHeader, 'every verbatim prompt must have an earlier ## header').toBe(true);
+    let nearestNonBlank = '';
+
+    for (let index = 0; index < protectedEnd; index += 1) {
+      const line = lines[index];
+      const trimmed = line.trim();
+      if (trimmed === '') continue;
+
+      if (trimmed === '---') {
+        sawHeader = false;
+        nearestNonBlank = '';
+        continue;
       }
+
+      if (line === '### Prompt nguyên văn đã dùng') {
+        expect(sawHeader, 'every verbatim prompt must follow a header in its own entry').toBe(true);
+        expect(
+          nearestNonBlank.startsWith('## '),
+          `orphaned prompt heading at line ${index + 1}; nearest non-blank line was "${nearestNonBlank}"`,
+        ).toBe(true);
+      }
+
+      if (line.startsWith('## ')) sawHeader = true;
+      nearestNonBlank = line;
     }
+
+    expect(content, 'the preserved previous AI_LOG header must survive a prepend').toContain(
+      '## 2026-11-20 15:37:07 +07:00 - D9/D10: Lighthouse evidence và script boundary',
+    );
   });
 });
