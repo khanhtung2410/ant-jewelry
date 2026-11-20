@@ -61,6 +61,21 @@ async function deleteUploadedImages(urls: string[]) {
   }
 }
 
+async function deleteUploadedImagesViaUi(page: Page, count: number) {
+  if (count === 0) return;
+  // Use the real Server Action so product/category pages are revalidated.
+  // Direct DB deletion leaves cached HTML pointing at removed blobs.
+  const dialog = await openImagesTab(page);
+  const items = dialog.locator('ol > li');
+  const before = await items.count();
+  for (let deleted = 0; deleted < count; deleted += 1) {
+    await items.last().getByRole('button', { name: 'Delete' }).click();
+    const confirm = page.getByRole('dialog', { name: 'CONFIRM ACTION' });
+    await confirm.getByRole('button', { name: 'Delete' }).click();
+    await expect(items).toHaveCount(before - deleted - 1);
+  }
+}
+
 async function assertStoredImage(request: APIRequestContext, url: string): Promise<number> {
   const response = await request.get(url);
   expect(response.status(), `${url} status`).toBe(200);
@@ -204,6 +219,8 @@ test('ADMIN uploads three images and the storefront serves small cached WebP cop
     }
     expect(optimizedChecked, 'at least one optimizer-served upload').toBe(true);
   } finally {
+    await deleteUploadedImagesViaUi(page, uploadedUrls.length);
+    // Safety net for rows the UI path may have missed after an early failure.
     await deleteUploadedImages(uploadedUrls);
   }
 });

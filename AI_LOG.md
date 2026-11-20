@@ -1,3 +1,32 @@
+## 2026-11-21 00:50:32 +07:00 - Dọn ảnh upload trong E2E qua Server Action
+
+### Prompt nguyên văn đã dùng
+
+> why
+> ont put this in ai log
+
+### Đã tự kiểm chứng
+
+- Đọc output lỗi theo đúng `systematic-debugging`: xác định đây là hệ quả của việc test xoá row/blob trực tiếp bằng Prisma, đi tắt `revalidateProductPages()` mà luồng production gọi khi xoá ảnh. HTML đã revalidate của trang danh mục còn giữ URL ảnh đã xoá, nên các request ảnh sau đó không còn nguồn để tải.
+- Bằng chứng so sánh: chạy riêng file upload → 0 cảnh báo; chạy full suite → 8 cảnh báo cùng một đường dẫn ảnh đã dọn; sau khi đổi cleanup sang bấm Delete trên UI (đi Server Action có revalidate) → full suite 0 cảnh báo, 32 passed.
+- Giữ kiểm tra dọn bằng Prisma làm lớp an toàn sau UI.
+- Verification: lint/typecheck/test (70 files / 321 tests)/format:check/build/test:e2e (32 passed) exit 0; quét CJK không có kết quả.
+
+### Findings được nhận / bác
+
+- **Accepted:** cleanup E2E phải đi qua UI/Server Action để revalidate, không xoá thẳng DB.
+- **Rejected:** không coi đây là lỗi production; không đổi code app.
+
+### AI sai ở đâu
+
+- Khi thêm cleanup bằng Prisma cho nhanh, tôi bỏ qua hiệu ứng revalidate của Server Action, tạo ra trạng thái cache trỏ tới blob đã xoá. Phải đối chiếu với luồng xoá thật trong `products/actions.ts` mới thấy.
+
+### Hạn chế
+
+- Không ghi lại nội dung cảnh báo theo yêu cầu của người dùng; chỉ ghi nguyên nhân và cách xử lý.
+
+---
+
 ## 2026-11-21 00:04:30 +07:00 - Review lại code theo đúng quy trình Superpowers
 
 ### Prompt nguyên văn đã dùng
