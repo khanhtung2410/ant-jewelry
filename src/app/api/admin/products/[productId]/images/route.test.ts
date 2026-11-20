@@ -156,6 +156,9 @@ describe('POST product image upload', () => {
     expect(response.status).toBe(500);
     expect(body.error).toMatch(/metadata/i);
     expect(mocks.enqueueProductImageDeletions).toHaveBeenCalledTimes(1);
+    expect(mocks.enqueueProductImageDeletions).toHaveBeenCalledWith([
+      'products/product-1/uploaded.png',
+    ]);
     expect(consoleError).toHaveBeenCalled();
     consoleError.mockRestore();
   });

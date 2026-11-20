@@ -1,4 +1,37 @@
-## 2026-11-20 12:45:47 +07:00 - Layered design tokens + X button + Figma check
+## 2026-11-20 13:49:13 +07:00 - Fix review findings #9, #10, #11
+
+### Prompt nguyên văn đã dùng
+
+> docs/reviews/2026-11-20-requesting-code-review.md
+> read #9,10,11 and fix
+> remember to pull main first to avoid conflict in ailog
+>
+> (câu trả lời cho câu hỏi phạm vi finding #11: "Low-risk items only (Recommended)")
+
+Link review: `docs/reviews/2026-11-20-requesting-code-review.md` (mục "Cập nhật trong PR fix findings #9-#11").
+
+### Đã tự kiểm chứng
+
+- **Pull main trước:** `git fetch origin` → main đã tiến tới `2415c8b` (PR #119 merge); reset về origin/main rồi tạo nhánh `fix/review-findings-9-to-11`. Không có conflict ở `AI_LOG.md`.
+- **Finding #9 (Accepted → Fixed):** đọc toàn bộ `e2e/storefront-admin.spec.ts` trước khi sửa. Thêm helper `openAuroraEditDialog`, chụp giá/tên gốc, khôi phục trong `finally` và assertion cuối. Chạy targeted E2E trước sửa → **RED: 2 failed** (vẫn nhận `12.345.678` và `Aurora Band (EDITOR rename)`); sau sửa → **GREEN: 2 passed**.
+- **Finding #10 (Rejected dạng lỗ hổng; comment → Fixed):** đọc `errors.ts`, `messages.ts`, `actions.ts` và `actions.test.ts`. Comment cũ nói "giống hệt" là sai; hai message thực tế là `TOO_MANY_ATTEMPTS` và `INVALID_CREDENTIALS`, đều generic nên không rò rỉ tồn tại tài khoản. Đã sửa comment, không đổi response.
+- **Finding #11 (Rejected/deferred → partial fix theo lựa chọn low-risk):** đọc `client-ip.ts`, `login-rate-limit.ts`, `product-image-storage.ts`, route upload + test, script E1 + test, `user-form-schema.ts` + test. Đã thêm comment XFF (Vercel ghi đè header) + test 3-hop, comment rủi ro race check→record, assertion cleanup blob đúng storageKey + comment rủi ro crash cứng, `.trim()` password lúc create (RED `'  Editor@123  '` → GREEN 7/7), comment giới hạn E1 chỉ phủ DB blob. Không đổi parse XFF, không làm race atomic, không thêm sweeper blob.
+- **Verification focused:** 8 files / 46 tests (auth, user schema, upload route, E1 migration) exit 0.
+
+### AI sai ở đâu
+
+- Ban đầu định sửa toàn bộ 5 sub-item của finding #11 dù review trước đó đã **Rejected/deferred** kèm lý do cụ thể (Vercel ghi đè XFF, OI-021 chưa TBC, xác suất crash thấp). Đã dừng lại và hỏi người dùng; kết quả là chỉ làm low-risk. Bài học: một finding bị reject vẫn cần xin ý kiến trước khi đảo quyết định, đặc biệt với code auth.
+- Gần như chỉ sửa comment cho các sub-item deferred rồi coi là "xong"; phải tự nhắc mình phân biệt rõ **hành vi đã đổi** (password trim, cleanup assertions) và **chỉ tài liệu hóa** (XFF, race, crash cứng, E1) trong review record để không ghi nhận sai.
+
+### Hạn chế
+
+- Không có bằng chứng mới về OI-021 hay hành vi XFF trên production, nên các rủi ro còn lại vẫn defer; không tự bịa dữ liệu để đảo quyết định.
+- Assertion cleanup blob chỉ phủ nhánh metadata-error; không mô phỏng được crash cứng giữa 2 ghi.
+- **Verification cuối (đã chạy lại sau khi Prettier sửa `e2e/storefront-admin.spec.ts`):** `npm run lint` exit 0; `npm run typecheck` exit 0; `npm test` exit 0 (65 files / 303 tests); `npm run format:check` exit 0 ("All matched files use Prettier code style!"); `npm run build` exit 0 ("Compiled successfully in 3.2s"); `npm run test:e2e` exit 0 (30 passed / 1.4m). Quét CJK/Hangul/Cyrillic toàn repo (trừ reports/generated) → 0 kết quả. Output đầy đủ lưu trong file temp ngoài repo.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

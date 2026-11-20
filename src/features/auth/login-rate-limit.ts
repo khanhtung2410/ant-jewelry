@@ -9,8 +9,14 @@ function getWindowStart(now: Date): Date {
 
 /**
  * Blocks a combination of email and client IP after too many failures inside
- * the rolling window. The error message stays identical to a normal failed
- * login, so the response does not reveal whether the email exists.
+ * the rolling window. A blocked attempt returns TOO_MANY_ATTEMPTS while a
+ * normal failure returns INVALID_CREDENTIALS; both are generic and neither
+ * names the email, so the response does not reveal whether the account exists.
+ *
+ * Residual risk (deferred to security/auth-hardening): this check and
+ * recordFailedLogin are not atomic, so a tightly synchronised burst can pass
+ * the check before any failure is recorded. The probability is low and the
+ * response stays generic; no behaviour change is made here.
  */
 export async function isLoginRateLimited(
   email: string,

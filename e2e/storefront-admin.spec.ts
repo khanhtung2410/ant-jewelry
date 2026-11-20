@@ -18,6 +18,13 @@ async function signIn(page: Page, email: string, password: string) {
   await expect(page).toHaveURL(/\/admin\/?$/);
 }
 
+async function openAuroraEditDialog(page: Page, name = 'Aurora Band') {
+  await page.goto('/admin/products?search=Aurora');
+  const row = page.getByRole('row').filter({ hasText: name });
+  await row.getByRole('link', { name: 'Edit' }).click();
+  return page.getByRole('dialog');
+}
+
 async function tabTo(page: Page, target: Locator) {
   for (let presses = 0; presses < 20; presses += 1) {
     await page.keyboard.press('Tab');
@@ -302,15 +309,28 @@ test('ADMIN price changes are reflected on the storefront', async ({ page }) => 
   await productRow.getByRole('link', { name: 'Edit' }).click();
 
   const productDialog = page.getByRole('dialog');
-  await productDialog.getByLabel('Price (VND)').fill('12345678');
-  await productDialog.getByRole('button', { name: 'Save product' }).click();
-  await expect(page).toHaveURL(/saved=1/);
+  const priceInput = productDialog.getByLabel('Price (VND)');
+  const originalPrice = await priceInput.inputValue();
+  try {
+    await priceInput.fill('12345678');
+    await productDialog.getByRole('button', { name: 'Save product' }).click();
+    await expect(page).toHaveURL(/saved=1/);
 
-  await page.goto('/p/aurora-band');
-  await expect(async () => {
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.getByText('12.345.678', { exact: true })).toBeVisible();
-  }).toPass({ timeout: 20_000 });
+    await page.goto('/p/aurora-band');
+    await expect(async () => {
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await expect(page.getByText('12.345.678', { exact: true })).toBeVisible();
+    }).toPass({ timeout: 20_000 });
+  } finally {
+    const restoreDialog = await openAuroraEditDialog(page);
+    await restoreDialog.getByLabel('Price (VND)').fill(originalPrice);
+    await restoreDialog.getByRole('button', { name: 'Save product' }).click();
+    await expect(page).toHaveURL(/saved=1/);
+  }
+
+  // Later tests and projects read the same E2E database.
+  const restoredDialog = await openAuroraEditDialog(page);
+  await expect(restoredDialog.getByLabel('Price (VND)')).toHaveValue(originalPrice);
 });
 
 test('EDITOR can save product details but cannot edit a product price', async ({ page }) => {
@@ -326,16 +346,32 @@ test('EDITOR can save product details but cannot edit a product price', async ({
   const originalPrice = await priceInput.inputValue();
   const nameInput = productDialog.getByRole('textbox', { name: 'Name', exact: true });
   await expect(nameInput).not.toHaveAttribute('readonly', '');
+  const originalName = await nameInput.inputValue();
 
-  await nameInput.fill('Aurora Band (EDITOR rename)');
-  await productDialog.getByRole('button', { name: 'Save product' }).click();
-  await expect(page).toHaveURL(/saved=1/);
+  try {
+    await nameInput.fill('Aurora Band (EDITOR rename)');
+    await productDialog.getByRole('button', { name: 'Save product' }).click();
+    await expect(page).toHaveURL(/saved=1/);
 
-  await page.goto('/admin/products?search=Aurora');
-  await expect(page.getByText('Aurora Band (EDITOR rename)')).toBeVisible();
-  const renamedRow = page.getByRole('row').filter({ hasText: 'Aurora Band (EDITOR rename)' });
-  await renamedRow.getByRole('link', { name: 'Edit' }).click();
-  await expect(page.getByRole('dialog').getByLabel('Price (VND)')).toHaveValue(originalPrice);
+    await page.goto('/admin/products?search=Aurora');
+    await expect(page.getByText('Aurora Band (EDITOR rename)')).toBeVisible();
+    const renamedRow = page.getByRole('row').filter({ hasText: 'Aurora Band (EDITOR rename)' });
+    await renamedRow.getByRole('link', { name: 'Edit' }).click();
+    await expect(page.getByRole('dialog').getByLabel('Price (VND)')).toHaveValue(originalPrice);
+  } finally {
+    // The 'Aurora Band' filter matches both names, so cleanup works even if
+    // the save never happened and the original name is still in place.
+    const restoreDialog = await openAuroraEditDialog(page);
+    await restoreDialog.getByRole('textbox', { name: 'Name', exact: true }).fill(originalName);
+    await restoreDialog.getByRole('button', { name: 'Save product' }).click();
+    await expect(page).toHaveURL(/saved=1/);
+  }
+
+  // Later tests and projects read the same E2E database.
+  const restoredDialog = await openAuroraEditDialog(page);
+  await expect(restoredDialog.getByRole('textbox', { name: 'Name', exact: true })).toHaveValue(
+    originalName,
+  );
 });
 
 test('confirming hide changes the product status', async ({ page }) => {
