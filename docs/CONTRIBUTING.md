@@ -288,6 +288,7 @@ Blog detail) vào `docs/deploy-screenshots/`, dùng luôn cho bảng R6.3 trong 
 ### Review
 
 - Sau **mỗi lượt review** (dùng skill review hoặc tự review), lưu toàn bộ kết quả vào `docs/reviews/YYYY-MM-DD-<skill>.md` (xem quy định chi tiết trong `AGENTS.md`). `<skill>` phải là **tên skill cụ thể đã dùng** (ví dụ `requesting-code-review`, `receiving-code-review`, `systematic-debugging`), không được ghi chung chung là `superpowers`. Mỗi phát hiện phải có `file:line`, mức độ, cách tái hiện và quyết định **Accepted** (kèm PR/nhánh) hoặc **Rejected** (kèm lý do).
+- Mọi file review phải theo mẫu `docs/reviews/TEMPLATE.md` (skill id cụ thể, bảng findings và bảng "Checklist versus evidence").
 - Nếu lượt review không tìm được phát hiện nào ngoài checklist có sẵn của mentor, phải **ghi rõ điều đó** thay vì trình bày danh sách checklist như kết quả review độc lập.
 - Mỗi file review phải có vùng **"Đối chiếu checklist mentor ↔ code/test thật"**: với từng mục đã ghi **Đạt**, chỉ ra file test hoặc output chứng minh; nếu không có thì ghi rõ "không có bằng chứng". Không được đánh dấu Đạt chỉ vì checklist của mentor nói vậy.
 - Trước khi sửa một phát hiện về một giá trị (password, token, URL...), grep mọi nơi dùng giá trị đó và viết test cho **cả luồng** (ví dụ tạo user → đăng nhập), không dừng ở unit test của riêng schema. Unit test RED→GREEN chưa đủ để coi là đã hiểu hết ảnh hưởng.
