@@ -1,3 +1,38 @@
+## 2026-11-20 20:49:51 +07:00 - Sửa F1: nhất quán khoảng trắng mật khẩu
+
+### Prompt nguyên văn đã dùng
+
+> F. Lỗi + tài liệu mâu thuẫn
+> F1 — Mật khẩu bị trim khi tạo, không trim khi đăng nhập. user-form-schema.ts thêm .trim() cho password ở schema tạo user (update đã trim từ trước), nhưng auth/actions.ts:29 so sánh password nguyên văn. Tái hiện: ADMIN tạo user với mật khẩu " Editor@123 " → hash của "Editor@123"; người dùng gõ đúng chuỗi có khoảng trắng như được giao → đăng nhập thất bại. Chọn một hướng và áp cho cả ba chỗ: không trim, và từ chối khoảng trắng đầu/cuối bằng thông báo lỗi rõ (khuyên dùng); hoặc trim ở cả login.
+> Test: tạo user (create + update) rồi gọi loginAction với đúng chuỗi đã nhập → kết quả nhất quán với hướng đã chọn.
+
+Link review: `docs/reviews/2026-11-20-receiving-code-review.md` (mục "Cập nhật F1").
+
+### Đã tự kiểm chứng
+
+- Kéo `origin/main` (`db8081b`, PR #125 merge) rồi tạo nhánh `fix/f1-password-whitespace`. Đọc toàn bộ `user-form-schema.ts`, test của nó, `auth/actions.ts`, `auth/actions.test.ts`, `users/actions.ts` trước khi sửa — đúng rule 10.
+- Chọn hướng **không trim + từ chối khoảng trắng đầu/cuối bằng thông báo rõ**, áp cả ba chỗ: bỏ `.trim()` trong create/update schema và thêm refine `value === value.trim()`; thêm `AUTH_MESSAGES.PASSWORD_WHITESPACE` + `invalidPasswordFormatState()` + kiểm tra sớm trong `loginAction` (trước khi đếm rate limit).
+- TDD: test luồng mới `src/features/auth/password-flow.test.ts` viết trước → **RED 3/5** (tạo/update có khoảng trắng vẫn được nhận, login trả "Invalid email or password."); sau sửa → **GREEN 5/5**. Test phủ: create→login đúng chuỗi, update→login đúng chuỗi, create/update có khoảng trắng bị từ chối, login có khoảng trắng trả cùng thông báo rõ.
+- Cập nhật test schema cũ: bỏ ca "trim password", thay bằng ca giữ nguyên mật khẩu hợp lệ + từ chối khoảng trắng; update dùng `''` cho "không đổi mật khẩu" và từ chối `'   '`.
+- Focused: 4 files / 26 tests exit 0.
+
+### Findings được nhận / bác
+
+- **Accepted:** F1 — đã sửa code và test; quyết định ghi trong file review.
+- **Rejected:** không có. Không chọn hướng "trim ở login" vì nó vẫn âm thầm đổi mật khẩu người dùng nhập, trái khuyến nghị.
+
+### AI sai ở đâu
+
+- Chính lỗi S6 được ghi ở entry `13:49`: sửa finding #11 bằng `.trim()` ở create mà không đọc `loginAction`, nên tạo ra F1. Lần này đã grep `password` toàn `src/features` và viết test cả luồng create/update→login trước khi đổi code.
+- Ban đầu test update kỳ vọng `'   '` trả lỗi "at least 8" do thứ tự refine; phải đưa refine khoảng trắng lên trước để thông báo rõ đúng ý người dùng.
+
+### Hạn chế
+
+- User đã tồn tại với mật khẩu chứa dấu cách (bị trim lúc tạo trước đây) vẫn phải dùng mật khẩu đã trim để đăng nhập; không sửa hash cũ trong phạm vi này.
+- **Verification cuối (sau Prettier):** lint exit 0; typecheck exit 0; test exit 0 (70 files / 317 tests); format:check exit 0; build exit 0; test:e2e exit 0 (30 passed). Output đầy đủ được dán nguyên vào PR body.
+
+---
+
 ## 2026-11-20 15:55:00 +07:00 - Ghi nhận phản hồi Superpowers S6-S8
 
 ### Prompt nguyên văn đã dùng

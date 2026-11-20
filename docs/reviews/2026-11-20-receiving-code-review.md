@@ -37,3 +37,15 @@
 
 - F1, T2, F2 được xác nhận là hở nhưng chưa sửa: phản hồi của người dùng chỉ yêu cầu ghi nhận ví dụ S6 và đổi quy trình review cho S7/S8.
 - Không có bản gốc checklist mentor trong repo để đối chiếu ngoài nội dung prompt; bảng đối chiếu dựa trên các mục mentor nêu trong prompt.
+
+## Cập nhật F1 (2026-11-20, branch `fix/f1-password-whitespace`)
+
+Người dùng yêu cầu sửa F1 theo hướng được khuyên dùng: **không trim, từ chối khoảng trắng đầu/cuối bằng thông báo rõ**, áp cho cả ba chỗ.
+
+| File | Thay đổi | Bằng chứng |
+|---|---|---|
+| `src/features/users/lib/user-form-schema.ts` | Bỏ `.trim()` ở create và update; thêm refine `value === value.trim()` với cùng thông báo. Update giữ `''` hợp lệ (không đổi mật khẩu) nhưng `'   '` bị từ chối. | `user-form-schema.test.ts` |
+| `src/features/auth/messages.ts`, `src/features/auth/errors.ts`, `src/features/auth/actions.ts` | Thêm `AUTH_MESSAGES.PASSWORD_WHITESPACE`, `invalidPasswordFormatState()`, và check sớm trong `loginAction` trước khi đếm rate limit. | `password-flow.test.ts` |
+| `src/features/auth/password-flow.test.ts` (mới) | Test luồng thật: create → login đúng chuỗi; update → login đúng chuỗi; create/update có khoảng trắng → lỗi trường; login có khoảng trắng → cùng thông báo rõ. | RED 3/5 trước sửa, GREEN 5/5 sau sửa |
+
+Quyết định: **Accepted (fixed)**. Các file review lịch sử vẫn giữ nguyên mô tả cũ theo đúng nguyên tắc không viết lại lịch sử; entry này ghi nhận quyết định mới. Hạn chế: user đã tạo trước đây với mật khẩu chứa dấu cách (bị trim lúc tạo) vẫn cần dùng mật khẩu đã trim để đăng nhập — không thể tự sửa hash cũ trong phạm vi này.
