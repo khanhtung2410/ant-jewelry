@@ -9,6 +9,7 @@ import { resolveAdminNextPath } from './next-path';
 import {
   handleAuthActionError,
   invalidCredentialsState,
+  invalidPasswordFormatState,
   loginRateLimitedState,
   type AuthActionState,
 } from './errors';
@@ -31,6 +32,13 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
 
   if (!email || !password) {
     return invalidCredentialsState();
+  }
+
+  // Passwords are never silently normalized. A value with surrounding
+  // whitespace cannot have been produced by createUser/saveUserAccess, so
+  // reject it here with the same clear message those actions return.
+  if (password !== password.trim()) {
+    return invalidPasswordFormatState();
   }
 
   const clientIp = await getClientIp();

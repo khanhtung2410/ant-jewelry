@@ -15,15 +15,25 @@ describe('createUserSchema', () => {
     expect(parsed.role).toBe('EDITOR');
   });
 
-  it('trims the password just like the update schema does', () => {
+  it('keeps the password exactly as entered and rejects surrounding whitespace', () => {
     const parsed = createUserSchema.parse({
+      name: 'Content Editor',
+      email: 'editor@example.com',
+      password: 'Editor@123',
+      role: 'EDITOR',
+    });
+    expect(parsed.password).toBe('Editor@123');
+
+    const result = createUserSchema.safeParse({
       name: 'Content Editor',
       email: 'editor@example.com',
       password: '  Editor@123  ',
       role: 'EDITOR',
     });
-
-    expect(parsed.password).toBe('Editor@123');
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.message).toMatch(/whitespace/i);
+    }
   });
 
   it('rejects short passwords', () => {
@@ -75,10 +85,21 @@ describe('updateUserAccessSchema', () => {
       userId: 'user-1',
       role: 'EDITOR',
       locked: false,
-      password: '   ',
+      password: '',
     });
 
     expect(parsed.password).toBe('');
+
+    const spaced = updateUserAccessSchema.safeParse({
+      userId: 'user-1',
+      role: 'EDITOR',
+      locked: false,
+      password: '   ',
+    });
+    expect(spaced.success).toBe(false);
+    if (!spaced.success) {
+      expect(spaced.error.issues[0]?.message).toMatch(/whitespace/i);
+    }
   });
 
   it('requires at least 8 characters when a new password is provided', () => {

@@ -16,6 +16,10 @@ export function loginRateLimitedState(): AuthActionState {
   return authErrorState(AUTH_MESSAGES.TOO_MANY_ATTEMPTS);
 }
 
+export function invalidPasswordFormatState(): AuthActionState {
+  return authErrorState(AUTH_MESSAGES.PASSWORD_WHITESPACE);
+}
+
 export function loginUnavailableState(): AuthActionState {
   return authErrorState(AUTH_MESSAGES.LOGIN_UNAVAILABLE);
 }
