@@ -1,4 +1,47 @@
-## 2026-11-20 15:37:07 +07:00 - D9/D10: Lighthouse evidence và script boundary
+## 2026-11-20 15:55:00 +07:00 - Ghi nhận phản hồi Superpowers S6-S8
+
+### Prompt nguyên văn đã dùng
+
+> about superpower usage
+>  Dùng Superpowers: còn hạn chế
+> Mentor đã kiểm tra: skill được dùng thật, không chỉ ghi tên. Có requesting-code-review 4 lượt (3–4 reviewer độc lập, read-only, mỗi phát hiện có file:dòng, mức độ, quyết định), receiving-code-review (bảng kiểm chứng lại, 6 phát hiện bị bác kèm lý do), systematic-debugging đủ 4 phase, TDD với commit đỏ riêng (#102 6cb30bb → 66b7238), verification-before-completion có output, và brainstorming → spec → plan cho PR #119. Còn ba điểm:
+>
+> S6 — Nhận phát hiện review mà không kiểm tra hết ảnh hưởng. Lỗi F1 sinh ra chính từ một phát hiện review: finding #11 (“password trim chỉ ở update”) được sửa bằng cách thêm .trim() vào create (#120), có test RED → GREEN, nhưng không ai đọc loginAction. Test chỉ kiểm tra schema, không kiểm tra luồng tạo user → đăng nhập. Theo receiving-code-review: trước khi sửa, tìm mọi nơi dùng giá trị đó (grep -rn "password" src/features) và viết test cho cả luồng.
+> Ghi ví dụ này vào mục “AI sai ở đâu” trong AI_LOG.md.
+
+> S7 — Lượt review đầu chỉ chép lại checklist mentor. docs/reviews/2026-11-19-superpowers.md ghi skill là “superpowers” (không phải một skill cụ thể). 11 phát hiện đều đã có trong checklist đợt 3–4, không phát hiện mới nào; lại còn bác việc sửa mojibake trong AI_LOG, trái với yêu cầu mentor. Từ giờ mỗi file review phải ghi đúng tên skill. Nếu một lượt review không tìm thêm được gì ngoài checklist của mentor, ghi rõ điều đó thay vì trình bày như kết quả review.
+> S8 — Review chưa bắt được lỗ hổng test. 4 lượt review không phát hiện T2 (E2E upload) còn thiếu, cũng không phát hiện kết luận S3 nói quá (F2). Lượt review sau thêm một vùng “đối chiếu checklist mentor ↔ code/test thật”: với mỗi mục đã ghi Đạt, reviewer phải chỉ ra test hoặc output chứng minh.
+
+Link review: `docs/reviews/2026-11-20-receiving-code-review.md`.
+
+### Đã tự kiểm chứng
+
+- **S6:** dùng `receiving-code-review` — đọc feedback xong mới kiểm tra code thật. `grep -rn "password" src/features` + đọc `src/features/auth/actions.ts:24-29,71` xác nhận `loginAction` chỉ `normalizeEmail` còn password lấy nguyên từ FormData rồi `bcrypt.compare`; `src/features/users/actions.ts:118` hash `parsed.data.password` đã trim. F1 là thật. Đã chèn ví dụ cụ thể vào mục **AI sai ở đâu** của entry `13:49`.
+- **S7:** đọc `docs/reviews/2026-11-19-superpowers.md:1` — ghi `superpowers`, không phải tên skill; `AI_LOG.md` entry cũ ghi rõ dùng nguyên tắc `receiving-code-review`. 11 phát hiện trùng checklist; finding #9 bác sửa mojibake. Đã sửa tên skill, thêm ghi chú trung thực về việc không có phát hiện mới và việc bác đó là sai.
+- **S8:** kiểm chứng các mục mentor nêu: commit đỏ `6cb30bb` (104 dòng test mới) → `66b7238` tồn tại; có 8 file review, trong đó 5 file `requesting-code-review*`; `e2e/` chỉ có smoke kiểm tra ảnh upload có sẵn, không có test E2E thực hiện upload qua ADMIN (T2 đúng là thiếu); `docs/reviews/2026-11-19-systematic-debugging.md:6` kết luận S3 khẳng định chắc chắn. Đã thêm vùng "Đối chiếu checklist mentor ↔ code/test thật" vào file review mới.
+- **AI_LOG hygiene:** phát hiện 3 header entry (`14:50`, `14:24`, `13:49`) bị mất do các lần prepend trước — đã khôi phục cả 3.
+
+### Findings được nhận / bác
+
+- **Accepted:** S6, S7, S8 — đều ghi file:line, reproduction và quyết định trong `docs/reviews/2026-11-20-receiving-code-review.md`.
+- **Rejected:** không có. F1, T2, F2 được ghi là hở còn mở; PR này chỉ sửa quy trình ghi nhận và review, không sửa code/test vì người dùng chưa yêu cầu fix.
+
+### AI sai ở đâu
+
+- Ba lần prepend AI_LOG liên tiếp xoá mất header của entry trước đó — lỗi lặp lại dù đã từng bị reviewer bắt gặp ở entry `13:49`. Lần này đã quét `^## ` và khôi phục đủ.
+- Với finding #11, tin rằng test RED→GREEN ở schema là đủ mà không grep toàn bộ nơi dùng `password`; đúng như S6, phải kiểm tra luồng tạo user → đăng nhập.
+- Lượt review đầu ghi tên skill chung chung và trình bày checklist mentor như kết quả tự review, lại bác đúng việc mentor yêu cầu — S7.
+- Bốn lượt review sau đó vẫn không đối chiếu từng mục "Đạt" với test/output thật, nên lọt T2 và F2 — S8.
+
+### Hạn chế
+
+- Chưa sửa F1 (trim password ở luồng đăng nhập), T2 (E2E upload) hay F2 (kết luận S3); cần người dùng xác nhận trước khi mở rộng phạm vi.
+- Mentor checklist được lấy nguyên từ prompt; không có tài liệu checklist gốc trong repo để đối chiếu thêm.
+- PR này là tài liệu/quy trình, không có thay đổi hành vi nên không chạy production check.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
@@ -36,7 +79,7 @@ Link review: `docs/reviews/2026-11-20-requesting-code-review-d9-d10.md`.
 
 ---
 
-
+## 2026-11-20 14:50:44 +07:00 - Fix review findings #1 và #3 bằng code/asset
 
 ### Prompt nguyên văn đã dùng
 
@@ -63,7 +106,7 @@ Link review: `docs/reviews/2026-11-20-requesting-code-review-round-2.md` (decisi
 
 ---
 
-
+## 2026-11-20 14:24:25 +07:00 - Full evidence, production check và Lighthouse v4
 
 ### Prompt nguyên văn đã dùng
 
@@ -119,7 +162,7 @@ Link review: `docs/reviews/2026-11-20-requesting-code-review-round-2.md`.
 
 ---
 
-
+## 2026-11-20 13:49:13 +07:00 - Fix review findings #9, #10, #11
 
 ### Prompt nguyên văn đã dùng
 
@@ -143,6 +186,7 @@ Link review: `docs/reviews/2026-11-20-requesting-code-review.md` (mục "Cập n
 
 - Ban đầu định sửa toàn bộ 5 sub-item của finding #11 dù review trước đó đã **Rejected/deferred** kèm lý do cụ thể (Vercel ghi đè XFF, OI-021 chưa TBC, xác suất crash thấp). Đã dừng lại và hỏi người dùng; kết quả là chỉ làm low-risk. Bài học: một finding bị reject vẫn cần xin ý kiến trước khi đảo quyết định, đặc biệt với code auth.
 - Gần như chỉ sửa comment cho các sub-item deferred rồi coi là "xong"; phải tự nhắc mình phân biệt rõ **hành vi đã đổi** (password trim, cleanup assertions) và **chỉ tài liệu hóa** (XFF, race, crash cứng, E1) trong review record để không ghi nhận sai.
+- **Ví dụ S6 do mentor chỉ ra (F1):** nhận finding #11 "password trim chỉ ở update" rồi thêm `.trim()` vào `createUserSchema`, có test RED → GREEN, nhưng **không đọc `loginAction`** (`src/features/auth/actions.ts:26-29,71`: email được `normalizeEmail`, password lấy nguyên từ FormData rồi đưa thẳng vào `bcrypt.compare`). Test chỉ nằm ở `user-form-schema.test.ts`, không phủ luồng "tạo user → đăng nhập". Hệ quả: user tạo với mật khẩu có dấu cách đầu/cuối được lưu dạng đã trim, nhưng đăng nhập bằng đúng chuỗi đó thì bcrypt so sánh thất bại. Theo `receiving-code-review`, trước khi sửa phải `grep -rn "password" src/features` để tìm mọi nơi dùng giá trị và viết test cho cả luồng, không chỉ test schema. Bài học: RED→GREEN ở một unit test không chứng minh đã hiểu hết ảnh hưởng của phát hiện review.
 
 ### Hạn chế
 

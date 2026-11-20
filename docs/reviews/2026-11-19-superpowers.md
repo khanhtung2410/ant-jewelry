@@ -1,4 +1,6 @@
-# Review 2026-11-19 — superpowers (tự review kiểu E1)
+# Review 2026-11-19 — receiving-code-review (tự review kiểu E1)
+
+> **Cập nhật theo phản hồi S7 (2026-11-20):** tên skill ở bản gốc ghi nhầm là "superpowers" — đây không phải tên skill. AI_LOG entry tương ứng ghi rõ dùng nguyên tắc `receiving-code-review`, nên lượt này được ghi đúng tên đó. Cả 11 phát hiện dưới đây đều đã có trong checklist đợt 3–4 của mentor; lượt này **không tìm thêm phát hiện mới nào** và không nên trình bày như kết quả review độc lập. Riêng finding #9 (bác sửa mojibake trong `AI_LOG.md`) là **sai**: mentor yêu cầu dọn mojibake, và việc đó đã được thực hiện ở PR #123.
 
 - **Phạm vi:** `main` tại `e64c30b` (sau PR #94), toàn bộ code/docs hiện hành.
 - **Mục đích:** tự tìm lỗi kiểu E1 (sai lệch giữa tài liệu/spec và code, bằng chứng không khớp) trước khi mentor tìm ra.
@@ -19,7 +21,7 @@ Không có phát hiện **Critical** nào còn mở. Các phát hiện **Importa
 | 6 | Important | Preview dùng chung DB Production, có thể ghi vào dữ liệu thật | **Deferred (có lý do)** | Đã cảnh báo rõ tại `docs/DEPLOY.md:68` kèm 3 lựa chọn. Việc tách DB/tắt Preview cần quyền cấu hình Vercel ngoài repo; không tự ý đổi hạ tầng |
 | 7 | Important | Bảng Figma ↔ production thiếu màn Contact popover và cột “lệch + lý do” | **Deferred (có lý do)** | `docs/DEPLOY.md:122-133` có 6 màn + ảnh chụp; repo không có file Figma gốc nên không tự suy diễn mức lệch. Chờ mentor cung cấp Figma hoặc chấp nhận đối chiếu theo SAD v1.1 |
 | 8 | Minor | Số liệu Lighthouse nhiều bộ (84 / 91 / 85 / 95) dễ gây nhầm | **Fixed** (PR #89/#93) | Bảng mới ghi rõ 3 lần đo + trung vị, các số cũ được ghi nhãn là lượt trước; 9 JSON report gốc trong `docs/lighthouse-reports/` |
-| 9 | Minor | `AI_LOG.md` có đoạn mojibake lịch sử (`â€`, `Ã`, …) | **Rejected** | Đây là bản ghi prompt nguyên văn của các phiên cũ; sửa nội dung lịch sử làm sai tính “prompt đã dùng”. Các entry mới đều ghi UTF-8 bằng tool |
+| 9 | Minor | `AI_LOG.md` có đoạn mojibake lịch sử (`â€`, `Ã`, …) | **Rejected (sai — đã đảo tại PR #123)** | Lý do cũ cho rằng sửa lịch sử làm sai prompt nguyên văn; mentor sau đó yêu cầu dọn mojibake. PR #123 giải mã 73 dòng, giữ nguyên nội dung prompt |
 | 10 | Minor | PR #72 còn dòng “Full lint/typecheck/test/build not run” | **Rejected** | Là nhận xét trung thực tại thời điểm đó; các PR sau (#83, #84…) đã dán output đầy đủ. Không sửa lịch sử PR |
 | 11 | Minor | `bg-black/10` còn xuất hiện trong AI_LOG | **Rejected** | Chỉ nằm trong câu prompt lịch sử; code `contact-popover.tsx:22` đã dùng `bg-[var(--backdrop-color)]` |
 
