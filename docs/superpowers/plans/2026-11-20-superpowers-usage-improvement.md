@@ -72,7 +72,7 @@ In the Review section, add one bullet: every review record must follow `docs/rev
 
 - [ ] **Step 6: Prepend the AI_LOG entry**
 
-Add a new top entry with the verbatim prompt from the owner ("can you take this result in to account and improve skill usage" plus the chosen option A then C), self-verified facts, accepted/rejected findings with link to this plan and the design doc, "AI sai ở đâu" and limitations. Verify the existing top header `## 2026-11-20 15:55:00 +07:00 - Ghi nhận phản hồi Superpowers S6-S8` is still present immediately after the new `---`.
+Add a new top entry with the verbatim prompt from the owner ("can you take this result in to account and improve skill usage" plus the chosen option A then C), self-verified facts, accepted/rejected findings with link to this plan and the design doc, "AI sai ở đâu" and limitations. Verify the actual previous header on this base, `## 2026-11-20 15:37:07 +07:00 - D9/D10: Lighthouse evidence và script boundary`, is still present immediately after the new `---`. The earlier 15:55 entry lives on the unmerged PR #124 branch and must not be invented on this base.
 
 - [ ] **Step 7: Run the guard test to verify it passes**
 
