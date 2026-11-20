@@ -143,15 +143,15 @@ Các blob cũ vẫn là PNG và có thể vượt ngân sách LCP trên mobile 4
 
 ```bash
 #_local (file:./prisma/dev.db trong .env)_
-node scripts/reencode-legacy-uploads.mjs --dry-run
-node scripts/reencode-legacy-uploads.mjs
+npx tsx scripts/reencode-legacy-uploads.ts --dry-run
+npx tsx scripts/reencode-legacy-uploads.ts
 
 # production: đặt DATABASE_URL là chuỗi direct của Prisma Postgres, rồi chạy hai lệnh trên
 ```
 
-Script dùng chung `resizeToStoredWebp()` với `uploadProductImage()`, ghi đè `bytes`/`contentType` và **giữ nguyên storage key** (đuôi `.png`). Vì nội dung đổi nhưng URL cũ có thể còn nằm trong CDN cache, script thêm `?v=2` vào `ProductImage.url` và lưu ETag mới (`ProductImageBlob.etag`); route `/uploads/[...path]` bỏ qua query, đọc hash từ DB trước và trả 304 **mà không kéo blob** khi `If-None-Match` khớp (hỗ trợ `W/"…"` và danh sách ETag). Với ảnh legacy chưa có hash, route tính từ bytes như cũ. Sau khi chạy, kiểm tra mọi ảnh `/uploads/...` trên trang sản phẩm có `size_download < 400000` và chạy lại Lighthouse mobile cho trang đó (dùng `/p/ivy-tennis-bracelet`, trang có ảnh upload thật).
+Script import `resizeToStoredWebp()` từ `src/features/products/server/product-image-processing.ts` — cùng hàm với `uploadProductImage()` — nên chạy bằng `tsx`. Script ghi đè `bytes`/`contentType` và **giữ nguyên storage key** (đuôi `.png`). Vì nội dung đổi nhưng URL cũ có thể còn nằm trong CDN cache, script thêm `?v=2` vào `ProductImage.url` và lưu ETag mới (`ProductImageBlob.etag`); route `/uploads/[...path]` bỏ qua query, đọc hash từ DB trước và trả 304 **mà không kéo blob** khi `If-None-Match` khớp (hỗ trợ `W/"…"` và danh sách ETag). Với ảnh legacy chưa có hash, route tính từ bytes như cũ. Sau khi chạy, kiểm tra mọi ảnh `/uploads/...` trên trang sản phẩm có `size_download < 400000` và chạy lại Lighthouse mobile cho trang đó (dùng `/p/ivy-tennis-bracelet`, trang có ảnh upload thật).
 
-**Kết quả kiểm chứng production 2026-11-19:** 4 ảnh `/uploads/...` trên `/p/ivy-tennis-bracelet` lần lượt 29.732 / 29.728 / 29.868 / 337.464 byte (đều <400 KB). Lighthouse mobile 3 lần: 93 / 91 / 100 → trung vị Performance **93**, Accessibility 100, SEO 100; báo cáo JSON trong [`docs/lighthouse-reports/`](lighthouse-reports/) (`prod-ivy-{1,2,3}.json`). Các ảnh production được thay bằng giao diện ADMIN vì agent không có `DATABASE_URL` production; script ở trên vẫn là cách chuẩn để migrate các blob còn lại sau khi deploy.
+**Kết quả kiểm chứng production 2026-11-19:** 4 ảnh `/uploads/...` trên `/p/ivy-tennis-bracelet` lần lượt 29.732 / 29.728 / 29.868 / 337.464 byte (đều <400 KB). Lighthouse mobile 3 lần: 93 / 91 / 100 → trung vị Performance **93**, Accessibility 100, SEO 100; báo cáo JSON nén trong [`docs/lighthouse-reports/`](lighthouse-reports/) (`prod-ivy-{1,2,3}.json.gz`). Các ảnh production được thay bằng giao diện ADMIN vì agent không có `DATABASE_URL` production; script ở trên vẫn là cách chuẩn để migrate các blob còn lại sau khi deploy.
 
 ### Đánh đổi E3: một kích thước cho mọi chỗ
 
@@ -257,7 +257,7 @@ If `next build` fails during page data collection with:
 | `SITE_URL` đúng origin production | [x] | `curl https://ant-jewelry.vercel.app/` có `<link rel="canonical" href="https://ant-jewelry.vercel.app"/>` (6 lần xuất hiện origin trong HTML) |
 | A3 — Preview không ghi vào DB Production | [x] | `vercel.json` đặt `git.deploymentEnabled = { main: true, "*": false }`; chỉ deploy `main`. Quyết định + lý do ở mục "Quyết định A3" phía trên. Có hiệu lực sau lần deploy áp dụng config |
 | Migration đã áp dụng, status sạch | [ ] | Cần output thật của `npm run db:migrate:status:production` (chạy với `DATABASE_URL` direct). Không thể tự lấy từ môi trường agent |
-| Script E1/B6 backfill ảnh legacy đã chạy | [ ] | Bắt buộc nếu DB có blob cũ: chạy `node scripts/reencode-legacy-uploads.mjs --dry-run` rồi lệnh thật với `DATABASE_URL` direct; dán output số blob + ETag mới. Cho đến khi chạy, các blob có `etag = NULL` vẫn phải đọc bytes để trả 304 (đúng nhưng chậm hơn). Không nằm trong `prisma migrate deploy` vì cần sharp + cập nhật URL `?v=2` |
+| Script E1/B6 backfill ảnh legacy đã chạy | [ ] | Bắt buộc nếu DB có blob cũ: chạy `npx tsx scripts/reencode-legacy-uploads.ts --dry-run` rồi lệnh thật với `DATABASE_URL` direct; dán output số blob + ETag mới. Cho đến khi chạy, các blob có `etag = NULL` vẫn phải đọc bytes để trả 304 (đúng nhưng chậm hơn). Không nằm trong `prisma migrate deploy` vì cần sharp + cập nhật URL `?v=2` |
 | ADMIN đầu tiên bằng email thật | [ ] | Cần ảnh trang admin sau khi đăng nhập bằng tài khoản ADMIN vừa tạo (`db:create-admin:production`) |
 | 6 màn R6.3 mở được + ảnh đối chiếu | [x] | Bảng đối chiếu ở trên: 6 ảnh 1920px từ `npm run test:screenshots` (2026-11-19); smoke production 8/8 pass cùng ngày; admin/login vẫn có ảnh riêng nhưng không tính vào 6 màn |
 | E2E + a11y + smoke chạy được trên clone sạch / CI | [x] | `npm run test:e2e` 30 pass (18 desktop + 12 Pixel 7, axe 0 serious/critical); job `e2e` trong `.github/workflows/npm-ci.yml` upload report/trace khi fail; smoke production 8/8 pass |

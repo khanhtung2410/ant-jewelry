@@ -8,7 +8,7 @@
 - **Bản deploy (production):** `https://ant-jewelry.vercel.app/`, `https://ant-jewelry.vercel.app/p/aurora-band` và `https://ant-jewelry.vercel.app/blog/cach-chon-nhan-cuoi-phu-hop`, đo ngày 2026-11-18.
 - **Bản production build local (tham chiếu):** `npm run build && npm run start` (`DATABASE_URL=file:./prisma/dev.db` với dữ liệu seed) tại `http://localhost:3000`, cùng ngày.
 
-Mỗi trang được đo **1 lần khởi động (bỏ qua, không lưu báo cáo) rồi 3 lần liên tiếp** trên cùng bản/cấu hình; bảng báo cáo **trung vị** và **dải (min–max)** của đúng 3 lần đã lưu. Lần khởi động chịu chi phí Lighthouse/Chrome nên không được tính vào trung vị. Báo cáo JSON của cả 3 lần mỗi trang nằm trong [`docs/lighthouse-reports/`](lighthouse-reports/) và được liên kết trực tiếp ở bảng chi tiết bên dưới. Ảnh chụp mobile đối chiếu Figma: [`docs/r6-1-screenshots/home-mobile.png`](r6-1-screenshots/home-mobile.png) và [`docs/r6-1-screenshots/blog-detail-mobile.png`](r6-1-screenshots/blog-detail-mobile.png).
+Mỗi trang được đo **1 lần khởi động (bỏ qua, không lưu báo cáo) rồi 3 lần liên tiếp** trên cùng bản/cấu hình; bảng báo cáo **trung vị** và **dải (min–max)** của đúng 3 lần đã lưu. Lần khởi động chịu chi phí Lighthouse/Chrome nên không được tính vào trung vị. Chỉ bộ baseline hiện tại (v4 và ivy) được giữ lại, dưới dạng `.json.gz` trong [`docs/lighthouse-reports/`](lighthouse-reports/); các lượt đã bị thay (v1, v2, v3, warm-up) đã bị xoá khỏi repo. Ảnh chụp mobile đối chiếu Figma: [`docs/r6-1-screenshots/home-mobile.png`](r6-1-screenshots/home-mobile.png) và [`docs/r6-1-screenshots/blog-detail-mobile.png`](r6-1-screenshots/blog-detail-mobile.png).
 
 ### Kết quả đo trên production deploy (3 lần đã lưu; median; range)
 
@@ -18,15 +18,15 @@ Mỗi trang được đo **1 lần khởi động (bỏ qua, không lưu báo c�
 | Sản phẩm (`/p/aurora-band`) | **97** (94–99) | **100** | **100** | 970 (954–1131) | 2204 (1537–2671) | 162 (109–198) |
 | Blog chi tiết (`/blog/cach-chon-nhan-cuoi-phu-hop`) | **97** (81–98) | **98** | **100** | 1009 (966–2411) | 2466 (2209–3616) | 87 (71–198) |
 
-**Chi tiết 3 lần đo (Performance) và báo cáo JSON:**
+**Chi tiết 3 lần đo (Performance); báo cáo gốc của lượt này đã bị xoá:**
 
 | Trang | Lần 1 | Lần 2 | Lần 3 | Trung vị | Báo cáo |
 |---|---:|---:|---:|---:|---|
-| Home | 91 | 96 | 95 | **95** | [1](lighthouse-reports/prod-home-1.json) · [2](lighthouse-reports/prod-home-2.json) · [3](lighthouse-reports/prod-home-3.json) |
-| Sản phẩm | 97 | 99 | 94 | **97** | [1](lighthouse-reports/prod-product-1.json) · [2](lighthouse-reports/prod-product-2.json) · [3](lighthouse-reports/prod-product-3.json) |
-| Blog chi tiết | 81 | 98 | 97 | **97** | [1](lighthouse-reports/prod-blog-1.json) · [2](lighthouse-reports/prod-blog-2.json) · [3](lighthouse-reports/prod-blog-3.json) |
+| Home | 91 | 96 | 95 | **95** | (đã xoá) |
+| Sản phẩm | 97 | 99 | 94 | **97** | (đã xoá) |
+| Blog chi tiết | 81 | 98 | 97 | **97** | (đã xoá) |
 
-**Mục tiêu:** Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95 (trung vị 3 lần). **Trạng thái:** Home (95) và sản phẩm (97) **đạt** rõ ràng trên bản deploy ở lượt đo lại sau khi upload ảnh thật. Blog chi tiết giữ số liệu của lượt đo trước (97 trung vị) và cũng đạt. Các bộ số liệu cũ (Home “84 (82–92)”, “91 (61–96)” rồi “85 (84–95)”) phản ánh các lần đo khác nhau; bảng trên là lượt 2026-11-18; lượt mới nhất là "Đo lại production 2026-11-20 — lượt 2 (v3)" bên dưới, JSON gốc được lưu lại để đối chiếu.
+**Mục tiêu:** Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95 (trung vị 3 lần). **Trạng thái:** Home (95) và sản phẩm (97) **đạt** rõ ràng trên bản deploy ở lượt đo lại sau khi upload ảnh thật. Blog chi tiết giữ số liệu của lượt đo trước (97 trung vị) và cũng đạt. Các bộ số liệu cũ (Home “84 (82–92)”, “91 (61–96)” rồi “85 (84–95)”) phản ánh các lần đo khác nhau; bảng trên là lượt 2026-11-18; lượt mới nhất là "Đo lại production 2026-11-20 — lượt 3 (v4)" bên dưới. Báo cáo gốc của các lượt cũ đã được xoá khỏi repo.
 
 ### Kết quả đo trên production build local (tham chiếu, median; range)
 
@@ -70,9 +70,9 @@ Các thay đổi giữ nguyên hành vi UI (carousel vẫn cuộn/điều hướ
 
 ## Đo lại production 2026-11-20 — lượt 1 (nhiễu, v2)
 
-Lượt này có độ phân tán lớn (xem bên dưới); giữ lại làm bằng chứng nhưng **không dùng làm baseline**. Bảng cập nhật nhất là lượt 2 (v3) ngay sau đây.
+Lượt này có độ phân tán lớn (xem bên dưới); giữ số liệu lại để giải thích nhưng **không dùng làm baseline**. Bảng cập nhật nhất là lượt 3 (v4) ngay sau đây.
 
-Chạy Lighthouse 13.6.0 với Chrome của Playwright, mobile + simulated throttling, **bỏ 1 lần khởi động rồi lưu 3 lần** cho mỗi trang (cùng cách với lượt 2026-11-18). JSON gốc: `prod-{home,product,blog}-v2-{1,2,3}.json` trong [`docs/lighthouse-reports/`](lighthouse-reports/).
+Chạy Lighthouse 13.6.0 với Chrome của Playwright, mobile + simulated throttling, **bỏ 1 lần khởi động rồi lưu 3 lần** cho mỗi trang (cùng cách với lượt 2026-11-18). Báo cáo gốc `prod-{home,product,blog}-v2-{1,2,3}.json` đã bị xoá khỏi repo theo chính sách bên dưới.
 
 | Trang | Performance (median; range) | Accessibility | SEO | FCP / LCP / TBT median |
 |---|---:|---:|---:|---|
@@ -93,7 +93,7 @@ blog v2-1: perf=74 ...     blog v2-2: perf=73 ...    blog v2-3: perf=76 ...
 
 ## Đo lại production 2026-11-20 — lượt 2 (v3, ổn định)
 
-Chạy lại cùng quy trình (Lighthouse 13.6.0, Chrome Playwright, mobile, simulated throttling, bỏ 1 warm-up, lưu 3 lần) trên máy yên tĩnh hơn. JSON gốc: `prod-{home,product,blog}-v3-{1,2,3}.json` trong [`docs/lighthouse-reports/`](lighthouse-reports/).
+Chạy lại cùng quy trình (Lighthouse 13.6.0, Chrome Playwright, mobile, simulated throttling, bỏ 1 warm-up, lưu 3 lần) trên máy yên tĩnh hơn. Báo cáo gốc `prod-{home,product,blog}-v3-{1,2,3}.json` đã bị xoá khỏi repo theo chính sách bên dưới.
 
 | Trang | Performance (median; range) | Accessibility | SEO | FCP / LCP / TBT median |
 |---|---:|---:|---:|---|
@@ -105,7 +105,7 @@ Lần này TBT chỉ 170–290 ms và CLS = 0 ở cả 9 lần, sát với lư�
 
 ## Đo lại production 2026-11-20 — lượt 3 (v4, sau PR #119/#120)
 
-Chạy lại cùng quy trình (Lighthouse 13.6.0, Chrome Playwright headless shell, mobile, simulated throttling, 3 lần mỗi trang) trên production sau khi token layer và E2E isolation được merge. JSON gốc: `prod-{home,product,blog}-v4-{1,2,3}.json` trong [`docs/lighthouse-reports/`](lighthouse-reports/).
+Chạy lại cùng quy trình (Lighthouse 13.6.0, Chrome Playwright headless shell, mobile, simulated throttling, 3 lần mỗi trang) trên production sau khi token layer và E2E isolation được merge. Báo cáo gốc: `prod-{home,product,blog}-v4-{1,2,3}.json.gz` trong [`docs/lighthouse-reports/`](lighthouse-reports/) (nén gzip để giảm dung lượng repo). Bộ ivy (3 lần trên `/p/ivy-tennis-bracelet`) cũng được giữ dưới dạng `prod-ivy-{1,2,3}.json.gz`.
 
 | Trang | Performance (median; range) | Accessibility | Best practices | SEO | FCP / LCP / TBT median | CLS |
 |---|---:|---:|---:|---:|---|---:|
@@ -114,6 +114,13 @@ Chạy lại cùng quy trình (Lighthouse 13.6.0, Chrome Playwright headless she
 | Blog chi tiết | **98** (95–98) | 98 | 100 | 100 | 1.0 s / 2.2 s / 103 ms | 0 |
 
 TBT 30–207 ms và CLS = 0 ở cả 9 lần, xác nhận lượt v2 vẫn là nhiễu đo. Cả ba trang đạt mục tiêu Performance ≥ 85 / A11y ≥ 90 / SEO ≥ 95. Đây là **baseline hiện tại**. Output đầy đủ 9 lần nằm trong PR evidence và file review `docs/reviews/2026-11-20-requesting-code-review-round-2.md`.
+
+## Chính sách lưu báo cáo Lighthouse
+
+- Chỉ giữ bộ đang làm baseline (v4 cho Home/Sản phẩm/Blog và 3 lần ivy) trong `docs/lighthouse-reports/`, ở dạng `.json.gz`.
+- Các lượt đã bị thay (v1, v2, v3, warm-up) đã bị xoá khỏi repo. Chúng vẫn tồn tại trong lịch sử Git cũ, nhưng không được thêm vào PR code nữa.
+- Khi cần báo cáo cho một lần đo mới, đính kèm qua GitHub Release/artifact hoặc PR riêng chỉ chứa evidence; PR code không kèm file JSON/gzip báo cáo.
+- Test `src/test/lighthouse-reports.test.ts` chặn việc thêm file báo cáo không phải baseline.
 
 ## Kiểm chứng tự động khác (2026-11-19 → 2026-11-20)
 

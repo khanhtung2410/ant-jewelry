@@ -188,9 +188,10 @@ không truy cập Prisma trực tiếp.
   `/_next/image`) để tránh lỗi optimizer trên Vercel; ảnh vẫn còn sau redeploy.
   `PRODUCT_IMAGE_UPLOAD_DIR` chỉ dùng để đọc/dọn ảnh legacy từ bản filesystem cũ.
 - Ảnh cũ còn lưu dạng PNG có thể migrate một lần bằng
-  `node scripts/reencode-legacy-uploads.mjs --dry-run` (xem trước) rồi bỏ `--dry-run` để ghi.
-  Script dùng chung hàm resize với upload, cập nhật bytes/contentType và thêm `?v=2` vào URL ảnh
-  để CDN không trả nội dung cũ; ETag được tính lại từ bytes mới ở mỗi request.
+  `npx tsx scripts/reencode-legacy-uploads.ts --dry-run` (xem trước) rồi bỏ `--dry-run` để ghi.
+  Script import hàm resize từ `src/features/products/server/product-image-processing.ts`, cùng
+  hàm với upload (không còn import từ `scripts/`), cập nhật bytes/contentType và thêm `?v=2` vào
+  URL ảnh để CDN không trả nội dung cũ; ETag được tính lại từ bytes mới ở mỗi request.
 
 Sau khi đổi schema local, chạy `npm run db:push` và `npm run db:generate` nếu Prisma Client
 chưa được cập nhật. Không dùng `prisma db push` cho production.
