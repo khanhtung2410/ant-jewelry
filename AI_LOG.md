@@ -1,4 +1,60 @@
-## 2026-11-20 13:49:13 +07:00 - Fix review findings #9, #10, #11
+## 2026-11-20 14:24:25 +07:00 - Full evidence, production check và Lighthouse v4
+
+### Prompt nguyên văn đã dùng
+
+> use superpower tool to carefully check code base and production
+> use admin account i give you to test
+> rerun light house
+>
+> rules
+> add complete output in pr, not just exit 0, i need full evidence
+> some of your pr body have just exit 0, not acceptible
+>
+> (credential production được cung cấp riêng: email + password; chỉ nằm trong script temp ngoài repo, đã xóa sau khi chạy)
+
+Link review: `docs/reviews/2026-11-20-requesting-code-review-round-2.md`.
+
+### Đã tự kiểm chứng
+
+- **Skills:** `requesting-code-review` (reviewer subagent fresh-context, read-only), `verification-before-completion` (bộ lệnh đầy đủ, output đầy đủ), `browser` (production check). Reviewer không dispatch subagent phụ.
+- **Pull main trước:** `origin/main` đã tiến tới `ea87187` (PR #120 merge); reset từ origin/main rồi tạo nhánh `chore/full-evidence-and-production-check`.
+- **Codebase review (base `cfef8cb` → head `ea87187`):** reviewer resolve cơ học mọi CSS var ra hex, kiểm tra 29/29 component token có consumer, xác nhận 3 điểm trọng yếu (ConfirmPopover `#fefdf8`, CloseButton outline `#991b1b`, E2E `finally` khôi phục cả khi assertion throw). Không có Critical.
+- **Production check bằng ADMIN thật trên `https://ant-jewelry.vercel.app`:** login OK; 7 trang admin đều 200; focus trap Cancel→Delete→Cancel, Escape đóng confirm mà không xóa; hide confirm Cancel giữ sản phẩm visible; ivy product 200 với 2 ảnh upload; logout OK; 0 native dialog, 0 console error, 0 page error. Chỉ đọc, không tạo/sửa/xóa dữ liệu. Script chứa credential nằm ở temp và đã xóa.
+- **Lighthouse 13.6.0 chạy lại trên production:** 3 lần/trang, mobile, simulate; 9/9 exit 0; lưu JSON đầy đủ vào `docs/lighthouse-reports/prod-*-v4-*.json`. Median perf Home 95 (85–98), Product 98 (94–100), Blog 98 (95–98); TBT 30–207 ms; CLS 0 ở cả 9 lần.
+- **Verification với output đầy đủ (không chỉ exit code):** lint/typecheck/test (65 files / 303 tests)/format:check/build/test:e2e (30 pass) — toàn bộ stdout+stderr được ghi vào file temp và sẽ dán nguyên vào PR body.
+
+### Findings được nhận / bác
+
+**Accepted (đều có file:line, reproduction và quyết định trong file review):**
+1. Important — border CloseButton `#262626` → `#93aaa0` chưa được ghi vào ngoại lệ: đã coi lại Figma `Product-2` (node `116:741`, vòng tròn sáng viền xám) và ghi rõ vào `ARCHITECTURE.md`, spec và plan. Không đổi code.
+2. Minor — `AI_LOG.md:36` mất header entry cũ: đã chèn lại.
+3. Minor — `product-1920.png` lệch 2 byte do seed local: giữ lại, ghi rõ lý do trong spec/plan.
+4. Minor — `--component-confirm-primary-text` dùng token background làm text: thêm `--semantic-text-on-brand-soft` và trỏ lại; vẫn ra `#fefdf8`.
+5. Minor — test mới pin 6/30 component token: thay bằng bảng 30 token + kiểm tra mỗi tên khai báo đúng một lần (5/5 pass).
+
+**Rejected:** không có finding nào bị bác trong lượt này; phần được reviewer đưa vào "declined to judge" (XFF, race, blob sweeper, legacy filesystem) đã được người dùng chọn defer ở lượt trước nên giữ nguyên.
+
+### AI sai ở đâu
+
+- Ở entry `13:49` trước đó tôi đã xóa nhầm header của entry `12:45` khi prepend — reviewer bắt được. Đã sửa và từ đây mỗi lần prepend phải kiểm tra dòng `##` ngay bên dưới entry mới.
+- Spec/plan từng khẳng định "mọi token khác giữ nguyên" trong khi border CloseButton đã đổi; phải sửa cả 3 chỗ tài liệu thay vì chỉ sửa `ARCHITECTURE.md`.
+- Các PR trước chỉ ghi `exit=0` trong verification; người dùng đã chỉ rõ không đạt yêu cầu. Lần này dán toàn bộ output thực tế vào PR body.
+
+### Hạn chế
+
+- Reviewer không tự chạy lại bộ lệnh (chế độ read-only); bằng chứng là output đầy đủ do tôi chạy riêng.
+- Không có snapshot Figma lịch sử trong repo; quyết định border dựa trên render `Product-2` hiện tại.
+- Production check chỉ đọc, không kiểm tra ghi dữ liệu thật trên production.
+
+### Flake E2E trong lượt này (đã debug theo systematic-debugging)
+
+- Lần chạy full đầu tiên: 1 failed / 29 passed — `accessibility.spec.ts:73` không thấy dialog CONTACT US sau khi click footer. Không phải regression token: full suite chạy lại pass, test riêng pass 4/4.
+- Probe với `waitUntil: 'commit'` + click ngay: **3/10 lần dialog không mở**, xác nhận race hydration (panel là React state, click trước hydration là no-op).
+- Fix: `e2e/accessibility.spec.ts` dùng `expect(...).toPass({ timeout: 10_000 })` để click có điều kiện cho tới khi dialog hiện (không dùng sleep cố định). Sau fix chạy full suite 2 lần liên tiếp: 30/30 pass cả hai. Chi tiết trong file review round 2.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
@@ -31,7 +87,7 @@ Link review: `docs/reviews/2026-11-20-requesting-code-review.md` (mục "Cập n
 
 ---
 
-
+## 2026-11-20 12:45:47 +07:00 - Layered design tokens + X button + Figma check
 
 ### Prompt nguyên văn đã dùng
 

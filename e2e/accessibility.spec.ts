@@ -76,13 +76,21 @@ test(
   async ({ page }) => {
     await page.goto('/');
     const footer = page.getByRole('contentinfo');
-    // On mobile the footer columns are collapsed accordions.
-    if (test.info().project.name === 'pixel-7') {
-      await footer.getByRole('button', { name: 'HOME' }).click();
-    }
-    await footer.getByRole('button', { name: 'CONTACT' }).click();
+    const contactTrigger = footer.getByRole('button', { name: 'CONTACT' });
     const dialog = page.getByRole('dialog', { name: 'CONTACT US' });
-    await expect(dialog).toBeVisible();
+
+    // The panel is React state, so a click before hydration is a no-op.
+    // Poll the interaction until the dialog actually opens instead of
+    // assuming a single post-load click lands after hydration.
+    await expect(async () => {
+      if (test.info().project.name === 'pixel-7' && !(await contactTrigger.isVisible())) {
+        // Mobile footer columns are collapsed accordions.
+        await footer.getByRole('button', { name: 'HOME' }).click();
+      }
+      await contactTrigger.click();
+      await expect(dialog).toBeVisible();
+    }).toPass({ timeout: 10_000 });
+
     await expectClean(page, '[role="dialog"]');
   },
 );

@@ -82,12 +82,48 @@ describe('layered design tokens', () => {
     }
   });
 
-  it('resolves each component token to its intended concrete colour', () => {
-    expect(resolveVar('--component-confirm-primary-text')).toBe('#fefdf8');
-    expect(resolveVar('--component-confirm-confirm-border')).toBe('#fecaca');
-    expect(resolveVar('--component-action-button-text')).toBe('#000000');
-    expect(resolveVar('--component-arrow-button-text')).toBe('#383838');
-    expect(resolveVar('--component-close-button-background')).toBe('#fefdf8');
-    expect(resolveVar('--component-close-button-outline')).toBe('#991b1b');
+  it('resolves every component token to its intended concrete colour', () => {
+    const componentTokenHexes: Record<string, string> = {
+      '--component-action-button-background': '#ffffff80',
+      '--component-action-button-text': '#000000',
+      '--component-action-button-hover-background': '#265649',
+      '--component-action-button-hover-text': '#ffffff',
+      '--component-admin-action-border': '#93aaa0',
+      '--component-admin-action-hover-border': '#265649',
+      '--component-admin-action-hover-text': '#265649',
+      '--component-admin-action-danger-border': '#fecaca',
+      '--component-admin-action-danger-text': '#b91c1c',
+      '--component-admin-action-danger-hover-border': '#b91c1c',
+      '--component-confirm-cancel-border': '#93aaa0',
+      '--component-confirm-confirm-border': '#fecaca',
+      '--component-confirm-confirm-text': '#b91c1c',
+      '--component-confirm-confirm-hover-border': '#b91c1c',
+      '--component-confirm-confirm-hover-background': '#fef2f2',
+      '--component-confirm-primary-background': '#265649',
+      '--component-confirm-primary-text': '#fefdf8',
+      '--component-close-button-border': '#93aaa0',
+      '--component-close-button-background': '#fefdf8',
+      '--component-close-button-text': '#383838',
+      '--component-close-button-hover-border': '#991b1b',
+      '--component-close-button-hover-background': '#bbbab6',
+      '--component-close-button-hover-text': '#b91c1c',
+      '--component-close-button-outline': '#991b1b',
+      '--component-arrow-button-border': '#262626',
+      '--component-arrow-button-background': '#ffffff80',
+      '--component-arrow-button-text': '#383838',
+      '--component-arrow-button-hover-border': '#265649',
+      '--component-arrow-button-hover-background': '#e5e5e5',
+      '--component-arrow-button-hover-text': '#265649',
+    };
+
+    const declared = [...css.matchAll(/^\s*(--component-[\w-]+)\s*:/gm)].map((match) => match[1]);
+    expect(new Set(declared).size, 'each component token is declared exactly once').toBe(
+      declared.length,
+    );
+    expect(new Set(declared)).toEqual(new Set(Object.keys(componentTokenHexes)));
+
+    for (const [name, expected] of Object.entries(componentTokenHexes)) {
+      expect(resolveVar(name), name).toBe(expected);
+    }
   });
 });
