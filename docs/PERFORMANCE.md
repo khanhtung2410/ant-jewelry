@@ -101,7 +101,19 @@ Chạy lại cùng quy trình (Lighthouse 13.6.0, Chrome Playwright, mobile, sim
 | Sản phẩm (`/p/aurora-band`) | **94** (94–95) | 100 | 100 | 0.9 s / 2.5 s / 190 ms |
 | Blog chi tiết | **93** (92–93) | 98 | 100 | 0.9 s / 2.7 s / 210 ms |
 
-Lần này TBT chỉ 170–290 ms và CLS = 0 ở cả 9 lần, sát với lượt 2026-11-18 (TBT ~148 ms). Điều đó xác nhận lượt v2 (TBT tới 3.690 ms, CLS 0,516) là **nhiễu môi trường đo**, không phải regression từ PR #108–#113. Cả ba trang **đạt** mục tiêu Performance ≥ 85 / A11y ≥ 90 / SEO ≥ 95. Đây là baseline hiện tại.
+Lần này TBT chỉ 170–290 ms và CLS = 0 ở cả 9 lần, sát với lượt 2026-11-18 (TBT ~148 ms). Điều đó xác nhận lượt v2 (TBT tới 3.690 ms, CLS 0,516) là **nhiễu môi trường đo**, không phải regression từ PR #108–#113. Cả ba trang **đạt** mục tiêu Performance ≥ 85 / A11y ≥ 90 / SEO ≥ 95. Đây là baseline trước lượt v4.
+
+## Đo lại production 2026-11-20 — lượt 3 (v4, sau PR #119/#120)
+
+Chạy lại cùng quy trình (Lighthouse 13.6.0, Chrome Playwright headless shell, mobile, simulated throttling, 3 lần mỗi trang) trên production sau khi token layer và E2E isolation được merge. JSON gốc: `prod-{home,product,blog}-v4-{1,2,3}.json` trong [`docs/lighthouse-reports/`](lighthouse-reports/).
+
+| Trang | Performance (median; range) | Accessibility | Best practices | SEO | FCP / LCP / TBT median | CLS |
+|---|---:|---:|---:|---:|---|---:|
+| Home (`/`) | **95** (85–98) | 96 | 100 | 100 | 1.2 s / 3.0 s / 47 ms | 0 |
+| Sản phẩm (`/p/aurora-band`) | **98** (94–100) | 100 | 100 | 100 | 1.2 s / 2.2 s / 93 ms | 0 |
+| Blog chi tiết | **98** (95–98) | 98 | 100 | 100 | 1.0 s / 2.2 s / 103 ms | 0 |
+
+TBT 30–207 ms và CLS = 0 ở cả 9 lần, xác nhận lượt v2 vẫn là nhiễu đo. Cả ba trang đạt mục tiêu Performance ≥ 85 / A11y ≥ 90 / SEO ≥ 95. Đây là **baseline hiện tại**. Output đầy đủ 9 lần nằm trong PR evidence và file review `docs/reviews/2026-11-20-requesting-code-review-round-2.md`.
 
 ## Kiểm chứng tự động khác (2026-11-19 → 2026-11-20)
 

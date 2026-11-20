@@ -86,6 +86,7 @@
   --semantic-text-body: var(--primitive-neutral-600);
   --semantic-text-strong: var(--primitive-neutral-0);
   --semantic-text-on-brand: var(--primitive-white);
+  --semantic-text-on-brand-soft: var(--primitive-neutral-50);
   --semantic-border-line: var(--primitive-line);
   --semantic-background-surface: var(--primitive-neutral-100);
   --semantic-background-product-frame: var(--primitive-neutral-200);
@@ -140,7 +141,7 @@
   --component-confirm-confirm-hover-border: var(--semantic-text-danger);
   --component-confirm-confirm-hover-background: var(--semantic-background-danger);
   --component-confirm-primary-background: var(--semantic-background-brand);
-  --component-confirm-primary-text: var(--semantic-background-body);
+  --component-confirm-primary-text: var(--semantic-text-on-brand-soft);
   --component-close-button-border: var(--semantic-border-line);
   --component-close-button-background: var(--semantic-background-body);
   --component-close-button-text: var(--semantic-text-body);

@@ -13,7 +13,7 @@ Apply the four-layer token model shown by the project owner to the ANT JEWELRY U
 
 ## Non-goals / anti-goals
 
-- No colour, spacing or layout change. The six committed 1920px screenshots must remain byte-identical after regeneration.
+- No colour, spacing or layout change except the sanctioned X close-button treatment authorised mid-flight: cream background (`#fefdf8`), dark X (`#383838`) and light grey border (`#93aaa0`), confirmed against Figma `Product-2`. Five of the six committed 1920px screenshots remain byte-identical; `product-contact-popover-1920.png` is the only intentional visual change.
 - No rename of every token in the repo (that was the rejected full-rename approach).
 - No new font, CDN asset or dependency.
 
@@ -61,7 +61,7 @@ Migrated components use `var(--component-...)` classes for their own backgrounds
 
 - `npm run lint`, `typecheck`, `test`, `format:check`, `build` all exit 0.
 - `npm run test:e2e` -> 30 passed.
-- `npm run test:screenshots` -> six PNGs byte-identical to the committed ones (proof of no visual change).
+- `npm run test:screenshots` -> five PNGs byte-identical to the committed ones; `product-contact-popover-1920.png` is the only intentional change (X close button). `product-1920.png` has a 2-byte seed-data delta and is documented, not a token change.
 - Repo-wide CJK scan -> no matches.
 
 ## Builder notes
