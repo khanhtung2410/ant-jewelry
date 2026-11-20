@@ -5,9 +5,9 @@ const actionClassName =
   'inline-flex items-center justify-center whitespace-nowrap rounded-md border px-3 py-1.5 text-xs font-medium transition';
 const actionVariantClassNames = {
   default:
-    'border-[var(--line)] hover:border-[var(--underline-color)] hover:text-[var(--underline-color)]',
+    'border-[var(--component-admin-action-border)] hover:border-[var(--component-admin-action-hover-border)] hover:text-[var(--component-admin-action-hover-text)]',
   danger:
-    'border-[var(--danger-border)] text-[var(--danger-text)] hover:border-[var(--danger-text)]',
+    'border-[var(--component-admin-action-danger-border)] text-[var(--component-admin-action-danger-text)] hover:border-[var(--component-admin-action-danger-hover-border)]',
 };
 
 export function AdminTableActions({
