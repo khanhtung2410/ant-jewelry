@@ -20,7 +20,7 @@ Production target: **Vercel** (Next.js) + **PostgreSQL**. Uploaded product image
 - PR #86 giới hạn 4 MB/file, gửi từng file một (Vercel Function ~4,5 MB/body) và thêm `s-maxage` + ETag cho `/uploads/[...path]`.
 - PR #94 resize ảnh mới thành WebP ≤1600 px lúc lưu và phục vụ mọi `/uploads/...` dạng `unoptimized` (bỏ `/_next/image`).
 - PR #98 lưu hash SHA-256 vào `ProductImageBlob.etag`: 304 đọc metadata trước, **không kéo blob**; hỗ trợ `W/"…"` và danh sách ETag.
-- PR #102 xác định và sửa lỗi 400 do query `?v=2` (xem mục S3) bằng cách chỉnh `images.localPatterns` cho phép query string; lỗi 400 ban đầu trên Vercel với URL không query vẫn chưa rõ nguyên nhân. Vẫn giữ `unoptimized` cho ảnh upload vì lý do kích thước.
+- PR #102 xác định và sửa lỗi 400 do query `?v=2` (xem mục S3) bằng cách chỉnh `images.localPatterns` cho phép query string; lỗi 400 ban đầu trên Vercel với URL không query vẫn chưa rõ nguyên nhân; `unoptimized` khi đó chỉ là workaround. Từ 2026-11-20 ảnh upload đã đi qua optimizer sau khi đo lại trên production.
 - PR #104–#106: E2E chạy được trên clone sạch, có thêm Pixel 7 + axe a11y, và smoke production chỉ đọc.
 - PR #108: E2E chạy trong CI kèm artifact report/trace; ảnh chụp 1920 px bằng Playwright cho bảng R6.3.
 
@@ -29,7 +29,7 @@ Production target: **Vercel** (Next.js) + **PostgreSQL**. Uploaded product image
 - **Dung lượng DB:** ảnh nằm trong `bytea`, làm tăng kích thước backup và thời gian `pg_dump`/PITR; không có bucket riêng để tách dữ liệu nhị phân.
 - **Backup:** ảnh được backup cùng database (xem mục Migration/backup) — không cần backup filesystem riêng, nhưng restore DB là restore luôn ảnh.
 - **Chi phí Function + DB khi CDN miss:** mỗi lần cache miss chạy một Function và một query kéo blob từ DB. Đã giảm bằng `Cache-Control: s-maxage=31536000, immutable` và ETag/304 (từ PR #98 đọc hash từ DB trước nên 304 không kéo bytes); vẫn cần theo dõi tỉ lệ cache HIT và số invocation.
-- **Ảnh cũ trước #94:** vẫn là PNG gốc nếu chưa chạy script E1 bên dưới; từ #94 các URL `/uploads/` đều `unoptimized` nên ảnh cũ được trả nguyên kích thước. Đây là lý do E1 là việc bắt buộc, không phải tùy chọn, trên môi trường có ảnh upload cũ.
+- **Ảnh cũ trước #94:** vẫn là PNG gốc nếu chưa chạy script E1 bên dưới; từ #94 đến 2026-11-20 các URL `/uploads/` từng được phục vụ `unoptimized` nên ảnh cũ được trả nguyên kích thước. Đây là lý do E1 là việc bắt buộc, không phải tùy chọn, trên môi trường có ảnh upload cũ; sau lần đo 2026-11-20 ảnh upload đi qua optimizer và nhận bản nhỏ hơn.
 - **Đổi lấy:** không thêm vendor/secrets, ít cấu hình hơn, nhất quán giữa local và production, ảnh tồn tại qua redeploy.
 
 **Giới hạn sẽ theo dõi (review định kỳ):**
@@ -135,7 +135,7 @@ HEAD 3 (If-None-Match): status=304 x-vercel-cache=HIT
 
 Ảnh chụp: [admin đã đăng nhập](deploy-screenshots/admin-logged-in.png), [danh sách ảnh sau upload](deploy-screenshots/admin-uploaded-images.png), [trang sản phẩm có ảnh upload](deploy-screenshots/product-with-uploaded-image.png), [Home](deploy-screenshots/home.png), [sản phẩm](deploy-screenshots/product.png). Chưa tự phát động redeploy Production từ môi trường agent; ảnh nằm trong DB nên bước còn lại là xác nhận sau lần deploy tiếp theo.
 
-**Lỗi optimizer đã gặp và cách xử lý:** ảnh PNG ~3,8 MB upload ở lượt trên có lúc trả `400 INVALID_IMAGE_OPTIMIZE_REQUEST` qua `/_next/image?...&w=256&q=75` (`uniqueContextId not found`, kèm cảnh báo Permissions-Policy không liên quan từ trình duyệt). Ảnh mới được resize thành WebP ≤1600 px ngay khi lưu và component dùng `shouldSkipImageOptimizer()` để phục vụ trực tiếp `/uploads/...`. Cần phân biệt hai lỗi: (1) lỗi 400 khi URL ảnh có `?v=2` (xuất hiện sau E1) đã được xác định và sửa ở mục S3 bên dưới (`images.localPatterns` mặc định chặn query string); (2) lỗi `400 INVALID_IMAGE_OPTIMIZE_REQUEST` ban đầu trên Vercel xảy ra với URL **không có query string** (`/_next/image?url=%2Fuploads%2F…png&w=256`), kèm `uniqueContextId not found`, và **chưa rõ nguyên nhân**. Resize WebP + `unoptimized` khiến đường dẫn optimizer không còn được dùng, nhưng không phải vì đã hiểu hết lỗi 400 ban đầu. Quyết định giữ `unoptimized` cho ảnh upload vẫn đúng vì lý do kích thước (E3).
+**Lỗi optimizer đã gặp và cách xử lý:** ảnh PNG ~3,8 MB upload ở lượt trên có lúc trả `400 INVALID_IMAGE_OPTIMIZE_REQUEST` qua `/_next/image?...&w=256&q=75` (`uniqueContextId not found`, kèm cảnh báo Permissions-Policy không liên quan từ trình duyệt). Ảnh mới được resize thành WebP ≤1600 px ngay khi lưu; ban đầu component dùng `shouldSkipImageOptimizer()` để phục vụ trực tiếp `/uploads/...`, nay đã bỏ skip sau khi đo lại. Cần phân biệt hai lỗi: (1) lỗi 400 khi URL ảnh có `?v=2` (xuất hiện sau E1) đã được xác định và sửa ở mục S3 bên dưới (`images.localPatterns` mặc định chặn query string); (2) lỗi `400 INVALID_IMAGE_OPTIMIZE_REQUEST` ban đầu trên Vercel xảy ra với URL **không có query string** (`/_next/image?url=%2Fuploads%2F…png&w=256`), kèm `uniqueContextId not found`, và **chưa rõ nguyên nhân**. `unoptimized` ban đầu là **workaround cho lỗi 400 chưa rõ nguyên nhân**, không phải tối ưu kích thước — chính nó bắt card/thumbnail tải bản lớn. Sau khi sửa `images.localPatterns` và đo production 2026-11-20 (optimizer trả 200 cho ảnh upload), `shouldSkipImageOptimizer` chỉ còn bỏ qua URL tuyệt đối bên ngoài; ảnh `/uploads/` đã đi qua optimizer.
 
 ### Migration ảnh legacy (E1)
 
@@ -153,9 +153,9 @@ Script import `resizeToStoredWebp()` từ `src/features/products/server/product-
 
 **Kết quả kiểm chứng production 2026-11-19:** 4 ảnh `/uploads/...` trên `/p/ivy-tennis-bracelet` lần lượt 29.732 / 29.728 / 29.868 / 337.464 byte (đều <400 KB). Lighthouse mobile 3 lần: 93 / 91 / 100 → trung vị Performance **93**, Accessibility 100, SEO 100; báo cáo JSON nén trong [`docs/lighthouse-reports/`](lighthouse-reports/) (`prod-ivy-{1,2,3}.json.gz`). Các ảnh production được thay bằng giao diện ADMIN vì agent không có `DATABASE_URL` production; script ở trên vẫn là cách chuẩn để migrate các blob còn lại sau khi deploy.
 
-### Đánh đổi E3: một kích thước cho mọi chỗ
+### Đánh đổi E3: một kích thước cho mọi chỗ (đã đóng sau lần đo 2026-11-20)
 
-Vì ảnh `/uploads/...` được phục vụ `unoptimized`, card sản phẩm, thumbnail 96 px và ảnh admin 88 px đều tải cùng một blob WebP đã resize (~1600 px hoặc ngưỡng 380 KB), thay vì bản nhỏ. Đây là đánh đổi có chủ đích để tránh lỗi optimizer (xem bên dưới); khi một danh mục có nhiều ảnh upload thật, trang `/c/<slug>` sẽ tăng theo số ảnh × kích thước blob.
+Khi ảnh `/uploads/...` còn `unoptimized`, card sản phẩm, thumbnail 96 px và ảnh admin 88 px đều tải cùng một blob WebP đã resize (~1600 px hoặc ngưỡng 380 KB). **Lý do lúc đó là workaround cho lỗi 400 trên Vercel chưa rõ nguyên nhân, không phải tối ưu dung lượng** — ngược lại, chính `unoptimized` làm trang tăng theo số ảnh × kích thước blob. Sau khi sửa `images.localPatterns` và kiểm chứng production, ảnh upload đã đi qua optimizer nên đánh đổi này không còn.
 
 **Số đo thực tế 2026-11-19** (production, `/c/other-jewelry` đang có 1 ảnh upload thật):
 
@@ -167,7 +167,9 @@ upload image bytes: 337464 (≈97.8% tổng bytes ảnh)
 cùng ảnh nếu có bản 480px webp q80: 98998 bytes (~96.6 KB, giảm ~70%)
 ```
 
-Với 5 card upload thật cùng kích thước, phần ảnh sẽ ~1,7 MB thay vì ~0,5 MB nếu có bản 480 px. Hướng xử lý khi đợt sau cần: sinh thêm biến thể nhỏ lúc upload (storage key phụ, ví dụ `-480.webp`) và dùng cho card/thumbnail, hoặc bật lại optimizer sau khi xử lý xong nguyên nhân bên dưới.
+Với 5 card upload thật cùng kích thước, phần ảnh sẽ ~1,7 MB thay vì ~0,5 MB nếu có bản 480 px.
+
+**Kiểm chứng 2026-11-20:** trên production, ảnh `/uploads/...webp` ở `/p/ivy-tennis-bracelet` trả 337.464 byte; `/_next/image?url=…&w=256&q=75` trả **200, 13.350 byte** `image/jpeg` (giảm ~96%). Local production build cho kết quả tương tự (275.246 → 9.609 byte). Không có lỗi 400 nào xuất hiện ở hai môi trường, nên `isStoredUploadUrl` đã bị bỏ khỏi `shouldSkipImageOptimizer`. Phần đo 2026-11-19 ở trên giữ lại làm baseline của trạng thái `unoptimized`.
 
 ### Điều tra lỗi 400 INVALID_IMAGE_OPTIMIZE_REQUEST (S3 — nguyên nhân thật)
 
@@ -188,7 +190,7 @@ Bản ghi đầy đủ các bước systematic-debugging: [`docs/reviews/2026-11
 3. **Pattern:** chỉ khác biệt là `search` của inner URL khác `""`. Dấu `?` rỗng cho `search === ""` nên vẫn 200 — khớp chính xác điều kiện so sánh trong Next.js.
 4. **Root cause:** bản build của Next 16 chèn mặc định `images.localPatterns = [{ pathname: '**', search: '' }]` (đọc được trong `.next/required-server-files.json`). `match-local-pattern.js:25-28` so sánh `pattern.search !== url.search` → mọi local URL có query sẽ bị từ chối. Gọi trực tiếp `ImageOptimizerCache.validateParams()` với config build xác nhận: `?v=2`/`?foo=bar` -> `"url" parameter is not allowed`; không query và `?` -> OK.
 5. **Giả thuyết bị bác:** file hỏng (sharp đọc được metadata); `w` vượt ảnh nguồn (w=1920 vẫn 200); kích thước file (PNG 3,97 MB từng 200); cold-start Vercel (lỗi tái hiện 100% local, không phải ngẫu nhiên).
-6. **Fix root cause:** `next.config.ts` khai báo `images.localPatterns: [{ pathname: '**' }]` — bỏ trường `search` nên mọi path local được phép với mọi query. Giữ nguyên quyết định dùng `unoptimized` cho `/uploads/...` (chờ E3 bản 480 px); config này chỉ đảm bảo optimizer **không còn trả 400** nếu được bật lại. Test `src/test/image-optimizer-config.test.ts` chuyển từ đỏ sang xanh; HTTP repro ở bước 2 cũng xanh.
+6. **Fix root cause:** `next.config.ts` khai báo `images.localPatterns: [{ pathname: '**' }]` — bỏ trường `search` nên mọi path local được phép với mọi query. Config này cho phép optimizer xử lý `/uploads/...`; sau lần đo production 2026-11-20 (xem mục E3) skip đã được bỏ nên ảnh upload thực sự dùng optimizer. Test `src/test/image-optimizer-config.test.ts` chuyển từ đỏ sang xanh; HTTP repro ở bước 2 cũng xanh.
 7. **Phần không tái hiện được:** URL không query kèm `uniqueContextId not found` của mentor vẫn là lớp edge Vercel; không ép lại được và không có trong source. Không giả vờ đã giải thích được phần này — ghi nhận là platform-specific, không ảnh hưởng fix ở trên.
 
 ## Production test hygiene (quy tắc bắt buộc)

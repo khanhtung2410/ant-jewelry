@@ -1,3 +1,37 @@
+## 2026-11-20 21:47:23 +07:00 - Sửa F3: thống nhất lý do E3 và bỏ skip optimizer
+
+### Prompt nguyên văn đã dùng
+
+> F3 — Lý do E3 tự mâu thuẫn. DEPLOY.md:138 và file S3 viết "giữ unoptimized cho ảnh upload vì lý do kích thước (E3)", nhưng chính unoptimized mới là nguyên nhân card và thumbnail phải tải bản 1600px; optimizer sẽ trả bản nhỏ hơn. DEPLOY.md:158 lại viết là để "tránh lỗi optimizer". Chọn một lý do đúng và viết lại cho thống nhất. Gợi ý: localPatterns đã sửa, nên thử bật optimizer cho /uploads/ trên production và đo dung lượng trang /c/other-jewelry trước/sau. Nếu không còn lỗi 400 thì bỏ isStoredUploadUrl khỏi shouldSkipImageOptimizer.
+
+Link review: `docs/reviews/2026-11-20-receiving-code-review.md` (mục "Cập nhật F3").
+
+### Đã tự kiểm chứng
+
+- Kéo `origin/main` (`ad9362f`, PR #127 merge) rồi tạo nhánh `fix/f3-optimizer-rationale`.
+- **Đo thật trước khi quyết định:** local production build (`next start`) với ảnh upload có sẵn trong DB: raw `/uploads/...` 275.246 B, optimizer `w=256` trả 200 / 9.609 B. Production `https://ant-jewelry.vercel.app/p/ivy-tennis-bracelet`: raw 337.464 B, optimizer `w=256` trả **200 / 13.350 B** `image/jpeg`, không có 400. Vậy lý do "kích thước" sai và skip không còn cần thiết.
+- **TDD:** đổi assertion trong `image-url.test.ts`, `product-card.test.tsx`, `product-detail.test.tsx` trước → **RED 3/5**; sau khi bỏ `isStoredUploadUrl` khỏi `shouldSkipImageOptimizer` (và xoá hàm thừa) → **GREEN 18/18**.
+- **Docs thống nhất một lý do:** `unoptimized` ban đầu là workaround cho lỗi 400 chưa rõ trên Vercel, không phải tối ưu dung lượng. Sửa `DEPLOY.md:23,32,138,158,170,191`, `PERFORMANCE.md:133`, `ARCHITECTURE.md:860`, và mục 3 của file review S3. Giữ số đo 2026-11-19 làm baseline trạng thái cũ, thêm số đo 2026-11-20 làm bằng chứng mới.
+- Không tự deploy; chỉ gửi request HTTP read-only tới optimizer production.
+
+### Findings được nhận / bác
+
+- **Accepted:** F3 — sửa code và toàn bộ tài liệu mâu thuẫn; quyết định trong file review.
+- **Rejected:** không có. Không giữ lý do "kích thước" vì nó bị số đo bác bỏ.
+
+### AI sai ở đâu
+
+- Tôi từng viết "giữ `unoptimized` vì lý do kích thước (E3)" trong khi `unoptimized` chính là nguyên nhân tải bản lớn — nhầm chiều của quan hệ nhân quả. Phải đo thực tế mới nhận ra.
+- Bốn lượt review trước không bắt được mâu thuẫn giữa `DEPLOY.md:138` và `:158`; mãi đến F3 người dùng mới chỉ ra.
+
+### Hạn chế
+
+- Chưa đo tổng bytes của `/c/other-jewelry` sau khi deploy code đã bỏ skip; cần deploy để xác nhận mức giảm ở cấp trang. Số đo hiện tại là cấp một ảnh (~96% nhỏ hơn).
+- Lỗi 400 ban đầu với URL không query vẫn chưa rõ nguyên nhân; việc bỏ skip dựa trên kết quả optimizer production trả 200 cho ảnh hiện tại.
+- **Verification cuối:** lint/typecheck/test (70 files / 317 tests)/format:check/build/test:e2e (30 passed) đều exit 0; guard test AI_LOG 5/5 (header entry trước vẫn còn sau prepend). Output đầy đủ trong PR body.
+
+---
+
 ## 2026-11-20 21:25:06 +07:00 - Sửa F2: tách hai lỗi 400 optimizer
 
 ### Prompt nguyên văn đã dùng

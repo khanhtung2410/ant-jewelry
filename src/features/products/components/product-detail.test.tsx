@@ -115,7 +115,7 @@ describe('ProductDetail', () => {
     expect(html).not.toContain('role="dialog"');
   });
 
-  it('skips the optimizer for uploaded gallery images but keeps mock images on it', () => {
+  it('uses the optimizer for uploaded gallery images and mock images alike', () => {
     const mockHtml = renderToStaticMarkup(
       <ProductDetail product={makeProduct()} categoryName="Wedding Ring" settings={settings} />,
     );
@@ -131,7 +131,7 @@ describe('ProductDetail', () => {
       <ProductDetail product={uploadedProduct} categoryName="Wedding Ring" settings={settings} />,
     );
     expect(uploadHtml).toContain('/uploads/products/p-1/cover.webp');
-    expect(uploadHtml).toContain('data-unoptimized="true"');
+    expect(uploadHtml).toContain('data-unoptimized="false"');
   });
 
   it('renders every colour as a labelled swatch and starts with the first colour gallery', () => {

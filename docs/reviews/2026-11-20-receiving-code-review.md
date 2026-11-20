@@ -61,3 +61,16 @@ Người dùng chỉ ra S3 khẳng định quá mức: lỗi gốc của PR #94 
 | `docs/PERFORMANCE.md:133` (phát hiện thêm khi grep) | Đồng bộ cùng cách diễn đạt để không còn câu mâu thuẫn. | **Accepted (fixed)** |
 
 Không viết lại các phát hiện lịch sử khác; chỉ sửa các câu khẳng định nguyên nhân. Hạn chế: vẫn không có bằng chứng giải thích `uniqueContextId not found` — file review tiếp tục ghi nhận là chưa rõ.
+
+## Cập nhật F3 (2026-11-20, branch `fix/f3-optimizer-rationale`)
+
+Người dùng chỉ ra lý do E3 tự mâu thuẫn: "giữ `unoptimized` vì kích thước" sai, vì chính `unoptimized` bắt card/thumbnail tải bản 1600 px; DEPLOY.md:158 lại nói "để tránh lỗi optimizer".
+
+| Hạng mục | Bằng chứng | Quyết định |
+|---|---|---|
+| Local production build, ảnh upload thật | raw `/uploads/...` 275.246 B; optimizer `w=256` 200 / 9.609 B | **Accepted** — `unoptimized` không phải tối ưu kích thước |
+| Production `/p/ivy-tennis-bracelet`, ảnh upload thật | raw 337.464 B; `/_next/image?...&w=256&q=75` → **200 / 13.350 B** `image/jpeg`, không có 400 | **Accepted** — bỏ skip |
+| Code `src/features/shared/lib/image-url.ts` | TDD: test `shouldSkipImageOptimizer('/uploads/...') === false` RED rồi GREEN; xoá hàm `isStoredUploadUrl` trở nên thừa; cập nhật 2 test component | **Accepted (fixed)** |
+| Docs `DEPLOY.md:23,32,138,158,170,191`, `PERFORMANCE.md:133`, `ARCHITECTURE.md:860`, file review S3 mục 3 | Một lý do thống nhất: `unoptimized` là workaround cho lỗi 400 chưa rõ; giờ đã bỏ sau khi đo | **Accepted (fixed)** |
+
+Không tự deploy cấu hình; kết luận dựa trên request HTTP read-only tới optimizer trên production. Hạn chế: chưa đo lại tổng bytes của `/c/other-jewelry` sau deploy thực tế (cần deploy code đã bỏ skip); số đo ảnh cho thấy giảm ~96% cho một ảnh.

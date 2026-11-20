@@ -8,16 +8,11 @@ export function isExternalImageUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
 }
 
-/** URLs of admin-uploaded images stored in ProductImageBlob. */
-export function isStoredUploadUrl(url: string): boolean {
-  return url.startsWith('/uploads/');
-}
-
 /**
- * Stored uploads are already resized when saved and are served from the app's
- * own route; routing them through /_next/image adds a cold-start failure mode
- * and a redundant resize on Vercel.
+ * Only external absolute URLs need to skip the optimizer: their hostnames are
+ * unknown at build time. Local `/uploads/...` images are valid local paths
+ * after the `images.localPatterns` fix and benefit from smaller variants.
  */
 export function shouldSkipImageOptimizer(url: string): boolean {
-  return isExternalImageUrl(url) || isStoredUploadUrl(url);
+  return isExternalImageUrl(url);
 }

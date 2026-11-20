@@ -106,7 +106,7 @@ if (pattern.search !== undefined) {
 
    Test chuyển xanh. Build lại + restart server + chạy lại HTTP repro: `?v=2` và `?foo=bar` từ 400 → 200; `/uploads/...?v=2` từ 400 → 404 (đã tới fetch nguồn, chứng tỏ validation không còn chặn).
 
-3. **Không re-enable optimizer cho ảnh upload** — quyết định E3 vẫn giữ `unoptimized` vì lý do kích thước (ảnh ~1600 px cho mọi card). Config mới chỉ đảm bảo optimizer không còn trả 400 nếu sau này bật lại.
+3. **Quyết định tại thời điểm S3: giữ `unoptimized` cho ảnh upload** — nhưng lý do đúng là **workaround cho lỗi 400 chưa rõ trên Vercel**, không phải "lý do kích thước"; `unoptimized` thực sự làm card tải bản ~1600 px. Config mới lúc đó chỉ đảm bảo optimizer không còn trả 400 nếu bật lại. **Cập nhật 2026-11-20 (F3):** sau khi đo production (optimizer 200 / 13.350 B cho ảnh raw 337.464 B), skip đã được bỏ và ảnh upload dùng optimizer.
 
 ## Phần không giải thích được
 
