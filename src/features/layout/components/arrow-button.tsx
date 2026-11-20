@@ -16,8 +16,8 @@ export function ArrowButton({
   disabled = false,
 }: ArrowButtonProps) {
   const classes = [
-    'inline-flex h-[30px] w-[30px] items-center justify-center rounded-full border-2 border-[var(--font-color)] bg-[var(--surface-overlay-color)] text-[var(--font-color)] transition-colors duration-200',
-    'hover:border-[var(--underline-color)] hover:bg-[var(--button-bg-hover)] hover:text-[var(--underline-color)]',
+    'inline-flex h-[30px] w-[30px] items-center justify-center rounded-full border-2 border-[var(--neutral-strong)] bg-[var(--surface-overlay-color)] text-[var(--font-color)] transition-colors duration-200',
+    'hover:border-[var(--underline-color)] hover:bg-[var(--neutral-hover)] hover:text-[var(--underline-color)]',
     'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)] disabled:cursor-not-allowed disabled:opacity-40',
     className,
   ]

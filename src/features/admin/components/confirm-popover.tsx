@@ -15,14 +15,12 @@ export function ConfirmPopover({
   onConfirm,
   onCancel,
   confirmLabel = 'Confirm',
-  busy = false,
   danger = false,
 }: {
   message: string;
   onConfirm: () => void;
   onCancel: () => void;
   confirmLabel?: string;
-  busy?: boolean;
   danger?: boolean;
 }) {
   const titleId = useId();
@@ -102,8 +100,7 @@ export function ConfirmPopover({
           <button
             type="button"
             onClick={onConfirm}
-            disabled={busy}
-            className={`rounded-md px-3 py-2 text-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
+            className={`rounded-md px-3 py-2 text-sm transition ${
               danger
                 ? 'border border-[var(--danger-border)] text-[var(--danger-text)] hover:border-[var(--danger-text)] hover:bg-[var(--danger-bg)]'
                 : 'bg-[var(--underline-color)] text-background hover:opacity-95'

@@ -13,7 +13,9 @@ function PendingToast({ message }: { message: string }) {
 /**
  * Wraps a destructive Server Action form. Replaces window.confirm with an
  * accessible in-app popover and shows a bottom-left busy indicator while the
- * action runs.
+ * action runs. The popover closes on confirm; double submission is prevented
+ * by `confirmedRef`, and the pending Server Action is announced by
+ * `AdminStatusToast`, so ConfirmPopover has no busy/disabled state of its own.
  */
 export function AdminConfirmForm({
   action,

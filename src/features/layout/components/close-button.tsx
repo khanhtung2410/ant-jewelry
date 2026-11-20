@@ -13,9 +13,9 @@ export function CloseButton({ onClick, ariaLabel = 'Close', className = '' }: Cl
       aria-label={ariaLabel}
       onClick={onClick}
       className={`group inline-flex h-[30px] w-[30px] items-center justify-center rounded-full border-2
-        border-[var(--font-color)] bg-[var(--button-bg-normal)] text-[var(--font-color)] transition-colors duration-200 
+        border-[var(--neutral-strong)] bg-[var(--button-bg-normal)] text-[var(--neutral-strong)] transition-colors duration-200 
         hover:border-[var(--danger-strong)] hover:bg-[var(--button-bg-hover)] hover:text-[var(--danger-text)] 
-        focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)] ${className}`.trim()}
+        focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--danger-strong)] ${className}`.trim()}
     >
       {/* X Icon SVG */}
       <svg
