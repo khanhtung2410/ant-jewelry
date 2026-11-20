@@ -101,7 +101,7 @@ describe('layered design tokens', () => {
       '--component-confirm-confirm-hover-background': '#fef2f2',
       '--component-confirm-primary-background': '#265649',
       '--component-confirm-primary-text': '#fefdf8',
-      '--component-close-button-border': '#93aaa0',
+      '--component-close-button-border': '#262626',
       '--component-close-button-background': '#fefdf8',
       '--component-close-button-text': '#383838',
       '--component-close-button-hover-border': '#991b1b',
