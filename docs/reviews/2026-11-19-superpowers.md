@@ -2,7 +2,7 @@
 
 - **Phạm vi:** `main` tại `e64c30b` (sau PR #94), toàn bộ code/docs hiện hành.
 - **Mục đích:** tự tìm lỗi kiểu E1 (sai lệch giữa tài liệu/spec và code, bằng chứng không khớp) trước khi mentor tìm ra.
-- **Phương pháp:** đọc toàn bộ file liên quan, đối chiếu code ↔ docs ↔ bằng chứng; phân loại Critical / Important / Minor; mỗi phát hiện都要 có trạng thái `Fixed` hoặc `Rejected/Deferred` kèm lý do.
+- **Phương pháp:** đọc toàn bộ file liên quan, đối chiếu code ↔ docs ↔ bằng chứng; phân loại Critical / Important / Minor; mỗi phát hiện đều phải có trạng thái `Fixed` hoặc `Rejected/Deferred` kèm lý do.
 - **Prompt đã dùng:** xem `AI_LOG.md` mục `2026-11-19 10:38 +07:00`.
 
 ## Kết quả tổng hợp
