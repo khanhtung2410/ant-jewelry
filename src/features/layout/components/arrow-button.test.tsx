@@ -10,6 +10,9 @@ describe('ArrowButton', () => {
 
     expect(html).toContain('aria-label="Previous slide"');
     expect(html).toContain('h-[30px] w-[30px]');
+    expect(html).toContain('border-[var(--component-arrow-button-border)]');
+    expect(html).toContain('bg-[var(--component-arrow-button-background)]');
+    expect(html).toContain('text-[var(--component-arrow-button-text)]');
     expect(html).toContain('hover:border-[var(--component-arrow-button-hover-border)]');
     expect(html).toContain('hover:bg-[var(--component-arrow-button-hover-background)]');
     expect(html).toContain('hover:text-[var(--component-arrow-button-hover-text)]');

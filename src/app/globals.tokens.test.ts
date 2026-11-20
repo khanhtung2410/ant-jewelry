@@ -47,6 +47,16 @@ const preservedHexes = [
   '#e5e5e5',
 ];
 
+function resolveVar(name: string, seen = new Set<string>()): string {
+  if (seen.has(name)) throw new Error(`cyclic token: ${name}`);
+  seen.add(name);
+  const match = css.match(new RegExp(`${name}\\s*:\\s*([^;]+);`));
+  if (!match) throw new Error(`missing token: ${name}`);
+  const value = match[1].trim();
+  const nested = value.match(/^var\((--[\w-]+)\)$/);
+  return nested ? resolveVar(nested[1], seen) : value;
+}
+
 describe('layered design tokens', () => {
   it('declares each of the four layers exactly once', () => {
     for (const marker of ['/* 1. Raw', '/* 2. Primitive', '/* 3. Semantic', '/* 4. Component']) {
@@ -70,5 +80,14 @@ describe('layered design tokens', () => {
     for (const hex of preservedHexes) {
       expect(css, hex).toContain(hex);
     }
+  });
+
+  it('resolves each component token to its intended concrete colour', () => {
+    expect(resolveVar('--component-confirm-primary-text')).toBe('#fefdf8');
+    expect(resolveVar('--component-confirm-confirm-border')).toBe('#fecaca');
+    expect(resolveVar('--component-action-button-text')).toBe('#000000');
+    expect(resolveVar('--component-arrow-button-text')).toBe('#383838');
+    expect(resolveVar('--component-close-button-background')).toBe('#fefdf8');
+    expect(resolveVar('--component-close-button-outline')).toBe('#991b1b');
   });
 });

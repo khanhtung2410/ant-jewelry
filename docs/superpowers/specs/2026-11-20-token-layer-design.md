@@ -2,7 +2,7 @@
 
 ## Intent
 
-Apply the four-layer token model shown by the project owner to the ANT JEWELRY UI. Today `src/app/globals.css` has one flat `:root` block of Figma hex values used directly as names such as `--underline-color` and `--font-color`. The goal is structure, not new colours: every current value stays byte-for-byte the same.
+Apply the four-layer token model shown by the project owner to the ANT JEWELRY UI. Today `src/app/globals.css` has one flat `:root` block of Figma hex values used directly as names such as `--underline-color` and `--font-color`. The goal is structure, not new colours: every current value stays byte-for-byte the same, with one explicit exception requested mid-flight — the X close button becomes cream (`#fefdf8`) with a dark X (`#383838`) after checking Figma `Product-2`.
 
 ## Goals
 

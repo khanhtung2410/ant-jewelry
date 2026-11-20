@@ -873,7 +873,7 @@ Deletion records are queued transactionally with database deletion and processed
 raw        #265649
 primitive  brand-700
 semantic   background/brand · text/brand · border/brand
-component  button/primary/background → ActionButton
+component  --component-action-button-background → ActionButton
 ```
 
 - **Raw** (`--raw-*`): exact Figma/palette hex values, never used directly by components.
@@ -881,7 +881,7 @@ component  button/primary/background → ActionButton
 - **Semantic** (`--semantic-*`): the role a colour plays (background, text, border, badge, backdrop).
 - **Component** (`--component-*`): one component's default/hover/disabled state.
 
-Existing public names such as `--underline-color`, `--font-color`, `--surface-overlay-color` and `--badge-*` remain declared as aliases into the semantic layer, so unmigrated components keep their exact computed values. Tailwind v4 `@theme inline` continues to expose the same utility colour names. When adding a colour, define it as raw first, then primitive, semantic and finally component — never inline a hex in a component class. No colour value changed when these layers were introduced.
+Existing public names such as `--underline-color`, `--font-color`, `--surface-overlay-color` and `--badge-*` remain declared as aliases into the semantic layer, so unmigrated components keep their exact computed values. Tailwind v4 `@theme inline` continues to expose the same utility colour names. When adding a colour, define it as raw first, then primitive, semantic and finally component — never inline a hex in a component class. The only intentional visual change in this pass is the X close button: a cream background (`#fefdf8`) with a dark X (`#383838`), confirmed against Figma `Product-2`; every other token resolves to its previous value.
 
 ## 12. Non-functional Architecture
 SAD đề cập các vấn đề phi chức năng nhưng chưa có dữ liệu khảo sát quy mô sản phẩm, số lượng người dùng đồng thời và lưu lượng truy cập. Vì vậy, chưa có cơ sở để đưa ra các chỉ tiêu hiệu năng định lượng chính thức.

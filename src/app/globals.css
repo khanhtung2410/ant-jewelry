@@ -140,7 +140,7 @@
   --component-confirm-confirm-hover-border: var(--semantic-text-danger);
   --component-confirm-confirm-hover-background: var(--semantic-background-danger);
   --component-confirm-primary-background: var(--semantic-background-brand);
-  --component-confirm-primary-text: var(--semantic-text-on-brand);
+  --component-confirm-primary-text: var(--semantic-background-body);
   --component-close-button-border: var(--semantic-border-line);
   --component-close-button-background: var(--semantic-background-body);
   --component-close-button-text: var(--semantic-text-body);
@@ -150,7 +150,7 @@
   --component-close-button-outline: var(--semantic-text-danger-strong);
   --component-arrow-button-border: var(--semantic-border-strong);
   --component-arrow-button-background: var(--semantic-background-overlay);
-  --component-arrow-button-text: var(--semantic-border-strong);
+  --component-arrow-button-text: var(--semantic-text-body);
   --component-arrow-button-hover-border: var(--semantic-border-brand);
   --component-arrow-button-hover-background: var(--semantic-background-hover-neutral);
   --component-arrow-button-hover-text: var(--semantic-text-brand);

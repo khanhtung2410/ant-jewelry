@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- No colour, spacing or layout change; every existing hex value stays identical.
+- No colour, spacing or layout change; every existing hex value stays identical, except the X close button's cream background / dark X authorised during Task 4.
 - Existing token names (`--underline-color`, `--font-color`, `--surface-overlay-color`, `--line`, `--button-bg-*`, `--backdrop-*`, `--badge-*`, `--danger-*`, `--success-text`, `--neutral-*`, `--control-outline`, `--focus-ring-color`, `--popover-shadow-color`, `--product-image-background`) stay declared as aliases.
 - Tailwind `@theme inline` keeps all current mapping names.
 - Only the five listed components are edited; other components keep using aliases.
@@ -185,7 +185,7 @@ Expected: 30 passed.
 
 - [ ] **Step 3: Prove no visual change**
 
-Run `npm run test:screenshots` with the default output directory, then compare all six PNGs to the committed versions. Expected: byte-identical (no `git status` changes for `docs/deploy-screenshots/*-1920.png`). If any file differs, stop and restore the previous token value rather than accepting the change.
+Run `npm run test:screenshots` with the default output directory, then compare all six PNGs to the committed versions. Expected: five captures byte-identical; `product-contact-popover-1920.png` is the only intentional change (X close button), regenerate and commit it with the rationale. Any other difference means stop and restore the previous token value.
 
 - [ ] **Step 4: Check the language rule and AI log**
 

@@ -33,6 +33,7 @@ describe('ActionButton', () => {
     expect(html).toContain('h-10 w-36');
     expect(html).toContain('EXPLORE NOW');
     expect(html).toContain('bg-[var(--component-action-button-background)]');
+    expect(html).toContain('text-[var(--component-action-button-text)]');
     expect(html).toContain('hover:bg-[var(--component-action-button-hover-background)]');
     expect(html).toContain('hover:text-[var(--component-action-button-hover-text)]');
     expect(html).not.toContain('disabled=""');
@@ -48,7 +49,7 @@ describe('ActionButton', () => {
     expect(html).toContain('<button');
     expect(html).toContain('disabled=""');
     expect(html).toContain(
-      'cursor-not-allowed bg-[var(--component-action-button-background)] text-foreground',
+      'cursor-not-allowed bg-[var(--component-action-button-background)] text-[var(--component-action-button-text)]',
     );
     expect(html).not.toContain('hover:bg-[var(--component-action-button-hover-background)]');
     expect(html).not.toContain('href="/collection"');

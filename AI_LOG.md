@@ -31,6 +31,17 @@
 - Không có snapshot Figma cũ trong repo nên "check if any changes" chỉ khẳng định cấu trúc/frame hiện tại khớp mapping, không so được diff lịch sử thiết kế.
 - Ảnh so sánh local/production khác nhau vài byte do dữ liệu, không phải bằng chứng thay đổi thị giác từ token; token hex test là bằng chứng chính.
 
+### Final review (fresh reviewer) và fix pass
+
+Reviewer toàn branch chấm **không ready** với 3 Important, đã xử lý trong một pass:
+1. Nút Confirm mặc định đổi `text-background` (#fefdf8) → trắng tinh (#ffffff) ngoài ngoại lệ được duyệt. Đã thêm test resolve giá trị cụ thể (`globals.tokens.test.ts`: `--component-confirm-primary-text` phải ra `#fefdf8`) → đỏ, rồi trỏ token sang `--semantic-background-body` → xanh.
+2. Bằng chứng screenshot cũ: ảnh commit vẫn là trạng thái trước đổi X. Đã regenerate từ local production build (port 3101); 4/6 giống hệt, `product-*` đổi vài byte do dữ liệu seed local, `product-contact-popover-1920.png` đổi đúng vùng nút đóng (đã soi ảnh: nền sáng, X đậm). Commit cả 2 ảnh product kèm giải thích.
+3. Migration component chưa đầy đủ: `--component-action-button-text`, `--component-arrow-button-* Border/text` khai báo nhưng không dùng; `--component-arrow-button-text` resolve #262626 trong khi render thực #383838. Đã nối các class default vào component token, sửa token text thành `--semantic-text-body` (#383838) và cập nhật assertion.
+
+Sửa thêm (cùng pass): docs/spec/plan bỏ câu "không đổi màu" tuyệt đối, ghi rõ ngoại lệ X; ghi rõ dùng file Figma **Copy** theo chỉ dẫn của người dùng, đã inspect node `226:469` (Blog-1), `235:761` (Blog-2), `105:861` (Product-1), `116:741` (Product-2) và so sánh với file gốc: 6 frame cùng cấu trúc/text hash, chỉ metadata khác (copy lưu ngày 2026-11-20).
+
+Bộ lệnh sau fix: lint/typecheck/test (65 files / 301 tests)/format:check/build exit 0; E2E 30 pass; quét CJK → 0.
+
 **So sánh Figma:** frame mapping giữ nguyên; nút đóng được điều chỉnh theo Product-2 (nền sáng, X đậm).
 
 ---
