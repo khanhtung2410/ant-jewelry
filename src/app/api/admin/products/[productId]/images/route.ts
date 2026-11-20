@@ -101,6 +101,9 @@ export async function POST(
     }
     // A single-file request cannot leave a partially uploaded object behind;
     // the metadata-error branch below handles cleanup after a successful write.
+    // Residual risk (deferred): a hard crash between the blob write here and
+    // the metadata transaction below can still orphan a blob. A periodic
+    // sweeper is tracked outside this fix; the error path is covered by tests.
     console.error('Product image upload failed:', error);
     return jsonError('Image upload failed. Please retry.', 500);
   }

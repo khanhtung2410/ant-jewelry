@@ -15,6 +15,17 @@ describe('createUserSchema', () => {
     expect(parsed.role).toBe('EDITOR');
   });
 
+  it('trims the password just like the update schema does', () => {
+    const parsed = createUserSchema.parse({
+      name: 'Content Editor',
+      email: 'editor@example.com',
+      password: '  Editor@123  ',
+      role: 'EDITOR',
+    });
+
+    expect(parsed.password).toBe('Editor@123');
+  });
+
   it('rejects short passwords', () => {
     const result = createUserSchema.safeParse({
       name: '',

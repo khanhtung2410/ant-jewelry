@@ -6,6 +6,10 @@ describe('parseClientIp', () => {
     expect(parseClientIp('203.0.113.7, 10.0.0.1', null)).toBe('203.0.113.7');
   });
 
+  it('keeps the leftmost hop of a platform-supplied chain', () => {
+    expect(parseClientIp('203.0.113.7, 10.0.0.1, 10.0.0.2', null)).toBe('203.0.113.7');
+  });
+
   it('trims surrounding whitespace', () => {
     expect(parseClientIp('  203.0.113.8  ', '10.0.0.2')).toBe('203.0.113.8');
   });

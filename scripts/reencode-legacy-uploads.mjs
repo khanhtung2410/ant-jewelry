@@ -31,6 +31,8 @@ export async function reencodeLegacyBlob(bytes) {
 /**
  * E1 + B6: re-encode non-WebP blobs, and backfill the ETag on legacy WebP
  * blobs that predate the etag column so conditional GETs stop loading bytes.
+ * Scope is database blobs only; legacy images still on the old filesystem are
+ * a read-only compatibility path and are not rewritten by this script.
  */
 export async function migrateLegacyBlobs(prisma, { dryRun = false, log = console.log } = {}) {
   const blobs = await prisma.productImageBlob.findMany({
