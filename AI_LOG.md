@@ -41,7 +41,55 @@ Link review: `docs/reviews/2026-11-20-receiving-code-review.md`.
 
 ---
 
+## 2026-11-20 16:30:00 +07:00 - Task 1: biến quy trình Superpowers thành rule kiểm được
 
+### Prompt nguyên văn đã dùng
+
+> can you take this result in to account and improve skill usage
+>
+> option A then C
+
+Link thiết kế: `docs/superpowers/specs/2026-11-20-superpowers-usage-improvement-design.md`.
+Link kế hoạch: `docs/superpowers/plans/2026-11-20-superpowers-usage-improvement.md`.
+
+### Đã tự kiểm chứng
+
+- Chạy guard test mới trước khi sửa docs: 3 failed / 2 passed, lỗi đầu tiên là "AGENTS.md must have item 10 in the standing list" - đúng trạng thái đỏ mong đợi.
+- Nhánh `feat/superpowers-process-rules` được cắt từ `origin/main` ở `3249432`; spec và plan được đưa vào commit này.
+- Rule 10 nằm trong danh sách "Standing working agreement", trước `<!-- BEGIN:nextjs-agent-rules -->`; không sửa managed block.
+- `docs/reviews/TEMPLATE.md` có `- **Skill:** <exact skill id>` và `## Checklist versus evidence`.
+- `docs/CONTRIBUTING.md` mục Review trỏ tới template.
+- Quét 8 file review cũ: không file nào có dòng `- **Skill:** superpowers`; chạy lại guard test: 5/5 pass.
+- Trên base ban đầu `3249432`, header entry cũ ngay dưới `---` mới là `## 2026-11-20 15:37:07 +07:00 - D9/D10: Lighthouse evidence và script boundary`; sau khi rebase sang `origin/main` (PR #124 đã merge), header ngay dưới `---` mới là `## 2026-11-20 15:55:00 +07:00 - Ghi nhận phản hồi Superpowers S6-S8`. Không bịa entry nào.
+
+### Findings được nhận / bác
+
+**Accepted (từ S6-S8, theo thiết kế và plan):**
+
+- S6/F1: re-read whole source và grep mọi consumer trước khi sửa giá trị; kèm flow test cho giá trị đi qua module.
+- S7: mọi file review ghi skill id cụ thể, không dùng chữ "superpowers"; prompt của owner được tin sau khi kiểm chứng kỹ thuật, kể cả khi đổi hồ sơ lịch sử.
+- S8: mọi mục "Đạt" phải có test/output; nói rõ khi round không có phát hiện mới ngoài mentor checklist; template bắt buộc có bảng checklist-versus-evidence.
+- Các phát hiện này được đưa vào rule 10, template và guard test trên branch `feat/superpowers-process-rules`; F1/T2/F2 để lại task C riêng.
+
+**Rejected:**
+
+- Không có finding nào bị bác trong Task 1. Không tạo giả entry AI_LOG `15:55:00 ... S6-S8`: entry đó không có trên base `3249432`, nhưng đã tồn tại thật sau khi rebase sang `origin/main` (PR #124); conflict AI_LOG đã được giải bằng cách giữ cả hai entry.
+
+### AI sai ở đâu
+
+- Brief và plan giả định AI_LOG đã có header `## 2026-11-20 15:55:00 +07:00 - Ghi nhận phản hồi Superpowers S6-S8`, nhưng trên base ban đầu `3249432` header đó không có; tôi phát hiện khi grep toàn repo và đã giữ nguyên header cũ thay vì bịa entry. Sau khi rebase sang `origin/main`, entry 15:55 có thật và đã được giữ cùng entry mới — brief/plan đã được sửa để phản ánh đúng.
+- Ở các round trước tôi từng xóa nhầm `##` header của entry trước khi prepend; rule 10 và guard test giờ chặn lỗi đó.
+- Ở round trước tôi cũng bác request đổi hồ sơ lịch sử (mojibake) dù owner yêu cầu rõ; rule 10 giờ yêu cầu tin owner sau khi kiểm chứng.
+
+### Hạn chế
+
+- Trên base ban đầu `3249432`, entry `15:55:00 ... S6-S8` chưa tồn tại nên header ngay dưới `---` mới là `15:37:07 ... D9/D10`; sau rebase sang `origin/main` (PR #124), entry 15:55 có thật và nằm ngay dưới `---` mới. Cả hai entry được giữ nguyên.
+- Guard test kiểm tra `##` header ở bất kỳ dòng nào trước mỗi `### Prompt nguyên văn đã dùng` (theo đúng brief), nên không phát hiện trường hợp header bị xóa nhưng vẫn còn header cũ ở đầu file.
+- Task C (sửa F1/T2/F2) nằm ở branch/PR riêng, không nằm trong Task 1 này.
+
+---
+
+## 2026-11-20 15:37:07 +07:00 - D9/D10: Lighthouse evidence và script boundary
 
 ### Prompt nguyên văn đã dùng
 
