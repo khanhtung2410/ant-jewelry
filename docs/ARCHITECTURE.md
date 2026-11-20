@@ -865,6 +865,24 @@ Admin image actions use an in-app `ConfirmPopover` (Escape/backdrop to cancel, f
 
 Deletion records are queued transactionally with database deletion and processed against that store. Failed cleanup stays queued for a later retry and is logged instead of being thrown, so a storage error cannot fail the product action or upload response. Cache revalidation runs before the best-effort cleanup and callers wrap it in try/catch; image uploads invalidate the `products` cache tag through the same `revalidateProductPages()` helper as the Server Actions, so `/p/<slug>` serves the new images on its next request.
 
+### 11.1. Design token architecture
+
+`src/app/globals.css` uses four layers. Each layer only references the one before it; components consume the component layer (or the compatibility aliases for components not yet migrated).
+
+```text
+raw        #265649
+primitive  brand-700
+semantic   background/brand · text/brand · border/brand
+component  button/primary/background → ActionButton
+```
+
+- **Raw** (`--raw-*`): exact Figma/palette hex values, never used directly by components.
+- **Primitive** (`--primitive-*`): palette-scale aliases of raw values.
+- **Semantic** (`--semantic-*`): the role a colour plays (background, text, border, badge, backdrop).
+- **Component** (`--component-*`): one component's default/hover/disabled state.
+
+Existing public names such as `--underline-color`, `--font-color`, `--surface-overlay-color` and `--badge-*` remain declared as aliases into the semantic layer, so unmigrated components keep their exact computed values. Tailwind v4 `@theme inline` continues to expose the same utility colour names. When adding a colour, define it as raw first, then primitive, semantic and finally component — never inline a hex in a component class. No colour value changed when these layers were introduced.
+
 ## 12. Non-functional Architecture
 SAD đề cập các vấn đề phi chức năng nhưng chưa có dữ liệu khảo sát quy mô sản phẩm, số lượng người dùng đồng thời và lưu lượng truy cập. Vì vậy, chưa có cơ sở để đưa ra các chỉ tiêu hiệu năng định lượng chính thức.
 
