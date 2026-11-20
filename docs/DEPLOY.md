@@ -20,7 +20,7 @@ Production target: **Vercel** (Next.js) + **PostgreSQL**. Uploaded product image
 - PR #86 giới hạn 4 MB/file, gửi từng file một (Vercel Function ~4,5 MB/body) và thêm `s-maxage` + ETag cho `/uploads/[...path]`.
 - PR #94 resize ảnh mới thành WebP ≤1600 px lúc lưu và phục vụ mọi `/uploads/...` dạng `unoptimized` (bỏ `/_next/image`).
 - PR #98 lưu hash SHA-256 vào `ProductImageBlob.etag`: 304 đọc metadata trước, **không kéo blob**; hỗ trợ `W/"…"` và danh sách ETag.
-- PR #102 tìm ra nguyên nhân thật của 400 optimizer (xem mục S3) và chỉnh `images.localPatterns` cho phép query string; vẫn giữ `unoptimized` cho ảnh upload vì lý do kích thước.
+- PR #102 xác định và sửa lỗi 400 do query `?v=2` (xem mục S3) bằng cách chỉnh `images.localPatterns` cho phép query string; lỗi 400 ban đầu trên Vercel với URL không query vẫn chưa rõ nguyên nhân. Vẫn giữ `unoptimized` cho ảnh upload vì lý do kích thước.
 - PR #104–#106: E2E chạy được trên clone sạch, có thêm Pixel 7 + axe a11y, và smoke production chỉ đọc.
 - PR #108: E2E chạy trong CI kèm artifact report/trace; ảnh chụp 1920 px bằng Playwright cho bảng R6.3.
 
@@ -135,7 +135,7 @@ HEAD 3 (If-None-Match): status=304 x-vercel-cache=HIT
 
 Ảnh chụp: [admin đã đăng nhập](deploy-screenshots/admin-logged-in.png), [danh sách ảnh sau upload](deploy-screenshots/admin-uploaded-images.png), [trang sản phẩm có ảnh upload](deploy-screenshots/product-with-uploaded-image.png), [Home](deploy-screenshots/home.png), [sản phẩm](deploy-screenshots/product.png). Chưa tự phát động redeploy Production từ môi trường agent; ảnh nằm trong DB nên bước còn lại là xác nhận sau lần deploy tiếp theo.
 
-**Lỗi optimizer đã gặp và cách xử lý:** ảnh PNG ~3,8 MB upload ở lượt trên có lúc trả `400 INVALID_IMAGE_OPTIMIZE_REQUEST` qua `/_next/image?...&w=256&q=75` (`uniqueContextId not found`, kèm cảnh báo Permissions-Policy không liên quan từ trình duyệt). Ảnh mới được resize thành WebP ≤1600 px ngay khi lưu và component dùng `shouldSkipImageOptimizer()` để phục vụ trực tiếp `/uploads/...`. Nguyên nhân thật của 400 đã được tìm và sửa ở mục S3 bên dưới (`images.localPatterns` mặc định chặn query string); quyết định giữ `unoptimized` cho ảnh upload vẫn đúng vì lý do kích thước (E3), không còn vì sợ lỗi 400.
+**Lỗi optimizer đã gặp và cách xử lý:** ảnh PNG ~3,8 MB upload ở lượt trên có lúc trả `400 INVALID_IMAGE_OPTIMIZE_REQUEST` qua `/_next/image?...&w=256&q=75` (`uniqueContextId not found`, kèm cảnh báo Permissions-Policy không liên quan từ trình duyệt). Ảnh mới được resize thành WebP ≤1600 px ngay khi lưu và component dùng `shouldSkipImageOptimizer()` để phục vụ trực tiếp `/uploads/...`. Cần phân biệt hai lỗi: (1) lỗi 400 khi URL ảnh có `?v=2` (xuất hiện sau E1) đã được xác định và sửa ở mục S3 bên dưới (`images.localPatterns` mặc định chặn query string); (2) lỗi `400 INVALID_IMAGE_OPTIMIZE_REQUEST` ban đầu trên Vercel xảy ra với URL **không có query string** (`/_next/image?url=%2Fuploads%2F…png&w=256`), kèm `uniqueContextId not found`, và **chưa rõ nguyên nhân**. Resize WebP + `unoptimized` khiến đường dẫn optimizer không còn được dùng, nhưng không phải vì đã hiểu hết lỗi 400 ban đầu. Quyết định giữ `unoptimized` cho ảnh upload vẫn đúng vì lý do kích thước (E3).
 
 ### Migration ảnh legacy (E1)
 

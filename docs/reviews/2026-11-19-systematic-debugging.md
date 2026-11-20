@@ -1,9 +1,11 @@
-# S3 — Tìm nguyên nhân thật của `400 INVALID_IMAGE_OPTIMIZE_REQUEST`
+# S3 — Điều tra lỗi 400 optimizer: giải thích được lỗi do `?v=2`, lỗi 400 ban đầu trên Vercel vẫn chưa rõ
 
 - **Ngày:** 2026-11-19
 - **Skill:** `systematic-debugging`
 - **Prompt nguyên văn:** xem `AI_LOG.md` mục `2026-11-19 15:xx +07:00 - Tìm root cause optimizer và TDD E1/B6 (S3/S4)`.
-- **Kết luận ngắn:** không phải lỗi ảnh hỏng, không phải cold-start Vercel. Next.js 16 chèn mặc định `images.localPatterns = [{ pathname: '**', search: '' }]`; localPatterns có `search: ''` khiến **mọi URL ảnh local có query string bị từ chối 400**. Đã sửa bằng `images.localPatterns: [{ pathname: '**' }]`.
+- **Kết luận ngắn (hiệu chỉnh theo F2 — cần phân biệt hai lỗi):**
+  - **Lỗi do `?v=2` (đã tìm và sửa):** sau khi E1 thêm hậu tố `?v=2` vào URL ảnh, Next.js 16 chèn mặc định `images.localPatterns = [{ pathname: '**', search: '' }]`; `search: ''` từ chối mọi inner URL có query string → 400 `"url" parameter is not allowed`. Đã sửa bằng `images.localPatterns: [{ pathname: '**' }]`. Toàn bộ Phase 1–4 bên dưới mô tả **lỗi này**.
+  - **Lỗi 400 ban đầu trên Vercel (chưa rõ nguyên nhân):** URL trong PR #94 là `/_next/image?url=%2Fuploads%2F…png&w=256`, **không có `?v=2`** (E1 chưa tồn tại lúc đó). Chuỗi `INVALID_IMAGE_OPTIMIZE_REQUEST` / `uniqueContextId not found` không tái hiện được ở local. **Không khẳng định đã tìm root cause của lỗi này** — xem mục "Phần không giải thích được" cuối file.
 
 ## Phase 1 — Root cause investigation
 
@@ -29,7 +31,7 @@ upload no query            404 null :: "url" parameter is valid but internal res
 upload + inner ?v=2        400 null :: "url" parameter is not allowed
 ```
 
-Lỗi tái hiện 100% local — loại giả thuyết "timing/cold-start trên Vercel".
+Lỗi tái hiện 100% local — nhưng chỉ cho biến thể **có query string** (`?v=2`, `?foo=bar`), tức lỗi phát sinh sau E1. Phát hiện này không giải thích được lỗi 400 ban đầu trên Vercel, vốn xảy ra với URL không query.
 
 ### 3. Kiểm tra thay đổi gần đây
 

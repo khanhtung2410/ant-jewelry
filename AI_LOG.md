@@ -1,3 +1,36 @@
+## 2026-11-20 21:25:06 +07:00 - Sửa F2: tách hai lỗi 400 optimizer
+
+### Prompt nguyên văn đã dùng
+
+> F2 — Kết luận S3 nói quá. Lỗi gốc của PR #94 xảy ra với URL không có query string (/_next/image?url=%2Fuploads%2F…png&w=256), lúc đó chưa có hậu tố ?v=2. Nguyên nhân localPatterns.search = '' tìm được trong docs/reviews/2026-11-19-systematic-debugging.md là lỗi của bản sửa E1 (thêm ?v=2), không phải nguyên nhân của lỗi 400 ban đầu. Phần cuối file đã thừa nhận “uniqueContextId” chưa giải thích được, nhưng câu “Kết luận ngắn” ở đầu file và DEPLOY.md:138 (“Nguyên nhân thật của 400 đã được tìm và sửa”) đang khẳng định ngược lại. Sửa hai chỗ này: tách “lỗi do ?v=2 (đã sửa)” và “lỗi 400 ban đầu trên Vercel (chưa rõ)”.
+
+Link review: `docs/reviews/2026-11-20-receiving-code-review.md` (mục "Cập nhật F2").
+
+### Đã tự kiểm chứng
+
+- Kéo `origin/main` (`1c6588e`, PR #126 merge) rồi tạo nhánh `fix/f2-s3-conclusion`. Đọc toàn bộ file review S3 và đoạn DEPLOY liên quan trước khi sửa.
+- Xác nhận đúng mâu thuẫn: `2026-11-19-systematic-debugging.md:6` khẳng định localPatterns là nguyên nhân của 400, trong khi cuối file thừa nhận không giải thích được `uniqueContextId`; các phép repro trong Phase 1 đều dùng inner URL **có query** (`?v=2`, `?foo=bar`), còn URL lỗi ban đầu trong PR #94 không có query.
+- Sửa "Kết luận ngắn" thành hai mục rõ ràng: lỗi do `?v=2` đã tìm/sửa; lỗi 400 ban đầu trên Vercel chưa rõ. Thêm ghi chú tương tự ở tiêu đề file và Phase 1 để không còn chỗ nào ngụ ý ngược lại.
+- Sửa `DEPLOY.md:138` và `:23`; grep thêm thấy `PERFORMANCE.md:133` có cùng khẳng định nên đồng bộ luôn. Ghi quyết định vào file review.
+- Chỉ tài liệu, không đổi code hay config.
+
+### Findings được nhận / bác
+
+- **Accepted:** F2 — đã sửa 4 chỗ tài liệu; quyết định trong file review.
+- **Rejected:** không có. Không bịa nguyên nhân cho `uniqueContextId`; giữ nguyên ghi nhận "chưa rõ".
+
+### AI sai ở đâu
+
+- Ở S3 tôi viết "Kết luận ngắn" như thể đã tìm root cause của lỗi 400 ban đầu, trong khi bằng chứng chỉ chứng minh lỗi do `?v=2` xuất hiện sau E1. Đây đúng là S8: kết luận nói quá so với output.
+- Bốn lượt review sau đó không đối chiếu câu kết luận với URL gốc trong PR #94, nên để mâu thuẫn tồn tại qua nhiều PR.
+
+### Hạn chế
+
+- Vẫn không có bằng chứng giải thích `uniqueContextId not found`; tài liệu giờ nói rõ là chưa rõ thay vì giả vờ đã hiểu.
+- **Verification cuối:** lint/typecheck/test (70 files / 317 tests)/format:check/build/test:e2e (30 passed) đều exit 0; guard test AI_LOG 5/5 pass — chứng minh header entry trước đó vẫn còn sau lần prepend này. Output đầy đủ trong PR body.
+
+---
+
 ## 2026-11-20 20:49:51 +07:00 - Sửa F1: nhất quán khoảng trắng mật khẩu
 
 ### Prompt nguyên văn đã dùng

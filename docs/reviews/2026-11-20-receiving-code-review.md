@@ -49,3 +49,15 @@ Người dùng yêu cầu sửa F1 theo hướng được khuyên dùng: **khôn
 | `src/features/auth/password-flow.test.ts` (mới) | Test luồng thật: create → login đúng chuỗi; update → login đúng chuỗi; create/update có khoảng trắng → lỗi trường; login có khoảng trắng → cùng thông báo rõ. | RED 3/5 trước sửa, GREEN 5/5 sau sửa |
 
 Quyết định: **Accepted (fixed)**. Các file review lịch sử vẫn giữ nguyên mô tả cũ theo đúng nguyên tắc không viết lại lịch sử; entry này ghi nhận quyết định mới. Hạn chế: user đã tạo trước đây với mật khẩu chứa dấu cách (bị trim lúc tạo) vẫn cần dùng mật khẩu đã trim để đăng nhập — không thể tự sửa hash cũ trong phạm vi này.
+
+## Cập nhật F2 (2026-11-20, branch `fix/f2-s3-conclusion`)
+
+Người dùng chỉ ra S3 khẳng định quá mức: lỗi gốc của PR #94 xảy ra với URL **không có query string**, trước khi E1 thêm `?v=2`; `localPatterns.search = ''` giải thích lỗi của bản sửa E1, không phải lỗi 400 ban đầu.
+
+| File | Thay đổi | Quyết định |
+|---|---|---|
+| `docs/reviews/2026-11-19-systematic-debugging.md:6` (và tiêu đề, ghi chú Phase 1) | Tách thành hai lỗi: "lỗi do `?v=2` (đã sửa)" và "lỗi 400 ban đầu trên Vercel (chưa rõ nguyên nhân)"; Phase 1 ghi rõ repro chỉ phủ biến thể có query. | **Accepted (fixed)** |
+| `docs/DEPLOY.md:138` và `:23` | Bỏ câu "Nguyên nhân thật của 400 đã được tìm và sửa"; nêu rõ lỗi ban đầu không query vẫn chưa rõ. | **Accepted (fixed)** |
+| `docs/PERFORMANCE.md:133` (phát hiện thêm khi grep) | Đồng bộ cùng cách diễn đạt để không còn câu mâu thuẫn. | **Accepted (fixed)** |
+
+Không viết lại các phát hiện lịch sử khác; chỉ sửa các câu khẳng định nguyên nhân. Hạn chế: vẫn không có bằng chứng giải thích `uniqueContextId not found` — file review tiếp tục ghi nhận là chưa rõ.
