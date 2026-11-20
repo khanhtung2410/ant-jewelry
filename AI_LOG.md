@@ -1,3 +1,37 @@
+## 2026-11-20 22:03:44 +07:00 - Sửa F4/F5: số Lighthouse một nguồn và migrate atomic
+
+### Prompt nguyên văn đã dùng
+
+> F4 — Số Lighthouse "mới nhất" không thống nhất. PERFORMANCE.md:116 nói v4 là baseline hiện tại, nhưng PERFORMANCE.md:29 và DEPLOY.md mục "Current deployment status" vẫn nói v3 là mới nhất. Lỗi này lặp lại lần thứ ba: mỗi lần đo lại phải tìm và sửa mọi chỗ nhắc tới số cũ (grep -rn "Lighthouse" docs README.md). Tốt hơn: chỉ giữ số ở một chỗ (PERFORMANCE.md), các file khác chỉ link tới đó.
+> F5 — Không bắt buộc: script migrate không atomic. reencode-legacy-uploads.mjs ghi blob mới rồi mới đổi URL sang ?v=2. Nếu script dừng giữa hai bước, lần chạy sau bỏ qua blob này (đã là webp) nên URL không bao giờ được đổi, và CDN tiếp tục phục vụ PNG cũ (immutable, 1 năm). Gói hai bước trong prisma.$transaction. findMany đang tải mọi blob vào RAM cùng lúc; xử lý theo lô.
+
+Link review: `docs/reviews/2026-11-20-receiving-code-review.md` (mục "Cập nhật F4 và F5").
+
+### Đã tự kiểm chứng
+
+- Kéo `origin/main` (`6bccc8e`, PR #128 merge) rồi tạo nhánh `fix/f4-f5-lighthouse-migration`.
+- **F4:** grep toàn `docs/` + `README.md` theo đúng yêu cầu; thấy `DEPLOY.md:249` (Current deployment status) còn nêu v3 là mới nhất và `DEPLOY.md:154` chép số ivy. Giờ `PERFORMANCE.md` là nơi duy nhất giữ số (v4 + ivy, làm rõ mục tổng hợp trỏ tới v4); `DEPLOY.md` chỉ còn link. Thêm rule vào `CONTRIBUTING.md`: grep `Lighthouse` sau mỗi lần đo.
+- **F5:** TDD — test mới (transaction gọi đúng một lần chứa blob update + URL update; `take = LEGACY_MIGRATION_BATCH_SIZE`; vòng lặp dừng khi hết trang) → **RED 3/5**; sau sửa script → **GREEN 7/7**. Script giờ dùng cursor `storageKey`, lô 50, và một `$transaction` cho mỗi blob. Bỏ một test ban đầu giả định có relation `productImage` trên blob — schema không có relation đó, atomicity đủ để đóng cửa sổ crash.
+- Cập nhật `DEPLOY.md` mục migration, file review và `CONTRIBUTING.md`.
+
+### Findings được nhận / bác
+
+- **Accepted:** F4 và F5, dù F5 được nhãn "không bắt buộc" — vẫn sửa vì lỗi CDN immutable 1 năm có tác động thật.
+- **Rejected:** không có. Không thêm điều kiện select phức tạp để "sửa lại" blob đã hỏng từ trước; atomicity ngăn lỗi tái diễn.
+
+### AI sai ở đâu
+
+- Lỗi F4 lặp lần thứ ba vì mỗi lần đo tôi chỉ sửa đúng chỗ được chỉ ra, không grep toàn docs. Lần này đã đưa grep vào rule trong `CONTRIBUTING.md`.
+- Ban đầu tôi định thêm điều kiện `productImage.url` vào `where` của blob, nhưng schema không có relation đó; phải đọc schema trước khi viết test. Đã bỏ test sai và dùng atomicity làm cơ chế đúng.
+- Test atomicity dùng fake findMany trả cùng blob mãi → timeout; phải cho nó trả trang rỗng ở lần sau.
+
+### Hạn chế
+
+- **Verification cuối (sau sửa type test + Prettier):** lint/typecheck/test (70 files / 319 tests)/format:check/build/test:e2e (30 passed) đều exit 0; guard AI_LOG 5/5. Lần đầu gate đỏ do `unknown[]` từ `Promise.all` trong test fake — đã cast rồi chạy lại toàn bộ, output đầy đủ trong PR body.
+- F4 chỉ sửa tài liệu; quy ước một nguồn cần được tuân thủ ở lần đo sau.
+
+---
+
 ## 2026-11-20 21:47:23 +07:00 - Sửa F3: thống nhất lý do E3 và bỏ skip optimizer
 
 ### Prompt nguyên văn đã dùng

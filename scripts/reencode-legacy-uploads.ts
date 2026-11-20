@@ -33,9 +33,13 @@ export async function reencodeLegacyBlob(bytes: Uint8Array<ArrayBufferLike>): Pr
   return { bytes: resized, contentType: 'image/webp', etag: etag(resized) };
 }
 
+export const LEGACY_MIGRATION_BATCH_SIZE = 50;
+
 /**
  * E1 + B6: re-encode non-WebP blobs, and backfill the ETag on legacy WebP
  * blobs that predate the etag column so conditional GETs stop loading bytes.
+ * Each blob and its URL updates are committed in one transaction: stopping
+ * halfway can no longer leave a WebP blob with an unversioned CDN URL.
  * Scope is database blobs only; legacy images still on the old filesystem are
  * a read-only compatibility path and are not rewritten by this script.
  */
@@ -43,50 +47,61 @@ export async function migrateLegacyBlobs(
   prisma: PrismaClient,
   { dryRun = false, log = console.log }: { dryRun?: boolean; log?: (message: string) => void } = {},
 ): Promise<number> {
-  const blobs = await prisma.productImageBlob.findMany({
-    where: {
-      OR: [{ contentType: { not: 'image/webp' } }, { etag: null }],
-    },
-    orderBy: { storageKey: 'asc' },
-  });
   log(`mode: ${dryRun ? 'dry-run' : 'write'}`);
-  log(`legacy blobs to process: ${blobs.length}`);
 
-  for (const blob of blobs) {
-    const needsResize = blob.contentType !== 'image/webp';
-    const beforeEtag = blob.etag ?? etag(blob.bytes);
-    const result = needsResize
-      ? await reencodeLegacyBlob(blob.bytes)
-      : { bytes: blob.bytes, contentType: blob.contentType, etag: etag(blob.bytes) };
-
-    log(
-      `${blob.storageKey}: ${blob.bytes.length} -> ${result.bytes.length} bytes, ETag ${beforeEtag} -> ${result.etag}`,
-    );
-    if (dryRun) continue;
-
-    await prisma.productImageBlob.update({
-      where: { storageKey: blob.storageKey },
-      data: { bytes: result.bytes, contentType: result.contentType, etag: result.etag },
+  let processed = 0;
+  let cursor: string | undefined;
+  while (true) {
+    const blobs = await prisma.productImageBlob.findMany({
+      where: {
+        OR: [{ contentType: { not: 'image/webp' } }, { etag: null }],
+      },
+      orderBy: { storageKey: 'asc' },
+      take: LEGACY_MIGRATION_BATCH_SIZE,
+      ...(cursor ? { cursor: { storageKey: cursor }, skip: 1 } : {}),
     });
+    if (blobs.length === 0) break;
 
-    if (needsResize) {
-      // Storage keys keep their old .png suffix, so bust the CDN with a
-      // versioned URL; the /uploads route ignores the query string.
-      const rows = await prisma.productImage.findMany({
-        where: { storageKey: blob.storageKey },
-        select: { id: true, url: true },
-      });
-      for (const row of rows) {
-        await prisma.productImage.update({
-          where: { id: row.id },
-          data: { url: withVersionQuery(row.url) },
-        });
+    for (const blob of blobs) {
+      const needsResize = blob.contentType !== 'image/webp';
+      const beforeEtag = blob.etag ?? etag(blob.bytes);
+      const result = needsResize
+        ? await reencodeLegacyBlob(blob.bytes)
+        : { bytes: blob.bytes, contentType: blob.contentType, etag: etag(blob.bytes) };
+
+      log(
+        `${blob.storageKey}: ${blob.bytes.length} -> ${result.bytes.length} bytes, ETag ${beforeEtag} -> ${result.etag}`,
+      );
+      if (!dryRun) {
+        // Storage keys keep their old .png suffix, so bust the CDN with a
+        // versioned URL; the /uploads route ignores the query string.
+        const rows = needsResize
+          ? await prisma.productImage.findMany({
+              where: { storageKey: blob.storageKey },
+              select: { id: true, url: true },
+            })
+          : [];
+
+        await prisma.$transaction([
+          prisma.productImageBlob.update({
+            where: { storageKey: blob.storageKey },
+            data: { bytes: result.bytes, contentType: result.contentType, etag: result.etag },
+          }),
+          ...rows.map((row) =>
+            prisma.productImage.update({
+              where: { id: row.id },
+              data: { url: withVersionQuery(row.url) },
+            }),
+          ),
+        ]);
       }
+      processed += 1;
+      cursor = blob.storageKey;
     }
   }
 
-  log(dryRun ? 'dry-run complete; no rows written' : `migrated ${blobs.length} blob(s)`);
-  return blobs.length;
+  log(dryRun ? 'dry-run complete; no rows written' : `migrated ${processed} blob(s)`);
+  return processed;
 }
 
 async function runCli(): Promise<void> {

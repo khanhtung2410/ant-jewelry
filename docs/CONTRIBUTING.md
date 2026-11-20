@@ -127,7 +127,7 @@ Alias `@/*` trong `tsconfig.json` trỏ về `src/*`. Đặt code gần route ho
 - Với thay đổi giao diện hoặc logic hiện có, kiểm tra thủ công các luồng bị ảnh hưởng và ghi rõ trong Pull Request.
 - Ưu tiên kiểm thử hàm thuần, validation schema và hành vi server-side có thể tái hiện ổn định.
 - **Production test hygiene:** mọi dữ liệu tạo ra khi test trên production (ảnh upload, sản phẩm, bài viết, tài khoản tạm) phải được dọn ngay sau khi test, trừ một ảnh/record được giữ lại làm bằng chứng redeploy — khi đó ghi rõ trong PR đó là ảnh/record nào. Nếu không dọn được, nêu rõ lý do và người chịu trách nhiệm dọn trong PR. Xem thêm `docs/DEPLOY.md` mục “Production test hygiene”.
-- **Lighthouse evidence hygiene:** PR code không được kèm file báo cáo Lighthouse (`.json` / `.json.gz`). Chỉ bộ baseline hiện tại được giữ trong `docs/lighthouse-reports/` dưới dạng `.json.gz`; các lượt cũ đã bị xoá. Báo cáo của lần đo mới đính kèm qua GitHub Release/artifact hoặc PR riêng chỉ chứa evidence, rồi dán số liệu vào `docs/PERFORMANCE.md`. Xem chính sách ở `docs/PERFORMANCE.md`.
+- **Lighthouse evidence hygiene:** PR code không được kèm file báo cáo Lighthouse (`.json` / `.json.gz`). Chỉ bộ baseline hiện tại được giữ trong `docs/lighthouse-reports/` dưới dạng `.json.gz`; các lượt cũ đã bị xoá. Báo cáo của lần đo mới đính kèm qua GitHub Release/artifact hoặc PR riêng chỉ chứa evidence. **Số Lighthouse chỉ được ghi ở một nơi: `docs/PERFORMANCE.md`; mọi file khác chỉ link tới đó.** Sau mỗi lần đo, chạy `grep -rn "Lighthouse" docs README.md` và sửa mọi chỗ còn nhắc số/lượt cũ. Xem chính sách ở `docs/PERFORMANCE.md`.
 
 ### Format & Lint
 
