@@ -6,7 +6,7 @@ import {
   migrateLegacyBlobs,
   reencodeLegacyBlob,
   withVersionQuery,
-} from '../../scripts/reencode-legacy-uploads.mjs';
+} from '../../scripts/reencode-legacy-uploads';
 
 const createdKeys: string[] = [];
 const createdImageIds: string[] = [];

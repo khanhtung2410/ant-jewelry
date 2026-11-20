@@ -1,4 +1,42 @@
-## 2026-11-20 14:50:44 +07:00 - Fix review findings #1 và #3 bằng code/asset
+## 2026-11-20 15:37:07 +07:00 - D9/D10: Lighthouse evidence và script boundary
+
+### Prompt nguyên văn đã dùng
+
+> D9 — 22 MB báo cáo Lighthouse trong git. docs/lighthouse-reports/ có 45 file JSON (~360k dòng), gồm cả các lượt đã bị loại (v2, warmup). Git giữ chúng mãi trong lịch sử, làm clone chậm và PR #113, #114, #121 có 95k–132k dòng, không review được. Chỉ commit bộ đang làm baseline (v4 + ivy), nén .json.gz hoặc đính vào GitHub Release/artifact; xóa các lượt đã bị thay. Từ giờ mỗi PR code không kèm file báo cáo.
+> D10 — Code app import từ scripts/. product-image-storage.ts:6 import ../../../../scripts/product-image-processing.mjs. Đưa hàm resize về src/features/products/server/ (TypeScript, có type), để script CLI import ngược lại từ đó, hoặc chạy script bằng tsx. Như vậy code chạy trên Vercel không phụ thuộc thư mục script.
+>
+> clean mojibake in AI_LOG
+
+Link review: `docs/reviews/2026-11-20-requesting-code-review-d9-d10.md`.
+
+### Đã tự kiểm chứng
+
+- Kéo `origin/main` (`f4b7a10`, PR #122 merge) rồi tạo nhánh `fix/review-d9-d10`.
+- **D9 (Accepted → Fixed):** đo được 45 file / 22.499.810 byte trong `docs/lighthouse-reports/`; giữ 12 file baseline (v4 + ivy), nén gzip thành `.json.gz` (1.808.506 byte), xoá 33 file lỗi thời. Thêm `src/test/lighthouse-reports.test.ts` chặn file báo cáo ngoài baseline. Ghi chính sách vào `PERFORMANCE.md` và `CONTRIBUTING.md`: PR code không kèm báo cáo, báo cáo mới đính Release/artifact hoặc PR riêng.
+- **D10 (Accepted → Fixed):** TDD — test module mới đỏ (`Cannot find module`), test boundary đỏ (import `scripts/`), sau đó xanh. Tạo `src/features/products/server/product-image-processing.ts` có type; app import nội bộ; CLI đổi sang `scripts/reencode-legacy-uploads.ts` chạy bằng `npx tsx` và import ngược lại từ `src/`; xoá 2 file `.mjs`. Sửa lỗi type Prisma (`Uint8Array<ArrayBuffer>`) và top-level await trong CLI; `typecheck` exit 0. Probe `tsx`: `exports=migrateLegacyBlobs,reencodeLegacyBlob,withVersionQuery`.
+- **Mojibake (Accepted → Fixed):** giải mã cp1252→UTF-8 bằng script một lần ngoài repo, có map các byte undefined (0x81/0x8D/0x8F/0x90/0x9D) để khôi phục dấu tiếng Việt; 73 dòng thay đổi; `rg 'Ã|â€|Ä‘|á»|Æ°|Â§|ï¿½'` không còn kết quả; quét CJK/Hangul/Cyrillic → 0.
+- Cập nhật README, DEPLOY, PERFORMANCE, CONTRIBUTING cho đường dẫn CLI `.ts` và chính sách evidence.
+
+### Findings được nhận / bác
+
+- **Accepted:** D9, D10 và mojibake — đều có file:line, reproduction và quyết định trong `docs/reviews/2026-11-20-requesting-code-review-d9-d10.md`.
+- **Rejected:** không có. Không rewrite lịch sử Git để xoá report cũ (cần force push); chỉ ngăn không thêm file báo cáo mới vào PR code.
+
+### AI sai ở đâu
+
+- Khi viết lại câu meta sau khi giải mã mojibake, tôi đã lỡ gõ ký tự CJK vào AI_LOG; phát hiện ngay bằng quét CJK và sửa trước khi commit. Đây là lỗi vi phạm quy tắc ngôn ngữ của dự án.
+- Ban đầu decoder thiếu map các byte cp1252 undefined nên một số dấu thanh vẫn lỗi (`á»`); phải thêm map rồi chạy dry-run đối chiếu trước khi ghi.
+- Script probe CLI dùng top-level await và import absolute path sai định dạng trên Windows; mất vài lần thử mới ra `file://` URL và `.then()`.
+
+### Hạn chế
+
+- Lịch sử Git vẫn chứa các file JSON đã xoá; PR code từ nay không thêm file báo cáo nữa.
+- Việc giải mã mojibake đổi biểu diễn byte của prompt nguyên văn nhưng không đổi nội dung; các entry cũ trước đây cố tình giữ mojibake.
+- Không chạy production check vì thay đổi không có tác động UI.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 
@@ -424,14 +462,14 @@ Bộ lệnh sau fix: lint/typecheck/test (65 files / 301 tests)/format:check/bui
 - Fetch `origin/main` (`40c61f2`, sau PR #110), tạo branch `docs/spec-and-log-cleanup`; đọc toàn bộ `PERMISSIONS.md`, các mục liên quan của `REQUIREMENTS.md`, `CONTRIBUTING.md` và file review trước khi sửa.
 - **#2 — theo `PERMISSIONS.md`:** không đổi `permissions.ts` hay `PERMISSIONS.md`. Cập nhật `REQUIREMENTS.md` ở mọi chỗ còn mâu thuẫn (§1.3.1, §2 actor/OBJ, §3.3 matrix, mô tả MOD-06, actor của UC, route table `/admin/products|categories|hero-slides`, OI-004) để phản ánh đúng mô hình đã chốt: EDITOR xem/sửa/ẩn sản phẩm (không giá/tạo/xóa), quản lý ảnh/danh mục/Blog/hero slide, không vào Settings/Users.
 - **#3 — docs lỗi thời:** `CONTRIBUTING.md` mục Database → Prisma 7 + schema/migration có sẵn + postinstall; Validation → Zod 4 đã cài. `REQUIREMENTS.md` → DB-backed `ProductImageBlob` thay vì filesystem; route tĩnh `/terms`, `/privacy`, `/ship`; TC-02/OI-013/Appendix B đồng bộ. Kiểm tra grep: 0 dòng stale còn lại (các dòng "local filesystem" trong AI_LOG là prompt lịch sử, giữ nguyên).
-- **#4 — AI_LOG:** 3 script một lần đặt ở temp (không commit) dùng kiểm tra byte-for-byte trước khi xóa: bỏ bản lặp 1.735 dòng + đoạn lặp đuôi 43 dòng (tổng 4.528 dòng), sửa 1 dòng `---## ` dính, chuyển entry 2026-11-17 14:02 từ cuối file lên sau entry 12:00, đổi 25 heading `â€”` → `—`, chuẩn hóa 2 heading legacy. Kết quả: **4.728 → 85 heading, 0 trùng**, thứ tự đúng; **không sửa nội dung prompt nguyên văn nào**.
+- **#4 — AI_LOG:** 3 script một lần đặt ở temp (không commit) dùng kiểm tra byte-for-byte trước khi xóa: bỏ bản lặp 1.735 dòng + đoạn lặp đuôi 43 dòng (tổng 4.528 dòng), sửa 1 dòng `---## ` dính, chuyển entry 2026-11-17 14:02 từ cuối file lên sau entry 12:00, đổi 25 heading mojibake sang dấu gạch ngang `—`, chuẩn hóa 2 heading legacy. Kết quả: **4.728 → 85 heading, 0 trùng**, thứ tự đúng; **không sửa nội dung prompt nguyên văn nào**.
 - Bộ lệnh mục V: lint/typecheck/test (64 files / 289 tests)/format:check/build đều exit 0 (sau khi format markdown).
 
 ### AI sai ở đâu
 
 - **Ban đầu hiểu #2 là "siết quyền EDITOR theo REQUIREMENTS":** user nói "follow permission.md", nên đã chọn chiều ngược lại — cập nhật REQUIREMENTS cho khớp code + PERMISSIONS.md, không đụng code. Đây đúng là lựa cần quyết định chủ sở hữu đã ghi ở review.
 - **Script dọn AI_LOG vấp 4 lần guard sai:** các guard kiểm tra "dòng trước phải là `---` / heading" nhưng cấu trúc log cũ có dòng `Không ghi nhận trong log cũ.` ngay trước bản lặp. Đã bỏ guard hình thức, dựa vào kiểm tra byte-identical (mạnh hơn) và verify lại 0 heading trùng.
-- **Chỉ đổi heading mojibake, không đụa prompt:** nhiều dòng `â€”` nằm trong block `> ` (prompt nguyên văn) — cố tình giữ để không làm sai yêu cầu "prompt đã dùng".
+- **Chỉ đổi heading mojibake, không đụa prompt:** nhiều dòng mojibake (nay là `—`) nằm trong block `> ` (prompt nguyên văn) — khi đó cố tình giữ để không làm sai yêu cầu "prompt đã dùng"; lượt này người dùng yêu cầu dọn mojibake nên đã giải mã lại, không đổi nội dung các prompt.
 
 ### Hạn chế
 
@@ -3815,8 +3853,8 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> G3.5 â€” Settings + Users (milestone 3). Settings: sá»‘ Ä‘iá»‡n thoáº¡i, Facebook, Instagram, Ä‘á»‹a chá»‰, email. Users: táº¡o tÃ i khoáº£n, gÃ¡n role, khoÃ¡ tÃ i khoáº£n â€” chá»‰ ADMIN.
-> header / footer / ContactPopover Ä‘á»c tá»« Settings, khÃ´ng cÃ²n hard-code; Ä‘Äƒng nháº­p EDITOR, gá»i tháº³ng Server Action sá»­a giÃ¡ / Settings / Users (bá» qua UI) bá»‹ tá»« chá»‘i; khÃ´ng tá»± háº¡ quyá»n / khoÃ¡ Ä‘Æ°á»£c ADMIN cuá»‘i cÃ¹ng.
+> G3.5 — Settings + Users (milestone 3). Settings: số điện thoại, Facebook, Instagram, địa chỉ, email. Users: tạo tài khoản, gán role, khoá tài khoản — chỉ ADMIN.
+> header / footer / ContactPopover đọc từ Settings, không còn hard-code; đăng nhập EDITOR, gọi thẳng Server Action sửa giá / Settings / Users (bỏ qua UI) bị từ chối; không tự hạ quyền / khoá được ADMIN cuối cùng.
 >
 > create new branch,commit
 > write pr body, title strictly follow contributin.md
@@ -3850,7 +3888,7 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> **G3.3 â€” Upload vÃ  quáº£n lÃ½ áº£nh.** Upload nhiá»u áº£nh qua Route Handler, sáº¯p thá»© tá»±, chá»n áº£nh hover, gÃ¡n áº£nh cho mÃ u.chá»‰ nháº­n JPG / PNG / WebP â‰¤ 5 MB, kiá»ƒm tra á»Ÿ server báº±ng ná»™i dung file (khÃ´ng tin Ä‘uÃ´i file / mimetype cá»§a client); xoÃ¡ áº£nh/sáº£n pháº©m thÃ¬ dá»n file; áº£nh cÃ²n sau khi redeploy (lÆ°u object storage á»Ÿ production, khÃ´ng lÆ°u filesystem server).open
+> **G3.3 — Upload và quản lý ảnh.** Upload nhiều ảnh qua Route Handler, sắp thứ tự, chọn ảnh hover, gán ảnh cho màu.chỉ nhận JPG / PNG / WebP ≤ 5 MB, kiểm tra ở server bằng nội dung file (không tin đuôi file / mimetype của client); xoá ảnh/sản phẩm thì dọn file; ảnh còn sau khi redeploy (lưu object storage ở production, không lưu filesystem server).open
 >
 > add to ai_log follow it format of prompt,sumarize output
 > create new branch,commit, pr title+body in english
@@ -3885,9 +3923,9 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> layout sidebar + báº£ng + form, nháº¥t quÃ¡n giá»¯a cÃ¡c trang.
+> layout sidebar + bảng + form, nhất quán giữa các trang.
 >
-> **G3.2 â€” CRUD Products.** Danh sÃ¡ch (tÃ¬m theo tÃªn, lá»c danh má»¥c), táº¡o / sá»­a / áº©n-hiá»‡n. TrÆ°á»ng: name, slug, category, type, brand, price, description, details, colors (tÃªn + mÃ£ hex), published.Zod: price nguyÃªn > 0 (nháº­p â€œ10.000.000â€ Ä‘Æ°á»£c chuáº©n hoÃ¡ trÆ°á»›c khi validate), slug `^[a-z0-9-]+$`, hex `#RRGGBB`; slug trÃ¹ng bÃ¡o lá»—i táº¡i field, khÃ´ng pháº£i 500; form giá»¯ giÃ¡ trá»‹ khi lá»—i; sau khi lÆ°u storefront cáº­p nháº­t (`revalidatePath` Ä‘Ãºng trang); EDITOR tháº¥y giÃ¡ á»Ÿ dáº¡ng chá»‰ Ä‘á»c.
+> **G3.2 — CRUD Products.** Danh sách (tìm theo tên, lọc danh mục), tạo / sửa / ẩn-hiện. Trường: name, slug, category, type, brand, price, description, details, colors (tên + mã hex), published.Zod: price nguyên > 0 (nhập “10.000.000” được chuẩn hoá trước khi validate), slug `^[a-z0-9-]+$`, hex `#RRGGBB`; slug trùng báo lỗi tại field, không phải 500; form giữ giá trị khi lỗi; sau khi lưu storefront cập nhật (`revalidatePath` đúng trang); EDITOR thấy giá ở dạng chỉ đọc.
 >
 > add to ai_log follow it format of prompt,sumarize output
 
@@ -3958,8 +3996,8 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> G2.3 â€” Storefront Ä‘á»c database (milestone 2). Thay ruá»™t cÃ¡c hÃ m query G1.1 báº±ng Prisma; xoÃ¡ mock khá»i runtime.
-> khÃ´ng sá»­a file trang nÃ o ngoÃ i import; trang danh má»¥c chá»‰ select cá»™t cáº§n cho ProductCard; Home khÃ´ng N+1 (4 carousel khÃ´ng pháº£i 4 Ã— N query); sáº£n pháº©m áº©n / bÃ i DRAFT khÃ´ng hiá»‡n vÃ  tráº£ 404 khi vÃ o tháº³ng URL.
+> G2.3 — Storefront đọc database (milestone 2). Thay ruột các hàm query G1.1 bằng Prisma; xoá mock khỏi runtime.
+> không sửa file trang nào ngoài import; trang danh mục chỉ select cột cần cho ProductCard; Home không N+1 (4 carousel không phải 4 × N query); sản phẩm ẩn / bài DRAFT không hiện và trả 404 khi vào thẳng URL.
 >
 > create branch, commit strictly flollowing contributing.md and pr template
 > run and wrap pr body in 1 code block with markdown format with actual complete output, no summarize or change
@@ -3994,8 +4032,8 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> G2.2 â€” Seed. prisma/seed.ts tá»« mock G1: â‰¥ 20 sáº£n pháº©m / 4 danh má»¥c, â‰¥ 6 bÃ i blog, 3 hero slide, Settings, 1 ADMIN + 1 EDITOR.
-> cháº¡y seed 2 láº§n liÃªn tiáº¿p khÃ´ng lá»—i trÃ¹ng (upsert theo slug/email); máº­t kháº©u tÃ i khoáº£n seed Ä‘Æ°á»£c hash.
+> G2.2 — Seed. prisma/seed.ts từ mock G1: ≥ 20 sản phẩm / 4 danh mục, ≥ 6 bài blog, 3 hero slide, Settings, 1 ADMIN + 1 EDITOR.
+> chạy seed 2 lần liên tiếp không lỗi trùng (upsert theo slug/email); mật khẩu tài khoản seed được hash.
 >
 > create branch, commit strictly flollowing contributing.md and pr template
 > run and wrap pr body in 1 code block with markdown format with actual complete output, no summarize or change
@@ -4029,8 +4067,8 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> G2.1 â€” ERD + Prisma schema. Product, ProductColor, ProductImage (thá»© tá»±, gáº¯n mÃ u hoáº·c dÃ¹ng chung), Category, BlogPost, HeroSlide, Setting, User (role ADMIN/EDITOR). ERD dáº¡ng Mermaid trong docs/.
-> giÃ¡ kiá»ƒu Int; slug unique; má»—i quan há»‡ cÃ³ onDelete phÃ¹ há»£p (xoÃ¡ Product â†’ xoÃ¡ mÃ u/áº£nh; khÃ´ng xoÃ¡ Category cÃ²n sáº£n pháº©m).
+> G2.1 — ERD + Prisma schema. Product, ProductColor, ProductImage (thứ tự, gắn màu hoặc dùng chung), Category, BlogPost, HeroSlide, Setting, User (role ADMIN/EDITOR). ERD dạng Mermaid trong docs/.
+> giá kiểu Int; slug unique; mỗi quan hệ có onDelete phù hợp (xoá Product → xoá màu/ảnh; không xoá Category còn sản phẩm).
 >
 > create branch, commit strictly flollowing contributing.md and pr template
 > run and write pr body with actual complete output, no summarize or change
@@ -4220,8 +4258,8 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> G1.7 â€” Blog /blog, /blog/[slug] + 4 trang footer. Blog list: 4 BlogRow má»—i láº§n, má»›i nháº¥t trÆ°á»›c, SEE MORE. Blog detail: tiÃªu Ä‘á» cÄƒn giá»¯a, â€œPublished dd/MM/yyyyâ€, ná»™i dung Markdown xen áº£nh, OTHER BLOGS. Trang tÄ©nh: Terms and Conditions, Privacy Policy, Shipping & Return, Jewelry Care.
-> Markdown Ä‘Æ°á»£c sanitize (khÃ´ng render <script>); ngÃ y hiá»ƒn thá»‹ theo giá» Viá»‡t Nam.
+> G1.7 — Blog /blog, /blog/[slug] + 4 trang footer. Blog list: 4 BlogRow mỗi lần, mới nhất trước, SEE MORE. Blog detail: tiêu đề căn giữa, “Published dd/MM/yyyy”, nội dung Markdown xen ảnh, OTHER BLOGS. Trang tĩnh: Terms and Conditions, Privacy Policy, Shipping & Return, Jewelry Care.
+> Markdown được sanitize (không render <script>); ngày hiển thị theo giờ Việt Nam.
 >
 > new commit branch, commit strictly follow contributing rule and pull_request_template.md
 > also give pr title
@@ -4254,7 +4292,7 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> G1.6 â€” Product detail `/p/[slug]`. Gallery: large image plus three thumbnails with `â€¹ â€º`, keyboard selectable; choosing a colour swatch changes the gallery, and colours without their own images fall back to the shared product images. Show the product name in uppercase, Brand, Type, price, colours, description, and Details. `ORDER NOW` opens a `CONTACT US` popover with `Ã—`, Facebook, Instagram, and phone (`tel:`). The popover closes on `Ã—`, Esc, or outside click, returns focus to `ORDER NOW`, and is fully keyboard operable. `YOU MIGHT ALSO LIKE` shows products from the same category, excluding the current product. Commit following `docs/CONTRIBUTING.md` and the PR template, and prepend a timestamped prompt/output summary to `docs/AI_LOGS.md`.
+> G1.6 — Product detail `/p/[slug]`. Gallery: large image plus three thumbnails with `‹ ›`, keyboard selectable; choosing a colour swatch changes the gallery, and colours without their own images fall back to the shared product images. Show the product name in uppercase, Brand, Type, price, colours, description, and Details. `ORDER NOW` opens a `CONTACT US` popover with `×`, Facebook, Instagram, and phone (`tel:`). The popover closes on `×`, Esc, or outside click, returns focus to `ORDER NOW`, and is fully keyboard operable. `YOU MIGHT ALSO LIKE` shows products from the same category, excluding the current product. Commit following `docs/CONTRIBUTING.md` and the PR template, and prepend a timestamped prompt/output summary to `docs/AI_LOGS.md`.
 
 ### Đã tự kiểm chứng
 
@@ -4264,13 +4302,13 @@ Không ghi nhận trong log cũ.
 - Added a client product detail layout with uppercase name, Brand/Type, price, colour swatches, description, Details, and `ORDER NOW`.
 - Added a colour-aware gallery with a three-thumbnail window, arrow paging, keyboard-selectable thumbnails, and fallback to the shared product gallery.
 - Added per-colour gallery support to the domain model and mock data, plus gold-specific mock images for Aurora Band to demonstrate colour switching while white gold exercises fallback.
-- Added an accessible contact dialog with focus trap, focus restore to the trigger, Esc/outside/Ã— close, and Facebook, Instagram, and `tel:` links from Settings.
+- Added an accessible contact dialog with focus trap, focus restore to the trigger, Esc/outside/× close, and Facebook, Instagram, and `tel:` links from Settings.
 - Added related products from the same category, excluding the current product, and rendered them in the existing carousel.
 - Added tests for gallery helpers, fallback behaviour, product detail markup, popover links and focus trapping, and product page 404 handling.
 
 **Kết quả kiểm chứng**
 
-Product pages render the gallery, uppercase name, Brand/Type, price, colours, description, Details, and related products. Colour changes swap the gallery when colour images exist and fall back to shared images otherwise. `ORDER NOW` opens the contact dialog, which traps focus, closes via `Ã—`, Esc, or outside click, and restores focus to the trigger. Keyboard paging and thumbnail selection work, related products exclude the current item, and unknown or hidden slugs render the not-found UI.
+Product pages render the gallery, uppercase name, Brand/Type, price, colours, description, Details, and related products. Colour changes swap the gallery when colour images exist and fall back to shared images otherwise. `ORDER NOW` opens the contact dialog, which traps focus, closes via `×`, Esc, or outside click, and restores focus to the trigger. Keyboard paging and thumbnail selection work, related products exclude the current item, and unknown or hidden slugs render the not-found UI.
 
 `npm test` (15 files, 71 tests), `npm run lint`, `npm run typecheck`, and `npm run build` pass. Production checks confirmed Aurora Band renders four gold images in three-thumbnail windows, white gold falls back to the shared `ring-6.webp` image, related products are same-category and exclude Aurora Band, and the popover exposes Facebook, Instagram, and `tel:0900000000` links with the expected keyboard behaviour. `npm run format:check` still reports pre-existing files outside this change; the new files were formatted individually.
 
@@ -4288,7 +4326,7 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> G1.5 â€” Category `/c/[slug]`. Title, â€œSort byâ€ dropdown with four options (price ascending/descending, name Aâ€“Z/Zâ€“A), 5-column Ã— 2-row grid, SEE MORE loads 10. Sort is saved in `?sort=`; invalid values return to default; unknown slug returns 404; hide SEE MORE when exhausted; products with equal prices must not be duplicated or skipped when loading more (secondary sort by `id`).
+> G1.5 — Category `/c/[slug]`. Title, “Sort by” dropdown with four options (price ascending/descending, name A–Z/Z–A), 5-column × 2-row grid, SEE MORE loads 10. Sort is saved in `?sort=`; invalid values return to default; unknown slug returns 404; hide SEE MORE when exhausted; products with equal prices must not be duplicated or skipped when loading more (secondary sort by `id`).
 
 ### Đã tự kiểm chứng
 
@@ -4362,7 +4400,7 @@ Không ghi nhận trong log cũ.
 
 - Replaced the image-based arrow states with the supplied SVG chevron and neutral-to-green hover styling.
 - Made the chevron point left or right based on the component's direction prop.
-- Set both hero and product carousel arrow buttons to 30Ã—30px.
+- Set both hero and product carousel arrow buttons to 30×30px.
 
 **Kết quả kiểm chứng**
 
@@ -4506,11 +4544,11 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> G1.4 â€” Home /. Hero slider 3 áº£nh (â€¹ â€º, dot, EXPLORE NOW), 4 section carousel theo danh má»¥c, section BLOG 2 bÃ i má»›i nháº¥t + SEE MORE.
-> trang chá»‰ lÃ  Server Component; slider vÃ  carousel lÃ  Client Component nháº­n data qua props. KhÃ´ng Ä‘Ã¡nh "use client" cho cáº£ trang.
+> G1.4 — Home /. Hero slider 3 ảnh (‹ ›, dot, EXPLORE NOW), 4 section carousel theo danh mục, section BLOG 2 bài mới nhất + SEE MORE.
+> trang chỉ là Server Component; slider và carousel là Client Component nhận data qua props. Không đánh "use client" cho cả trang.
 >
 > rectangle 4 is main navigation rectangle
-> rectangle 13 Ã­ dropdownmenu css box
+> rectangle 13 í dropdownmenu css box
 > use image to set css
 >
 > new commit branch, commit strictly follow contributing rule and pull_request_template.md
@@ -4587,11 +4625,11 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> G1.3 â€” create Component dÃ¹ng chung.
-> ProductCard (áº£nh vuÃ´ng ná»n #EFEEEC, hover Ä‘á»•i áº£nh thá»© 2, tÃªn, giÃ¡, color swatch),
-> Carousel (5 card, nÃºt â€¹ â€º gÃ³c pháº£i dÆ°á»›i, VIEW PRODUCTS gÃ³c pháº£i trÃªn),
+> G1.3 — create Component dùng chung.
+> ProductCard (ảnh vuông nền #EFEEEC, hover đổi ảnh thứ 2, tên, giá, color swatch),
+> Carousel (5 card, nút ‹ › góc phải dưới, VIEW PRODUCTS góc phải trên),
 > BlogRow, formatPrice.
-> formatPrice(10000000) â†’ "10.000.000" cÃ³ unit test; card Ä‘Ãºng khi sáº£n pháº©m chá»‰ cÃ³ 1 áº£nh hoáº·c khÃ´ng cÃ³ mÃ u; carousel Ä‘Ãºng khi < 5 sáº£n pháº©m; swatch cÃ³ aria-label tÃªn mÃ u.
+> formatPrice(10000000) → "10.000.000" có unit test; card đúng khi sản phẩm chỉ có 1 ảnh hoặc không có màu; carousel đúng khi < 5 sản phẩm; swatch có aria-label tên màu.
 >
 > create new commit branch, commit strictly follow contributing rule and pull_request_template.md
 > also give pr title
@@ -4602,9 +4640,9 @@ Không ghi nhận trong log cũ.
 **Thay đổi đã thực hiện**
 
 - Branched `feature/g1-3-shared-components` from `feature/g1-2-tokens-layout` because the components build on the G1.2 tokens and layout.
-- Added `src/lib/format-price.ts`: groups VND digits with dots (`10000000` â†’ `10.000.000`) and leaves the currency unit to the caller. Added `src/lib/format-price.test.ts`.
+- Added `src/lib/format-price.ts`: groups VND digits with dots (`10000000` → `10.000.000`) and leaves the currency unit to the caller. Added `src/lib/format-price.test.ts`.
 - Added `src/components/product-card.tsx`: square `product-image-frame` (the `#EFEEEC` token), front image plus a second gallery image that fades in on hover, product name, formatted price and colour swatches. Single-image products render one image; products without colours render no swatch list; each swatch exposes the colour name through `aria-label`. Placeholder products that reuse the same image URL do not get a pointless hover layer.
-- Added `src/components/carousel.tsx`: product carousel with five cards per page, `getCarouselPage()` windowing helper, VIEW PRODUCTS link at the top right and `â€¹` / `â€º` buttons at the bottom right. Fewer than five products render in full with both arrows disabled; the last page shows the remainder; an empty list shows a short empty state.
+- Added `src/components/carousel.tsx`: product carousel with five cards per page, `getCarouselPage()` windowing helper, VIEW PRODUCTS link at the top right and `‹` / `›` buttons at the bottom right. Fewer than five products render in full with both arrows disabled; the last page shows the remainder; an empty list shows a short empty state.
 - Added `src/components/blog-row.tsx`: horizontal Blog row with cover image, `dd.mm.yyyy` publication date, title, summary and READ MORE link.
 - Added `src/components/product-card.test.tsx` and `src/components/carousel.test.tsx`, rendering the components with `react-dom/server` and mocked `next/image` / `next/link` to cover the one-image, no-colour, swatch-label, fewer-than-five and pagination cases.
 - Verified the components at runtime through a temporary `/preview` route: the first carousel rendered five cards with the next arrow enabled, the three-item carousel disabled both arrows, the Serenade card rendered two images and two labelled swatches, and paging to the second page showed the remaining product before returning. The temporary route was deleted afterwards.
@@ -4628,11 +4666,11 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> G1.2 â€” Tokens + Layout.  requirement
+> G1.2 — Tokens + Layout.  requirement
 > Tokens trong Tailwind (@theme), font qua next/font.
-> Header: logo, HOME, PRODUCTS (dropdown 4 danh má»¥c, gáº¡ch chÃ¢n má»¥c active), BLOG, CONTACT.
-> Footer: Ä‘á»‹a chá»‰ / Ä‘iá»‡n thoáº¡i / email + icon, INFO, HELP, SOCIAL.
-> grep -rnE "#[0-9A-Fa-f]{6}" src/components src/app --include=*.tsx khÃ´ng cÃ³ káº¿t quáº£; dropdown má»Ÿ/Ä‘Ã³ng Ä‘Æ°á»£c báº±ng bÃ n phÃ­m (Enter, Esc, Tab).
+> Header: logo, HOME, PRODUCTS (dropdown 4 danh mục, gạch chân mục active), BLOG, CONTACT.
+> Footer: địa chỉ / điện thoại / email + icon, INFO, HELP, SOCIAL.
+> grep -rnE "#[0-9A-Fa-f]{6}" src/components src/app --include=*.tsx không có kết quả; dropdown mở/đóng được bằng bàn phím (Enter, Esc, Tab).
 >
 > create new commit branch, commit strictly follow contributing rule and pull_request_template.md
 > also give pr title
@@ -4670,13 +4708,13 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> Token	GiÃ¡ trá»‹	DÃ¹ng á»Ÿ
-> Ná»n trang	#FEFDF8	body, header, footer
-> Ná»n áº£nh sáº£n pháº©m	#EFEEEC	khung áº£nh vuÃ´ng cá»§a card vÃ  gallery
-> ÄÆ°á»ng káº»	#93AAA0	viá»n dÆ°á»›i header, viá»n trÃªn footer, divider trang sáº£n pháº©m
-> Chá»¯ chÃ­nh	#000000	tÃªn sáº£n pháº©m, giÃ¡, Ä‘oáº¡n vÄƒn
-> Font heading / nav	Monospace, VIáº¾T HOA	tiÃªu Ä‘á» section, menu, nÃºt â€” Ä‘á»‘i chiáº¿u tÃªn font chÃ­nh xÃ¡c trong Figma
-> Font ná»™i dung	Sans-serif	mÃ´ táº£, blog, footer
+> Token	Giá trị	Dùng ở
+> Nền trang	#FEFDF8	body, header, footer
+> Nền ảnh sản phẩm	#EFEEEC	khung ảnh vuông của card và gallery
+> Đường kẻ	#93AAA0	viền dưới header, viền trên footer, divider trang sản phẩm
+> Chữ chính	#000000	tên sản phẩm, giá, đoạn văn
+> Font heading / nav	Monospace, VIẾT HOA	tiêu đề section, menu, nút — đối chiếu tên font chính xác trong Figma
+> Font nội dung	Sans-serif	mô tả, blog, footer
 >
 > use this to change layout.css at highest level
 > create new commit branch, commit strictly follow contributing rule and pull_request_template.md
@@ -4723,8 +4761,8 @@ Không ghi nhận trong log cũ.
 **Thay đổi đã thực hiện**
 
 - Added a `productPhoto()` helper and an optional `images` list to `ProductSeed` in `src/lib/mock/products.ts`; the first URL becomes the front image and the rest are ordered gallery images.
-- Wired the 10 new primary webp photos into the matching ring products: `ring-1` â†’ Solitaire Grace, `ring-2` â†’ Ã‰toile PavÃ©, `ring-3` â†’ Blossom Three Stone, `ring-4` â†’ Eclipse PavÃ© Band, `ring-5` â†’ Serenade Twisted Band, `ring-6` â†’ Aurora Band, `ring-7` â†’ Halo Eternity Band, `ring-8` â†’ Petite Promise, `ring-9` â†’ Lumiere Slim Band, `ring-10` â†’ Regal Emerald Cut.
-- Added the second angles as secondary gallery images: `ring-2-1` for Ã‰toile PavÃ© and `ring-5-2` for Serenade Twisted Band, with `sortOrder` and `isFront` set by position.
+- Wired the 10 new primary webp photos into the matching ring products: `ring-1` → Solitaire Grace, `ring-2` → Étoile Pavé, `ring-3` → Blossom Three Stone, `ring-4` → Eclipse Pavé Band, `ring-5` → Serenade Twisted Band, `ring-6` → Aurora Band, `ring-7` → Halo Eternity Band, `ring-8` → Petite Promise, `ring-9` → Lumiere Slim Band, `ring-10` → Regal Emerald Cut.
+- Added the second angles as secondary gallery images: `ring-2-1` for Étoile Pavé and `ring-5-2` for Serenade Twisted Band, with `sortOrder` and `isFront` set by position.
 - Products without a matching photo keep the existing SVG placeholder per `ProductType` (both a front and a detail entry), so all mock products still expose a gallery.
 - Extended `src/lib/queries/queries.test.ts` with checks for 10 unique webp front images, webp front-image shape, ordered secondary angles for `ring-2`/`ring-5`, and SVG placeholders for products without a photo.
 - Updated `docs/README.md` and `docs/ARCHITECTURE.md` to document the webp product photos, the `ring-N-M` secondary-image convention and SVG placeholders.
@@ -4785,10 +4823,10 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> DÃ¹ng mock data Ä‘áº·t trong src/lib/mock/, gÃµ kiá»ƒu theo src/types/domain.ts. Truy cáº­p dá»¯ liá»‡u qua hÃ m query
+> Dùng mock data đặt trong src/lib/mock/, gõ kiểu theo src/types/domain.ts. Truy cập dữ liệu qua hàm query
 >
-> G1.1 â€” Domain types + mock data + query layer. Bá»• sung domain.ts: Product (categoryId, brand, type, description, details, colors), ProductColor, ProductImage, Category (sortOrder), BlogPost (coverImageUrl, publishedAt), HeroSlide, Settings, Role. Mock â‰¥ 20 sáº£n pháº©m / 4 danh má»¥c, 6 bÃ i blog.
-> trang chá»‰ import hÃ m query, khÃ´ng import trá»±c tiáº¿p file mock.
+> G1.1 — Domain types + mock data + query layer. Bổ sung domain.ts: Product (categoryId, brand, type, description, details, colors), ProductColor, ProductImage, Category (sortOrder), BlogPost (coverImageUrl, publishedAt), HeroSlide, Settings, Role. Mock ≥ 20 sản phẩm / 4 danh mục, 6 bài blog.
+> trang chỉ import hàm query, không import trực tiếp file mock.
 >
 > create new branch, commit stricly follow contributing rule and pull_request_template.md
 > if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
@@ -4810,7 +4848,7 @@ Không ghi nhận trong log cũ.
 
 **Kết quả kiểm chứng**
 
-G1.1 is implemented on branch `feature/g1-1-domain-mock-query`: domain types, typed mock data and the query layer are in place, and pages can only reach data through `@/lib/queries` (enforced by ESLint). Mock coverage exceeds the requirement: 24 products â‰¥ 20, 4 categories, 6 Blog posts. Verification passed: `npm run lint`, `npm run typecheck`, `npm test` (2 files, 19 tests), `npm run format:check`, `npm run build`.
+G1.1 is implemented on branch `feature/g1-1-domain-mock-query`: domain types, typed mock data and the query layer are in place, and pages can only reach data through `@/lib/queries` (enforced by ESLint). Mock coverage exceeds the requirement: 24 products ≥ 20, 4 categories, 6 Blog posts. Verification passed: `npm run lint`, `npm run typecheck`, `npm test` (2 files, 19 tests), `npm run format:check`, `npm run build`.
 
 ---
 
@@ -4828,9 +4866,9 @@ Không ghi nhận trong log cũ.
 
 > review file, check for bug, mismatch between file and iron out
 >
-> Storefront + trang quáº£n trá»‹ + database, trong repo Ant-jewelry hiá»‡n cÃ³. LÃ m theo 4 giai Ä‘oáº¡n (G0 â†’ G4), má»—i má»¥c cÃ³ dáº¥u â˜ lÃ  má»™t PR.
-> Design: Figma Jewelry-website â€” 6 mÃ n: Home, Category, Product, Product + Contact popover, Blog list, Blog detail. Äá»‘i chiáº¿u thÃªm antjewelry.vn.
-> Quyáº¿t Ä‘á»‹nh Ä‘Ã£ chá»‘t: má»™t Next.js App Router + TypeScript strict; read báº±ng Server Components, mutation báº±ng Server Actions, Route Handlers chá»‰ cho upload; khÃ´ng NestJS, khÃ´ng táº§ng REST riÃªng. Prisma, SQLite dev, PostgreSQL production, validate báº±ng Zod. ADMIN toÃ n quyá»n; EDITOR quáº£n lÃ½ sáº£n pháº©m (trá»« giÃ¡), danh má»¥c, Blog, hero slide; khÃ´ng sá»­a giÃ¡, khÃ´ng vÃ o Settings / Users. KhÃ´ng cÃ³ Inquiry/form; ORDER NOW má»Ÿ Contact popover láº¥y sá»‘ Ä‘iá»‡n thoáº¡i + Facebook + Instagram tá»« Settings. GiÃ¡ lÃ  sá»‘ nguyÃªn VND, hiá»ƒn thá»‹ 10.000.000, khÃ´ng kÃ½ hiá»‡u tiá»n tá»‡. Responsive tá»± thiáº¿t káº¿ cho mobile/tablet. NgoÃ i pháº¡m vi: giá» hÃ ng, thanh toÃ¡n, tÃ i khoáº£n khÃ¡ch hÃ ng, wishlist, Ä‘a ngÃ´n ngá»¯. Design tokens: #FEFDF8, #EFEEEC, #93AAA0, #000000; heading/nav monospace viáº¿t hoa; ná»™i dung sans-serif. Figma ghi "Short by" á»Ÿ Category â€” sá»­a thÃ nh "Sort by".
+> Storefront + trang quản trị + database, trong repo Ant-jewelry hiện có. Làm theo 4 giai đoạn (G0 → G4), mỗi mục có dấu ☐ là một PR.
+> Design: Figma Jewelry-website — 6 màn: Home, Category, Product, Product + Contact popover, Blog list, Blog detail. Đối chiếu thêm antjewelry.vn.
+> Quyết định đã chốt: một Next.js App Router + TypeScript strict; read bằng Server Components, mutation bằng Server Actions, Route Handlers chỉ cho upload; không NestJS, không tầng REST riêng. Prisma, SQLite dev, PostgreSQL production, validate bằng Zod. ADMIN toàn quyền; EDITOR quản lý sản phẩm (trừ giá), danh mục, Blog, hero slide; không sửa giá, không vào Settings / Users. Không có Inquiry/form; ORDER NOW mở Contact popover lấy số điện thoại + Facebook + Instagram từ Settings. Giá là số nguyên VND, hiển thị 10.000.000, không ký hiệu tiền tệ. Responsive tự thiết kế cho mobile/tablet. Ngoài phạm vi: giỏ hàng, thanh toán, tài khoản khách hàng, wishlist, đa ngôn ngữ. Design tokens: #FEFDF8, #EFEEEC, #93AAA0, #000000; heading/nav monospace viết hoa; nội dung sans-serif. Figma ghi "Short by" ở Category — sửa thành "Sort by".
 > dont code anything yet
 > create new branch, commit stricly follow contributing rule and pull_request_template.md
 > if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
@@ -4848,7 +4886,7 @@ Không ghi nhận trong log cũ.
 - Updated `docs/README.md`: single Next.js architecture (removed NestJS), Prisma/SQLite/PostgreSQL/Zod decisions, Prettier/Vitest, `.env.example`, scripts, directory tree and verification commands.
 - Updated `docs/CONTRIBUTING.md`: `src/` structure and `@/*` alias, no separate backend/REST layer, Prisma/Zod decisions, Vitest and Prettier commands, and PR checklist/description consistency.
 - Updated `docs/ARCHITECTURE.md`: work-tree status, stack table, SQLite/PostgreSQL and Prisma decisions, repository trees, environment section, implementation checkboxes and ADR entries.
-- Updated `docs/REQUIREMENTS.md`: added the agreed decisions and Figma design tokens, aligned role names (`ADMIN`/`EDITOR`, mapping `EDITOR` to SAD Staff), integer VND price, ORDER NOW â†’ Contact popover, single Next.js/no-REST architecture, "Sort by" label, and fixed the truncated `NFR-008` reference in OI-021.
+- Updated `docs/REQUIREMENTS.md`: added the agreed decisions and Figma design tokens, aligned role names (`ADMIN`/`EDITOR`, mapping `EDITOR` to SAD Staff), integer VND price, ORDER NOW → Contact popover, single Next.js/no-REST architecture, "Sort by" label, and fixed the truncated `NFR-008` reference in OI-021.
 - No storefront, admin, database schema or Server Action code was added.
 
 **Kết quả kiểm chứng**
@@ -4868,10 +4906,10 @@ Không ghi nhận trong log cũ.
 ### Prompt nguyên văn đã dùng
 
 > docs/ARCHITECTURE.md: single Next.js app
-> - Bá» NestJS vÃ  táº§ng REST API riÃªng.
-> - Kiáº¿n trÃºc: Next.js App Router, Server Components cho read, Server Actions / Route Handlers cho mutation.
-> - Cáº­p nháº­t láº¡i sÆ¡ Ä‘á»“ layer, request flow, cáº¥u trÃºc repo cho khá»›p.
-> - AC: grep -ci nestjs docs/ARCHITECTURE.md â†’ 0.
+> - Bỏ NestJS và tầng REST API riêng.
+> - Kiến trúc: Next.js App Router, Server Components cho read, Server Actions / Route Handlers cho mutation.
+> - Cập nhật lại sơ đồ layer, request flow, cấu trúc repo cho khớp.
+> - AC: grep -ci nestjs docs/ARCHITECTURE.md → 0.
 >
 > if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
 
@@ -4907,11 +4945,11 @@ Không ghi nhận trong log cũ.
 ### Prompt nguyên văn đã dùng
 
 > Sitemap in docs/REQUIREMENTS.md need modification
-> - Báº£ng: Route | MÃ n Figma | CÃ¡c khá»‘i chÃ­nh | Quyá»n truy cáº­p
+> - Bảng: Route | Màn Figma | Các khối chính | Quyền truy cập
 > - Storefront: /, /c/[slug], /p/[slug], /blog, /blog/[slug], 4 trang footer (Terms and Conditions, Privacy Policy, Shipping & Return, Jewelry Care).
-> - Contact popover (ORDER NOW): overlay, khÃ´ng pháº£i route riÃªng; chá»‰ hiá»ƒn thá»‹ sá»‘ Ä‘iá»‡n thoáº¡i + link Facebook/Instagram, khÃ´ng cÃ³ form.
-> - Admin: /admin/* (login, products, categories, blog, hero slides, settings, users), ghi role Ä‘Æ°á»£c truy cáº­p (ADMIN / EDITOR).
-> - AC: Ä‘á»§ 6 mÃ n Figma (Home, Category, Product, Product + Contact popover, Blog list, Blog detail).
+> - Contact popover (ORDER NOW): overlay, không phải route riêng; chỉ hiển thị số điện thoại + link Facebook/Instagram, không có form.
+> - Admin: /admin/* (login, products, categories, blog, hero slides, settings, users), ghi role được truy cập (ADMIN / EDITOR).
+> - AC: đủ 6 màn Figma (Home, Category, Product, Product + Contact popover, Blog list, Blog detail).
 >
 > if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
 
@@ -4919,7 +4957,7 @@ Không ghi nhận trong log cũ.
 
 **Thay đổi đã thực hiện**
 
-- Replaced the UI page list in `docs/REQUIREMENTS.md` Â§9.1 with a sitemap table using exactly four columns: `Route`, `MÃ n Figma`, `CÃ¡c khá»‘i chÃ­nh`, `Quyá»n truy cáº­p`.
+- Replaced the UI page list in `docs/REQUIREMENTS.md` §9.1 with a sitemap table using exactly four columns: `Route`, `Màn Figma`, `Các khối chính`, `Quyền truy cập`.
 - Storefront routes: `/`, `/c/[slug]`, `/p/[slug]`, `/blog`, `/blog/[slug]`, plus the four footer pages `/terms-and-conditions`, `/privacy-policy`, `/shipping-and-return`, `/jewelry-care`.
 - Added the Contact popover as an overlay row on `/p/[slug]` (explicitly not a separate route): phone number and Facebook/Instagram links only, no form.
 - Added admin routes for login, products, categories, blog, hero slides, settings and users, with `ADMIN` / `EDITOR` access recorded per route; `EDITOR` is limited to content modules and `ADMIN` also manages settings/users.
@@ -4928,7 +4966,7 @@ Không ghi nhận trong log cũ.
 
 **Kết quả kiểm chứng**
 
-`docs/REQUIREMENTS.md` Â§9.1 is now a route-level sitemap with the requested columns and access roles. Storefront, footer, contact overlay and admin routes are all covered, and the table explicitly maps to the six Figma screens. The detailed permission matrix remains tied to OI-004, so the new `EDITOR` role mapping to the SAD Staff actor is flagged rather than silently assumed.
+`docs/REQUIREMENTS.md` §9.1 is now a route-level sitemap with the requested columns and access roles. Storefront, footer, contact overlay and admin routes are all covered, and the table explicitly maps to the six Figma screens. The detailed permission matrix remains tied to OI-004, so the new `EDITOR` role mapping to the SAD Staff actor is flagged rather than silently assumed.
 
 ---
 
@@ -4943,8 +4981,8 @@ Không ghi nhận trong log cũ.
 ### Prompt nguyên văn đã dùng
 
 > fix README.md at docs/
-> - Ná»™i dung: mÃ´ táº£ dá»± Ã¡n, prerequisites, npm install / npm run dev / npm run build, link tá»›i docs/*.
-> - AC: README hiá»ƒn thá»‹ trÃªn trang repo GitHub.
+> - Nội dung: mô tả dự án, prerequisites, npm install / npm run dev / npm run build, link tới docs/*.
+> - AC: README hiển thị trên trang repo GitHub.
 >
 > if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
 
@@ -4976,11 +5014,11 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> Äá»‹nh nghÄ©a Product, Category, BlogPost.
-> - KhÃ´ng any, khÃ´ng @ts-ignore.
-> - price: integer, Ä‘Æ¡n vá»‹ VND.
-> - slug: string cho cáº£ 3 entity.
-> - Status dÃ¹ng union literal ("DRAFT" | "PUBLISHED", "VISIBLE" | "HIDDEN"â€¦), khÃ´ng dÃ¹ng string.
+> Định nghĩa Product, Category, BlogPost.
+> - Không any, không @ts-ignore.
+> - price: integer, đơn vị VND.
+> - slug: string cho cả 3 entity.
+> - Status dùng union literal ("DRAFT" | "PUBLISHED", "VISIBLE" | "HIDDEN"…), không dùng string.
 > - AC: npx tsc --noEmit pass.
 >
 > if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
@@ -5011,11 +5049,11 @@ Không ghi nhận trong log cũ.
 
 ### Prompt nguyên văn đã dùng
 
-> Äá»‹nh nghÄ©a Product, Category, BlogPost.
-> - KhÃ´ng any, khÃ´ng @ts-ignore.
-> - price: integer, Ä‘Æ¡n vá»‹ VND.
-> - slug: string cho cáº£ 3 entity.
-> - Status dÃ¹ng union literal ("DRAFT" | "PUBLISHED", "VISIBLE" | "HIDDEN"â€¦), khÃ´ng dÃ¹ng string.
+> Định nghĩa Product, Category, BlogPost.
+> - Không any, không @ts-ignore.
+> - price: integer, đơn vị VND.
+> - slug: string cho cả 3 entity.
+> - Status dùng union literal ("DRAFT" | "PUBLISHED", "VISIBLE" | "HIDDEN"…), không dùng string.
 > - AC: npx tsc --noEmit pass.
 > if change, add promt and output summarize to ai_logs.md with time stamp, put in beginning of file so user can review
 
@@ -5083,7 +5121,7 @@ Không ghi nhận trong log cũ.
 **Thay đổi đã thực hiện**
 
 - Updated `docs/ARCHITECTURE.md` status header and document limits: the repository now has a root-level Next.js 16.4.5 App Router skeleton (React 19.3.0, Tailwind CSS v4, TypeScript strict, ESLint 9). Backend, database, auth, image storage, business APIs and domain features are still not implemented.
-- Added a "Hiá»‡n tráº¡ng work tree" section with the real folder tree and clarified that `app/page.tsx` is still the `create-next-app` starter page and no `test` script exists.
+- Added a "Hiện trạng work tree" section with the real folder tree and clarified that `app/page.tsx` is still the `create-next-app` starter page and no `test` script exists.
 - Updated the technology stack table with installed versions/statuses while keeping Backend, Database, ORM, Authentication and Cloudinary as proposals.
 - Reworked the repository structure section: actual root-level app first; the separate `frontend/` and `backend/` trees are now explicitly labeled as a future proposal only.
 - Marked completed items in the implementation sequence (Next.js, Tailwind, TypeScript, ESLint, Git workflow, docs) and left NestJS, PostgreSQL, Prisma and environment variables unchecked.

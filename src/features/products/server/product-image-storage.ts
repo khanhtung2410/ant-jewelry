@@ -3,7 +3,7 @@ import 'server-only';
 import { createHash, randomUUID } from 'node:crypto';
 import { readFile, unlink } from 'node:fs/promises';
 import path from 'node:path';
-import { resizeToStoredWebp } from '../../../../scripts/product-image-processing.mjs';
+import { resizeToStoredWebp } from './product-image-processing';
 import { prisma } from '@/features/shared/db/prisma';
 
 const storageKeySegmentPattern = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
