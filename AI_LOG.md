@@ -1,3 +1,31 @@
+## 2026-11-20 10:03:29 +07:00 - Đồng bộ trạng thái finding #1-#4 trong file review
+
+### Prompt nguyên văn đã dùng
+
+> docs/reviews/2026-11-20-requesting-code-review.md
+> read #1,2,3,4 and fix first because they are docs files
+
+### Đã tự kiểm chứng
+
+- Đọc lại #1–#4 trong file review và grep 4 file docs: cả 4 phát hiện **đã được sửa ở commit trước của chính PR #114** (`REQUIREMENTS.md:257/269/865/977`, preamble Lighthouse, 27→30 ở 4 file, `REQUIREMENTS.md:1318`); không còn chuỗi stale nào.
+- Chỉ còn "giá chỉ đọc" (đúng quyền EDITOR) và "filesystem chỉ đọc legacy" (đúng thiết kế) — không phải lỗi.
+- Cập nhật cột Quyết định của #1–#4 từ "Accepted → nhánh follow-up" thành **"Fixed trong PR #114"** để bảng không tự mâu thuẫn với mục "Cập nhật trong cùng PR #114" ở cuối file.
+- Không tạo branch/PR mới; đẩy commit tiếp theo lên PR #114.
+
+### AI sai ở đâu
+
+- Bảng findings ban đầu vẫn ghi Accepted/follow-up dù phần dưới file đã ghi Fixed — người đọc #1–#4 ở đầu file sẽ tưởng chưa sửa. Đã đồng bộ hai chỗ.
+- User phải nhắc "fix first because they are docs files" dù các file docs đã được sửa; bài học là phải cập nhật luôn bảng trạng thái trong cùng lượt, không chỉ phần phụ lục.
+
+### Hạn chế
+
+- Finding #5+ vẫn mở theo nhánh riêng; không sửa code/UI trong lượt này.
+
+**So sánh Figma:** không áp dụng.
+
+---
+
+
 ## 2026-11-20 01:51:09 +07:00 - Sửa docs theo code + đo lại Lighthouse trong PR #114
 
 ### Prompt nguyên văn đã dùng
