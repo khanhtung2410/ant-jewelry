@@ -9,11 +9,17 @@ import { resizeToStoredWebp } from './product-image-processing.mjs';
 
 const etag = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
-/** Add the CDN-bust version without breaking an existing query string. */
+/** Add the CDN-bust version without breaking query strings or fragments. */
 export function withVersionQuery(url) {
-  const [path, query = ''] = url.split('?');
-  if (query.split('&').some((part) => part.split('=')[0] === 'v')) return url;
-  return `${path}?${query ? `${query}&` : ''}v=2`;
+  const hashIndex = url.indexOf('#');
+  const fragment = hashIndex === -1 ? '' : url.slice(hashIndex);
+  const main = hashIndex === -1 ? url : url.slice(0, hashIndex);
+  const isAbsolute = /^https?:\/\//i.test(main);
+  const parsed = new URL(main, 'https://placeholder.local');
+  // Always set (never just add) so a stale `?v=1` is actually busted.
+  parsed.searchParams.set('v', '2');
+  const base = isAbsolute ? `${parsed.origin}${parsed.pathname}` : parsed.pathname;
+  return `${base}${parsed.search}${fragment}`;
 }
 
 /** E1: re-encode an old blob with the same helper used by new uploads. */

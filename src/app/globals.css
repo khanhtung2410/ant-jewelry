@@ -33,11 +33,15 @@
   --badge-info-text: #1e40af;
   --badge-unknown-bg: #e5e7eb;
   --badge-unknown-text: #374151;
+  /* Danger/success shades match the Tailwind palette they replaced. */
   --danger-border: #fecaca;
-  --danger-text: var(--badge-danger-text);
-  --danger-bg: var(--badge-danger-bg);
+  --danger-text: #b91c1c;
+  --danger-bg: #fef2f2;
   --danger-strong: #991b1b;
-  --success-text: #047857;
+  --success-text: #065f46;
+  /* Neutral shades used by the compact round admin buttons. */
+  --neutral-strong: #262626;
+  --neutral-hover: #e5e5e5;
 
   /* Montserrat (content) and Roboto Mono (headings/nav) are loaded in src/app/layout.tsx. */
   --font-body-family: var(--font-montserrat), 'Montserrat', Arial, Helvetica, sans-serif;

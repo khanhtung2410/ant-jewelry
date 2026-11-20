@@ -114,19 +114,4 @@ describe('ConfirmPopover interactions', () => {
     );
     expect(document.activeElement, 'focus stays on Confirm across re-render').toBe(confirm);
   });
-
-  it('disables the confirm button while busy', () => {
-    render(
-      <ConfirmPopover
-        message="Deleting?"
-        onConfirm={vi.fn()}
-        onCancel={vi.fn()}
-        confirmLabel="Delete"
-        busy
-      />,
-    );
-    expect((screen.getByRole('button', { name: 'Delete' }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
-  });
 });

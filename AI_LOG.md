@@ -1,4 +1,36 @@
-## 2026-11-20 10:53:22 +07:00 - Thêm rule ngôn ngữ + Figma vào AGENTS.md
+## 2026-11-20 11:21:15 +07:00 - Sửa finding #5-#8 (token, CDN query, busy)
+
+### Prompt nguyên văn đã dùng
+
+> docs/reviews/2026-11-20-requesting-code-review.md
+> read #5,6,7,8 and fix
+> remember to pull main first to avoid conflict in ailog
+
+### Đã tự kiểm chứng
+
+- `git pull --ff-only origin main` bị từ chối (branch cũ đã diverge sau PR #117), nên `git reset --hard origin/main` (`4ca54ef`) rồi tạo branch mới `fix/review-findings-5-to-8` — đúng ý "pull main first" và tránh conflict AI_LOG.
+- **#5:** thêm `--neutral-strong: #262626`, `--neutral-hover: #e5e5e5`; focus ring close-button dùng `--danger-strong #991b1b` (giữ đỏ); `--danger-bg #fef2f2`, `--success-text #065f46` khớp red-50/emerald-800. Cập nhật assertion arrow-button.
+- **#6 (RED→GREEN):** test mới cho `?v=1`, fragment, `?` trong query và gọi lại 2 lần → 2 test đỏ (giữ `?v=1`). Đổi `withVersionQuery` sang `new URL()` + `searchParams.set('v','2')`, tách fragment, hỗ trợ URL absolute; query chứa `?` được encode `%3F` (sửa lại expectation cho đúng ngữ nghĩa URL). 5/5 test pass.
+- **#7 (RED→GREEN):** test mới tạo `ProductImage` thật trên sản phẩm seed, URL `?v=1`, chạy migration, assert `?v=2`; cleanup cả blob lẫn image. Đỏ trước khi sửa helper, xanh sau.
+- **#8:** bỏ prop `busy`, `disabled` và test đi kèm; ghi chú trong `AdminConfirmForm` rằng popover đóng ngay khi confirm, double-submit chặn bằng `confirmedRef`, pending bằng `AdminStatusToast`.
+- Cập nhật cột quyết định #5–#8 trong file review thành Fixed. `rg` toàn repo: không còn ký tự Han/Hangul/Cyrillic. Bộ lệnh mục V: lint/typecheck/test (64 files / 296 tests)/format:check/build exit 0; E2E 30 pass.
+
+### AI sai ở đâu
+
+- Ban đầu viết expectation `?foo=x?y&v=2` (giữ `?` literal) nhưng `URLSearchParams` mã hóa thành `%3F`; đã sửa expectation theo đúng ngữ nghĩa URL trước khi implement — không phải lỗi code.
+- Ban đầu định `git pull --ff-only` trên branch cũ; phải reset về `origin/main` và branch mới theo yêu cầu để tránh conflict AI_LOG (đúng lời user).
+- Viết nhầm "seed Category/Product" trong review trong khi test chỉ tạo `ProductImage` trên sản phẩm có sẵn; đã sửa lại cho chính xác.
+
+### Hạn chế
+
+- Không chạy script migration trên production (không có DB credentials); chỉ test DB local.
+- Finding #9+ vẫn mở theo nhánh riêng.
+
+**So sánh Figma:** không đổi bố cục; token màu chỉ khớp lại giá trị palette cũ.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

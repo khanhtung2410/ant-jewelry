@@ -9,12 +9,15 @@ import {
 } from '../../scripts/reencode-legacy-uploads.mjs';
 
 const createdKeys: string[] = [];
+const createdImageIds: string[] = [];
 
 afterEach(async () => {
+  await prisma.productImage.deleteMany({ where: { id: { in: createdImageIds } } });
   await prisma.productImageBlob.deleteMany({
     where: { storageKey: { in: createdKeys } },
   });
   createdKeys.length = 0;
+  createdImageIds.length = 0;
 });
 
 async function png(width = 2000, height = 2000): Promise<Uint8Array<ArrayBuffer>> {
@@ -50,6 +53,21 @@ describe('versioned CDN URL', () => {
       '/uploads/products/p-1/a.png?v=2',
     );
   });
+
+  it('busts a stale version, keeps fragments and does not truncate extra query text', () => {
+    expect(withVersionQuery('/uploads/products/p-1/a.png?v=1')).toBe(
+      '/uploads/products/p-1/a.png?v=2',
+    );
+    expect(withVersionQuery('/uploads/products/p-1/a.png#frag')).toBe(
+      '/uploads/products/p-1/a.png?v=2#frag',
+    );
+    expect(withVersionQuery('/uploads/products/p-1/a.png?foo=x?y')).toBe(
+      '/uploads/products/p-1/a.png?foo=x%3Fy&v=2',
+    );
+    expect(withVersionQuery(withVersionQuery('/uploads/products/p-1/a.png'))).toBe(
+      '/uploads/products/p-1/a.png?v=2',
+    );
+  });
 });
 
 describe('B6 etag backfill', () => {
@@ -79,5 +97,36 @@ describe('B6 etag backfill', () => {
     expect(afterWebp?.etag).toBe(sha256Hex(webp));
     expect(afterPng?.contentType).toBe('image/webp');
     expect(afterPng?.etag).toBe(sha256Hex(afterPng!.bytes));
+  });
+
+  it('updates the ProductImage CDN URL when a legacy blob is re-encoded', async () => {
+    const product = await prisma.product.findFirst({ select: { id: true } });
+    expect(product, 'seeded product exists').toBeTruthy();
+
+    const storageKey = 'products/p-1/legacy-with-row.png';
+    await prisma.productImageBlob.create({
+      data: {
+        storageKey,
+        bytes: await png(400, 400),
+        contentType: 'image/png',
+        etag: null,
+      },
+    });
+    createdKeys.push(storageKey);
+
+    const image = await prisma.productImage.create({
+      data: {
+        productId: product!.id,
+        storageKey,
+        url: `/uploads/${storageKey}?v=1`,
+        alt: 'legacy image',
+      },
+    });
+    createdImageIds.push(image.id);
+
+    await migrateLegacyBlobs(prisma, { dryRun: false });
+
+    const after = await prisma.productImage.findUnique({ where: { id: image.id } });
+    expect(after?.url).toBe(`/uploads/${storageKey}?v=2`);
   });
 });
