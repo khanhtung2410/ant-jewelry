@@ -56,6 +56,18 @@ describe('Superpowers process guard', () => {
     }
   });
 
+  it('requires every review file to declare a concrete skill id', () => {
+    const files = readdirSync(path.join(root, 'docs/reviews')).filter(
+      (file) => file.endsWith('.md') && file !== 'TEMPLATE.md',
+    );
+    for (const file of files) {
+      const content = read(path.join('docs/reviews', file));
+      const match = content.match(/^\s*-\s+\*\*Skill:\*\*\s+(.+)$/m);
+      expect(match, `${file} must have a - **Skill:** line`).toBeTruthy();
+      expect(match?.[1].trim().toLowerCase(), `${file} skill id`).not.toBe('superpowers');
+    }
+  });
+
   it('keeps an AI_LOG header directly above every verbatim-prompt heading it owns', () => {
     // Normalize CRLF: an exact heading comparison silently skips every line on Windows otherwise.
     const content = read('AI_LOG.md').replace(/\r\n/g, '\n');

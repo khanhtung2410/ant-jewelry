@@ -1,5 +1,7 @@
 # Code Review toàn dự án (S1)
 
+- **Skill:** `requesting-code-review`
+
 ## Phạm vi và phương pháp
 
 - **Base (commit đầu tiên):** `5e19d3f81b17ab491c0883287de424f2e6566dfa`

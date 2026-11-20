@@ -1,5 +1,7 @@
 # Review 2026-11-19 — receiving-code-review (tự review kiểu E1)
 
+- **Skill:** `receiving-code-review`
+
 > **Cập nhật theo phản hồi S7 (2026-11-20):** tên skill ở bản gốc ghi nhầm là "superpowers" — đây không phải tên skill. AI_LOG entry tương ứng ghi rõ dùng nguyên tắc `receiving-code-review`, nên lượt này được ghi đúng tên đó. Cả 11 phát hiện dưới đây đều đã có trong checklist đợt 3–4 của mentor; lượt này **không tìm thêm phát hiện mới nào** và không nên trình bày như kết quả review độc lập. Riêng finding #9 (bác sửa mojibake trong `AI_LOG.md`) là **sai**: mentor yêu cầu dọn mojibake, và việc đó đã được thực hiện ở PR #123.
 
 - **Phạm vi:** `main` tại `e64c30b` (sau PR #94), toàn bộ code/docs hiện hành.
