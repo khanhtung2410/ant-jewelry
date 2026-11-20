@@ -1,3 +1,39 @@
+## 2026-11-20 23:10:32 +07:00 - Thêm T2: E2E upload ảnh ADMIN
+
+### Prompt nguyên văn đã dùng
+
+> T. Playwright: còn thiếu
+> T2 — E2E upload ảnh (giữ nguyên từ đợt 4). Upload là tính năng gây nhiều lỗi nhất (A1, E1, E3) nhưng chưa có test E2E nào. Đăng nhập ADMIN, mở Images, setInputFiles 3 ảnh (1 PNG ~3,8 MB tạo bằng sharp trong fixture, 2 ảnh nhỏ). Kiểm tra: toast "Uploading i/3"; đúng 3 request POST …/images trả 201; /p/<slug> có ảnh /uploads/…webp; ảnh đó content-type: image/webp, < 400 KB, có etag; gửi lại request với If-None-Match thì trả 304. Thêm case file > 4 MB: UI báo lỗi, không gửi request. Cuối test xóa ảnh đã upload (dùng finally như các test hiện có).
+
+Link review: `docs/reviews/2026-11-20-receiving-code-review.md` (mục "Cập nhật T2").
+
+### Đã tự kiểm chứng
+
+- Kéo `origin/main` (`b4e659c`, PR #129 merge) rồi tạo nhánh `test/e2e-upload-coverage`.
+- Tạo `e2e/product-upload.spec.ts` với 2 test. Fixture PNG nhiễu 1120×1120 bằng sharp (~3,8 MB, đo thực trước khi viết), 2 PNG nhỏ 400×400.
+- Test 1:ADMIN login → Edit sản phẩm → tab Images → `setInputFiles` 3 file → click Upload; MutationObserver ghi lại các toast `Uploading 1/3`, `2/3`, `3/3`; bắt 3 POST `/images` và assert `[201,201,201]`; 3 URL `/uploads/...webp` từ response xuất hiện trong HTML `/p/eclipse-pave-band` (dạng raw hoặc encoded); mỗi URL GET 200, `image/webp`, < 400.000 B, có ETag, `If-None-Match` → 304. Dọn trong `finally` bằng Prisma/E2E DB.
+- Test 2: file > 4 MB → `role="alert"` chứa "exceeds the 4 MB limit", mảng POST rỗng.
+- Chạy file E2E riêng: **2 passed / 55.2s**. Trong lúc debug đã thấy 2 vấn đề test (không phải lỗi production): origin check chỉ khớp với hostname `localhost` (dùng 127.0.0.1 bị 403), và gallery chỉ render cửa sổ thumbnail nên phải assert trong HTML trang.
+- Cập nhật README, DEPLOY, PERFORMANCE: 30 → 32 E2E (20 desktop + 12 pixel-7).
+
+### Findings được nhận / bác
+
+- **Accepted:** T2 — file review ghi rõ bằng chứng từng kỳ vọng.
+- **Rejected:** không có. Không đổi route origin check vì lỗi chỉ xuất hiện với hostname 127.0.0.1 trong webServer; production dùng hostname thật khớp Origin.
+
+### AI sai ở đâu
+
+- Ban đầu dùng `page.goto` tương đối (baseURL 127.0.0.1) nên upload bị 403 "Cross-origin uploads are not allowed" dù Origin và host khớp ở trình duyệt — phải đổi sang `http://localhost:3100` rõ ràng.
+- Chọn Aurora Band để upload nhưng gallery của nó dùng ảnh riêng từng màu, nên ảnh upload (shared) không hiển thị; phải đổi sang `eclipse-pave-band` (không có ảnh màu).
+- Assert 3 `img src` nhưng gallery chỉ render 3 thumbnail cửa sổ; phải assert sự hiện diện trong HTML trang, và không `decodeURIComponent` toàn bộ HTML (bị URIError).
+
+### Hạn chế
+
+- **Verification cuối (sau `const` + Prettier):** lint/typecheck/test (70 files / 319 tests)/format:check/build/test:e2e (32 passed) đều exit 0; guard AI_LOG 5/5. Output đầy đủ trong PR body.
+- Test dọn bằng Prisma trực tiếp thay vì UI Delete; không kiểm tra luồng xóa ảnh qua UI trong test này.
+
+---
+
 ## 2026-11-20 22:03:44 +07:00 - Sửa F4/F5: số Lighthouse một nguồn và migrate atomic
 
 ### Prompt nguyên văn đã dùng

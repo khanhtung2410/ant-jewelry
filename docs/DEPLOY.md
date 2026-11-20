@@ -248,7 +248,7 @@ If `next build` fails during page data collection with:
 - **Admin:** https://ant-jewelry.vercel.app/admin (redirects to login as expected for unauthenticated access)
 - **Lighthouse production:** số liệu mới nhất (v4, 2026-11-20) và toàn bộ lịch sử đo chỉ nằm tại [`docs/PERFORMANCE.md`](PERFORMANCE.md) mục "Đo lại production 2026-11-20 — lượt 3 (v4)". File này không chép lại số.
 - **Smoke production 2026-11-19:** `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` → **8/8 pass**: 6 màn public trả 200, đúng 1 `h1`, canonical đúng; ảnh `/uploads/` trên `/p/ivy-tennis-bracelet` có ETag và < 400 KB; `robots.txt` / `sitemap.xml` đúng. Chạy lệnh này sau mỗi lần deploy và dán output vào PR production.
-- **A11y / mobile 2026-11-19 → 2026-11-20:** E2E local 30 test (18 desktop + 12 Pixel 7), trong đó axe có **0 lỗi serious/critical** trên 6 màn. `npm run test:screenshots` tạo 6 ảnh 1920px đã dùng cho bảng R6.3 ở trên.
+- **A11y / mobile 2026-11-19 → 2026-11-20:** E2E local 32 test (20 desktop + 12 Pixel 7), trong đó axe có **0 lỗi serious/critical** trên 6 màn và 2 test upload ảnh ADMIN (progress toast, 3 request 201, WebP < 400 KB có ETag/304, chặn file > 4 MB). `npm run test:screenshots` tạo 6 ảnh 1920px đã dùng cho bảng R6.3 ở trên.
 
 ## Production readiness checklist (kèm bằng chứng)
 
@@ -262,7 +262,7 @@ If `next build` fails during page data collection with:
 | Script E1/B6 backfill ảnh legacy đã chạy | [ ] | Bắt buộc nếu DB có blob cũ: chạy `npx tsx scripts/reencode-legacy-uploads.ts --dry-run` rồi lệnh thật với `DATABASE_URL` direct; dán output số blob + ETag mới. Cho đến khi chạy, các blob có `etag = NULL` vẫn phải đọc bytes để trả 304 (đúng nhưng chậm hơn). Không nằm trong `prisma migrate deploy` vì cần sharp + cập nhật URL `?v=2` |
 | ADMIN đầu tiên bằng email thật | [ ] | Cần ảnh trang admin sau khi đăng nhập bằng tài khoản ADMIN vừa tạo (`db:create-admin:production`) |
 | 6 màn R6.3 mở được + ảnh đối chiếu | [x] | Bảng đối chiếu ở trên: 6 ảnh 1920px từ `npm run test:screenshots` (2026-11-19); smoke production 8/8 pass cùng ngày; admin/login vẫn có ảnh riêng nhưng không tính vào 6 màn |
-| E2E + a11y + smoke chạy được trên clone sạch / CI | [x] | `npm run test:e2e` 30 pass (18 desktop + 12 Pixel 7, axe 0 serious/critical); job `e2e` trong `.github/workflows/npm-ci.yml` upload report/trace khi fail; smoke production 8/8 pass |
+| E2E + a11y + smoke chạy được trên clone sạch / CI | [x] | `npm run test:e2e` 32 pass (20 desktop + 12 Pixel 7, axe 0 serious/critical, 2 test upload ảnh ADMIN); job `e2e` trong `.github/workflows/npm-ci.yml` upload report/trace khi fail; smoke production 8/8 pass |
 | Upload ảnh qua redeploy vẫn còn | [ ] | Cần ảnh `/p/<slug>` có ảnh `/uploads/...` **trên production sau redeploy**. Bằng chứng local (production build): [`docs/a1-screenshots/product-after-upload.png`](a1-screenshots/product-after-upload.png), upload ~4 MB + batch 3 ảnh vào DB rồi restart `next start` → ảnh vẫn 200 |
 | Backup/restore đã test | [ ] | Quy trình/pg_dump được mô tả ở mục Migration/backup; chưa có bản ghi test restore ngoài production |
 
