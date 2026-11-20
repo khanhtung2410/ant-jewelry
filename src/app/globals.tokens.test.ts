@@ -37,16 +37,19 @@ const themeNames = [
   '--color-admin-background',
 ];
 
-const preservedHexes = ['#265649', '#383838', '#fefdf8', '#93aaa0', '#991b1b', '#262626', '#e5e5e5'];
+const preservedHexes = [
+  '#265649',
+  '#383838',
+  '#fefdf8',
+  '#93aaa0',
+  '#991b1b',
+  '#262626',
+  '#e5e5e5',
+];
 
 describe('layered design tokens', () => {
   it('declares each of the four layers exactly once', () => {
-    for (const marker of [
-      '/* 1. Raw',
-      '/* 2. Primitive',
-      '/* 3. Semantic',
-      '/* 4. Component',
-    ]) {
+    for (const marker of ['/* 1. Raw', '/* 2. Primitive', '/* 3. Semantic', '/* 4. Component']) {
       expect(css.includes(marker), marker).toBe(true);
     }
   });
