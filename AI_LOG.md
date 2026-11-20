@@ -1,3 +1,42 @@
+## 2026-11-21 00:04:30 +07:00 - Review lại code theo đúng quy trình Superpowers
+
+### Prompt nguyên văn đã dùng
+
+> use superpower skill to check coe again
+> take into account note that mentor point out about using skill
+> except from unit test, also test whole work flow
+
+Link review: `docs/reviews/2026-11-21-requesting-code-review-workflow.md`.
+
+### Đã tự kiểm chứng
+
+- Kéo `origin/main` (`224a67c`), tạo nhánh `review/workflow-coverage`, dùng skill `requesting-code-review` với đúng id, reviewer fresh-context, read-only, không dispatch subagent phụ.
+- Reviewer nhận rõ quy trình đã sửa theo S6-S8: ghi tên skill cụ thể, đọc file thật + grep consumer trước khi nhận phát hiện, bảng đối chiếu checklist mentor ↔ code/test thật, nói rõ khi không có phát hiện mới, và ưu tiên test toàn luồng thay vì unit test.
+- Reviewer tìm thấy 3 lỗ hổng bằng chứng (1 Important F3, 1 Important F5, 1 Minor S7 extension), **không có lỗi production**, và ghi rõ "No new findings" ngoài checklist mentor.
+- **F3:** E2E giờ lấy src `/_next/image?...` thực tế từ trang sản phẩm, assert 200 + dung lượng nhỏ hơn raw + content-type ảnh. Chạy lại `e2e/product-upload.spec.ts`: 2 passed.
+- **F5:** thêm integration test trên DB thật — xóa row ProductImage sau `findMany` để update trong transaction lỗi P2025, rồi assert blob giữ nguyên contentType/etag/bytes. Chứng minh RED bằng cách tạm đổi script sang ghi tuần tự (lỗi `expected 'image/webp' to be 'image/png'`), khôi phục lại atomic → 8/8 pass. Giữ test grouping cũ làm guard nhanh.
+- **S7 extension:** guard test mới yêu cầu mọi file review (trừ TEMPLATE.md) có dòng `- **Skill:**` với id cụ thể; thêm dòng còn thiếu cho 2 file review lịch sử. Guard 6/6 pass.
+- Bảng đối chiếu mentor ↔ bằng chứng được lưu đầy đủ trong file review; mỗi mục F1-F5, T2, S6-S8 có test/output hoặc ghi rõ "không có bằng chứng tự động".
+
+### Findings được nhận / bác
+
+- **Accepted:** 3 findings của reviewer (F3 workflow assertion, F5 rollback integration, S7 skill-id guard) — file:line và quyết định trong file review.
+- **Rejected:** không có. Không đổi code production; cả ba chỉ là lỗ hổng kiểm chứng.
+
+### AI sai ở đâu
+
+- Tôi từng coi unit test `image-url.test.ts` và một lần probe tay trong DEPLOY là đủ cho F3, trong khi người dùng dùng trình duyệt tải `/_next/image` — đúng lỗi S8: kết luận không có output tự động cho đúng luồng.
+- Với F5, test fake transaction chỉ chứng minh "gộp operation", không chứng minh rollback; phải tạo lỗi DB thật mới có bằng chứng.
+- Guard S7 cũ chỉ cấm chuỗi "superpowers", không bắt sự hiện diện của skill id — sửa bằng assertion dương tính.
+- Lại suýt mất header entry trước khi prepend; lần này đã kiểm tra dòng `##` ngay bên dưới sau khi sửa.
+
+### Hạn chế
+
+- **Verification cuối (sau sửa type test + Prettier):** lint/typecheck/test (70 files / 321 tests)/format:check/build/test:e2e (32 passed) đều exit 0; guard AI_LOG 6/6. Lần đầu gate đỏ do `mockImplementationOnce` trả Promise thường thay vì PrismaPromise và một biến unused — đã cast `as never`, bỏ biến, chạy lại toàn bộ. Output đầy đủ trong PR body.
+- Reviewer không tự chạy lại bộ lệnh; chỉ controller chạy và dán output đầy đủ vào PR.
+
+---
+
 ## 2026-11-20 23:10:32 +07:00 - Thêm T2: E2E upload ảnh ADMIN
 
 ### Prompt nguyên văn đã dùng

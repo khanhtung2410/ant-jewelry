@@ -154,6 +154,59 @@ describe('B6 etag backfill', () => {
     expect(findMany.mock.calls[0][0].take).toBe(LEGACY_MIGRATION_BATCH_SIZE);
   });
 
+  it('rolls back the blob write when a URL update fails in the same transaction', async () => {
+    const originalBytes = await png(400, 400);
+    const storageKey = 'products/p-1/rollback.png';
+    const blob = await prisma.productImageBlob.create({
+      data: { storageKey, bytes: originalBytes, contentType: 'image/png', etag: null },
+    });
+    createdKeys.push(storageKey);
+
+    const product = await prisma.product.findFirst({ select: { id: true } });
+    expect(product).toBeTruthy();
+    const image = await prisma.productImage.create({
+      data: {
+        productId: product!.id,
+        storageKey,
+        url: `/uploads/${storageKey}`,
+        alt: 'rollback test',
+        sortOrder: 99,
+      },
+    });
+    createdImageIds.push(image.id);
+
+    const blobSpy = vi
+      .spyOn(prisma.productImageBlob, 'findMany')
+      .mockResolvedValueOnce([blob])
+      .mockResolvedValue([]);
+    const originalImageFindMany = prisma.productImage.findMany;
+    const imageSpy = vi.spyOn(prisma.productImage, 'findMany').mockImplementationOnce((async (
+      args: Parameters<typeof prisma.productImage.findMany>[0],
+    ) => {
+      const rows = await originalImageFindMany.call(prisma.productImage, args);
+      // Remove the row so the URL update inside the transaction fails with
+      // a real Prisma P2025 instead of a thrown mock error.
+      await prisma.productImage.delete({ where: { id: rows[0].id } });
+      return rows;
+    }) as never);
+
+    try {
+      await expect(migrateLegacyBlobs(prisma, { log: () => {} })).rejects.toThrow();
+
+      const after = await prisma.productImageBlob.findUnique({ where: { storageKey } });
+      expect(after, 'blob still exists').toBeTruthy();
+      expect(after!.contentType, 'rollback restored content type').toBe('image/png');
+      expect(after!.etag, 'rollback restored etag').toBeNull();
+      expect(
+        Buffer.from(after!.bytes).equals(Buffer.from(originalBytes)),
+        'rollback restored bytes',
+      ).toBe(true);
+    } finally {
+      blobSpy.mockRestore();
+      imageSpy.mockRestore();
+    }
+  });
+
   it('updates the ProductImage CDN URL when a legacy blob is re-encoded', async () => {
     const product = await prisma.product.findFirst({ select: { id: true } });
     expect(product, 'seeded product exists').toBeTruthy();

@@ -61,7 +61,7 @@ async function deleteUploadedImages(urls: string[]) {
   }
 }
 
-async function assertStoredImage(request: APIRequestContext, url: string) {
+async function assertStoredImage(request: APIRequestContext, url: string): Promise<number> {
   const response = await request.get(url);
   expect(response.status(), `${url} status`).toBe(200);
   expect(response.headers()['content-type'] ?? '').toContain('image/webp');
@@ -72,6 +72,29 @@ async function assertStoredImage(request: APIRequestContext, url: string) {
   expect(etag, `${url} etag`).toBeTruthy();
   const cached = await request.get(url, { headers: { 'If-None-Match': etag ?? '' } });
   expect(cached.status(), `${url} conditional GET`).toBe(304);
+  return body.byteLength;
+}
+
+async function assertOptimizedImage(
+  request: APIRequestContext,
+  page: Page,
+  url: string,
+  rawBytes: number,
+) {
+  const srcs = await page
+    .locator('img')
+    .evaluateAll((images) => images.map((image) => image.getAttribute('src') ?? ''));
+  const optimized = srcs.find(
+    (src) => src.startsWith('/_next/image?') && decodeURIComponent(src).includes(url),
+  );
+  expect(optimized, `storefront renders optimizer URL for ${url}`).toBeTruthy();
+
+  const response = await request.get(`${SITE}${optimized}`);
+  expect(response.status(), `optimizer status for ${url}`).toBe(200);
+  expect(response.headers()['content-type'] ?? '').toMatch(/^image\/(jpeg|webp)/);
+  const bytes = (await response.body()).byteLength;
+  expect(bytes, `optimizer bytes for ${url}`).toBeLessThan(rawBytes);
+  expect(bytes, `optimizer budget for ${url}`).toBeLessThan(400_000);
 }
 
 test('ADMIN uploads three images and the storefront serves small cached WebP copies', async ({
@@ -156,9 +179,30 @@ test('ADMIN uploads three images and the storefront serves small cached WebP cop
       )
       .toBe(true);
 
+    const rawSizes = new Map<string, number>();
     for (const url of uploadedUrls) {
-      await assertStoredImage(request, url);
+      rawSizes.set(url, await assertStoredImage(request, url));
     }
+
+    // F3: the storefront must actually load the optimizer URL, not just
+    // mention the raw blob, and the served variant must be smaller.
+    let optimizedChecked = false;
+    for (const url of uploadedUrls) {
+      const srcs = await page
+        .locator('img')
+        .evaluateAll((images) => images.map((image) => image.getAttribute('src') ?? ''));
+      if (
+        !srcs.some(
+          (src) => src.startsWith('/_next/image?') && decodeURIComponent(src).includes(url),
+        )
+      ) {
+        continue;
+      }
+      await assertOptimizedImage(request, page, url, rawSizes.get(url) ?? 400_000);
+      optimizedChecked = true;
+      break;
+    }
+    expect(optimizedChecked, 'at least one optimizer-served upload').toBe(true);
   } finally {
     await deleteUploadedImages(uploadedUrls);
   }
