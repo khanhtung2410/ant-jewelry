@@ -27,8 +27,8 @@ export function ActionButton({
     'inline-flex items-center justify-center rounded-full font-heading transition-colors min-h-7 px-2',
     'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]',
     disabled
-      ? 'cursor-not-allowed bg-[var(--surface-overlay-color)] text-foreground opacity-50'
-      : 'bg-[var(--surface-overlay-color)] text-foreground hover:bg-[var(--underline-color)] hover:text-white',
+      ? 'cursor-not-allowed bg-[var(--component-action-button-background)] text-[var(--component-action-button-text)] opacity-50'
+      : 'bg-[var(--component-action-button-background)] text-[var(--component-action-button-text)] hover:bg-[var(--component-action-button-hover-background)] hover:text-[var(--component-action-button-hover-text)]',
     className,
   ]
     .filter(Boolean)

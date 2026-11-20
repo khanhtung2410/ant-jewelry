@@ -15,7 +15,7 @@ describe('ContactPopover', () => {
     const html = renderToStaticMarkup(<ContactPopover settings={settings} />);
 
     expect(html).toContain('ORDER NOW');
-    expect(html).toContain('bg-[var(--underline-color)]');
+    expect(html).toContain('bg-[var(--component-action-button-background)]');
     expect(html).toContain('aria-haspopup="dialog"');
     expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain('role="dialog"');
@@ -52,7 +52,7 @@ describe('ContactPopover', () => {
     expect(html).toContain('href="tel:0900000000"');
     expect(html).toContain('0900 000 000');
     expect(html).toContain('ANT JEWELRY');
-    expect(html).toContain('hover:border-[var(--danger-strong)]');
+    expect(html).toContain('hover:border-[var(--component-close-button-hover-border)]');
     expect(html).toContain('rounded-3xl');
   });
 });

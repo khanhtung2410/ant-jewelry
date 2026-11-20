@@ -1,4 +1,52 @@
-## 2026-11-20 11:21:15 +07:00 - Sửa finding #5-#8 (token, CDN query, busy)
+## 2026-11-20 12:45:47 +07:00 - Layered design tokens + X button + Figma check
+
+### Prompt nguyên văn đã dùng
+
+> applie same logic to this project
+> ui/ux fix
+> (two design-token diagrams: raw value / primitive / semantic / component)
+> curl -H "X-Figma-Token: ..." "https://api.figma.com/v1/files/FILE_KEY"
+> figma.com/design/yUCfnsQhYKwX1yinlUWU7G/Jewelry-website--Copy-?t=UT6GEeBeZfBFBauG-0
+> check if any changes
+> also, the x button sgv background need color ajustdment
+> (new token supplied after the first one lacked file_content:read)
+
+### Đã tự kiểm chứng
+
+- Brainstorming + writing-plans + executing-plans theo Superpowers: đã viết spec `docs/superpowers/specs/2026-11-20-token-layer-design.md`, plan `docs/superpowers/plans/2026-11-20-layered-design-tokens.md`, ledger trong workspace git-ignored (script bash của skill không chạy được trên Windows nên tạo thủ công — đã ghi ruling).
+- **Task 1–4 hoàn thành:** 4 layer token + alias tương thích (test CSS 4/4), ActionButton, admin action + ConfirmPopover, CloseButton/ArrowButton dùng component token. Mỗi task có RED→GREEN và commit riêng.
+- **Figma API:** token đầu chỉ có scope `library_assets:read` → 403 mọi endpoint; token mới đọc được file `Jewelry website (Copy)`, `lastModified 2026-11-20T04:24:44Z`, version `2423802680768610234`. Các frame: `Home`, `Product-1`, `Product-2` (có popover CONTACT US), `Category page`, `Blog-1` (blog detail), `Blog-2` (blog list) — khớp mapping trong `AGENTS.md`. Không có thay đổi tên/cấu trúc frame so với mapping đã ghi; ảnh render được đối chiếu trực quan. Token chỉ nằm trong script temp, đã xóa, không commit.
+- **X button:** Figma Product-2 cho thấy nút đóng tròn nền sáng, X đậm. Theo lựa chọn của người dùng, đổi component token `--component-close-button-background` sang `--semantic-background-body` (#fefdf8), text sang `--semantic-text-body` (#383838), border sang `--semantic-border-line`. Đã ghi ruling trong ledger: đây là ngoại lệ thị giác có chủ đích.
+- **Verification:** lint/typecheck/test (65 files / 300 tests)/format:check/build exit 0; E2E 30 pass; quét CJK toàn repo → 0 kết quả. So sánh ảnh: chạy từ production thì 6/6 giống hệt (không chứng minh được code local); chạy từ local production build thì 4/6 giống hệt, `product-*` khác nhau vài byte do dữ liệu seed local khác production — không dùng làm bằng chứng "không đổi thị giác"; bằng chứng là test token hex + component class.
+
+### AI sai ở đâu
+
+- Ban đầu dùng script capture ảnh với `BASE_URL` mặc định là production → 6/6 giống hệt nhưng vô nghĩa với thay đổi local. Phải chạy lại local server port 3101 để có đối chiếu trung thực.
+- Tasks 2/3 không chạy full suite sau mỗi task, chỉ test file riêng → 2 assertion cũ trong `contact-popover.test.tsx` chỉ lộ ra ở Task 4. Đã sửa và ghi ruling; từ đây chạy full suite ở mỗi gate.
+- Token Figma đầu tiên sai scope; không tự đoán nội dung design, đã yêu cầu token mới có `file_content:read`.
+- `format:check` từng đỏ do 2 file test chưa format; đã chạy prettier --write.
+
+### Hạn chế
+
+- Không có snapshot Figma cũ trong repo nên "check if any changes" chỉ khẳng định cấu trúc/frame hiện tại khớp mapping, không so được diff lịch sử thiết kế.
+- Ảnh so sánh local/production khác nhau vài byte do dữ liệu, không phải bằng chứng thay đổi thị giác từ token; token hex test là bằng chứng chính.
+
+### Final review (fresh reviewer) và fix pass
+
+Reviewer toàn branch chấm **không ready** với 3 Important, đã xử lý trong một pass:
+1. Nút Confirm mặc định đổi `text-background` (#fefdf8) → trắng tinh (#ffffff) ngoài ngoại lệ được duyệt. Đã thêm test resolve giá trị cụ thể (`globals.tokens.test.ts`: `--component-confirm-primary-text` phải ra `#fefdf8`) → đỏ, rồi trỏ token sang `--semantic-background-body` → xanh.
+2. Bằng chứng screenshot cũ: ảnh commit vẫn là trạng thái trước đổi X. Đã regenerate từ local production build (port 3101); 4/6 giống hệt, `product-*` đổi vài byte do dữ liệu seed local, `product-contact-popover-1920.png` đổi đúng vùng nút đóng (đã soi ảnh: nền sáng, X đậm). Commit cả 2 ảnh product kèm giải thích.
+3. Migration component chưa đầy đủ: `--component-action-button-text`, `--component-arrow-button-* Border/text` khai báo nhưng không dùng; `--component-arrow-button-text` resolve #262626 trong khi render thực #383838. Đã nối các class default vào component token, sửa token text thành `--semantic-text-body` (#383838) và cập nhật assertion.
+
+Sửa thêm (cùng pass): docs/spec/plan bỏ câu "không đổi màu" tuyệt đối, ghi rõ ngoại lệ X; ghi rõ dùng file Figma **Copy** theo chỉ dẫn của người dùng, đã inspect node `226:469` (Blog-1), `235:761` (Blog-2), `105:861` (Product-1), `116:741` (Product-2) và so sánh với file gốc: 6 frame cùng cấu trúc/text hash, chỉ metadata khác (copy lưu ngày 2026-11-20).
+
+Bộ lệnh sau fix: lint/typecheck/test (65 files / 301 tests)/format:check/build exit 0; E2E 30 pass; quét CJK → 0.
+
+**So sánh Figma:** frame mapping giữ nguyên; nút đóng được điều chỉnh theo Product-2 (nền sáng, X đậm).
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

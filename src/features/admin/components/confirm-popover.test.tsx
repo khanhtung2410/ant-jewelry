@@ -16,7 +16,8 @@ describe('ConfirmPopover', () => {
     expect(html).toContain('Delete this image?');
     expect(html).toContain('Cancel');
     expect(html).toContain('Delete');
-    expect(html).not.toContain('border-[var(--danger-border)]');
+    expect(html).toContain('border-[var(--component-confirm-cancel-border)]');
+    expect(html).not.toContain('border-[var(--component-confirm-confirm-border)]');
   });
 
   it('uses the danger style for destructive confirmation', () => {
@@ -30,8 +31,8 @@ describe('ConfirmPopover', () => {
       />,
     );
 
-    expect(html).toContain('border-[var(--danger-border)]');
-    expect(html).toContain('text-[var(--danger-text)]');
+    expect(html).toContain('border-[var(--component-confirm-confirm-border)]');
+    expect(html).toContain('text-[var(--component-confirm-confirm-text)]');
   });
 });
 
