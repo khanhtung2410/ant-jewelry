@@ -1,4 +1,31 @@
-## 2026-11-20 14:24:25 +07:00 - Full evidence, production check và Lighthouse v4
+## 2026-11-20 14:50:44 +07:00 - Fix review findings #1 và #3 bằng code/asset
+
+### Prompt nguyên văn đã dùng
+
+> read docs/reviews/2026-11-20-requesting-code-review-round-2.md
+> and fix #1,3
+
+Link review: `docs/reviews/2026-11-20-requesting-code-review-round-2.md` (decisions #1 và #3 đã được cập nhật).
+
+### Đã tự kiểm chứng
+
+- Kéo `origin/main` mới nhất (`0211f39`, PR #121 merge) rồi tạo nhánh `fix/review-1-and-3`; không có conflict.
+- **Finding #1 (Accepted → Fixed thay vì chỉ document):** người dùng yêu cầu sửa thật, nên đổi `--component-close-button-border` từ `var(--semantic-border-line)` (`#93aaa0`) về `var(--semantic-border-strong)` (`#262626`). TDD: đổi expectation trong `globals.tokens.test.ts` trước → **RED** (`expected '#93aaa0' to be '#262626'`); sau đổi CSS → **GREEN** (`globals.tokens.test.ts` + `close-button.test.tsx`: 7/7). Gỡ border khỏi ngoại lệ Figma trong `ARCHITECTURE.md`, spec và plan; ngoại lệ giờ chỉ gồm nền và màu X.
+- **Finding #3 (Accepted deviation → Fixed):** khôi phục `docs/deploy-screenshots/product-1920.png` từ `cfef8cb`; kiểm tra byte: 199398 byte, `identicalToBase=true` (bản local build trước đó 199396). Bỏ ghi chú sai lệch 2 byte khỏi spec và plan.
+- Cập nhật bảng quyết định của review file cho #1/#3 sang "Fixed in follow-up PR on `fix/review-1-and-3`".
+
+### AI sai ở đâu
+
+- Ở lượt trước tôi chọn "documented, no code change" cho #1 và #3, nhưng người dùng muốn sửa thực tế. Bài học: khi reviewer đưaImportant/Minor kèm "Accepted (documented)", vẫn nên hỏi hoặc mặc định sửa giá trị gốc nếu người dùng nói "fix".
+- Từng ghi vào spec/plan rằng border `#93aaa0` là một phần của ngoại lệ Figma; phải sửa cùng lúc 3 file tài liệu khi đảo quyết định, nếu không tài liệu lại mâu thuẫn với code.
+
+### Hạn chế
+
+- **Verification cuối (output đầy đủ trong PR):** lint exit 0; typecheck exit 0; test exit 0 (65 files / 303 tests); format:check exit 0; build exit 0; test:e2e exit 0 (30 passed). So sánh ảnh với base `cfef8cb`: 5/6 byte-identical, chỉ `product-contact-popover-1920.png` khác (ngoại lệ X button) — đúng kỳ vọng của plan.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

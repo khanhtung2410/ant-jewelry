@@ -17,7 +17,7 @@
 - Tailwind `@theme inline` keeps all current mapping names.
 - Only the five listed components are edited; other components keep using aliases.
 - Project language rule: no Han/Hangul/Cyrillic characters in docs, code, PR or commit.
-- Five regenerated 1920px screenshots must be byte-identical to the committed PNGs; `product-contact-popover-1920.png` is the intentional X close-button exception (background `#fefdf8`, X `#383838`, border `#93aaa0`). `product-1920.png` has a documented 2-byte local-seed delta.
+- Five regenerated 1920px screenshots must be byte-identical to the committed PNGs; `product-contact-popover-1920.png` is the intentional X close-button exception (background `#fefdf8`, X `#383838`). The close-button border stays `#262626`.
 
 ## Review Focus
 

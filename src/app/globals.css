@@ -142,7 +142,7 @@
   --component-confirm-confirm-hover-background: var(--semantic-background-danger);
   --component-confirm-primary-background: var(--semantic-background-brand);
   --component-confirm-primary-text: var(--semantic-text-on-brand-soft);
-  --component-close-button-border: var(--semantic-border-line);
+  --component-close-button-border: var(--semantic-border-strong);
   --component-close-button-background: var(--semantic-background-body);
   --component-close-button-text: var(--semantic-text-body);
   --component-close-button-hover-border: var(--semantic-text-danger-strong);
