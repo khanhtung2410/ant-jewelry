@@ -1,4 +1,33 @@
-## 2026-11-20 10:03:29 +07:00 - Đồng bộ trạng thái finding #1-#4 trong file review
+## 2026-11-20 10:39:55 +07:00 - A3: tắt Preview deploy bằng vercel.json
+
+### Prompt nguyên văn đã dùng
+
+> vercel.json ("git": { "deploymentEnabled": { "main": true, "*": false } }).
+> Ghi lựa chọn và lý do vào DEPLOY.md; xóa câu "rủi ro đã biết, chưa được khắc phục".
+
+### Đã tự kiểm chứng
+
+- Fetch `origin/main` (`63252ba`, sau PR #115), tạo branch `chore/disable-preview-deploys`; đọc `vercel.json` cũ (chỉ có `buildCommand`) và đoạn cảnh báo A3 trong `docs/DEPLOY.md:74`.
+- Đọc tài liệu Vercel "Git Configuration" để xác nhận `git.deploymentEnabled` nhận branch key + minimatch (`*`), và rule `main: true` thắng `*: false` khi một branch khớp nhiều rule. Thêm `$schema` openapi để editor validate.
+- `vercel.json` mới giữ `buildCommand`, thêm `git.deploymentEnabled = { main: true, "*": false }`. Kiểm tra bằng `JSON.parse`: đúng cấu trúc.
+- `DEPLOY.md`: thay đoạn cảnh báo bằng mục "Quyết định A3 — tắt Preview deploy" ghi rõ lựa chọn, lý do (Preview dùng chung `DATABASE_URL` production và không chạy migration → có thể ghi dữ liệu thật; tách DB riêng tốn hạ tầng hơn), đánh đổi (không còn preview URL → dùng local build + 6 ảnh 1920px + E2E + smoke production), và điều kiện áp dụng (sau lần deploy config). Xóa hoàn toàn câu "rủi ro đã biết, chưa được khắc phục". Thêm dòng checklist A3 `[x]` có evidence là `vercel.json`.
+- Bộ lệnh mục V: lint/typecheck/test (64 files / 295 tests)/format:check/build đều exit 0.
+
+### AI sai ở đâu
+
+- Ban đầu định chỉ ghi vào DEPLOY.md mà quên kiểm tra `vercel.json` đã tồn tại; đã đọc và **giữ nguyên** `buildCommand` thay vì ghi đè file.
+- Không có Vercel CLI trong máy (`npx --no-install vercel` báo thiếu package) nên không chạy được schema validation chính thức; đã dùng `JSON.parse` + đối chiếu trực tiếp tài liệu Vercel thay thế.
+
+### Hạn chế
+
+- Không có quyền Vercel để xác nhận trên dashboard rằngPreview đã tắt; cấu hình chỉ có hiệu lực sau lần deploy áp dụng `vercel.json`.
+- Không đổi biến môi trường; nếu bật lại Preview sau này phải cấp `DATABASE_URL` riêng (đã ghi trong DEPLOY.md).
+
+**So sánh Figma:** không áp dụng.
+
+---
+
+
 
 ### Prompt nguyên văn đã dùng
 

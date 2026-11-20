@@ -71,7 +71,19 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 
 `vercel.json` runs `npm run build:production`: it generates the PostgreSQL Prisma client, applies pending migrations on **Production** Vercel builds (`scripts/migrate-production.mjs` → `prisma migrate deploy`), then runs `next build`. Local builds skip migrations. A production build now fails if the database is unreachable instead of deploying an app with no schema. Migrations can still be run manually (see below). Local dev/test use SQLite and write image bytes into that SQLite database's `ProductImageBlob` table — there is no filesystem upload path anymore; `PRODUCT_IMAGE_UPLOAD_DIR` only reads/removes legacy files from older versions.
 
-> ⚠️ **Rủi ro Preview dùng chung DB Production:** Preview hiện không chạy migration và trỏ tới cùng `DATABASE_URL` với Production. Một Server Action hoặc upload từ Preview có thể **ghi vào dữ liệu thật**. Các lựa chọn: (1) tách database riêng cho Preview (`DATABASE_URL` theo environment), (2) tắt Preview deploy, hoặc (3) nếu bắt buộc giữ như hiện tại, chỉ dùng Preview để xem và **không thực hiện thao tác ghi**; mọi mutation phải được kiểm tra trong checklist bàn giao. Đây là rủi ro đã biết, chưa được khắc phục bằng cấu hình trong repo.
+### Quyết định A3 — tắt Preview deploy
+
+**Lựa chọn:** chỉ deploy nhánh `main`; mọi branch/PR khác không tạo Preview deployment. Cấu hình trong `vercel.json`:
+
+```json
+"git": { "deploymentEnabled": { "main": true, "*": false } }
+```
+
+**Lý do:** Preview từng trỏ tới cùng `DATABASE_URL` với Production và **không chạy migration** (`scripts/migrate-production.mjs` chỉ chạy trên build Production). Một Server Action hoặc upload từ Preview vì thế có thể ghi vào dữ liệu thật. Việc tách DB riêng cho Preview (lựa chọn khác) đòi thêm database + secrets + migration cho mỗi branch — tốn kém hơn nhiều so với việc chỉ giữ một môi trường có quyền ghi. Tắt Preview ở cấp nền tảng loại bỏ hoàn toàn đường ghi đó mà không cần thêm hạ tầng hay thay đổi code.
+
+**Đánh đổi:** không còn URL preview tự động để reviewer xem thay đổi giao diện. Thay vào đó dùng `npm run build` local + `npm run test:screenshots` (6 ảnh desktop 1920px cho bảng R6.3) và `npm run test:e2e`, rồi smoke production sau khi merge `main`. Các kiểm tra này đã có trong repo và được dán output vào PR.
+
+Cấu hình có hiệu lực sau lần deploy áp dụng `vercel.json`; không cần thay đổi biến môi trường. Nếu sau này bật lại Preview, bắt buộc cấp `DATABASE_URL` riêng (Neon branch) trước.
 
 ## Vercel deployment sequence
 
@@ -243,6 +255,7 @@ If `next build` fails during page data collection with:
 | Vercel deployment accessible | [x] | 6 URL public + `/admin/login` trả 200 ngày 2026-11-18; ảnh chụp trong [`docs/deploy-screenshots/`](deploy-screenshots/) |
 | Vercel + PostgreSQL provisioned, env vars đúng, không lọt secret | [ ] | Cần ảnh/xuất danh sách biến trong Vercel dashboard (đã che giá trị). Repo chỉ có `.env.example`; production render được dữ liệu → gián tiếp chứng tỏ `DATABASE_URL` hoạt động |
 | `SITE_URL` đúng origin production | [x] | `curl https://ant-jewelry.vercel.app/` có `<link rel="canonical" href="https://ant-jewelry.vercel.app"/>` (6 lần xuất hiện origin trong HTML) |
+| A3 — Preview không ghi vào DB Production | [x] | `vercel.json` đặt `git.deploymentEnabled = { main: true, "*": false }`; chỉ deploy `main`. Quyết định + lý do ở mục "Quyết định A3" phía trên. Có hiệu lực sau lần deploy áp dụng config |
 | Migration đã áp dụng, status sạch | [ ] | Cần output thật của `npm run db:migrate:status:production` (chạy với `DATABASE_URL` direct). Không thể tự lấy từ môi trường agent |
 | Script E1/B6 backfill ảnh legacy đã chạy | [ ] | Bắt buộc nếu DB có blob cũ: chạy `node scripts/reencode-legacy-uploads.mjs --dry-run` rồi lệnh thật với `DATABASE_URL` direct; dán output số blob + ETag mới. Cho đến khi chạy, các blob có `etag = NULL` vẫn phải đọc bytes để trả 304 (đúng nhưng chậm hơn). Không nằm trong `prisma migrate deploy` vì cần sharp + cập nhật URL `?v=2` |
 | ADMIN đầu tiên bằng email thật | [ ] | Cần ảnh trang admin sau khi đăng nhập bằng tài khoản ADMIN vừa tạo (`db:create-admin:production`) |

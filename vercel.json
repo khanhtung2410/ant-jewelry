@@ -1,3 +1,10 @@
 {
-  "buildCommand": "npm run build:production"
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run build:production",
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "*": false
+    }
+  }
 }
