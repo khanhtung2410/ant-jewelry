@@ -115,7 +115,7 @@ describe('ProductCard', () => {
     expect(countImages(html)).toBe(1);
   });
 
-  it('skips the optimizer for uploaded images but keeps mock images on it', () => {
+  it('uses the optimizer for uploaded images and mock images alike', () => {
     const mockHtml = renderToStaticMarkup(
       <ProductCard product={makeProduct({ images: [frontImage] })} />,
     );
@@ -128,7 +128,7 @@ describe('ProductCard', () => {
     const uploadHtml = renderToStaticMarkup(
       <ProductCard product={makeProduct({ images: [uploaded] })} />,
     );
-    expect(uploadHtml).toContain('data-unoptimized="true"');
+    expect(uploadHtml).toContain('data-unoptimized="false"');
   });
 
   it('renders a second, hover-only image when the gallery has another photo', () => {

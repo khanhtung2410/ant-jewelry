@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isExternalImageUrl, isStoredUploadUrl, shouldSkipImageOptimizer } from './image-url';
+import { isExternalImageUrl, shouldSkipImageOptimizer } from './image-url';
 
 describe('isExternalImageUrl', () => {
   it('treats uppercase HTTPS URLs as external images', () => {
@@ -13,9 +13,8 @@ describe('isExternalImageUrl', () => {
     expect(isExternalImageUrl('http://cdn.example.com/a.jpg')).toBe(true);
   });
 
-  it('skips the optimizer for stored uploads as well as external URLs', () => {
-    expect(isStoredUploadUrl('/uploads/products/p-1/cover.webp')).toBe(true);
-    expect(shouldSkipImageOptimizer('/uploads/products/p-1/cover.webp')).toBe(true);
+  it('sends stored uploads through the optimizer but skips external URLs', () => {
+    expect(shouldSkipImageOptimizer('/uploads/products/p-1/cover.webp')).toBe(false);
     expect(shouldSkipImageOptimizer('HTTPS://cdn.example.com/a.jpg')).toBe(true);
     expect(shouldSkipImageOptimizer('/mock/hero/slide-1.webp')).toBe(false);
   });
