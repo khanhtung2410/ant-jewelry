@@ -270,4 +270,17 @@ describe('product image management actions with the real database (G10)', () => 
     const visible = await prisma.product.findUniqueOrThrow({ where: { id: productId } });
     expect(visible.status).toBe('VISIBLE');
   });
+
+  it('exposes the chosen front image to the real product query consumer', async () => {
+    await setProductImageFront(productId, thirdImageId, new FormData());
+
+    const { getProductBySlug } = await import('@/features/products/queries/products');
+    const queried = await getProductBySlug(`g10-product-${suffix}`);
+
+    const front = queried?.images.find((image) => image.isFront);
+    expect(front, 'query exposes exactly the front image set by the action').toBeTruthy();
+    expect(front?.url).toBe(
+      (await prisma.productImage.findUniqueOrThrow({ where: { id: thirdImageId } })).url,
+    );
+  });
 });
