@@ -1,4 +1,7 @@
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { PrismaClient } from '@prisma/client';
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { E2E_DATABASE_URL } from './database';
 
 function isMobile(): boolean {
   return test.info().project.name === 'pixel-7';
@@ -34,6 +37,59 @@ async function tabTo(page: Page, target: Locator) {
   }
 
   throw new Error('Target was not reachable with the Tab key.');
+}
+
+// No seeded category has more than one page of cards, so the load-more flow
+// needs temporary fixtures. They are written to the dedicated E2E database and
+// removed in the test's finally block.
+const SEE_MORE_SLUGS = [
+  'e2e-see-more-1',
+  'e2e-see-more-2',
+  'e2e-see-more-3',
+  'e2e-see-more-4',
+  'e2e-see-more-5',
+];
+
+async function createSeeMoreFixtures(): Promise<PrismaClient> {
+  const adapter = new PrismaBetterSqlite3({ url: E2E_DATABASE_URL });
+  const prisma = new PrismaClient({ adapter });
+  const category = await prisma.category.findUniqueOrThrow({ where: { slug: 'other-jewelry' } });
+
+  for (const [index, slug] of SEE_MORE_SLUGS.entries()) {
+    const price = 1_000_000 + index;
+    await prisma.product.upsert({
+      where: { slug },
+      create: {
+        id: slug,
+        categoryId: category.id,
+        name: `See More Fixture ${index + 1}`,
+        slug,
+        brand: 'Ant Jewelry',
+        description: 'Temporary product used by the category pagination E2E test.',
+        price,
+        status: 'VISIBLE',
+      },
+      update: { categoryId: category.id, price, status: 'VISIBLE' },
+    });
+  }
+
+  return prisma;
+}
+
+async function removeSeeMoreFixtures(prisma: PrismaClient): Promise<void> {
+  await prisma.product.deleteMany({ where: { slug: { in: SEE_MORE_SLUGS } } });
+  await prisma.$disconnect();
+}
+
+async function parseCardPrices(links: Locator): Promise<number[]> {
+  const texts = await links.locator('p').allTextContents();
+  return texts.map((text) => {
+    const match = text.match(/([\d]{1,3}(?:\.[\d]{3})+)\s*₫/);
+    if (!match) {
+      throw new Error(`Expected product card to contain a formatted price: ${text}`);
+    }
+    return Number(match[1].replaceAll('.', ''));
+  });
 }
 
 test(
@@ -168,21 +224,34 @@ test(
   'storefront pages do not scroll horizontally and keep the header sticky',
   { tag: '@storefront' },
   async ({ page }) => {
-    for (const width of [375, 768, 1280, 1920]) {
-      await page.setViewportSize({ width, height: 800 });
-      await page.goto('/');
+    test.setTimeout(180_000);
+    const paths = [
+      '/',
+      '/c/wedding-ring',
+      '/p/aurora-band',
+      '/blog',
+      '/blog/cach-chon-nhan-cuoi-phu-hop',
+    ];
 
-      const hasHorizontalOverflow = await page.evaluate(
-        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-      );
-      expect(hasHorizontalOverflow, `no horizontal overflow at ${width}px`).toBe(false);
+    for (const path of paths) {
+      for (const width of [375, 768, 1280, 1920]) {
+        await page.setViewportSize({ width, height: 800 });
+        await page.goto(path);
 
-      const headerTop = await page.evaluate(async () => {
-        window.scrollTo(0, 700);
-        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-        return Math.round(document.querySelector('header')!.getBoundingClientRect().top);
-      });
-      expect(headerTop, `sticky header at ${width}px`).toBe(0);
+        const hasHorizontalOverflow = await page.evaluate(
+          () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        );
+        expect(hasHorizontalOverflow, `${path}: no horizontal overflow at ${width}px`).toBe(false);
+
+        const headerTop = await page.evaluate(async () => {
+          window.scrollTo(0, 700);
+          await new Promise((resolve) =>
+            requestAnimationFrame(() => requestAnimationFrame(resolve)),
+          );
+          return Math.round(document.querySelector('header')!.getBoundingClientRect().top);
+        });
+        expect(headerTop, `${path}: sticky header at ${width}px`).toBe(0);
+      }
     }
   },
 );
@@ -374,7 +443,9 @@ test('EDITOR can save product details but cannot edit a product price', async ({
   );
 });
 
-test('confirming hide changes the product status', async ({ page }) => {
+test('confirming hide removes the product from the storefront and restoring brings it back', async ({
+  page,
+}) => {
   await signIn(page, 'admin@antjewelry.local', 'Admin@123');
   await page.goto('/admin/products?search=Aurora');
 
@@ -383,10 +454,172 @@ test('confirming hide changes the product status', async ({ page }) => {
   const dialog = page.getByRole('dialog', { name: 'CONFIRM ACTION' });
   await expect(dialog.getByRole('button', { name: 'Hide' })).toBeVisible();
   await dialog.getByRole('button', { name: 'Hide' }).click();
-
   await expect(row.getByRole('button', { name: 'Hiển thị' })).toBeVisible();
 
-  // Restore the seeded state: later projects run against the same E2E DB.
-  await row.getByRole('button', { name: 'Hiển thị' }).click();
-  await expect(row.getByRole('button', { name: 'Ẩn' })).toBeVisible();
+  try {
+    // A hidden product must stop being served, not just disappear from a list.
+    await expect(async () => {
+      const response = await page.goto('/p/aurora-band');
+      expect(response?.status()).toBe(404);
+    }).toPass({ timeout: 20_000 });
+    await expect(page.getByRole('heading', { name: 'Aurora Band' })).toHaveCount(0);
+
+    await page.goto('/c/wedding-ring');
+    await expect(page.getByRole('link', { name: /Aurora Band/ })).toHaveCount(0);
+  } finally {
+    // Restore the seeded state: later tests and projects use the same E2E DB.
+    await page.goto('/admin/products?search=Aurora');
+    const restoreRow = page.getByRole('row').filter({ hasText: 'Aurora Band' });
+    await restoreRow.getByRole('button', { name: 'Hiển thị' }).click();
+    await expect(restoreRow.getByRole('button', { name: 'Ẩn' })).toBeVisible();
+  }
+
+  await expect(async () => {
+    const response = await page.goto('/p/aurora-band');
+    expect(response?.status()).toBe(200);
+  }).toPass({ timeout: 20_000 });
+  await expect(page.getByRole('heading', { name: 'Aurora Band', level: 1 })).toBeVisible();
+
+  await page.goto('/c/wedding-ring');
+  await expect(page.getByRole('link', { name: /Aurora Band/ })).toHaveCount(1);
 });
+
+test(
+  'home product carousel arrows move the first visible card and wrap at the ends',
+  { tag: '@storefront' },
+  async ({ page }) => {
+    // A narrower viewport guarantees the six-card carousel actually overflows.
+    await page.setViewportSize({ width: 900, height: 800 });
+    await page.goto('/');
+    const carousel = page.getByRole('region', { name: 'Wedding Ring' });
+    const items = carousel.locator('[data-product-carousel-items]');
+    const next = carousel.getByRole('button', { name: 'Next products' });
+    const previous = carousel.getByRole('button', { name: 'Previous products' });
+
+    const scrollLeft = () => items.evaluate((element) => Math.round(element.scrollLeft));
+    const firstVisibleHref = () =>
+      items.evaluate((list) => {
+        const left = list.getBoundingClientRect().left;
+        const first = Array.from(list.querySelectorAll('li')).find(
+          (item) => item.getBoundingClientRect().right > left + 4,
+        );
+        return first?.querySelector('a')?.getAttribute('href') ?? null;
+      });
+
+    const overflow = await items.evaluate((element) => element.scrollWidth - element.clientWidth);
+    expect(overflow, 'carousel must overflow before the arrows can scroll').toBeGreaterThan(0);
+
+    expect(await scrollLeft()).toBe(0);
+    const initialFirst = await firstVisibleHref();
+    expect(initialFirst).toMatch(/^\/p\//);
+
+    // Retry the first click until hydration has attached the React handler.
+    await expect(async () => {
+      await items.evaluate((element) => {
+        element.scrollLeft = 0;
+      });
+      await next.click();
+      await expect.poll(scrollLeft, { timeout: 2_000 }).toBeGreaterThan(0);
+    }).toPass({ timeout: 15_000 });
+    await expect.poll(firstVisibleHref).not.toBe(initialFirst);
+
+    await previous.click();
+    await expect.poll(scrollLeft).toBe(0);
+    await expect.poll(firstVisibleHref).toBe(initialFirst);
+
+    // The controls wrap instead of disabling at the ends; they must stay usable.
+    await previous.click();
+    await expect
+      .poll(async () => {
+        const position = await items.evaluate((element) => ({
+          left: element.scrollLeft,
+          max: element.scrollWidth - element.clientWidth,
+        }));
+        return Math.abs(position.max - position.left) < 10;
+      })
+      .toBe(true);
+    await expect(previous).toBeEnabled();
+    await expect(next).toBeEnabled();
+
+    await next.click();
+    await expect.poll(scrollLeft).toBe(0);
+  },
+);
+
+test('double-clicking Sign in does not submit the login twice', async ({ page }) => {
+  await page.goto('/admin/login');
+  await page.getByLabel('Email').fill('admin@antjewelry.local');
+  await page.getByLabel('Password').fill('Admin@123');
+
+  const submit = page.getByRole('button', { name: 'Sign in' });
+  await submit.dblclick();
+
+  await expect(page).toHaveURL(/\/admin\/?$/);
+  await expect(page.getByRole('button', { name: 'Logout' })).toBeVisible();
+});
+
+test(
+  'category SEE MORE appends new sorted cards, disables while loading and hides at the end',
+  { tag: '@storefront' },
+  async ({ page }) => {
+    test.setTimeout(120_000);
+    await signIn(page, 'admin@antjewelry.local', 'Admin@123');
+    const prisma = await createSeeMoreFixtures();
+
+    try {
+      // A real admin mutation expires the cached product queries and pages.
+      await page.goto('/admin/products?search=Aurora');
+      const auroraRow = page.getByRole('row').filter({ hasText: 'Aurora Band' });
+      await auroraRow.getByRole('button', { name: 'Ẩn' }).click();
+      await page
+        .getByRole('dialog', { name: 'CONFIRM ACTION' })
+        .getByRole('button', { name: 'Hide' })
+        .click();
+      await expect(auroraRow.getByRole('button', { name: 'Hiển thị' })).toBeVisible();
+      await auroraRow.getByRole('button', { name: 'Hiển thị' }).click();
+      await expect(auroraRow.getByRole('button', { name: 'Ẩn' })).toBeVisible();
+
+      await page.goto('/c/other-jewelry?sort=price_asc');
+      const region = page.getByRole('region', { name: 'Other Jewelry' });
+      const cards = region.getByRole('article');
+      const cardLinks = region.getByRole('list').getByRole('link');
+      const hrefs = () =>
+        cardLinks.evaluateAll((elements) =>
+          elements.map((element) => element.getAttribute('href')),
+        );
+
+      await expect(async () => {
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await expect(cards).toHaveCount(10);
+      }).toPass({ timeout: 20_000 });
+
+      const initialHrefs = await hrefs();
+      const initialPrices = await parseCardPrices(cardLinks);
+      expect(initialPrices).toEqual([...initialPrices].sort((first, second) => first - second));
+
+      // Hold only the SEE MORE action so the pending state is observable.
+      await page.route('**/*', async (route) => {
+        if (route.request().method() === 'POST' && route.request().headers()['next-action']) {
+          await new Promise((resolve) => setTimeout(resolve, 800));
+        }
+        await route.continue();
+      });
+
+      await region.getByRole('button', { name: 'See more products' }).click();
+      const loadingButton = region.getByRole('button', { name: 'Loading more products' });
+      await expect(loadingButton).toBeDisabled();
+      await expect(loadingButton).toHaveText('LOADING...');
+
+      await expect(cards).toHaveCount(12);
+      const appendedHrefs = await hrefs();
+      expect(appendedHrefs.slice(0, 10)).toEqual(initialHrefs);
+      expect(new Set(appendedHrefs).size).toBe(12);
+      const allPrices = await parseCardPrices(cardLinks);
+      expect(allPrices).toEqual([...allPrices].sort((first, second) => first - second));
+      await expect(region.getByRole('button', { name: 'See more products' })).toHaveCount(0);
+    } finally {
+      await page.unrouteAll();
+      await removeSeeMoreFixtures(prisma);
+    }
+  },
+);
