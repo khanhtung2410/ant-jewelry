@@ -106,7 +106,18 @@ describe('blog post actions and image sync with the real database (G12)', () => 
     ]);
 
     expect(revalidatePath).toHaveBeenCalledWith('/admin/blog');
+    expect(revalidatePath).toHaveBeenCalledWith('/', 'page');
+    expect(revalidatePath).toHaveBeenCalledWith('/blog', 'page');
     expect(revalidatePath).toHaveBeenCalledWith('/blog/[slug]', 'page');
+
+    // The synced rows must reach the real query consumer in the right order.
+    const { getBlogPostBySlug } = await import('@/features/blog/queries/blog-posts');
+    const fetched = await getBlogPostBySlug(slug, { includeDrafts: true });
+    expect(fetched?.images.map((image) => image.url)).toEqual([
+      '/mock/cover.webp',
+      '/mock/ring.webp',
+      '/mock/necklace.webp',
+    ]);
   });
 
   it('returns a slug field error when another post already uses the slug', async () => {
@@ -201,6 +212,9 @@ describe('blog post actions and image sync with the real database (G12)', () => 
 
     expect(await prisma.blogPost.findUnique({ where: { id: post.id } })).toBeNull();
     expect(await prisma.blogImage.count({ where: { blogPostId: post.id } })).toBe(0);
+    expect(revalidatePath).toHaveBeenCalledWith('/admin/blog');
+    expect(revalidatePath).toHaveBeenCalledWith('/', 'page');
+    expect(revalidatePath).toHaveBeenCalledWith('/blog', 'page');
     expect(revalidatePath).toHaveBeenCalledWith('/blog/[slug]', 'page');
   });
 });
