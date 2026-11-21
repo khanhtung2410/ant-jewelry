@@ -69,7 +69,7 @@ Website **không** hỗ trợ các chức năng sau trong phạm vi hiện tại
 
 Không được tự ý đưa các chức năng nằm ngoài phạm vi trên vào kiến trúc hoặc kế hoạch triển khai nếu chưa có thay đổi yêu cầu chính thức từ chủ dự án.
 
-Trong work tree hiện tại, trang chủ hiển thị hero slider, các carousel sản phẩm theo danh mục và hai bài Blog mới nhất. Các trang danh sách/chi tiết sản phẩm, Blog và khu vực quản trị vẫn chưa được triển khai.
+Trong work tree hiện tại, trang chủ hiển thị hero slider, các carousel sản phẩm theo danh mục và hai bài Blog mới nhất. Các trang danh sách/chi tiết sản phẩm (`/c/[slug]`, `/p/[slug]`), Blog (`/blog`, `/blog/[slug]`) và khu vực quản trị (`/admin/*`) đã được triển khai trong `src/app`.
 
 ### 2.2. Mục tiêu hệ thống
 
@@ -81,7 +81,7 @@ Trong work tree hiện tại, trang chủ hiển thị hero slider, các carouse
 
 ### 2.3. Phạm vi chức năng chính
 
-Trạng thái trong bảng phản ánh mức độ xác định của yêu cầu trong SAD, **không phải** trạng thái triển khai. Tất cả chức năng nghiệp vụ dưới đây hiện chưa có trong work tree.
+Trạng thái trong bảng phản ánh mức độ xác định của yêu cầu trong SAD, không phải trạng thái triển khai. Phần lớn chức năng dưới đây đã có trong work tree (xem `src/app`, `src/features` và `prisma/schema.prisma`).
 
 | Nhóm chức năng | Nội dung | Actor chính | Trạng thái yêu cầu |
 |---|---|---|---|
@@ -102,7 +102,7 @@ Trạng thái trong bảng phản ánh mức độ xác định của yêu cầu
 
 ## 3. Actor và vai trò
 
-> Work tree hiện chưa có Authentication, User/Role model hoặc giao diện Admin/Staff. Các vai trò dưới đây là định hướng nghiệp vụ từ SAD.
+> Work tree đã có Authentication (session cookie ký HMAC, bcrypt), model `User`/`Role` trong Prisma và giao diện Admin (`src/app/admin`). Các diễn giải về Staff bên dưới là ánh xạ nghiệp vụ từ SAD (EDITOR).
 
 ### 3.1. Customer
 
@@ -156,28 +156,28 @@ Quyền cụ thể của Staff và mối quan hệ giữa Staff với User/Role 
 
 ### 4.1. Technology Stack
 
-SAD v1.1 nêu định hướng sử dụng Next.js. Kiến trúc đã chốt dùng **một Next.js application duy nhất**, Prisma với SQLite cho dev và PostgreSQL cho production; Authentication và Image Storage vẫn là phương án đề xuất, chưa được cấu hình.
+SAD v1.1 nêu định hướng sử dụng Next.js. Kiến trúc đã chốt dùng **một Next.js application duy nhất**, Prisma với SQLite cho dev và PostgreSQL cho production; Authentication bằng session cookie ký HMAC (`AUTH_SECRET`, bcrypt) và Image Storage DB-backed (`ProductImageBlob`) đã được cấu hình và triển khai.
 
 | Thành phần | Công nghệ | Vai trò | Trạng thái trong work tree |
 |---|---|---|---|
 | Application | Next.js 16.4.5 (App Router) | Giao diện và server-side logic trong cùng một ứng dụng | Đã cài đặt |
 | UI runtime | React 19.3.0 | Render giao diện | Đã cài đặt |
-| Read path | React Server Components (App Router) | Đọc dữ liệu và render phía server | Runtime đã có; chưa có query nghiệp vụ |
-| Mutation path | Server Actions; Route Handlers chỉ cho upload | Xử lý form, mutation và upload | Đã chốt; chưa triển khai |
+| Read path | React Server Components (App Router) | Đọc dữ liệu và render phía server | Đã triển khai (Server Components trong `src/app`, data access qua Prisma) |
+| Mutation path | Server Actions; Route Handlers chỉ cho upload | Xử lý form, mutation và upload | Đã triển khai (`src/features/*/actions.ts` và route handler upload) |
 | Styling | Tailwind CSS v4 qua `@tailwindcss/turbopack` | Utility CSS | Đã cấu hình |
 | Ngôn ngữ | TypeScript 5 (`strict`) | Type safety | Đã cấu hình |
 | Lint | ESLint 9 + `eslint-config-next` | Kiểm tra chất lượng mã | Đã cấu hình |
 | Format | Prettier 3 | Format mã nguồn | Đã cấu hình |
 | Test | Vitest 5 | Unit test | Đã cấu hình |
 | Package manager | npm (`package-lock.json`) | Quản lý dependencies | Đang sử dụng |
-| Database | SQLite (dev) / PostgreSQL (production) | Lưu trữ dữ liệu hệ thống | Đã chốt, chưa cấu hình |
-| ORM | Prisma | Truy vấn và quản lý dữ liệu | Đã chốt, chưa cấu hình |
-| Validation | Zod | Validate input tại server boundary | Đã chốt, chưa cài đặt |
-| Authentication | JWT | Xác thực người dùng nội bộ | Đề xuất, chưa cấu hình |
-| Image Storage | Local filesystem (`/uploads`) | Lưu trữ hình ảnh sản phẩm | Đã triển khai; Blog chưa xác định |
+| Database | SQLite (dev) / PostgreSQL (production) | Lưu trữ dữ liệu hệ thống | Đã cấu hình (SQLite dev/test, PostgreSQL production) |
+| ORM | Prisma | Truy vấn và quản lý dữ liệu | Đã cấu hình (Prisma 7) |
+| Validation | Zod | Validate input tại server boundary | Đã cài đặt (Zod 4) |
+| Authentication | Session cookie ký HMAC + bcrypt | Xác thực người dùng nội bộ | Đã triển khai (không phải JWT) |
+| Image Storage | DB-backed `ProductImageBlob`, phục vụ `/uploads/...` qua optimizer | Lưu trữ hình ảnh sản phẩm | Đã triển khai; ảnh Blog dùng URL, chính sách còn TBC |
 | Version Control | Git / GitHub | Quản lý mã nguồn và cộng tác | Đang sử dụng |
 
-Cần tiếp tục xác nhận phương thức Authentication và chính sách lưu ảnh Blog.
+Phương thức Authentication đã chốt và triển khai (session cookie HMAC + bcrypt); chính sách lưu ảnh Blog vẫn chờ quyết định.
 
 ### 4.2. Vai trò của từng công nghệ
 
@@ -189,7 +189,7 @@ Cần tiếp tục xác nhận phương thức Authentication và chính sách l
 - Thực thi nghiệp vụ, kiểm tra Authentication/Authorization và truy cập Database trong cùng process server-side.
 - Không tạo tầng API riêng hoặc ứng dụng backend tách biệt.
 
-Trong work tree hiện tại, trang chủ public đã được triển khai; các trang danh sách/chi tiết sản phẩm, Blog, Admin/Staff và server-side logic nghiệp vụ nêu trên chưa được triển khai.
+Trong work tree hiện tại, trang chủ public, các trang danh sách/chi tiết sản phẩm, Blog, Admin/Staff và server-side logic nghiệp vụ nêu trên đã được triển khai (`src/app/(public)`, `src/app/admin`, `src/features`).
 
 **SQLite / PostgreSQL**
 
@@ -207,11 +207,11 @@ Trong work tree hiện tại, trang chủ public đã được triển khai; cá
 - Quản lý database migrations sau khi schema được phê duyệt.
 - Hỗ trợ thao tác dữ liệu trong các module server-side.
 
-**JWT**
+**Session cookie ký HMAC (AUTH_SECRET)**
 
-- Là phương án xác thực người dùng nội bộ được đề xuất.
+- Là phương án xác thực người dùng nội bộ đã triển khai (`src/features/auth/session-token.ts`), không phải JWT.
 - Không thay thế việc kiểm tra quyền truy cập ở server-side.
-- Cần xác định thêm token expiration, refresh token, logout và thu hồi token trước khi triển khai.
+- Session hết hạn theo `SESSION_MAX_AGE_SECONDS`; logout và thu hồi đi qua `sessionVersion` trong bảng `User`. Không dùng refresh token.
 
 **Local filesystem image storage**
 
@@ -495,7 +495,7 @@ Các điểm cần xác nhận:
 ### 6.7. Authentication / User / Role Module
 Mục đích: Xác thực người dùng nội bộ và quản lý quyền truy cập.
 
-SAD đề xuất JWT cho Authentication nhưng cấu trúc User/Role và quan hệ với staff chưa được xác định.
+SAD đề xuất JWT; hiện trạng đã triển khai session cookie ký HMAC + bcrypt với model `User.role` (`ADMIN`/`EDITOR`, ánh xạ Staff của SAD) tại `prisma/schema.prisma`.
 
 Các trách nhiệm dự kiến:
 - Đăng nhập tài khoản nội bộ.
@@ -503,11 +503,11 @@ Các trách nhiệm dự kiến:
 - Quản lý tài khoản.
 - Quản lý Role và Permission sau khi mô hình được phê duyệt.
 - Kiểm tra quyền truy cập chức năng quản trị.
-Không được coi JWT là toàn bộ giải pháp bảo mật. Server-side code vẫn phải kiểm tra quyền trên từng Server Action / Route Handler hoặc nhóm thao tác được bảo vệ.
+Không được coi session cookie là toàn bộ giải pháp bảo mật. Server-side code vẫn kiểm tra quyền trên từng Server Action / Route Handler hoặc nhóm thao tác được bảo vệ.
 
 ## 7. System Request Flow
 
-> Work tree chưa có Database hoặc luồng dữ liệu nào được triển khai. Các sơ đồ dưới đây là luồng đề xuất; read đi qua Server Components, mutation đi qua Server Actions / Route Handlers.
+> Work tree đã có Database (Prisma) và các luồng dữ liệu read/mutation được triển khai; read đi qua Server Components, mutation qua Server Actions / Route Handlers. Các sơ đồ dưới đây mô tả luồng hiện tại.
 
 ### 7.1. Luồng read — xem danh sách sản phẩm
 
@@ -584,11 +584,11 @@ sequenceDiagram
     end
 ```
 
-Route Handlers chỉ dùng cho upload, webhook hoặc tích hợp cần HTTP endpoint; không tạo một tầng REST API riêng cho toàn bộ ứng dụng. JWT là phương án được đề xuất trong SAD. Token lifecycle, refresh token, logout, thu hồi token và chính sách bảo mật tài khoản cần được xác định trước khi triển khai.
+Route Handlers chỉ dùng cho upload, webhook hoặc tích hợp cần HTTP endpoint; không tạo một tầng REST API riêng cho toàn bộ ứng dụng. Xác thực đã triển khai bằng session cookie ký HMAC (`AUTH_SECRET`) và bcrypt, không phải JWT. Thu hồi session đi qua `sessionVersion`; refresh token không được dùng.
 
 ## 8. Logical Data Architecture
 
-> Work tree chưa có Database hoặc Prisma. Các entity, quan hệ và ERD dưới đây là mô hình logic từ SAD, không phải schema vật lý. `src/types/domain.ts` định nghĩa TypeScript contracts cho `Product`, `Category` và `BlogPost`; các type này không hàm ý rằng persistence hoặc workflow đã được triển khai.
+> Work tree đã có Prisma và schema vật lý (`prisma/schema.prisma` cho SQLite, `prisma/postgresql/schema.prisma` cho production). Các entity, quan hệ và ERD dưới đây mô tả schema đang dùng; `docs/ERD.md` là ERD đối chiếu. `src/types/domain.ts` chỉ là TypeScript contract, không thay thế schema.
 
 ### 8.1. Các entity được xác định trong SAD
 SAD Appendix A và Section 6 đề cập các bảng logic sau:
@@ -716,11 +716,11 @@ Theo SAD, Database physical design chỉ nên được thực hiện sau khi cá
 - OI-016: cấu trúc số tiền và currency.
 - OI-017: Database engine và quy ước kiểu chuỗi.
 - OI-018: cấu trúc lưu trữ hình ảnh.
-Do đó, ERD trong tài liệu này chỉ là Logical Data Model để rà soát, không được dùng thay thế cho DDL hoặc Prisma Schema đã phê duyệt.
+ERD trong tài liệu này đối chiếu với Prisma Schema đang dùng (`prisma/schema.prisma`); `docs/ERD.md` là bản ERD cập nhật. Prisma Schema là nguồn thật cho cấu trúc dữ liệu.
 
 ## 9. Server Data Access and Mutation Architecture
 
-> Work tree chưa có Server Action hoặc Route Handler nào. SAD có đề xuất endpoint HTTP, nhưng kiến trúc hiện tại **không tạo tầng REST API riêng**: read đi qua Server Components, mutation đi qua Server Actions / Route Handlers.
+> Work tree đã có Server Actions (`src/features/*/actions.ts`) và Route Handlers (`src/app/api/**/route.ts`, `src/app/uploads/[...path]/route.ts`). Ứng dụng vẫn không tạo tầng REST API riêng: read qua Server Components, mutation qua Server Actions / Route Handlers.
 
 ### 9.1. Nguyên tắc chung
 
@@ -797,7 +797,7 @@ Pagination, sorting, validation rules và error format vẫn cần chốt theo O
 > Authentication nội bộ đã được triển khai bằng session cookie ký HMAC (`AUTH_SECRET`), mật khẩu bcrypt và bảng `LoginAttempt`. Các mục còn ghi "đề xuất" bên dưới chỉ áp dụng cho phần chưa được chốt.
 
 ### 10.1. Định hướng
-SAD đề xuất JWT để xác thực người dùng nội bộ. Tuy nhiên, cấu trúc User/Role và quan hệ với Staff chưa được xác định đầy đủ.
+SAD đề xuất JWT để xác thực người dùng nội bộ; hiện trạng dùng session cookie ký HMAC + bcrypt với `User.role` (`ADMIN`/`EDITOR`) tại `prisma/schema.prisma`.
 
 Cần phân biệt:
 - Authentication: xác định người dùng là ai.
@@ -817,14 +817,14 @@ Bảng dưới đây là định hướng suy ra từ mô tả Actor trong SAD, 
 
 ### 10.3. Các quyết định bảo mật cần xác nhận
 - Cấu trúc User entity.
-- Quan hệ giữa User và Staff.
-- Role và Permission model.
-- Một User có thể có nhiều Role hay không.
-- Password hashing.
-- Password reset.
-- JWT expiration.
-- Refresh token strategy.
-- Token revocation và logout.
+- Quan hệ giữa User và Staff: ánh xạ EDITOR = Staff đã chốt tại `docs/PERMISSIONS.md`.
+- Role và Permission model: ADMIN/EDITOR tại `docs/PERMISSIONS.md`.
+- Một User có một role trong schema hiện tại.
+- Password hashing: bcryptjs với `BCRYPT_COST` dùng chung.
+- Password reset: chưa triển khai (mở).
+- Session expiration: `SESSION_MAX_AGE_SECONDS`.
+- Refresh token: không dùng.
+- Thu hồi session: `sessionVersion`; logout xoá cookie.
 - Login rate limiting (đã triển khai ở R4.1, xem 10.4).
 - Account lockout.
 - Audit log cho thao tác quản trị.
@@ -892,7 +892,7 @@ Bảng dưới đây tổng hợp các mối quan tâm kiến trúc và những 
 |---|---|---|
 | Responsive | Website cần hiển thị phù hợp các kích thước màn hình | Thiết kế giao diện Next.js responsive; breakpoint cụ thể thuộc UI design |
 | Performance | Chưa có số liệu về scale và traffic | Khảo sát số sản phẩm, lượng truy cập và concurrent users; xác định target trước capacity planning |
-| Security | Authentication và quyền nội bộ còn cần xác nhận | Bảo vệ route Admin và Server Actions tại server-side; chốt JWT, Role và Permission |
+| Security | Authentication và quyền nội bộ đã có hiện trạng triển khai | Route Admin và Server Actions được bảo vệ tại server-side; session cookie HMAC + bcrypt; Role/Permission tại `docs/PERMISSIONS.md` |
 | Data Integrity | Quan hệ Product/Price và các trường dữ liệu chưa hoàn chỉnh | Chốt PK, FK, constraints và price rules trước physical schema |
 | Availability | SAD chưa nêu SLA | Xác định yêu cầu uptime và phương án vận hành |
 | Backup / Recovery | Chưa có chính sách | Xác định lịch backup, retention và quy trình restore |
@@ -1024,7 +1024,7 @@ Theo SAD, cần giải quyết các vấn đề trọng yếu trước khi hoàn
 - Giá chưa có trường số tiền và quy tắc giá hiện tại rõ ràng.
 - Hình ảnh chưa có đầy đủ URL/path và thứ tự hiển thị.
 - Slug trên URL chưa được đối chiếu với cấu trúc dữ liệu.
-- Admin Permission, User/Role và Authentication chưa hoàn chỉnh.
+- Admin Permission, User/Role và Authentication: ma trận hiện hành tại `docs/PERMISSIONS.md`; authentication dùng session cookie HMAC + bcrypt.
 - Pagination, Sorting, validation rules, timezone và Error Format chưa được chốt.
 ### 15.3. Các tài liệu còn thiếu theo SAD
 SAD nêu rõ đây chưa phải bộ tài liệu thiết kế triển khai cuối cùng. Các nội dung còn thiếu hoặc chưa hoàn thiện gồm:
@@ -1126,16 +1126,16 @@ Bảng này dùng để theo dõi các quyết định đã có trong work tree 
 |---|---|---|---|
 | ADR-001 | Application framework | Next.js 16.4.5 (App Router) | Đã cài đặt ở thư mục gốc |
 | ADR-002 | Application topology | Một Next.js application duy nhất; không có backend tách biệt | Đã chốt |
-| ADR-003 | Database | SQLite cho dev; PostgreSQL cho production | Đã chốt, chưa cấu hình |
-| ADR-004 | ORM | Prisma | Đã chốt, chưa cấu hình |
-| ADR-005 | Internal Authentication | JWT | Đề xuất, cần thiết kế chi tiết |
-| ADR-006 | Product Image Storage | Local filesystem (`/uploads`, served by app) | Đã triển khai; cần storage bền vững khi deploy |
+| ADR-003 | Database | SQLite cho dev/test; PostgreSQL cho production | Đã cấu hình |
+| ADR-004 | ORM | Prisma 7 | Đã cấu hình |
+| ADR-005 | Internal Authentication | Session cookie ký HMAC (`AUTH_SECRET`) + bcrypt | Đã triển khai (thay cho JWT đề xuất trong SAD) |
+| ADR-006 | Product Image Storage | DB-backed `ProductImageBlob`, phục vụ `/uploads/...` qua optimizer | Đã triển khai; filesystem chỉ đọc cho ảnh legacy |
 | ADR-007 | Data access và mutation | Server Components cho read; Server Actions / Route Handlers cho mutation | Đã chốt |
 | ADR-008 | Repository structure | Một Next.js app trong `src/`; không tách frontend/backend | Đã chốt |
 | ADR-010 | Category model | Tách khỏi Product Type nếu nghiệp vụ cần | Cần xác nhận |
 | ADR-011 | Styling | Tailwind CSS v4 qua `@tailwindcss/turbopack` | Đã cấu hình |
 | ADR-012 | Language | TypeScript 5, chế độ `strict` | Đã cấu hình |
-| ADR-013 | Validation | Zod | Đã chốt, chưa cài đặt |
+| ADR-013 | Validation | Zod 4 | Đã cài đặt |
 | ADR-014 | Formatting | Prettier 3 | Đã cấu hình |
 | ADR-015 | Testing | Vitest 5 | Đã cấu hình |
 
@@ -1159,4 +1159,4 @@ Tài liệu nguồn chính:
 - Appendix E — Change Log.
 SAD v1.1 là bản dự thảo phục vụ rà soát và xác nhận nghiệp vụ. Tài liệu nêu rõ Physical Database Design, chi tiết input/output của Server Actions, UI Specification và Test Specification chưa hoàn thiện.
 
-Vì vậy, ARCHITECTURE.md này vẫn là kiến trúc đề xuất cho các phần chưa triển khai. Phần hiện trạng đã được cập nhật theo bộ khung Next.js trong work tree; nội dung cần tiếp tục được cập nhật khi các Open Issues được đóng và khi có thêm source code thực tế.
+Vì vậy, ARCHITECTURE.md này đã được cập nhật theo hiện trạng work tree cho các phần đã triển khai; chỉ các Open Issues còn mở giữ nhãn đề xuất. Cần cập nhật tiếp khi các Open Issues được đóng và khi có thêm source code thực tế.
