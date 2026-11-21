@@ -262,6 +262,7 @@ function BodyEditor({
       <textarea
         ref={textareaRef}
         name="body"
+        aria-label="Body"
         value={body}
         onChange={(event) => setBody(event.target.value)}
         rows={14}
