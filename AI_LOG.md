@@ -1,3 +1,41 @@
+## 2026-11-21 10:30:15 +07:00 - Lấp 21 lỗ hổng test theo audit
+
+### Prompt nguyên văn đã dùng
+
+> use skill to scan through code and check if any test missing
+> unit test, integration test, workflow
+> both e2e and vimtest
+>
+> (lựa chọn phạm vi: All 21 gaps)
+
+Link review: `docs/reviews/2026-11-21-requesting-code-review-test-coverage.md`.
+
+### Đã tự kiểm chứng
+
+- Dùng `requesting-code-review` cho reviewer fresh-context, read-only, đúng id skill. Reviewer liệt kê 51 test `.ts`, 19 `.tsx`, 5 spec E2E, đọc source + test thật, phân loại unit / integration / workflow và tìm 21 lỗ hổng (12 Important, 9 Minor), không có Critical. Có bảng đối chiếu và câu "no new gaps" cho các round trước.
+- Triển khai cả 21 theo 3 luồng song song, không chồng file: auth/user (G1-G7), admin CRUD integration (G8, G10-G14), E2E + route (G9, G15-G21). Không đổi production code trừ lỗi thật bên dưới.
+- **Lỗi thật do test mới G20 phát hiện:** textarea `name="body"` trong blog dialog không có label → Axe serious `label`. Test được giữ đỏ làm bằng chứng; controller thêm `aria-label="Body"` và chạy lại 6 admin axe test → pass. Đây là RED→GREEN thật, không phải sửa để xanh giả.
+- Các test mới dùng Prisma thật cho integration; E2E phủ ẩn sản phẩm khỏi storefront, SEE MORE có sort/disable/end-state, carousel, responsive 4 trang, admin a11y, double-submit, route 413/404.
+- Verification chung: lint/typecheck/test (79 files / 371 tests)/format:check/build/test:e2e (43 passed) exit 0; quét CJK 0 kết quả.
+
+### Findings được nhận / bác
+
+- **Accepted:** toàn bộ G1-G21; quyết định và file test tương ứng trong review record.
+- **Rejected:** không có. Không sửa các rủi ro đã defer trước đó (rate-limit race, orphan blob, 400 ban đầu).
+
+### AI sai ở đâu
+
+- Reviewer trước đó chỉ đếm file test chứ không đối chiếu từng nhánh/nhánh action với test thật, nên lọt 21 lỗ hổng — đúng S8. Lần này yêu cầu bảng behaviour ↔ test ↔ gap và cấm coi unit test là workflow.
+- Ba luồng chạy Vitest đồng thời từng gây transient `test.db` EBUSY/P2021; phải chạy lại tuần tự để có output sạch. Đây là nhiễu môi trường, không phải lỗi sản phẩm.
+- G18 ban đầu yêu cầu "boundary disabled" nhưng carousel designed để wrap và luôn bật arrow; phải sửa kỳ vọng cho đúng hành vi thực tế.
+
+### Hạn chế
+
+- Các test G17 dùng fixture tạm trong E2E DB và xóa trong `finally`; không chạy trên production.
+- Không đổi code production ngoài label aria của blog dialog; không có production check bổ sung.
+
+---
+
 ## 2026-11-21 00:50:32 +07:00 - Dọn ảnh upload trong E2E qua Server Action
 
 ### Prompt nguyên văn đã dùng
