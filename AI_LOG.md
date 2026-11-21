@@ -1,3 +1,34 @@
+## 2026-11-21 11:03:01 +07:00 - Đồng bộ tài liệu với code mới nhất
+
+### Prompt nguyên văn đã dùng
+
+> change all doc to match latest code status
+
+### Đã tự kiểm chứng
+
+- Dùng `requesting-code-review` cho reviewer fresh-context, read-only, đúng id skill; audit toàn bộ doc hiện trạng (README, AGENTS, CONTRIBUTING, ARCHITECTURE, DEPLOY, PERFORMANCE, REQUIREMENTS) đối chiếu source tại commit `8ef7ff9` (mới nhất, gồm PR #133). Không sửa `AI_LOG.md`, `docs/reviews/**`, spec/plan lịch sử.
+- Reviewer tìm 15 mismatch có file:line: số E2E cũ 32 (thực tế 43: 29 desktop + 14 pixel-7), optimizer vẫn mô tả là `unoptimized` (thực tế chỉ skip URL tuyệt đối), ARCHITECTURE còn nói sản phẩm/blog/admin/auth/database/Prisma/Server Action "chưa triển khai", REQUIREMENTS còn ghi JWT/TBC/OI-021 dù auth đã dùng session HMAC + bcrypt.
+- Đã sửa cả 15, cộng thêm các chỗ cùng loại reviewer không liệt kê riêng (mục JWT, ADR table, bảng API REST của REQUIREMENTS, "chưa có cấu trúc Category/User"). Không đổi code production.
+- Verification: lint/typecheck/test (79 files / 371 tests)/format:check/build/test:e2e (43 passed) exit 0; CJK 0 kết quả.
+
+### Findings được nhận / bác
+
+- **Accepted:** 15 mismatch của reviewer; không có finding bị bác.
+- **Rejected:** không có. Giữ nguyên các entry lịch sử theo đúng yêu cầu.
+
+### AI sai ở đâu
+
+- Nhiều lần trước tôi chỉ sửa đúng chỗ được chỉ ra (ví dụ số E2E ở PERFORMANCE) mà không grep toàn docs, nên cùng một con số cũ tồn tại ở README, DEPLOY, PERFORMANCE. Lần này đã grep lại toàn bộ sau khi sửa.
+- ARCHITECTURE có các tự sửa ở mục sau nhưng phần đầu vẫn nói "chưa triển khai" — phải đọc toàn file mới thấy mâu thuẫn nội bộ.
+- REQUIREMENTS là bản SRS dự thảo; dù có disclaimer, các ô trạng thái vẫn cần phản ánh hiện trạng để không gây hiểu lầm.
+
+### Hạn chế
+
+- Không đổi các file review/spec/plan lịch sử; chúng vẫn ghi số liệu cũ theo thời điểm đó.
+- Không chạy production check bổ sung vì thay đổi thuần tài liệu.
+
+---
+
 ## 2026-11-21 10:30:15 +07:00 - Lấp 21 lỗ hổng test theo audit
 
 ### Prompt nguyên văn đã dùng

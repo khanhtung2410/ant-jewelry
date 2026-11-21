@@ -588,7 +588,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Ưu tiên | Medium |
 | Trạng thái | TBC |
 | Hiện trạng triển khai | Chưa xác minh |
-| Liên quan | SAD: FR-PRO-005; UC-12; API-A13 đến API-A16; Dữ liệu: Category (chưa có cấu trúc); BR-006; OI-009 |
+| Liên quan | SAD: FR-PRO-005; UC-12; API-A13 đến API-A16; Dữ liệu: Category (`prisma/schema.prisma`); BR-006; OI-009 |
  
 ### 4.7. MOD-07 – Quản trị Blog (khu vực quản trị)
  
@@ -679,12 +679,12 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Actor | Admin, Staff |
 | Tiền điều kiện | Người dùng có tài khoản nội bộ được cấp. |
 | Luồng chính | 1. Người dùng mở khu vực quản trị.<br>2. Người dùng cung cấp thông tin xác thực (loại thông tin: TBC, OI-021).<br>3. Hệ thống xác thực.<br>4. Xác thực thành công: hệ thống cho phép truy cập các chức năng theo quyền (FR-036). |
-| Luồng thay thế | 3a. Xác thực thất bại: hệ thống từ chối truy cập (HTTP 401) và hiển thị thông báo không tiết lộ thông tin nào sai (đề xuất); chính sách khóa/giới hạn thử lại TBC (OI-021).<br>3b. Tài khoản bị khóa: hệ thống từ chối đăng nhập. |
+| Luồng thay thế | 3a. Xác thực thất bại: hệ thống từ chối truy cập (HTTP 401) và hiển thị thông báo không tiết lộ thông tin nào sai (đề xuất); chính sách giới hạn thử lại đã triển khai: 5 lần thất bại trong 15 phút theo email + IP (`src/features/auth/login-rate-limit.ts`); OI-021 chỉ còn là rủi ro check-then-record.<br>3b. Tài khoản bị khóa: hệ thống từ chối đăng nhập. |
 | Hậu điều kiện | Phiên làm việc được tạo. |
 | Ưu tiên | High |
 | Trạng thái | TBC |
 | Hiện trạng triển khai | Chưa xác minh |
-| Liên quan | SAD: FR-USER-001; UC-10; API-A01; NFR-007, NFR-012; BR-017; OI-021 (JWT chỉ là đề xuất) |
+| Liên quan | SAD: FR-USER-001; UC-10; API-A01; NFR-007, NFR-012; BR-017; OI-021 (check-then-record race còn mở; xác thực đã dùng session cookie HMAC thay cho JWT đề xuất) |
  
 #### FR-034 – Đăng xuất
  
@@ -714,7 +714,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Ưu tiên | Medium |
 | Trạng thái | TBC |
 | Hiện trạng triển khai | Chưa xác minh |
-| Liên quan | SAD: FR-USER-003; UC-19; API-A25, API-A26, API-A27; Dữ liệu: User/Role (chưa có cấu trúc), staff (A.5: chỉ có `staff_id`, `name`, `is_delete`); NFR-012; OI-021 |
+| Liên quan | SAD: FR-USER-003; UC-19; API-A25, API-A26, API-A27; Dữ liệu: User/Role (`User.role` tại `prisma/schema.prisma`), staff ánh xạ sang `EDITOR`; NFR-012; OI-021 |
  
 #### FR-036 – Phân quyền và kiểm soát truy cập
  
@@ -727,7 +727,7 @@ Tài liệu có **28 yêu cầu chức năng** chia thành 6 module. Mã FR bị
 | Luồng thay thế | 3a. Chức năng nằm ngoài quyền: hệ thống từ chối (HTTP 403) và không thay đổi dữ liệu.<br>3b. Chưa đăng nhập: hệ thống từ chối (HTTP 401). |
 | Hậu điều kiện | Quyền truy cập được áp dụng đúng theo vai trò. |
 | Ưu tiên | High |
-| Trạng thái | Đã chốt: vai trò và ma trận quyền (mục 3.3); cơ chế xác thực chi tiết TBC (OI-021) |
+| Trạng thái | Đã chốt: vai trò và ma trận quyền (mục 3.3); xác thực đã triển khai bằng session cookie HMAC + bcrypt, OI-021 chỉ còn là rủi ro check-then-record |
 | Hiện trạng triển khai | Đã triển khai; quyền được kiểm tra phía máy chủ |
 | Liên quan | SAD: FR-USER-004, FR-USER-005; UC-20; API-A28; BR-008, BR-018; NFR-008; OI-004 |
  
@@ -757,11 +757,11 @@ Tài liệu có **22 yêu cầu phi chức năng** thuộc 8 nhóm: tương thí
  
 | ID | Tên | Mô tả và tiêu chí đo | Mã SAD | Trạng thái | Ưu tiên |
 |---|---|---|---|---|---|
-| NFR-007 | Xác thực | Mọi trang và API của khu vực quản trị yêu cầu xác thực; yêu cầu chưa xác thực nhận HTTP 401 và không nhận dữ liệu nghiệp vụ. | NFR-007 | Đề xuất; cơ chế TBC (OI-021) | High |
+| NFR-007 | Xác thực | Mọi trang và API của khu vực quản trị yêu cầu xác thực; yêu cầu chưa xác thực nhận HTTP 401 và không nhận dữ liệu nghiệp vụ. | NFR-007 | Đã triển khai: session cookie HMAC + bcrypt; OI-021 chỉ còn là rủi ro check-then-record | High |
 | NFR-008 | Phân quyền | Người dùng chỉ thực hiện được chức năng thuộc quyền được cấp; thao tác ngoài quyền nhận HTTP 403 và không làm thay đổi dữ liệu. Việc kiểm tra thực hiện ở phía máy chủ, không chỉ ẩn nút trên giao diện. | NFR-008 | Đề xuất; ma trận quyền đã chốt tại mục 3.3 | High |
 | NFR-010 | Kiểm tra dữ liệu đầu vào | Mọi API nhận dữ liệu từ người dùng kiểm tra kiểu, độ dài và định dạng ở phía máy chủ; dữ liệu chứa mã script hoặc câu lệnh truy vấn không được thực thi (truy vấn tham số hóa, mã hóa ký tự đặc biệt khi hiển thị). | NFR-010 | Đề xuất | High |
 | NFR-011 | Truyền tải an toàn | Toàn bộ website được phục vụ qua HTTPS; yêu cầu HTTP tự động chuyển hướng sang HTTPS. | Bổ sung | Đề xuất (bổ sung bởi BA) | High |
-| NFR-012 | Bảo vệ thông tin xác thực nội bộ | Mật khẩu tài khoản nội bộ được lưu dưới dạng băm có salt bằng thuật toán băm mật khẩu hiện hành (ví dụ bcrypt hoặc Argon2); không lưu hoặc ghi nhật ký mật khẩu dạng bản rõ. Chính sách độ mạnh mật khẩu và giới hạn số lần thử: TBC. | Bổ sung (liên quan OI-021) | Đề xuất (bổ sung bởi BA); TBC (OI-021) | High |
+| NFR-012 | Bảo vệ thông tin xác thực nội bộ | Mật khẩu tài khoản nội bộ được lưu dưới dạng băm có salt bằng thuật toán băm mật khẩu hiện hành (ví dụ bcrypt hoặc Argon2); không lưu hoặc ghi nhật ký mật khẩu dạng bản rõ. Chính sách độ mạnh mật khẩu hiện hành: 8-72 ký tự, không có khoảng trắng ở đầu/cuối (`src/features/users/lib/user-form-schema.ts`, `src/features/auth/messages.ts`); giới hạn 5 lần thử thất bại trong cửa sổ 15 phút theo email + IP (`src/features/auth/login-rate-limit.ts`). | Bổ sung (liên quan OI-021) | Hiện hành (đã triển khai); OI-021 chỉ còn là rủi ro check-then-record | High |
  
 ### 5.4. Khả năng sử dụng (Usability)
  
@@ -967,7 +967,7 @@ Tài liệu còn 16 use case; các mã và tên còn lại được giữ nguyê
 | Primary Actor | Admin, Staff |
 | Điều kiện tiên quyết | Người dùng có tài khoản được cấp (FR-033). |
 | Main Success Scenario | 1. Người dùng mở khu vực quản trị.<br>2. Người dùng cung cấp thông tin xác thực (loại thông tin: OI-021).<br>3. Hệ thống xác thực.<br>4. Xác thực thành công: hệ thống cho phép truy cập các chức năng theo quyền (UC-20).<br>5. Khi đăng xuất, hệ thống kết thúc phiên làm việc (FR-034). |
-| Alternative Flows | 3a. Xác thực thất bại: hệ thống từ chối truy cập; nội dung thông báo và chính sách khóa/giới hạn thử lại TBC (OI-021). |
+| Alternative Flows | 3a. Xác thực thất bại: hệ thống từ chối truy cập; nội dung thông báo và chính sách giới hạn thử lại đã triển khai: 5 lần thất bại trong 15 phút theo email + IP (`src/features/auth/login-rate-limit.ts`); OI-021 chỉ còn là rủi ro check-then-record. |
 | Postconditions | Phiên làm việc được tạo hoặc kết thúc. |
  
 #### UC-11 – Quản lý sản phẩm (gồm UC-13 hình ảnh, UC-14 giá)
@@ -1062,8 +1062,8 @@ Phần này tổng hợp mô hình dữ liệu **logic** từ SAD (Phụ lục A
 | Product Image (Hình ảnh sản phẩm) | `product_images` | Hình ảnh của sản phẩm | MOD-02, MOD-06 | Theo cấu trúc rà soát; TBC (OI-018) |
 | Category (Danh mục) | Chưa có cấu trúc | Danh mục kinh doanh | MOD-02, MOD-06 | TBC (OI-009) |
 | Blog | `blog` | Bài viết giới thiệu, chia sẻ | MOD-03, MOD-07 | Cấu trúc cần xem xét; TBC (OI-024) |
-| Staff (Nhân viên) | `staff` | Thông tin nhân viên | MOD-08 | Theo cấu trúc rà soát; TBC (OI-021) |
-| User / Role (Tài khoản, vai trò) | Chưa có cấu trúc | Tài khoản Admin/Staff và phân quyền | MOD-08 | Quyền đã chốt (OI-004); cấu trúc lưu tài khoản TBC (OI-021) |
+| Staff (Nhân viên) | `staff` | Thông tin nhân viên | MOD-08 | Ánh xạ nghiệp vụ: `EDITOR` trong `User.role` (`docs/PERMISSIONS.md`) |
+| User / Role (Tài khoản, vai trò) | `User.role` (`ADMIN`/`EDITOR`) | Tài khoản Admin/Staff và phân quyền | MOD-08 | Đã triển khai trong `prisma/schema.prisma`; ma trận quyền tại `docs/PERMISSIONS.md` |
  
 ### 8.2. Thuộc tính dữ liệu quan trọng
  
@@ -1268,7 +1268,7 @@ SAD mục 2.5 nêu phương án công nghệ **đề xuất**; đây **không** 
 | Cơ sở dữ liệu | SQLite (dev) / PostgreSQL (production) | Lưu trữ dữ liệu | Đã cấu hình (schema + migration trong `prisma/`) |
 | ORM | Prisma 7 | Truy vấn và quản lý dữ liệu | Đã cài; client generate qua `postinstall` |
 | Validation | Zod 4 | Validate input tại server boundary | Đã cài đặt |
-| Xác thực | JWT | Xác thực người dùng nội bộ | Đề xuất; TBC (OI-021) |
+| Xác thực | Session cookie ký HMAC (`AUTH_SECRET`) + bcrypt | Xác thực người dùng nội bộ | Đã triển khai (thay cho JWT đề xuất trong SAD); OI-021 chỉ còn là rủi ro check-then-record |
 | Lưu trữ hình ảnh | DB-backed local blobs (`ProductImageBlob`), phục vụ qua `/uploads/[...path]` | Lưu bytes ảnh sản phẩm (WebP ≤1600px/380KB); filesystem chỉ là đường đọc legacy | Đã triển khai; quyết định chi tiết tại `docs/DEPLOY.md` mục Storage decision record. Ảnh Blog dùng URL, chính sách còn TBC (OI-018) |
 | Quản lý mã nguồn | Git / GitHub | Quản lý phiên bản | Đang sử dụng |
 
@@ -1291,7 +1291,7 @@ Toàn bộ đặc tả API trong SAD Chương 7 là **đề xuất**; không có
 | API-P01 | GET | `/api/products` | Danh sách sản phẩm; tham số `category`, `type`, `sort` (`price_asc`, `price_desc`, `name_asc`, `name_desc`), `page`, `limit` | FR-004 đến FR-006 | UC-02, UC-03, UC-04 | Đã quan sát (chức năng); tham số lọc, phân trang: TBC |
 | API-P02 | GET | `/api/products/{product_id}` | Chi tiết sản phẩm; lỗi 404 nếu không tồn tại hoặc đã xóa mềm | FR-007 đến FR-009 | UC-05 | Đã quan sát (chức năng); trường `description`, `specifications`, `price`: TBC |
 | API-P03 | GET | `/api/product-types` | Danh sách loại sản phẩm (loại trừ `is_delete = true`) | Hỗ trợ FR-004 | UC-02 | Đề xuất |
-| API-P04 | GET | `/api/categories` | Danh sách danh mục | FR-005 | UC-03 | TBC (chưa có cấu trúc Category – OI-009) |
+| API-P04 | GET | `/api/categories` | Danh sách danh mục | FR-005 | UC-03 | Đã triển khai qua Server Component/query (`src/features/shared/queries`), không có REST endpoint riêng |
 | API-P05 | GET | `/api/blogs` | Danh sách bài viết Blog | FR-010 | UC-06 | Đã quan sát (chức năng) |
 | API-P06 | GET | `/api/blogs/{blog_id}` | Chi tiết bài viết Blog | FR-011 | UC-07 | Đã quan sát (chức năng) |
  
@@ -1301,13 +1301,13 @@ Trang chủ (UC-01) và thông tin liên hệ (UC-08): chưa xác định nội 
  
 | Nhóm | ID | Endpoint (Method đường dẫn) | Yêu cầu | Trạng thái |
 |---|---|---|---|---|
-| Xác thực | API-A01, A02 | POST `/api/admin/auth/login`; POST `/api/admin/auth/logout` | FR-033, FR-034 | TBC (OI-021) |
-| Sản phẩm | API-A03 đến A08 | GET `/api/admin/products`; GET, PATCH, DELETE `/api/admin/products/{product_id}`; POST `/api/admin/products`; PATCH `…/{product_id}/visibility` | FR-020 đến FR-024 | TBC; A08: Đề xuất |
-| Hình ảnh sản phẩm | API-A09 đến A11 | POST `…/products/{product_id}/images`; PATCH, DELETE `…/images/{image_id}` | FR-025 | TBC (OI-018) |
-| Giá sản phẩm | API-A12 | POST `…/products/{product_id}/prices` | FR-026 | TBC (OI-008) |
-| Danh mục | API-A13 đến A16 | GET, POST `/api/admin/categories`; PATCH, DELETE `…/categories/{category_id}` | FR-027 | TBC (OI-009) |
-| Blog | API-A17 đến A21 | GET, POST `/api/admin/blogs`; PATCH, DELETE `…/blogs/{blog_id}`; PATCH `…/{blog_id}/status` | FR-028 đến FR-032 | TBC; A21: Đề xuất |
-| Tài khoản và quyền | API-A25 đến A28 | GET, POST `/api/admin/users`; PATCH `…/users/{user_id}`; GET `/api/admin/roles` | FR-035, FR-036 | Quyền đã chốt (OI-004); cấu trúc tài khoản TBC (OI-021) |
+| Xác thực | API-A01, A02 | POST `/api/admin/auth/login`; POST `/api/admin/auth/logout` | FR-033, FR-034 | Đã triển khai bằng Server Actions (`src/features/auth/actions.ts`), không phải REST endpoint; OI-021 chỉ còn rủi ro check-then-record |
+| Sản phẩm | API-A03 đến A08 | GET `/api/admin/products`; GET, PATCH, DELETE `/api/admin/products/{product_id}`; POST `/api/admin/products`; PATCH `…/{product_id}/visibility` | FR-020 đến FR-024 | Đã triển khai bằng Server Actions trong `src/features/products/actions.ts`; read qua Server Components |
+| Hình ảnh sản phẩm | API-A09 đến A11 | POST `…/products/{product_id}/images`; PATCH, DELETE `…/images/{image_id}` | FR-025 | Upload qua Route Handler `src/app/api/admin/products/[productId]/images/route.ts`; quản lý qua Server Actions; serving `/uploads/[...path]` qua optimizer |
+| Giá sản phẩm | API-A12 | POST `…/products/{product_id}/prices` | FR-026 | Đã triển khai trong form sản phẩm (`saveProduct`), không có endpoint REST riêng |
+| Danh mục | API-A13 đến A16 | GET, POST `/api/admin/categories`; PATCH, DELETE `…/categories/{category_id}` | FR-027 | Đã triển khai bằng Server Actions trong `src/features/products/actions/categories.ts` |
+| Blog | API-A17 đến A21 | GET, POST `/api/admin/blogs`; PATCH, DELETE `…/blogs/{blog_id}`; PATCH `…/{blog_id}/status` | FR-028 đến FR-032 | Đã triển khai bằng Server Actions trong `src/features/blog/actions.ts` |
+| Tài khoản và quyền | API-A25 đến A28 | GET, POST `/api/admin/users`; PATCH `…/users/{user_id}`; GET `/api/admin/roles` | FR-035, FR-036 | Đã triển khai bằng Server Actions trong `src/features/users/actions.ts`; quyền tại `docs/PERMISSIONS.md` |
 
 Không có endpoint cho giỏ hàng, đặt hàng, thanh toán hoặc thiết kế riêng (BR-003 đến BR-005).
  
@@ -1328,7 +1328,7 @@ Không có endpoint cho giỏ hàng, đặt hàng, thanh toán hoặc thiết k�
 | ID | Ràng buộc | Nguồn | Trạng thái |
 |---|---|---|---|
 | TC-01 | Frontend sử dụng Next.js | ASM-007, SAD 2.5 | Định hướng theo yêu cầu dự án |
-| TC-02 | Không có backend tách biệt; server-side nằm trong Next.js. Prisma 7 với SQLite (dev) / PostgreSQL (production), schema/migration đã có; validate bằng Zod 4. JWT vẫn là đề xuất; ảnh sản phẩm lưu trong `ProductImageBlob` và phục vụ qua `/uploads/[...path]`, ảnh Blog còn TBC | SAD 2.5; quyết định 2026-11-09 | Đã chốt phần kiến trúc/dữ liệu và lưu ảnh sản phẩm; JWT và ảnh Blog còn TBC |
+| TC-02 | Không có backend tách biệt; server-side nằm trong Next.js. Prisma 7 với SQLite (dev) / PostgreSQL (production), schema/migration đã có; validate bằng Zod 4. Xác thực bằng session cookie HMAC + bcrypt (không phải JWT); ảnh sản phẩm lưu trong `ProductImageBlob` và phục vụ qua `/uploads/[...path]` đi qua optimizer, ảnh Blog còn TBC | SAD 2.5; quyết định 2026-11-09 | Đã chốt phần kiến trúc/dữ liệu, xác thực và lưu ảnh sản phẩm; ảnh Blog còn TBC |
 | TC-03 | Hệ quản trị CSDL phải hỗ trợ lưu tiếng Việt có dấu; quy ước kiểu chuỗi phải thống nhất (SAD dùng cả VARCHAR và NVARCHAR trong khi PostgreSQL không có NVARCHAR) | SAD A.1 đến A.7 | TBC (OI-017) |
 | TC-04 | Giao diện công khai responsive cho máy tính, máy tính bảng và điện thoại | NFR-001 | Đã xác định |
 | TC-05 | Định danh bản ghi dùng UUID dạng chuỗi 36 ký tự | SAD A.1, A.6, A.7 | Theo SAD; TBC (OI-017, OI-018) |

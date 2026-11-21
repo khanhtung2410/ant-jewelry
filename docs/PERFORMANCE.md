@@ -126,7 +126,7 @@ TBT 30–207 ms và CLS = 0 ở cả 9 lần, xác nhận lượt v2 vẫn là n
 
 Bảng Lighthouse ngay trước mục này là lượt đo 2026-11-18; số liệu mới nhất nằm ở mục "Đo lại production 2026-11-20 — lượt 3 (v4)" phía trên — xem ở đó trước khi đánh giá hiệu năng. Những kiểm chứng tự động khác có output thực:
 
-- **E2E local:** `npm run test:e2e` → 32 pass trên 2 project (`desktop-chrome` 20 + `pixel-7` 12), gồm 2 test upload ảnh ADMIN (3 ảnh, progress toast, 201, WebP < 400 KB có ETag/304, chặn file > 4 MB). Bộ axe (`@axe-core/playwright`) chạy trên Home, Category, Product, Blog list, Blog detail và contact popover ở cả hai project → **0 lỗi serious/critical**.
+- **E2E local:** `npm run test:e2e` → 43 pass trên 2 project (`desktop-chrome` 29 + `pixel-7` 14), gồm 2 test upload ảnh ADMIN (3 ảnh, progress toast, 201, WebP < 400 KB có ETag/304, chặn file > 4 MB). Bộ axe gồm 6 test trong `e2e/accessibility.spec.ts` (Home, Category, Product, Blog list, Blog detail, contact popover - chạy cả 2 project) và 6 test trong `e2e/admin-a11y.spec.ts` (desktop) → **0 lỗi serious/critical**.
 - **Smoke production:** `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` → **8/8 pass**: 6 màn 200 + đúng 1 `h1` + canonical đúng; ảnh `/uploads/` trên `/p/ivy-tennis-bracelet` có ETag và < 400 KB; `robots.txt`/`sitemap.xml` đúng. Chạy sau mỗi deploy.
 - **Ảnh đối chiếu:** `npm run test:screenshots` tạo 6 ảnh desktop 1920px (chờ `networkidle` + font/ảnh eager) trong `docs/deploy-screenshots/`; dùng cho bảng R6.3 trong `docs/DEPLOY.md`.
 - **CI:** job `e2e` trong `.github/workflows/npm-ci.yml` chạy browser + `npm run test:e2e` và upload `playwright-report/`, `test-results/` (trace) khi fail.
