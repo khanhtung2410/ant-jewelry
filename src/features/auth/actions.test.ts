@@ -25,11 +25,17 @@ const PASSWORD = 'Locked@123';
 const RATE_EMAIL = 'rate-limit-login-test@antjewelry.local';
 const RATE_PASSWORD = 'RateLimit@123';
 const UNKNOWN_EMAIL = 'missing-login-test@antjewelry.local';
+const PADDED_MIXED_CASE_EMAIL = '  MiXeD.CaSe.LoGiN@aNtJeWeLrY.lOcAl  ';
+// createUser normalizes emails before storing them, so this is the row a
+// mixed-case sign-up would leave behind.
+const NORMALIZED_EMAIL = 'mixed.case.login@antjewelry.local';
+const NORMALIZED_PASSWORD = 'Normalized@123';
 
-function formDataFor(email: string, password: string): FormData {
+function formDataFor(email: string, password: string, next?: string): FormData {
   const formData = new FormData();
   formData.set('email', email);
   formData.set('password', password);
+  if (next !== undefined) formData.set('next', next);
   return formData;
 }
 
@@ -72,6 +78,23 @@ describe('loginAction', () => {
         locked: false,
       },
     });
+
+    await prisma.user.upsert({
+      where: { email: NORMALIZED_EMAIL },
+      update: {
+        name: 'Normalized login test user',
+        passwordHash: await bcrypt.hash(NORMALIZED_PASSWORD, BCRYPT_COST),
+        role: 'EDITOR',
+        locked: false,
+      },
+      create: {
+        name: 'Normalized login test user',
+        email: NORMALIZED_EMAIL,
+        passwordHash: await bcrypt.hash(NORMALIZED_PASSWORD, BCRYPT_COST),
+        role: 'EDITOR',
+        locked: false,
+      },
+    });
   });
 
   beforeEach(async () => {
@@ -83,7 +106,9 @@ describe('loginAction', () => {
 
   afterAll(async () => {
     await prisma.loginAttempt.deleteMany();
-    await prisma.user.deleteMany({ where: { email: { in: [LOCKED_EMAIL, RATE_EMAIL] } } });
+    await prisma.user.deleteMany({
+      where: { email: { in: [LOCKED_EMAIL, RATE_EMAIL, NORMALIZED_EMAIL] } },
+    });
   });
 
   it('rejects a locked account even with the correct password', async () => {
@@ -168,5 +193,38 @@ describe('loginAction', () => {
     expect(vi.mocked(setAdminSessionCookie)).toHaveBeenCalledWith(
       expect.objectContaining({ email: RATE_EMAIL }),
     );
+  });
+
+  it('finds the account when the login email is padded and mixed case', async () => {
+    await signIn(PADDED_MIXED_CASE_EMAIL, NORMALIZED_PASSWORD);
+
+    expect(vi.mocked(setAdminSessionCookie)).toHaveBeenCalledWith(
+      expect.objectContaining({ email: NORMALIZED_EMAIL }),
+    );
+    expect(vi.mocked(redirect)).toHaveBeenCalledWith('/admin');
+  });
+
+  it('records a failed login under the normalized email', async () => {
+    const state = await signIn(PADDED_MIXED_CASE_EMAIL, 'WrongPassword@123');
+
+    expect(state).toEqual({ error: AUTH_MESSAGES.INVALID_CREDENTIALS });
+    expect(await prisma.loginAttempt.findMany({ where: { email: NORMALIZED_EMAIL } })).toHaveLength(
+      1,
+    );
+    expect(await prisma.loginAttempt.count({ where: { email: PADDED_MIXED_CASE_EMAIL } })).toBe(0);
+  });
+
+  it('redirects to a safe next path after a successful sign-in', async () => {
+    await loginAction({}, formDataFor(RATE_EMAIL, RATE_PASSWORD, '/admin/products?search=ring'));
+
+    expect(vi.mocked(setAdminSessionCookie)).toHaveBeenCalled();
+    expect(vi.mocked(redirect)).toHaveBeenCalledWith('/admin/products?search=ring');
+  });
+
+  it('falls back to /admin when next points to an external URL', async () => {
+    await loginAction({}, formDataFor(RATE_EMAIL, RATE_PASSWORD, 'https://evil.example/'));
+
+    expect(vi.mocked(setAdminSessionCookie)).toHaveBeenCalled();
+    expect(vi.mocked(redirect)).toHaveBeenCalledWith('/admin');
   });
 });

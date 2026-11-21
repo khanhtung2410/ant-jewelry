@@ -1,8 +1,9 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/features/shared/db/prisma';
 import { BCRYPT_COST } from '@/features/shared/lib/password';
-import type { UserAccessFormState } from './actions';
+import type { CreateUserFormState, UserAccessFormState } from './actions';
 
 vi.mock('@/features/auth/session', () => ({
   getAdminSession: vi.fn(async () => ({
@@ -17,11 +18,14 @@ vi.mock('@/features/auth/session', () => ({
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 vi.mock('next/navigation', () => ({ redirect: vi.fn() }));
 
-const { saveUserAccess } = await import('./actions');
+const { saveUserAccess, createUser } = await import('./actions');
 
 const EMAIL = 'session-version-test@antjewelry.local';
 const OLD_PASSWORD = 'OldPass@123';
 const NEW_PASSWORD = 'NewPass@123';
+const DUPLICATE_EMAIL = 'duplicate-create-test@antjewelry.local';
+const STALE_EMAIL = 'stale-access-test@antjewelry.local';
+const CREATE_PASSWORD = 'CreatePass@123';
 let oldPasswordHash: string;
 
 function accessState(userId: string, role: 'ADMIN' | 'EDITOR', locked = false) {
@@ -38,6 +42,23 @@ function formDataFor(userId: string, role: string, locked = false): FormData {
   formData.set('userId', userId);
   formData.set('role', role);
   if (locked) formData.set('locked', 'on');
+  return formData;
+}
+
+function emptyCreateState(): CreateUserFormState {
+  return {
+    values: { name: '', email: '', role: '' },
+    fieldErrors: {},
+    message: null,
+  };
+}
+
+function createUserForm(email: string): FormData {
+  const formData = new FormData();
+  formData.set('name', 'Duplicate test user');
+  formData.set('email', email);
+  formData.set('password', CREATE_PASSWORD);
+  formData.set('role', 'EDITOR');
   return formData;
 }
 
@@ -223,5 +244,97 @@ describe('saveUserAccess last-active-ADMIN invariant', () => {
       select: { role: true },
     });
     expect(stored?.role).toBe('EDITOR');
+  });
+});
+
+describe('createUser duplicate email', () => {
+  beforeAll(async () => {
+    await prisma.user.deleteMany({ where: { email: DUPLICATE_EMAIL } });
+  });
+
+  afterAll(async () => {
+    await prisma.user.deleteMany({ where: { email: DUPLICATE_EMAIL } });
+  });
+
+  it('returns a friendly field error and leaves a single row', async () => {
+    await createUser(emptyCreateState(), createUserForm(DUPLICATE_EMAIL));
+
+    const state = await createUser(
+      emptyCreateState(),
+      createUserForm(`  ${DUPLICATE_EMAIL.toUpperCase()}  `),
+    );
+
+    expect(state.fieldErrors.email).toContain('This email address is already in use.');
+    expect(await prisma.user.count({ where: { email: DUPLICATE_EMAIL } })).toBe(1);
+  });
+});
+
+describe('saveUserAccess with a deleted user', () => {
+  afterAll(async () => {
+    await prisma.user.deleteMany({ where: { email: STALE_EMAIL } });
+  });
+
+  it('returns a friendly form error instead of throwing', async () => {
+    const hash = await bcrypt.hash('StalePass@123', BCRYPT_COST);
+    const user = await prisma.user.create({
+      data: {
+        email: STALE_EMAIL,
+        name: 'Stale user',
+        passwordHash: hash,
+        role: 'EDITOR',
+        locked: false,
+      },
+      select: { id: true },
+    });
+    await prisma.user.delete({ where: { id: user.id } });
+
+    const state = await saveUserAccess(
+      accessState(user.id, 'EDITOR'),
+      formDataFor(user.id, 'ADMIN'),
+    );
+
+    expect(state.fieldErrors.form?.[0]).toMatch(/no longer exists/i);
+  });
+});
+
+describe('saveUserAccess serializable retry loop', () => {
+  const userId = 'retry-loop-test-user';
+
+  function conflictError(): Prisma.PrismaClientKnownRequestError {
+    return new Prisma.PrismaClientKnownRequestError('write conflict', {
+      code: 'P2034',
+      clientVersion: 'test',
+    });
+  }
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('retries a P2034 conflict twice and succeeds on the third attempt', async () => {
+    const transactionSpy = vi
+      .spyOn(prisma, '$transaction')
+      .mockRejectedValueOnce(conflictError())
+      .mockRejectedValueOnce(conflictError())
+      .mockResolvedValueOnce(undefined as never);
+
+    await saveUserAccess(accessState(userId, 'EDITOR'), formDataFor(userId, 'ADMIN'));
+
+    expect(transactionSpy).toHaveBeenCalledTimes(3);
+    expect(transactionSpy).toHaveBeenLastCalledWith(expect.any(Function), {
+      isolationLevel: 'Serializable',
+    });
+  });
+
+  it('does not retry a non-retryable error', async () => {
+    const transactionSpy = vi
+      .spyOn(prisma, '$transaction')
+      .mockRejectedValueOnce(new Error('permission denied'));
+
+    await expect(
+      saveUserAccess(accessState(userId, 'EDITOR'), formDataFor(userId, 'ADMIN')),
+    ).rejects.toThrow('permission denied');
+
+    expect(transactionSpy).toHaveBeenCalledTimes(1);
   });
 });
