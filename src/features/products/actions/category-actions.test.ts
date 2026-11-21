@@ -1,4 +1,5 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { prisma } from '@/features/shared/db/prisma';
 import type {
   CategoryFormState,
@@ -52,6 +53,11 @@ describe('category actions with the real database (G11)', () => {
   beforeAll(async () => {
     const all = await prisma.category.findMany({ select: { id: true, sortOrder: true } });
     originalSortOrders = new Map(all.map((category) => [category.id, category.sortOrder]));
+  });
+
+  beforeEach(() => {
+    vi.mocked(revalidatePath).mockClear();
+    vi.mocked(revalidateTag).mockClear();
   });
 
   afterAll(async () => {
@@ -208,5 +214,30 @@ describe('category actions with the real database (G11)', () => {
     const downById = new Map(afterDown.map((category) => [category.id, category.sortOrder]));
     expect(downById.get(firstId)).toBeLessThan(downById.get(secondId)!);
     expect(downById.get(secondId)).toBeLessThan(downById.get(thirdId)!);
+  });
+
+  it('revalidates the storefront consumers and hides a category from the real query', async () => {
+    const categoryId = await createCategory('Visibility Target', 930);
+    const seeded = await prisma.category.findUniqueOrThrow({ where: { id: categoryId } });
+    const slug = seeded.slug;
+
+    // Hide via the real write path used by saveCategory (status field).
+    await prisma.category.update({
+      where: { id: categoryId },
+      data: { status: 'HIDDEN' },
+    });
+
+    const { getCategories } = await import('@/features/products/queries/categories');
+    const publicCategories = await getCategories();
+    expect(publicCategories.some((category) => category.slug === slug)).toBe(false);
+    const allCategories = await getCategories({ includeHidden: true });
+    expect(allCategories.find((category) => category.slug === slug)?.status).toBe('HIDDEN');
+
+    // moveCategory is a successful action that must revalidate the same
+    // storefront consumers after any category mutation.
+    await expect(moveCategory(categoryId, 'up', new FormData())).rejects.toThrow('NEXT_REDIRECT');
+    expect(revalidateTag).toHaveBeenCalledWith('products', 'max');
+    expect(revalidatePath).toHaveBeenCalledWith('/admin/categories');
+    expect(revalidatePath).toHaveBeenCalledWith('/', 'layout');
   });
 });
