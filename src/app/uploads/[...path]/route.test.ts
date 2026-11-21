@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const bytes = new Uint8Array([1, 2, 3, 4]);
 const hash = createHash('sha256').update(bytes).digest('hex');
@@ -8,6 +8,8 @@ const etag = `"${hash}"`;
 const mocks = vi.hoisted(() => ({
   readStoredProductImage: vi.fn(),
   getStoredProductImageMeta: vi.fn(),
+  InvalidProductImageStorageKeyError: class InvalidProductImageStorageKeyError extends Error {},
+  StoredProductImageNotFoundError: class StoredProductImageNotFoundError extends Error {},
 }));
 
 vi.mock(import('@/features/products/server/product-image-storage'), async (importOriginal) => {
@@ -17,8 +19,8 @@ vi.mock(import('@/features/products/server/product-image-storage'), async (impor
     ...actual,
     readStoredProductImage: mocks.readStoredProductImage,
     getStoredProductImageMeta: mocks.getStoredProductImageMeta,
-    InvalidProductImageStorageKeyError: class InvalidProductImageStorageKeyError extends Error {},
-    StoredProductImageNotFoundError: class StoredProductImageNotFoundError extends Error {},
+    InvalidProductImageStorageKeyError: mocks.InvalidProductImageStorageKeyError,
+    StoredProductImageNotFoundError: mocks.StoredProductImageNotFoundError,
   };
 });
 
@@ -27,6 +29,10 @@ const { GET } = await import('./route');
 const context = { params: Promise.resolve({ path: ['products', 'p-1', 'cover.webp'] }) };
 
 describe('GET /uploads/[...path]', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('adds an immutable CDN cache header and a content ETag', async () => {
     mocks.getStoredProductImageMeta.mockResolvedValueOnce(null);
     mocks.readStoredProductImage.mockResolvedValueOnce({ bytes, contentType: 'image/webp' });
@@ -75,5 +81,29 @@ describe('GET /uploads/[...path]', () => {
       );
       expect(response.status).toBe(304);
     }
+  });
+
+  it('returns 404 when the stored image is not found', async () => {
+    mocks.getStoredProductImageMeta.mockResolvedValueOnce(null);
+    mocks.readStoredProductImage.mockRejectedValueOnce(
+      new mocks.StoredProductImageNotFoundError('missing blob'),
+    );
+
+    const response = await GET(new Request('http://localhost/uploads/test'), context);
+
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe('Not found');
+  });
+
+  it('returns 404 when the storage key is invalid', async () => {
+    mocks.getStoredProductImageMeta.mockRejectedValueOnce(
+      new mocks.InvalidProductImageStorageKeyError('bad key'),
+    );
+
+    const response = await GET(new Request('http://localhost/uploads/test'), context);
+
+    expect(response.status).toBe(404);
+    expect(await response.text()).toBe('Not found');
+    expect(mocks.readStoredProductImage).not.toHaveBeenCalled();
   });
 });

@@ -198,6 +198,16 @@ describe('POST product image upload', () => {
     expect(mocks.uploadProductImage).not.toHaveBeenCalled();
   });
 
+  it('rejects an empty file with 413 without calling storage', async () => {
+    const response = await POST(createUploadRequest(1, new Uint8Array(0)), context);
+    const body = (await response.json()) as { error: string };
+
+    expect(response.status).toBe(413);
+    expect(body.error).toMatch(/greater than 0 bytes/i);
+    expect(mocks.uploadProductImage).not.toHaveBeenCalled();
+    expect(mocks.createProductImage).not.toHaveBeenCalled();
+  });
+
   it('rejects bytes without image magic with 415', async () => {
     const notAnImage = new Uint8Array([1, 2, 3, 4]);
 
