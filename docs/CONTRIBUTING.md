@@ -69,7 +69,7 @@ Chỉ dùng chữ ASCII, chữ số và dấu gạch ngang trong tên nhánh. Kh
 
 - **TypeScript strict** — không dùng `any`, không `// @ts-ignore` trừ khi có comment giải thích.
 - **Không commit code chết** — không `console.log`, không code comment-out, không file `.bak`.
-- **Không commit secret** — API key, mật khẩu, JWT secret để trong `.env` (đã có trong `.gitignore`).
+- **Không commit secret** — API key, mật khẩu, `AUTH_SECRET` để trong `.env` (đã có trong `.gitignore`).
 - **Một hàm làm một việc** — hàm > 50 dòng nên tách.
 - **Tên biến/hàm mô tả đúng ý nghĩa** — `getProductById` tốt hơn `getData`.
 - **Ưu tiên dễ đọc hơn thông minh** — code được đọc nhiều lần hơn viết.

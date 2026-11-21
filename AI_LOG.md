@@ -1,3 +1,72 @@
+## 2026-11-21 11:03:01 +07:00 - Đồng bộ tài liệu với code mới nhất
+
+### Prompt nguyên văn đã dùng
+
+> change all doc to match latest code status
+
+### Đã tự kiểm chứng
+
+- Dùng `requesting-code-review` cho reviewer fresh-context, read-only, đúng id skill; audit toàn bộ doc hiện trạng (README, AGENTS, CONTRIBUTING, ARCHITECTURE, DEPLOY, PERFORMANCE, REQUIREMENTS) đối chiếu source tại commit `8ef7ff9` (mới nhất, gồm PR #133). Không sửa `AI_LOG.md`, `docs/reviews/**`, spec/plan lịch sử.
+- Reviewer tìm 15 mismatch có file:line: số E2E cũ 32 (thực tế 43: 29 desktop + 14 pixel-7), optimizer vẫn mô tả là `unoptimized` (thực tế chỉ skip URL tuyệt đối), ARCHITECTURE còn nói sản phẩm/blog/admin/auth/database/Prisma/Server Action "chưa triển khai", REQUIREMENTS còn ghi JWT/TBC/OI-021 dù auth đã dùng session HMAC + bcrypt.
+- Đã sửa cả 15, cộng thêm các chỗ cùng loại reviewer không liệt kê riêng (mục JWT, ADR table, bảng API REST của REQUIREMENTS, "chưa có cấu trúc Category/User"). Không đổi code production.
+- Verification: lint/typecheck/test (79 files / 371 tests)/format:check/build/test:e2e (43 passed) exit 0; CJK 0 kết quả.
+
+### Findings được nhận / bác
+
+- **Accepted:** 15 mismatch của reviewer; không có finding bị bác.
+- **Rejected:** không có. Giữ nguyên các entry lịch sử theo đúng yêu cầu.
+
+### AI sai ở đâu
+
+- Nhiều lần trước tôi chỉ sửa đúng chỗ được chỉ ra (ví dụ số E2E ở PERFORMANCE) mà không grep toàn docs, nên cùng một con số cũ tồn tại ở README, DEPLOY, PERFORMANCE. Lần này đã grep lại toàn bộ sau khi sửa.
+- ARCHITECTURE có các tự sửa ở mục sau nhưng phần đầu vẫn nói "chưa triển khai" — phải đọc toàn file mới thấy mâu thuẫn nội bộ.
+- REQUIREMENTS là bản SRS dự thảo; dù có disclaimer, các ô trạng thái vẫn cần phản ánh hiện trạng để không gây hiểu lầm.
+
+### Hạn chế
+
+- Không đổi các file review/spec/plan lịch sử; chúng vẫn ghi số liệu cũ theo thời điểm đó.
+- Không chạy production check bổ sung vì thay đổi thuần tài liệu.
+
+---
+
+## 2026-11-21 10:30:15 +07:00 - Lấp 21 lỗ hổng test theo audit
+
+### Prompt nguyên văn đã dùng
+
+> use skill to scan through code and check if any test missing
+> unit test, integration test, workflow
+> both e2e and vimtest
+>
+> (lựa chọn phạm vi: All 21 gaps)
+
+Link review: `docs/reviews/2026-11-21-requesting-code-review-test-coverage.md`.
+
+### Đã tự kiểm chứng
+
+- Dùng `requesting-code-review` cho reviewer fresh-context, read-only, đúng id skill. Reviewer liệt kê 51 test `.ts`, 19 `.tsx`, 5 spec E2E, đọc source + test thật, phân loại unit / integration / workflow và tìm 21 lỗ hổng (12 Important, 9 Minor), không có Critical. Có bảng đối chiếu và câu "no new gaps" cho các round trước.
+- Triển khai cả 21 theo 3 luồng song song, không chồng file: auth/user (G1-G7), admin CRUD integration (G8, G10-G14), E2E + route (G9, G15-G21). Không đổi production code trừ lỗi thật bên dưới.
+- **Lỗi thật do test mới G20 phát hiện:** textarea `name="body"` trong blog dialog không có label → Axe serious `label`. Test được giữ đỏ làm bằng chứng; controller thêm `aria-label="Body"` và chạy lại 6 admin axe test → pass. Đây là RED→GREEN thật, không phải sửa để xanh giả.
+- Các test mới dùng Prisma thật cho integration; E2E phủ ẩn sản phẩm khỏi storefront, SEE MORE có sort/disable/end-state, carousel, responsive 4 trang, admin a11y, double-submit, route 413/404.
+- Verification chung: lint/typecheck/test (79 files / 371 tests)/format:check/build/test:e2e (43 passed) exit 0; quét CJK 0 kết quả.
+
+### Findings được nhận / bác
+
+- **Accepted:** toàn bộ G1-G21; quyết định và file test tương ứng trong review record.
+- **Rejected:** không có. Không sửa các rủi ro đã defer trước đó (rate-limit race, orphan blob, 400 ban đầu).
+
+### AI sai ở đâu
+
+- Reviewer trước đó chỉ đếm file test chứ không đối chiếu từng nhánh/nhánh action với test thật, nên lọt 21 lỗ hổng — đúng S8. Lần này yêu cầu bảng behaviour ↔ test ↔ gap và cấm coi unit test là workflow.
+- Ba luồng chạy Vitest đồng thời từng gây transient `test.db` EBUSY/P2021; phải chạy lại tuần tự để có output sạch. Đây là nhiễu môi trường, không phải lỗi sản phẩm.
+- G18 ban đầu yêu cầu "boundary disabled" nhưng carousel designed để wrap và luôn bật arrow; phải sửa kỳ vọng cho đúng hành vi thực tế.
+
+### Hạn chế
+
+- Các test G17 dùng fixture tạm trong E2E DB và xóa trong `finally`; không chạy trên production.
+- Không đổi code production ngoài label aria của blog dialog; không có production check bổ sung.
+
+---
+
 ## 2026-11-21 00:50:32 +07:00 - Dọn ảnh upload trong E2E qua Server Action
 
 ### Prompt nguyên văn đã dùng

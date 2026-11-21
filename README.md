@@ -184,8 +184,10 @@ không truy cập Prisma trực tiếp.
   `prisma/postgresql/migrations/`.
 - `src/features/shared/db/prisma.ts` giữ một `PrismaClient` dùng chung.
 - Ảnh sản phẩm upload được resize về WebP (tối đa 1600 px, tự giảm dần đến khi ≤380 KB) rồi lưu
-  dưới dạng blob trong `ProductImageBlob`, phục vụ trực tiếp qua `/uploads/...` (bỏ qua
-  `/_next/image`) để tránh lỗi optimizer trên Vercel; ảnh vẫn còn sau redeploy.
+  dưới dạng blob trong `ProductImageBlob`, phục vụ qua `/uploads/...` đi qua `/_next/image`
+  (`images.localPatterns` cho phép mọi path local, kể cả query `?v=2`). Chỉ URL tuyệt đối http(s)
+  do admin nhập mới bị bỏ qua optimizer (`shouldSkipImageOptimizer` trong
+  `src/features/shared/lib/image-url.ts`). Ảnh vẫn còn sau redeploy.
   `PRODUCT_IMAGE_UPLOAD_DIR` chỉ dùng để đọc/dọn ảnh legacy từ bản filesystem cũ.
 - Ảnh cũ còn lưu dạng PNG có thể migrate một lần bằng
   `npx tsx scripts/reencode-legacy-uploads.ts --dry-run` (xem trước) rồi bỏ `--dry-run` để ghi.
@@ -225,10 +227,10 @@ npm run test:e2e
   npm run test:e2e
   ```
 
-- `npm run test:e2e` chạy **2 project**: `desktop-chrome` (9 luồng storefront/admin cũ) và
-  `pixel-7` (`devices['Pixel 7']`, chạy lại các test gắn `@storefront` + `@a11y`). Tổng 32 test (20 desktop + 12 pixel-7). 2 test desktop mới trong `e2e/product-upload.spec.ts` phủ upload ảnh ADMIN và chặn file > 4 MB.
+- `npm run test:e2e` chạy **2 project**: `desktop-chrome` (29 test: 15 trong `e2e/storefront-admin.spec.ts`, 6 axe trong `e2e/accessibility.spec.ts`, 6 axe admin trong `e2e/admin-a11y.spec.ts`, 2 upload trong `e2e/product-upload.spec.ts`) và `pixel-7` (`devices['Pixel 7']`, grep `/@storefront|@a11y/`, 14 test: 8 storefront + 6 axe). Tổng 43 test. 2 test upload desktop phủ upload ảnh ADMIN và chặn file > 4 MB.
 - `e2e/accessibility.spec.ts` dùng `@axe-core/playwright` để assert **0 lỗi serious/critical**
-  trên Home, Category, Product, Blog list, Blog detail và contact popover (quét ở cả 2 project).
+  trên Home, Category, Product, Blog list, Blog detail và contact popover (quét ở cả 2 project);
+  `e2e/admin-a11y.spec.ts` quét 6 dialog/form admin (desktop).
 - **Smoke production (chỉ đọc):** chạy sau mỗi lần deploy, thay cho các lệnh `curl` thủ công:
 
   ```bash
