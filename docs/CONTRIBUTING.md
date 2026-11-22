@@ -194,6 +194,7 @@ refactor(ui): extract shared product card
 
 - Dòng tiêu đề **≤ 72 ký tự**, không viết hoa đầu câu, không dấu chấm cuối.
 - Dùng chữ ASCII trong commit message để thống nhất với tên nhánh và tránh lỗi encoding ở công cụ.
+- Trong mọi file văn bản của repo chỉ dùng chữ cái tiếng Việt hoặc tiếng Anh; chữ cái khác (kể cả mojibake) là lỗi. Kiểm tra bằng `npm run check:language` trước khi commit.
 - Dùng **thể mệnh lệnh** bằng tiếng Anh: `add` thay vì `added`, `fix` thay vì `fixing`.
 - Mỗi commit là một thay đổi logic hoàn chỉnh — build được, test pass (nếu đã có test).
 - Body giải thích **tại sao**, không phải **cái gì** (cái gì thì diff đã thể hiện).
