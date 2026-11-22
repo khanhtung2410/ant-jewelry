@@ -1,3 +1,32 @@
+## 2026-11-22 11:35:30 +07:00 - Giới hạn chữ cái trong dự án thành tiếng Việt và tiếng Anh
+
+### Prompt nguyên văn đã dùng
+
+> change han rule to only vietnamese and english character
+
+### Đã tự kiểm chứng
+
+- Đổi quy tắc 9 trong `AGENTS.md`: trước đây chỉ cấm CJK bằng `rg -n '\p{Han}'`; giờ chỉ cho phép chữ cái tiếng Việt hoặc tiếng Anh, mọi chữ cái khác là lỗi, ký tự không phải chữ cái được phép.
+- Thêm `scripts/check-language.mjs` với bảng chữ cái được phép và lệnh `npm run check:language`. TDD: test mới đỏ khi module chưa tồn tại, sau đó đỏ đúng chỗ do các chuỗi mojibake còn sót, rồi xanh 3/3.
+- Dọn các chuỗi mojibake còn lại trong `AI_LOG.md` và một file review để lệnh `rg` của mentor không còn kết quả.
+- Quét toàn repo: chỉ còn 4 chữ cái ngoài bảng (đều là mojibake), đã xóa. `npm run check:language` sạch.
+
+### Findings được nhận / bác
+
+- **Accepted:** yêu cầu đổi quy tắc ngôn ngữ; thực hiện bằng rule mới + script + test.
+- **Rejected:** không có.
+
+### AI sai ở đâu
+
+- Ban đầu đưa cả `Ã` vào danh sách bị cấm, nhưng `Ã` là chữ hoa hợp lệ của `ã` trong tiếng Việt; phải tách riêng kiểm tra chuỗi mojibake thay vì cấm theo từng ký tự.
+
+### Hạn chế
+
+- Bảng chữ cái được phép là danh sách tĩnh; nếu sau này thêm ngôn ngữ khác cần cập nhật script.
+- Quy tắc commit message vẫn dùng ASCII theo `CONTRIBUTING.md`, chặt hơn quy tắc chung này.
+
+---
+
 ## 2026-11-21 11:03:01 +07:00 - Đồng bộ tài liệu với code mới nhất
 
 ### Prompt nguyên văn đã dùng
@@ -414,7 +443,7 @@ Link review: `docs/reviews/2026-11-20-requesting-code-review-d9-d10.md`.
 - Kéo `origin/main` (`f4b7a10`, PR #122 merge) rồi tạo nhánh `fix/review-d9-d10`.
 - **D9 (Accepted → Fixed):** đo được 45 file / 22.499.810 byte trong `docs/lighthouse-reports/`; giữ 12 file baseline (v4 + ivy), nén gzip thành `.json.gz` (1.808.506 byte), xoá 33 file lỗi thời. Thêm `src/test/lighthouse-reports.test.ts` chặn file báo cáo ngoài baseline. Ghi chính sách vào `PERFORMANCE.md` và `CONTRIBUTING.md`: PR code không kèm báo cáo, báo cáo mới đính Release/artifact hoặc PR riêng.
 - **D10 (Accepted → Fixed):** TDD — test module mới đỏ (`Cannot find module`), test boundary đỏ (import `scripts/`), sau đó xanh. Tạo `src/features/products/server/product-image-processing.ts` có type; app import nội bộ; CLI đổi sang `scripts/reencode-legacy-uploads.ts` chạy bằng `npx tsx` và import ngược lại từ `src/`; xoá 2 file `.mjs`. Sửa lỗi type Prisma (`Uint8Array<ArrayBuffer>`) và top-level await trong CLI; `typecheck` exit 0. Probe `tsx`: `exports=migrateLegacyBlobs,reencodeLegacyBlob,withVersionQuery`.
-- **Mojibake (Accepted → Fixed):** giải mã cp1252→UTF-8 bằng script một lần ngoài repo, có map các byte undefined (0x81/0x8D/0x8F/0x90/0x9D) để khôi phục dấu tiếng Việt; 73 dòng thay đổi; `rg 'Ã|â€|Ä‘|á»|Æ°|Â§|ï¿½'` không còn kết quả; quét CJK/Hangul/Cyrillic → 0.
+- **Mojibake (Accepted → Fixed):** giải mã cp1252→UTF-8 bằng script một lần ngoài repo, có map các byte undefined (0x81/0x8D/0x8F/0x90/0x9D) để khôi phục dấu tiếng Việt; 73 dòng thay đổi; lệnh `rg` với các mẫu mojibake đã biết không còn kết quả; quét CJK/Hangul/Cyrillic → 0.
 - Cập nhật README, DEPLOY, PERFORMANCE, CONTRIBUTING cho đường dẫn CLI `.ts` và chính sách evidence.
 
 ### Findings được nhận / bác
@@ -425,7 +454,7 @@ Link review: `docs/reviews/2026-11-20-requesting-code-review-d9-d10.md`.
 ### AI sai ở đâu
 
 - Khi viết lại câu meta sau khi giải mã mojibake, tôi đã lỡ gõ ký tự CJK vào AI_LOG; phát hiện ngay bằng quét CJK và sửa trước khi commit. Đây là lỗi vi phạm quy tắc ngôn ngữ của dự án.
-- Ban đầu decoder thiếu map các byte cp1252 undefined nên một số dấu thanh vẫn lỗi (`á»`); phải thêm map rồi chạy dry-run đối chiếu trước khi ghi.
+- Ban đầu decoder thiếu map các byte cp1252 undefined nên một số dấu thanh vẫn lỗi; phải thêm map rồi chạy dry-run đối chiếu trước khi ghi.
 - Script probe CLI dùng top-level await và import absolute path sai định dạng trên Windows; mất vài lần thử mới ra `file://` URL và `.then()`.
 
 ### Hạn chế
