@@ -1,3 +1,56 @@
+## 2026-11-23 14:42:12 +07:00 - Spec và plan cho tách CI, deploy và migration
+
+### Prompt nguyên văn đã dùng
+
+> Hiện tại CI và deploy tách rời nhau. .github/workflows/npm-ci.yml chỉ chạy lint, typecheck và E2E, chưa chạy npm test, format:check, check:language. Vercel Git integration (vercel.json) tự deploy mỗi khi có push lên main, không chờ CI. Migration production chạy ngay trong bước build (build:production → scripts/migrate-production.mjs). Như vậy một commit đỏ CI vẫn lên production và có thể đã đổi schema DB. Mục tiêu: chỉ code đã pass CI mới được deploy, migration là một bước riêng có kiểm soát, deploy xong tự kiểm tra và rollback được. Làm theo thứ tự, mỗi mục một PR, có spec + plan trong docs/superpowers/.
+>
+> spec + plan trong docs/superpowers/.
+>
+> C1 — CI chạy đủ bộ kiểm tra. Đổi tên workflow thành ci.yml, gồm các job: lint + typecheck + format:check + check:language; npm test; npm run build; test:e2e. Dùng cache npm và cache trình duyệt Playwright. Bật branch protection cho main: bắt buộc PR, bắt buộc các job trên xanh, không push thẳng.
+> Bằng chứng: ảnh cấu hình branch protection; một PR thử cố ý làm fail npm test → nút Merge bị khóa.
+> C2 — Deploy production từ GitHub Actions sau khi CI xanh. Tắt auto-deploy của Vercel Git ("git": { "deploymentEnabled": false }). Thêm workflow deploy.yml chạy khi push vào main, needs các job của C1, dùng Vercel CLI: vercel pull --environment=production → vercel build --prod → vercel deploy --prebuilt --prod. Secrets (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID) đặt trong GitHub Environment production, không đặt ở mức repo. Đặt concurrency: production để hai lần deploy không chạy chồng nhau.
+> Bằng chứng: link một run Actions có đủ chuỗi CI → deploy; Vercel dashboard hiện deployment do CLI tạo, không còn deployment từ Git integration.
+> C3 — Tách migration khỏi bước build. Bỏ migrate-production.mjs khỏi build:production. Trong deploy.yml thêm job migrate chạy trước deploy: prisma migrate status → nếu có migration mới thì dừng chờ duyệt (GitHub Environment có required reviewers) → prisma migrate deploy với DIRECT_URL. Giải thích trong PR: vì sao migration chạy trước deploy, và migration phải tương thích ngược (code cũ vẫn chạy được trên schema mới) để rollback không làm hỏng dữ liệu.
+> Bằng chứng: output migrate status trong log Actions; một lần deploy có migration bị dừng ở bước chờ duyệt.
+> C4 — Smoke test sau deploy và rollback. Job smoke sau deploy chạy BASE_URL=<url vừa deploy> npm run test:smoke:production. Nếu fail: tự chạy vercel rollback về deployment trước, và workflow báo đỏ. Upload report Playwright làm artifact. Viết vào DEPLOY.md mục “Deploy & rollback” mô tả cả quy trình, kể cả cách rollback tay.
+> Bằng chứng: chạy thử một lần với smoke test cố ý fail (trên nhánh thử, workflow_dispatch) → production quay về bản trước; dán link run.
+> C5 — Preview deploy cho PR, dùng DB riêng. Không bắt buộc. Preview đang bị tắt vì dùng chung DB production (A3). Nếu bật lại: workflow preview.yml cho mỗi PR, dùng một DB preview riêng (Neon branch hoặc Prisma Postgres riêng, seed dữ liệu mẫu), comment link preview vào PR, xóa DB/branch khi PR đóng.
+> Điều kiện: chứng minh preview không thể ghi vào DB production (biến DATABASE_URL của Preview khác Production; ảnh cấu hình).
+>
+> (Quyết định bổ sung) C3 dùng DATABASE_URL là chuỗi direct, không thêm lại DIRECT_URL; live actions do tôi thực hiện khi được cấp credentials; spec được duyệt để viết plan.
+
+Link review: `docs/reviews/2026-11-23-brainstorming.md`.
+Link plan: `docs/superpowers/plans/2026-11-23-ci-deploy-gating.md`.
+
+### Đã tự kiểm chứng
+
+- Đọc trọn `.github/workflows/npm-ci.yml`, `vercel.json`, `scripts/migrate-production.mjs`, `playwright.production.config.ts`, `docs/DEPLOY.md`, `docs/PERFORMANCE.md`, `docs/ARCHITECTURE.md`, `README.md`, `package.json`, `prisma.postgresql.config.ts` và grep `directUrl` trong `prisma/`.
+- Xác nhận `gh` đã đăng nhập chủ repo, branch protection chưa bật, Vercel CLI chưa cài; `origin/main` đã tiến tới `c75a89c`.
+- Dùng `brainstorming`: viết spec rồi gửi reviewer độc lập; reviewer nêu 7 câu hỏi, đã tự quyết 5 và chỉ hỏi chủ dự án 2 câu.
+- Chủ dự án quyết định giữ `DATABASE_URL` direct (không thêm `DIRECT_URL`) và cho tôi làm live khi có credentials; spec được duyệt.
+- Dùng `writing-plans`: viết plan 4 task, mỗi task là một PR; self-review phát hiện lỗi test đặt ở `scripts/` ngoài phạm vi `include` của Vitest và đã sửa sang `src/test/`.
+
+### Findings được nhận / bác
+
+- **Accepted:** 7 câu hỏi của builder check; 5 tự quyết (workflow name/job names, app env trong Vercel, smoke trên origin SITE_URL, html reporter, snapshot thủ công), 2 hỏi chủ dự án và đã có quyết định như trên.
+- **Accepted:** sửa plan sau self-review để test nằm trong `src/test/`.
+- **Rejected:** không có.
+
+### AI sai ở đâu
+
+- Ban đầu định bám chữ "needs các job của C1" trong C2; `needs` không dùng được giữa hai workflow, phải đổi sang `workflow_run` kèm kiểm tra SHA.
+- Suýt giữ nguyên cụm "migrate với DIRECT_URL" dù repo đã bỏ biến này vì từng làm hỏng build Vercel.
+- Định cho smoke chạy trên URL deployment; canonical lấy từ `SITE_URL` nên smoke sẽ đỏ sai và rollback nhầm bản tốt.
+- Viết test pending migration vào `scripts/` trong khi Vitest chỉ quét `src/**`.
+
+### Hạn chế
+
+- Chưa có credentials Vercel nên chưa thể đặt secrets hay chạy deploy/smoke thật; plan ghi rõ bước bị chặn thay vì bịa output.
+- Chưa có danh sách reviewer cho Environment `migration-approval`; cần hỏi chủ dự án ở C3.
+- C5 chỉ được ghi là future work theo lựa chọn của tôi vì chủ dự án đánh dấu không bắt buộc.
+
+---
+
 ## 2026-11-23 14:17:48 +07:00 - Đưa toàn bộ output kiểm tra vào PR body và thêm rule
 
 ### Prompt nguyên văn đã dùng
