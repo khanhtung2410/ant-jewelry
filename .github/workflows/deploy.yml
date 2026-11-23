@@ -1,0 +1,73 @@
+name: deploy
+
+# Vercel Git deployments are disabled in vercel.json, so production is deployed
+# only here, after the `ci` workflow finishes for a push to main. `needs` cannot
+# reference jobs in another workflow, so the gate is this trigger plus the
+# verify-ci job below.
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+# One production deploy at a time. A run that arrives while another deploy is
+# in flight waits instead of cancelling work that may already be promoting.
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  verify-ci:
+    name: verify-ci
+    runs-on: ubuntu-latest
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      - name: Compare the CI commit with the current tip of main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          main_sha="$(gh api "repos/${GITHUB_REPOSITORY}/commits/main" --jq .sha)"
+          if [ "$main_sha" != "$HEAD_SHA" ]; then
+            echo "::error::CI finished for $HEAD_SHA but main is now $main_sha; a newer commit is still being checked, so this run must not deploy."
+            exit 1
+          fi
+          echo "Deploying $HEAD_SHA, the current tip of main."
+
+  deploy:
+    name: deploy
+    needs: verify-ci
+    runs-on: ubuntu-latest
+    environment: production
+    # Application runtime variables stay in the Vercel project and are pulled
+    # below; only the three Vercel credentials are GitHub Environment secrets.
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    outputs:
+      deployment_url: ${{ steps.deploy.outputs.deployment_url }}
+    steps:
+      - name: Check out the commit that passed CI
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Clean install from lockfile
+        run: npm ci
+      - name: Pull the production environment from Vercel
+        run: npx --yes vercel@66.6.0 pull --environment=production --token="$VERCEL_TOKEN"
+      - name: Build with the pulled production settings
+        run: npx --yes vercel@66.6.0 build --prod --token="$VERCEL_TOKEN"
+      - name: Deploy the prebuilt output to production
+        id: deploy
+        run: |
+          url="$(npx --yes vercel@66.6.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN")"
+          echo "deployment_url=$url" >>"$GITHUB_OUTPUT"
+          echo "Deployed $url"

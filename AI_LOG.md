@@ -1,3 +1,91 @@
+## 2026-11-23 16:04:27 +07:00 - C2: deploy production từ GitHub Actions sau CI
+
+### Prompt nguyên văn đã dùng
+
+> You are a subagent spawned by another session.
+>
+> You are implementing Task 2: Deploy production from GitHub Actions after CI, disable Vercel Git deploy.
+>
+> ## Task Description
+>
+> Read your task brief first — it is your requirements, with the exact values to use verbatim:
+> C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\task-2-brief.md
+>
+> Also read the spec:
+> C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating\docs\superpowers\specs\2026-11-23-ci-deploy-gating-design.md
+>
+> ## Context
+>
+> You work in the worktree C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating on branch ci/deploy-after-ci, freshly based on origin/main after C1 was merged. C1 delivered `.github/workflows/ci.yml` with `name: ci` and jobs `static`, `test`, `build`, `e2e`; main now has branch protection requiring those four checks. Node modules are installed.
+>
+> Controller rulings:
+> - Do NOT set GitHub Environment secrets or run any live deploy. The controller owns the `gh secret set --env production` step and all Vercel CLI calls. Your diff must only contain repo-side files.
+> - Do NOT push, open a PR, or change GitHub/Vercel settings. Commit locally only.
+> - The brief's guard test must assert `${{ secrets.VERCEL_TOKEN }}` etc. as literal strings in the workflow, but never put real secret values anywhere.
+>
+> ## Global constraints (binding)
+>
+> - `vercel.json`: keep `buildCommand: "npm run build:production"`, set `git.deploymentEnabled` to `false`.
+> - `deploy.yml`: `on: workflow_run` with `workflows: [ci]`, `types: [completed]`, `branches: [main]`; no cross-workflow `needs:`; guard job checks `conclusion == 'success'` and head SHA matches main; `environment: production`, `concurrency: production`; three Vercel commands verbatim with pinned `npx --yes vercel@66.6.0`.
+> - App env stays in Vercel via `vercel pull`; no app secrets in GitHub beyond the three Vercel tokens.
+> - TDD: write the failing guard test first, verify RED, then implement.
+> - Follow AGENTS.md rules 3-9 and 12; docs, AI_LOG entry, review record with exact skill id `requesting-code-review`.
+>
+> ## Your Job
+>
+> 1. Implement exactly the repo-side items.
+> 2. TDD RED then GREEN.
+> 3. Run focused tests while iterating; run the full check set once before committing, capturing via Node spawnSync UTF-8 NO_COLOR=1 with DATABASE_URL=file:./prisma/dev.db.
+> 4. Commit with a Conventional Commits message.
+> 5. Self-review the diff.
+> 6. Write your full report to C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\task-2-report.md with RED/GREEN evidence and full check output.
+>
+> ## You Do Not Dispatch Subagents
+>
+> Do all work yourself; never spawn a subagent or reviewer.
+>
+> ## Report Back
+>
+> Return ONLY: Status, commits (short SHA + subject), one-line test summary, concerns, report file path.
+
+Link review: `docs/reviews/2026-11-23-requesting-code-review-c2.md`.
+Link plan: `docs/superpowers/plans/2026-11-23-ci-deploy-gating.md`.
+Link brief: task-2-brief.md (outside the repository, in the agent temp directory).
+
+### Đã tự kiểm chứng
+
+- Đọc trọn `vercel.json`, `.github/workflows/ci.yml`, `src/test/deploy-workflow.test.ts`, `package.json`, `vitest.config.mts`, `scripts/check-language.mjs`, `src/test/superpowers-process.test.ts`, `docs/DEPLOY.md`, `docs/ARCHITECTURE.md` mục 14.1/14.2, `README.md` mục 7, entry `AI_LOG.md` của C1, `docs/reviews/TEMPLATE.md`, review C1, spec và plan.
+- `grep` mọi nơi dùng `deploymentEnabled`, `vercel.json`, `deploy.yml` và `needs`: chỉ `vercel.json`, guard test, docs sống (`docs/DEPLOY.md`, `docs/ARCHITECTURE.md`, `README.md`) và các bản ghi lịch sử. `README.md` mục 7 vẫn mô tả deploy không nhắc trigger nên đã cập nhật.
+- RED: `npm test -- src/test/deploy-workflow.test.ts` khi chưa sửa `vercel.json` và chưa có `deploy.yml` -> `Tests 8 failed (8)`; lỗi đầu tiên `every branch must stop deploying through the Vercel Git integration: expected { main: true, '*': false } to be false`, các lỗi còn lại `ENOENT ... .github\workflows\deploy.yml`.
+- GREEN: cùng lệnh sau khi thêm workflow và sửa config -> `Tests 8 passed (8)`.
+- Parse `deploy.yml` bằng package `yaml` (đã có trong `node_modules`) -> `YAML OK [name,on,permissions,concurrency,jobs]`, jobs `[verify-ci, deploy]`; không chỉ dựa vào so chuỗi.
+- `npx prettier --check vercel.json .github/workflows/deploy.yml src/test/deploy-workflow.test.ts` -> `All matched files use Prettier code style!`.
+- Chạy đủ bộ lint, typecheck, test, format:check, build, check:language bằng Node `spawnSync` UTF-8 `NO_COLOR=1`, `DATABASE_URL=file:./prisma/dev.db`, sau `npx --no-install next typegen` và `npm run db:push` như CI; output đầy đủ nằm trong file review và task report.
+- Không đặt GitHub Environment secret, không gọi Vercel CLI, không push, không mở PR: đây là phần controller sở hữu; diff chỉ có file trong repo.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong PR này):** comment trong `deploy.yml` nhắc tên `DATABASE_URL`, `AUTH_SECRET`, `SITE_URL` làm chính guard "app secrets ở Vercel" đỏ; đã viết lại comment thay vì nới guard. Thêm test chặn trigger `push`/`pull_request`, test chuỗi cài đặt (`checkout`, `setup-node`, `cache: npm`, `npm ci`), và test app secret. Cập nhật `README.md` mục 7 vì đó là tài liệu sống mô tả deploy.
+- **Accepted (ghi nhận, giữ nguyên thiết kế):** brief Step 1 yêu cầu guard khẳng định `deploy.yml` không chứa `needs:` trong khi Step 3 yêu cầu `needs: verify-ci`. Guard chỉ cấm `needs:` trong block `workflow_run` (đúng lý do "needs không qua được workflow") và pin `needs: verify-ci` ở job; đã ghi rõ trong review.
+- **Accepted (ghi nhận, giữ nguyên thiết kế):** literal `concurrency: production` của brief được viết thành block `concurrency: { group: production, cancel-in-progress: false }` vì Step 3 yêu cầu `cancel-in-progress: false`; guard kiểm cả hai giá trị.
+- **Rejected:** kiểm lại SHA lần hai ngay trước `vercel deploy` (concurrency đã tuần tự hóa, lần chạy mới sẽ deploy sau; kiểm lại sẽ để một commit tài liệu không liên quan chặn bản deploy đã xanh); thêm `timeout-minutes` (lựa chọn chi phí, không phải lỗi của PR này); pin action bằng SHA (quy ước repo, cần quyết định của chủ dự án); đặt `permissions: actions: read` (workflow không đọc artifact); tách ba secret sang cấp repository (trái yêu cầu Environment). Chi tiết trong `docs/reviews/2026-11-23-requesting-code-review-c2.md`.
+
+### AI sai ở đâu
+
+- Comment đầu tiên trong `deploy.yml` ghi đúng tên ba biến runtime, nhưng chính guard do tôi viết cấm các chuỗi đó ở bất kỳ đâu trong file; lần chạy GREEN đầu tiên đỏ ở test `keeps the application secrets in Vercel instead of GitHub`. Tôi sửa comment, không nới guard, vì mục đích của guard là không để tên biến app xuất hiện trong workflow.
+- Ban đầu định viết guard khẳng định nguyên văn `vercel pull --environment=production` trong khi workflow dùng tiền tố pin `npx --yes vercel@66.6.0`; hai yêu cầu này xung đột chuỗi. Đã pin nguyên câu lệnh có tiền tố và ghi rõ khác biệt so với danh sách literal của brief.
+- Định làm theo câu "Assert it does not contain `needs:`" của brief Step 1 trên toàn file, nhưng như vậy mâu thuẫn với Step 3 (`needs: verify-ci`); chỉ sau khi đối chiếu hai bước mới thu hẹp phạm vi vào block `workflow_run`.
+- Ban đầu chỉ sửa `docs/DEPLOY.md` và `docs/ARCHITECTURE.md` theo danh sách file của brief; khi `grep vercel.json` mới thấy `README.md` mục 7 cũng mô tả deploy production và đã cập nhật.
+
+### Hạn chế
+
+- Chưa chạy GitHub Actions thật, chưa có Environment secret, chưa chạy `vercel pull/build/deploy`, chưa có ảnh dashboard Vercel không còn deployment nguồn Git; đây là việc của controller/chủ dự án sau khi merge.
+- Bước 4 của brief (`gh secret set --env production`) không thực hiện trong task này; báo cáo ghi rõ là controller-owned.
+- YAML mới được kiểm bằng parser và guard test, chưa chạy trên runner; `npx --yes vercel@66.6.0` chưa được thực thi nên hành vi `--token` của đúng phiên bản đó chưa được xác minh live.
+- `npm run build` và `npm test` chạy trên Windows, không phải `ubuntu-latest`; `npm run test:e2e` không nằm trong bộ kiểm tra của task này.
+
+---
+
 ## 2026-11-23 15:11:05 +07:00 - C1: CI chạy đủ bộ kiểm tra và đổi tên workflow
 
 ### Prompt nguyên văn đã dùng
