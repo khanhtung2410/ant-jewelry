@@ -26,7 +26,7 @@ No Critical or Important findings. The reviewer approved the task.
 
 | Claim | Test or output | Result |
 |---|---|---|
-| Architecture note matches behavior | `docs/ARCHITECTURE.md:82` states 5000 ms auto-advance, countdown restart on manual navigation and looping; verified against `hero-slider.tsx:15`, `:22-30`, `:77`, `:83` | đạt/pass |
+| Architecture note matches behavior | `docs/ARCHITECTURE.md:72` states 5000 ms auto-advance, countdown restart on manual navigation and looping; verified against `hero-slider.tsx:15`, `:22-30`, `:77`, `:83` | đạt/pass |
 | Verbatim prompts in AI_LOG | `AI_LOG.md:5-6` | đạt/pass |
 | Required AI_LOG sections present | `AI_LOG.md:3`, `:10`, `:18`, `:23`, `:29` | đạt/pass |
 | Prior `##` header preserved | `AI_LOG.md:35-37` | đạt/pass |
