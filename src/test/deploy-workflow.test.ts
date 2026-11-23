@@ -81,7 +81,7 @@ describe('production deploy guard', () => {
     const deploy = block(block(readWorkflow(), 'jobs'), 'deploy', 2);
 
     expect(deploy, 'the deploy job must exist').not.toBe('');
-    expect(deploy).toContain('needs: verify-ci');
+    expect(deploy).toContain('needs: [verify-ci, migrate]');
     expect(deploy).toContain('environment: production');
     expect(deploy).toContain('deployment_url');
     expect(deploy, 'the deploy job must check out the verified SHA').toContain(
@@ -127,10 +127,79 @@ describe('production deploy guard', () => {
     }
   });
 
-  it('keeps the application secrets in Vercel instead of GitHub', () => {
+  it('checks pending migrations before the migration and deploy jobs', () => {
+    const jobs = block(readWorkflow(), 'jobs');
+    const check = block(jobs, 'check-migrations', 2);
+    const approval = block(jobs, 'approval', 2);
+    const migrate = block(jobs, 'migrate', 2);
+    const deploy = block(jobs, 'deploy', 2);
+
+    expect(check, 'the check-migrations job must exist').not.toBe('');
+    expect(check).toContain('environment: production');
+    expect(check).toContain('pending: ${{ steps.check.outputs.pending }}');
+    expect(check, 'the workflow must name the status command it relies on').toContain(
+      'db:migrate:status:production',
+    );
+    expect(check, 'status must be read through the detection wrapper').toContain(
+      'node scripts/detect-pending-migrations.mjs',
+    );
+
+    expect(approval, 'the approval job must exist').not.toBe('');
+    expect(approval).toContain('environment: migration-approval');
+    expect(approval).toContain("needs.check-migrations.outputs.pending == 'true'");
+
+    expect(migrate, 'the migrate job must exist').not.toBe('');
+    expect(migrate).toContain('needs: [check-migrations, approval]');
+    expect(migrate).toContain(
+      "always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')",
+    );
+    expect(migrate).toContain('npm run db:migrate:production');
+    expect(migrate, 'a failed status check must stop migration').toContain(
+      'needs.check-migrations.result',
+    );
+    expect(migrate, 'the reviewer must see the commit and the snapshot reminder').toContain(
+      'snapshot',
+    );
+
+    expect(deploy, 'deploy must wait for migrations').toContain('needs: [verify-ci, migrate]');
+  });
+
+  it('never applies migrations during the production build', () => {
+    const pkg = JSON.parse(read('package.json')) as { scripts: Record<string, string> };
+
+    expect(pkg.scripts['build:production']).toBe('npm run db:generate:production && next build');
+    expect(pkg.scripts['build:production']).not.toContain('migrate');
+    expect(existsSync(path.join(root, 'scripts/migrate-production.mjs'))).toBe(false);
+  });
+
+  it('links the workflow wrapper to the real status script across modules', () => {
+    const wrapper = read('scripts/detect-pending-migrations.mjs');
+    const pkg = JSON.parse(read('package.json')) as { scripts: Record<string, string> };
+
+    expect(wrapper, 'the wrapper must run the status npm script').toContain(
+      "['run', 'db:migrate:status:production']",
+    );
+    expect(wrapper, 'the wrapper must classify the captured output').toContain(
+      'hasPendingMigrations(output)',
+    );
+    expect(pkg.scripts['db:migrate:status:production']).toContain('prisma migrate status');
+  });
+
+  it('injects the direct database URL into every job that uses Prisma', () => {
+    const jobs = block(readWorkflow(), 'jobs');
+
+    for (const name of ['check-migrations', 'migrate', 'deploy']) {
+      const job = block(jobs, name, 2);
+      expect(job, `${name} must receive the direct database URL`).toContain(
+        'DATABASE_URL: ${{ secrets.DATABASE_URL }}',
+      );
+    }
+  });
+
+  it('keeps the remaining application secrets in Vercel instead of GitHub', () => {
     const content = readWorkflow();
 
-    for (const name of ['DATABASE_URL', 'AUTH_SECRET', 'SITE_URL', 'DIRECT_URL']) {
+    for (const name of ['AUTH_SECRET', 'SITE_URL', 'DIRECT_URL']) {
       expect(content, `${name} belongs to the Vercel project, not to this workflow`).not.toContain(
         name,
       );

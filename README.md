@@ -262,16 +262,17 @@ migration mới `20261118100000_add_product_image_blobs` trước/sau khi deploy
 - Trạng thái kiểm chứng và kết quả Lighthouse trên bản deploy: xem [`docs/DEPLOY.md`](docs/DEPLOY.md) và [`docs/PERFORMANCE.md`](docs/PERFORMANCE.md).
 
 1. Provision PostgreSQL và cấu hình `DATABASE_URL`, `AUTH_SECRET`,
-   `SITE_URL`, `PRODUCT_IMAGE_UPLOAD_DIR` trong môi trường production (`DIRECT_URL` không bắt buộc).
-   Đặt `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` trong GitHub Environment `production`
-   (không đặt ở cấp repository).
+   `SITE_URL`, `PRODUCT_IMAGE_UPLOAD_DIR` trong môi trường production (không dùng biến direct riêng).
+   Đặt `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` và `DATABASE_URL` (chuỗi direct
+   `db.prisma.io`) trong GitHub Environment `production`, không đặt ở cấp repository. Environment
+   `migration-approval` cần có required reviewer do chủ dự án cấu hình.
 2. Deploy Production lên Vercel qua GitHub Actions: sau khi workflow `ci` xanh trên `main`,
-   `.github/workflows/deploy.yml` chạy Vercel CLI (`pull` → `build --prod` →
+   `.github/workflows/deploy.yml` kiểm tra migration pending, dừng chờ duyệt khi có migration mới,
+   áp dụng migration rồi mới chạy Vercel CLI (`pull` → `build --prod` →
    `deploy --prebuilt --prod`). Git integration của Vercel đã tắt
    (`vercel.json`: `"git": { "deploymentEnabled": false }`).
-   `vercel.json` dùng `npm run build:production`, tự động chạy
-   `prisma migrate deploy` trước `next build` (chỉ ở Production; Preview bỏ qua vì dùng chung DB).
-   Có thể chạy migration thủ công bằng `npm run db:migrate:production` và
+   `vercel.json` dùng `npm run build:production` để generate Prisma Client và build; bản build không
+   đổi schema. Có thể chạy migration thủ công bằng `npm run db:migrate:production` và
    `npm run db:migrate:status:production` với URL **direct** (`db.prisma.io`, không dùng pooled).
 3. (Tuỳ chọn) Nạp catalogue demo vào PostgreSQL bằng `npm run db:seed:production` (dùng URL
    **direct**, không tạo user demo). `npm run db:seed` chỉ dành cho SQLite local.

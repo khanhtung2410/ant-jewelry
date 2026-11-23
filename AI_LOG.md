@@ -1,3 +1,96 @@
+## 2026-11-23 17:12:55 +07:00 - C3: tach migration khoi build va gate bang approval
+
+### Prompt nguyên văn đã dùng
+
+> You are a subagent spawned by another session.
+> You are implementing Task 3: Separate migration from build and gate it on approval.
+>
+> ## Task Description
+>
+> Read your task brief first — it is your requirements, with exact values to use verbatim:
+> C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\task-3-brief.md
+>
+> Also read the spec:
+> C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating\docs\superpowers\specs\2026-11-23-ci-deploy-gating-design.md
+>
+> Work from C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating on branch ci/separate-migration, freshly based on origin/main after C2 merged. Node modules are installed.
+>
+> ## Additional live finding you MUST include in this task
+>
+> C2's first live deploy run failed with Prisma P1013 because `vercel pull --environment=production` writes `"[SENSITIVE]"` as the DATABASE_URL value. The controller has copied the real direct database URL into GitHub Environment `production` as secret `DATABASE_URL` (no app secrets in repo). Add `DATABASE_URL: ${{ secrets.DATABASE_URL }}` to the `deploy` job's `env` so `vercel build` gets a real value, and use the same secret for the migration job. Add a guard-test assertion for this. Do not print or write any real secret value.
+>
+> ## Controller rulings (binding)
+>
+> - No separate `DIRECT_URL`: use `DATABASE_URL` as the direct db.prisma.io string, as the owner decided. No schema/config changes for a second variable.
+> - Do NOT create GitHub Environments, secrets, reviewers, or run live deploy/migration. The controller owns those. Your diff is repo-side only.
+> - Do NOT push or open a PR. Commit locally only.
+> - TDD: write the failing pending-detection test first, verify RED, then implement.
+>
+> ## Global constraints
+>
+> - `build:production` must become `npm run db:generate:production && next build` only.
+> - Remove `scripts/migrate-production.mjs` only after grepping every consumer and finding none.
+> - `deploy.yml`: add `check-migrations` (output `pending`), `approval` job with `environment: migration-approval` and `if: pending == 'true'`, `migrate` job with `if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')`, then `deploy` depends on `migrate`.
+> - Migration runs with `prisma migrate status` then `prisma migrate deploy` via existing npm scripts, using `DATABASE_URL`.
+> - Only Vietnamese and English letters in written files; AGENTS.md rules 3-9 and 12 apply.
+>
+> ## Your Job
+>
+> 1. Implement the task plus the DATABASE_URL fix above.
+> 2. TDD RED then GREEN.
+> 3. Run focused tests while iterating; run the full check set once before committing via spawnSync UTF-8 NO_COLOR=1 with DATABASE_URL=file:./prisma/dev.db.
+> 4. Commit with a Conventional Commits message.
+> 5. Self-review the diff.
+> 6. Write your full report to C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\task-3-report.md.
+>
+> ## You Do Not Dispatch Subagents
+>
+> Do all work yourself; never spawn a subagent or reviewer.
+>
+> ## Report Back
+>
+> Return ONLY: Status, commits (short SHA + subject), one-line test summary, concerns, report file path.
+
+Link review: `docs/reviews/2026-11-23-requesting-code-review-c3.md`.
+Link plan: `docs/superpowers/plans/2026-11-23-ci-deploy-gating.md`.
+Link brief: task-3-brief.md (outside the repository, in the agent temp directory).
+
+### Đã tự kiểm chứng
+
+- Đọc trọn `package.json`, `.github/workflows/deploy.yml`, `scripts/migrate-production.mjs`, `src/test/deploy-workflow.test.ts`, `docs/DEPLOY.md`, `docs/ARCHITECTURE.md` mục 14.1/14.2, `README.md` mục 7, `docs/CONTRIBUTING.md`, `docs/reviews/TEMPLATE.md`, entry C2 trong `AI_LOG.md`, spec, plan và hai skill `test-driven-development` / `requesting-code-review` (kèm tài liệu tham chiếu).
+- `grep migrate-production.mjs`: chỉ `package.json` là nơi dùng thật; các kết quả còn lại là văn bản lịch sử hoặc tài liệu sống. Đã xoá script sau khi xác nhận và đổi `build:production` thành `npm run db:generate:production && next build`.
+- RED: `npm test -- src/test/detect-pending-migrations.test.ts` khi module chưa tồn tại -> `Cannot find module '../../scripts/detect-pending-migrations.mjs'`, `Test Files 1 failed (1)`. GREEN sau khi implement -> `Tests 5 passed (5)`.
+- RED của guard workflow: `npm test -- src/test/deploy-workflow.test.ts` trước khi sửa `deploy.yml` -> `Tests 3 failed | 8 passed (11)`; sau khi sửa -> 17 test của hai file focused đều pass.
+- Parse `deploy.yml` bằng package `yaml` -> `YAML OK`, jobs `[verify-ci, check-migrations, approval, migrate, deploy]`, `deploy needs ["verify-ci","migrate"]`, `env.DATABASE_URL` là `${{ secrets.DATABASE_URL }}`.
+- Chạy wrapper với `DATABASE_URL=file:./prisma/dev.db` (SQLite, không phải production): in `[detect-pending-migrations] prisma migrate status failed; refusing to continue.`, `EXIT=1`; không in hay ghi giá trị secret nào.
+- Chạy đủ bộ lint, typecheck, test, format:check, build, check:language bằng Node `spawnSync` UTF-8 `NO_COLOR=1`, `DATABASE_URL=file:./prisma/dev.db`, sau `next typegen` và `db:push` như CI: cả sáu lệnh `EXIT=0`, 413 test pass. Output đầy đủ nằm trong file review và task report.
+- `grep MIGRATION_DATABASE_URL`: chỉ còn trong plan lịch sử, không có trong code hay workflow; tên secret dùng ở mọi job là `DATABASE_URL` theo chỉ thị của controller.
+- Không tạo Environment, secret hay reviewer; không gọi Vercel CLI, không push, không mở PR: đây là phần controller/chủ dự án sở hữu.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong nhánh này):** guard cũ cấm `DATABASE_URL` xuất hiện trong workflow. Live finding P1013 của C2 bắt buộc truyền URL thật vào `env` của job `deploy` và dùng chung cho migration, nên đã đổi guard thành:\u0020kiểm tra `${{ secrets.DATABASE_URL }}` trong `check-migrations`, `migrate`, `deploy`, đồng thời vẫn cấm `AUTH_SECRET`, `SITE_URL`, `DIRECT_URL`. Đây là thay đổi hành vi có chủ đích, không phải nới guard vô lý.
+- **Accepted (sửa trong nhánh này):** literal `db:migrate:status:production` theo brief Step 7 được đưa vào tên bước của `check-migrations`, và bổ sung flow test nối workflow -> wrapper -> script npm -> `prisma migrate status`, để guard không chỉ là so chuỗi.
+- **Accepted (sửa trong nhánh này):** thêm bước `Refuse to migrate when the status check failed` trong job `migrate`, vì `if: always() ...` cho phép job chạy khi `check-migrations` fail; guard test khẳng định điều kiện `needs.check-migrations.result` tồn tại.
+- **Accepted (sửa trong nhánh này):** lệnh `pg_dump "$DIRECT_URL"` trong `docs/DEPLOY.md` được đổi sang `$DATABASE_URL` để khớp quyết định không dùng biến direct riêng.
+- **Rejected:** đổi `MIGRATION_DATABASE_URL` thành tên khác trong code (controller chốt dùng `DATABASE_URL`); tự tạo Environment `migration-approval` và required reviewer (controller sở hữu); chạy migration/deploy thật để lấy bằng chứng live (không có credentials); push hoặc mở PR (bị cấm rõ ràng).
+
+### AI sai ở đâu
+
+- Ban đầu guard `checks pending migrations before the migration and deploy jobs` đòi chuỗi `npm run db:migrate:status:production` ngay trong `deploy.yml`, nhưng workflow gọi wrapper nên chuỗi đó nằm trong `scripts/detect-pending-migrations.mjs`; guard đỏ dù thiết kế đúng. Đã sửa bằng tên bước chứa lệnh và flow test qua cac module thay vì bắt workflow lặp lại chi tiết implement.
+- Suýt bỏ sót mâu thuẫn giữa guard C2 (`DATABASE_URL` không được xuất hiện) và live finding P1013 (`DATABASE_URL` phải nằm trong `env` của `deploy`). Chỉ phát hiện khi grep consumer của `DATABASE_URL` trước khi sửa workflow.
+- Ban đầu định dùng đúng `if: always() && (...)` của brief mà không kiểm tra đường `check-migrations` fail; với `always()`, job `migrate` vẫn chạy khi status check fail. Đã thêm bước kiểm tra `needs.check-migrations.result` mà không đổi biểu thức `if` bắt buộc.
+- Nhiều lần `edit` tài liệu thất bại vì nhầm số space đầu dòng (3 thay vì 4, 5 thay vì 6, 2 thay vì 3) khi chuyển từ output có tiền tố số dòng sang nội dung thật; đã đọc byte của dòng bằng Node để sửa, không đoán.
+
+### Hạn chế
+
+- Chưa chạy GitHub Actions thật, chưa có Environment `migration-approval` với required reviewer, chưa set secret thật, chưa chạy `prisma migrate status/deploy` trên PostgreSQL production hay deploy Vercel; các bước này do controller thực hiện sau merge. Không nói approval gate đã live.
+- Chưa chứng minh bằng live run rằng `env: DATABASE_URL` ở cấp job đè được giá trị `[SENSITIVE]` mà `vercel pull` ghi vào file env; cần controller xác nhận trong lần deploy tiếp theo.
+- Guard workflow là so chuỗi trên YAML, không phải chạy runner; đã bổ sung parse YAML và flow test để giảm rủi ro nhưng không thay thế live verification.
+- `npm run build` và `npm test` chạy trên Windows, không phải `ubuntu-latest`; `npm run test:e2e`, smoke production và rollback không nằm trong bộ kiểm tra của task này.
+
+---
+
 ## 2026-11-23 16:04:27 +07:00 - C2: deploy production từ GitHub Actions sau CI
 
 ### Prompt nguyên văn đã dùng
