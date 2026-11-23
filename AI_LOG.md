@@ -1,3 +1,39 @@
+## 2026-11-23 10:37:48 +07:00 - Ghi nhận hành vi tự động chuyển slide của hero slider
+
+### Prompt nguyên văn đã dùng
+
+> make hero slider auto slide, create test following what change
+> let time about 5s/1 time change
+
+Link review: `docs/reviews/2026-11-23-requesting-code-review.md` (file sẽ do controller tạo sau khi subagent báo cáo; liên kết này được thêm có chủ đích).
+
+### Đã tự kiểm chứng
+
+- Đọc trọn `src/features/layout/components/hero-slider.tsx` tại commit `a3c7207`, `646df7d` để mô tả đúng hành vi: `AUTO_SLIDE_INTERVAL_MS = 5000`, `setTimeout` được lên lịch lại trong effect phụ thuộc `currentIndex` và `slides.length`, có `clearTimeout` khi dọn, effect đặt trước early return của trạng thái rỗng.
+- Xác nhận `currentIndex` được kẹp bằng `Math.min(activeIndex, Math.max(slides.length - 1, 0))` khi prop `slides` thu nhỏ, phép lặp dùng cùng modulo với nút mũi tên, và không đặt timer khi `slides.length < 2`.
+- Đọc 5 test fake timer trong `src/features/layout/components/hero-slider.auto-slide.test.tsx`: dừng ở 4999 ms rồi chuyển ở 5000 ms, lặp về slide 1, khởi động lại sau click tay, không timer với ít hơn 2 slide, dọn timer khi unmount và tiếp tục chạy khi `slides` thu nhỏ.
+- Thêm một câu hiện trạng vào `docs/ARCHITECTURE.md` (dòng 72), giữ nguyên phần còn lại của dòng; sau khi prepend entry đã kiểm tra dòng `##` của entry trước vẫn nằm ngay dưới dấu `---` mới.
+- Chạy `npm run check:language` và `npm run format:check` với output được bắt qua `spawnSync` UTF-8, `NO_COLOR=1` (kết quả trong báo cáo task).
+
+### Findings được nhận / bác
+
+- **Accepted:** toàn bộ hành vi Task 1 trên nhánh `feat/hero-slider-auto-slide` (commit `a3c7207`, `646df7d`) gồm tự động chuyển slide mỗi 5000 ms, kẹp chỉ số khi `slides` thu nhỏ, lặp vòng bằng modulo, không đặt timer khi `slides.length < 2` và 5 test fake timer; tài liệu được cập nhật theo đúng hành vi đó.
+- **Rejected:** không có phát hiện nào bị bác ở bước ghi chú tài liệu này; không có thay đổi production code.
+
+### AI sai ở đâu
+
+- Ban đầu định chỉ viết "tự động chuyển slide sau mỗi 5 giây" và bỏ sót hai ý "bộ đếm khởi động lại sau điều hướng thủ công" với "lặp vòng"; phải đọc lại `hero-slider.tsx` và file test mới thấy effect phụ thuộc `currentIndex` và phép modulo.
+- Suýt mô tả nhầm cơ chế là `setInterval`; source thực chất dùng `setTimeout` được lên lịch lại sau mỗi lần đổi `currentIndex`, nên đã sửa lại cho đúng trước khi commit.
+- Khi prepend entry, dễ làm mất header `##` của entry ngay trước; đã kiểm tra dòng `##` đầu tiên ngay bên dưới dấu `---` sau khi sửa.
+
+### Hạn chế
+
+- Chỉ cập nhật một câu hiện trạng trong `docs/ARCHITECTURE.md`; không sửa spec, plan hay các entry lịch sử cho khớp yêu cầu ngôn ngữ.
+- File review `docs/reviews/2026-11-23-requesting-code-review.md` chưa tồn tại lúc viết entry này; controller sẽ tạo sau, nên liên kết hiện tại là liên kết có chủ đích.
+- Không chạy production check bổ sung vì thay đổi thuần tài liệu; chỉ chạy hai lệnh kiểm tra bắt buộc của brief.
+
+---
+
 ## 2026-11-22 11:35:30 +07:00 - Giới hạn chữ cái trong dự án thành tiếng Việt và tiếng Anh
 
 ### Prompt nguyên văn đã dùng
