@@ -44,7 +44,7 @@ This round adds no independent finding beyond the owner feedback and the mentor 
 Captured with Node `spawnSync`, UTF-8, `NO_COLOR=1`. Full stdout/stderr, verbatim:
 
 ```text
-Verification run at 2026-11-23T07:10:58.847Z
+Verification run at 2026-11-23T07:18:21.223Z
 
 === npm run lint ===
 
@@ -73,12 +73,12 @@ EXIT=0
 
 
  Test Files  82 passed (82)
-      Tests  388 passed (388)
-   Start at  14:11:18
-   Duration  44.93s (tests 49%, import 33%, environment 11%, transform 4%, setup 2%, worker 2%)
+      Tests  389 passed (389)
+   Start at  14:18:43
+   Duration  49.59s (tests 46%, import 35%, environment 10%, transform 4%, setup 2%, worker 2%)
 
-     Import  205 modules were evaluated 662 times · 8.45s total, 33% of tracked time
-             ~5.83s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
+     Import  205 modules were evaluated 662 times · 9.70s total, 35% of tracked time
+             ~6.70s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
              learn more: https://vitest.dev/guide/improving-performance#test-isolation
 
 EXIT=0
@@ -102,14 +102,14 @@ EXIT=0
 
 ▲ Next.js 16.4.5 (Turbopack)
 - Environments: .env.production.local, .env.local, .env
-✓ Running next.config.ts took 36ms
+✓ Running next.config.ts took 263ms
 - Cache Components enabled
 - Partial Prefetching enabled
 - Experiments (use with caution):
   ✓ agentFeedback
 
   Creating an optimized production build ...
-✓ Compiled successfully in 2.4s
+✓ Compiled successfully in 2.9s
   Running TypeScript ...
   Finished TypeScript in 4.3s ...
   Collecting page data using 7 workers ...
@@ -117,7 +117,7 @@ EXIT=0
   Generating static pages using 7 workers (13/53) 
   Generating static pages using 7 workers (26/53) 
   Generating static pages using 7 workers (39/53) 
-✓ Generating static pages using 7 workers (53/53) in 5.1s
+✓ Generating static pages using 7 workers (53/53) in 5.3s
   Finalizing page optimization ...
 
 Route (app)                                 Revalidate  Expire

@@ -1,3 +1,38 @@
+## 2026-11-23 14:17:48 +07:00 - Đưa toàn bộ output kiểm tra vào PR body và thêm rule
+
+### Prompt nguyên văn đã dùng
+
+> rewrite pr body, you dont haave full output
+> add to rules
+
+Link review: `docs/reviews/2026-11-23-receiving-code-review.md`.
+
+### Đã tự kiểm chứng
+
+- Đọc lại mục Testing trong template PR của `docs/CONTRIBUTING.md`: yêu cầu dán output đầy đủ của các lệnh vào sau tick, không phải chỉ dẫn link tới file review.
+- TDD: thêm guard test `requires the full check output inside the pull request body` trong `src/test/superpowers-process.test.ts`, quan sát đỏ vì rule 12 chưa tồn tại, rồi thêm rule 12 vào `AGENTS.md` và thấy xanh 7/7.
+- Lấy nguyên văn output của full check set từ `spawnSync` UTF-8, `NO_COLOR=1`; bản ghi đầy đủ nằm ở `docs/reviews/2026-11-23-receiving-code-review.md`. Thay ký tự legend U+0192 bằng F và ghi chú để giữ rule 9.
+- Viết lại PR body với phần Testing chứa toàn bộ stdout/stderr và từng dòng `EXIT=0`, rồi cập nhật PR #150 bằng `gh`.
+- Chạy lại toàn bộ check set sau khi đổi rule và test; output được cập nhật trong file review.
+
+### Findings được nhận / bác
+
+- **Accepted:** yêu cầu đưa full output vào PR body và thêm rule tương ứng; thực hiện trên nhánh `fix/hero-slider-a11y-pause-controls`, PR #150.
+- **Rejected:** không có.
+
+### AI sai ở đâu
+
+- PR body ban đầu chỉ ghi "output đầy đủ trong file review" rồi liệt kê các dòng EXIT=0; như vậy là mới chỉ dẫn link và tóm tắt, không đúng yêu cầu của template PR.
+- Tôi từng cho rằng đưa output vào file review là đủ, trong khi yêu cầu là bản thân PR body phải có output đó.
+- Khi thêm rule mới, ban đầu định sửa trực tiếp `AGENTS.md`; đã đổi sang viết guard test trước để quan sát màu đỏ rồi mới sửa rule.
+
+### Hạn chế
+
+- Không chạy production smoke vì không có quyền truy cập deploy trong task này.
+- Output dán vào PR body là bản đã thay U+0192 bằng F; output gốc và ghi chú nằm trong file review.
+
+---
+
 ## 2026-11-23 14:05:59 +07:00 - Thêm rule a11y và sửa hero slider có nút dừng
 
 ### Prompt nguyên văn đã dùng
