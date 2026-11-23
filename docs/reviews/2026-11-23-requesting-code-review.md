@@ -146,7 +146,7 @@ Route (app)                                 Revalidate  Expire
 ├ ◐ /admin/products
 ├ ◐ /admin/settings
 ├ ◐ /admin/users
-├ ƒ /api/admin/products/[productId]/images
+├ F /api/admin/products/[productId]/images
 ├ ○ /blog                                          15m      1y
 ├   /blog/[slug]                                   15m      1y
 │ ├ ◐ /blog/[slug]                                 15m      1y
@@ -169,14 +169,14 @@ Route (app)                                 Revalidate  Expire
 ├ ○ /ship                                          15m      1y
 ├ ○ /sitemap.xml                                   15m      1y
 ├ ○ /terms                                         15m      1y
-└ ƒ /uploads/[...path]
+└ F /uploads/[...path]
 
 
-ƒ Proxy (Middleware)
+F Proxy (Middleware)
 
 ○  (Static)             prerendered as static content
 ◐  (Partial Prerender)  prerendered as static HTML with dynamic server-streamed content
-ƒ  (Dynamic)            server-rendered on demand
+F  (Dynamic)            server-rendered on demand
 
 EXIT=0
 
@@ -187,6 +187,8 @@ EXIT=0
 
 EXIT=0
 ```
+
+Ghi chú: trong bản ghi output `next build` ở trên, ký hiệu legend `F` thay cho ký tự gốc U+0192 (LATIN SMALL LETTER F WITH HOOK) để tuân quy tắc chỉ dùng chữ cái tiếng Việt và tiếng Anh. Các dòng khác được giữ nguyên; output gốc nằm trong workspace SDD tạm thời và sẽ bị xóa sau khi hoàn tất.
 
 ## Limitations
 
