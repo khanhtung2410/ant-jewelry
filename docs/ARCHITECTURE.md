@@ -69,7 +69,7 @@ Website **không** hỗ trợ các chức năng sau trong phạm vi hiện tại
 
 Không được tự ý đưa các chức năng nằm ngoài phạm vi trên vào kiến trúc hoặc kế hoạch triển khai nếu chưa có thay đổi yêu cầu chính thức từ chủ dự án.
 
-Trong work tree hiện tại, trang chủ hiển thị hero slider, các carousel sản phẩm theo danh mục và hai bài Blog mới nhất. Các trang danh sách/chi tiết sản phẩm (`/c/[slug]`, `/p/[slug]`), Blog (`/blog`, `/blog/[slug]`) và khu vực quản trị (`/admin/*`) đã được triển khai trong `src/app`. Hero slider tự động chuyển slide sau mỗi 5 giây (5000 ms), bộ đếm khởi động lại sau thao tác điều hướng thủ công và các slide lặp vòng.
+Trong work tree hiện tại, trang chủ hiển thị hero slider, các carousel sản phẩm theo danh mục và hai bài Blog mới nhất. Các trang danh sách/chi tiết sản phẩm (`/c/[slug]`, `/p/[slug]`), Blog (`/blog`, `/blog/[slug]`) và khu vực quản trị (`/admin/*`) đã được triển khai trong `src/app`. Hero slider tự động chuyển slide sau mỗi 5 giây (5000 ms), bộ đếm khởi động lại sau thao tác điều hướng thủ công và các slide lặp vòng. Người dùng có thể tạm dừng hoặc tiếp tục bằng nút Pause/Play; tự động chuyển cũng tạm dừng khi con trỏ nằm trên slider hoặc khi focus nằm trong slider, và bị tắt hoàn toàn khi hệ thống bật prefers-reduced-motion: reduce. Vùng nội dung slide dùng aria-live="off" khi đang tự chuyển và "polite" khi đã dừng.
 
 ### 2.2. Mục tiêu hệ thống
 
