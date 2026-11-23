@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { findDisallowedLetters } from '../../scripts/check-language.mjs';
 
 const root = process.cwd();
 const read = (relativePath: string): string => readFileSync(path.join(root, relativePath), 'utf8');
@@ -63,6 +64,19 @@ describe('Superpowers process guard', () => {
         read(path.join('docs/reviews', file)),
         `${file} must name an exact skill id`,
       ).not.toMatch(/^\s*-\s+\*\*Skill:\*\*\s+superpowers\s*$/m);
+    }
+  });
+
+  it('keeps review records language-clean for the CI static check', () => {
+    const files = readdirSync(path.join(root, 'docs/reviews')).filter((file) =>
+      file.endsWith('.md'),
+    );
+    expect(files.length, 'review records must exist').toBeGreaterThan(0);
+    for (const file of files) {
+      expect(
+        findDisallowedLetters(read(path.join('docs/reviews', file))),
+        `${file} must use Vietnamese and English letters only`,
+      ).toEqual([]);
     }
   });
 

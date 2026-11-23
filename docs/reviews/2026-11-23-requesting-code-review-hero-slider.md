@@ -166,7 +166,7 @@ Route (app)                                 Revalidate  Expire
 ├ ◐ /admin/products
 ├ ◐ /admin/settings
 ├ ◐ /admin/users
-├ ƒ /api/admin/products/[productId]/images
+├ F /api/admin/products/[productId]/images
 ├ ○ /blog                                          15m      1y
 ├   /blog/[slug]                                   15m      1y
 │ ├ ◐ /blog/[slug]                                 15m      1y
@@ -183,14 +183,14 @@ Route (app)                                 Revalidate  Expire
 ├ ○ /ship                                          15m      1y
 ├ ○ /sitemap.xml                                   15m      1y
 ├ ○ /terms                                         15m      1y
-└ ƒ /uploads/[...path]
+└ F /uploads/[...path]
 
 
-ƒ Proxy (Middleware)
+F Proxy (Middleware)
 
 ○  (Static)             prerendered as static content
 ◐  (Partial Prerender)  prerendered as static HTML with dynamic server-streamed content
-ƒ  (Dynamic)            server-rendered on demand
+F  (Dynamic)            server-rendered on demand
 
 
 --- STDERR ---
@@ -208,7 +208,7 @@ EXIT=0
 
 ```
 
-Bản chép đầy đủ cũng nằm trong `docs/reviews/2026-11-23-remove-hero-pause-button-checks.txt`. Khi dán vào PR body, thay ký tự legend U+0192 (`ƒ`) bằng `F` và ghi chú ngắn theo rule 12.
+Bản chép đầy đủ cũng nằm trong `docs/reviews/2026-11-23-remove-hero-pause-button-checks.txt`. Ký tự legend U+0192 của Next.js đã được thay bằng `F` trong bản trích dẫn ở file này và trong PR body theo rule 12; file `.txt` giữ nguyên bản capture của build.
 
 ## Limitations
 

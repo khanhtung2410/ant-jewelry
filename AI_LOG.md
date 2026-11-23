@@ -1,3 +1,43 @@
+## 2026-11-23 16:47:41 +07:00 - Sửa PR 154: lỗi static check và xung đột merge
+
+### Prompt nguyên văn đã dùng
+
+> pr 154 is error, check why fail and fix (note that pr 155 is aabout ci and is done)
+
+Link review: `docs/reviews/2026-11-23-systematic-debugging-pr154.md`.
+
+### Đã tự kiểm chứng
+
+- Đọc `gh pr view 154 --json statusCheckRollup,mergeable` và `gh run view 45147984546 --log-failed`: chỉ job `static` đỏ, vì `npm run check:language` tìm thấy ký tự U+0192; `test`, `build`, `e2e` và Vercel đều xanh.
+- `gh pr view 155` xác nhận PR 155 đã MERGED, đúng feedback của chủ dự án; `git fetch origin` đưa `main` từ `d7a51e7` lên `24ff8a2`.
+- Đọc trọn `scripts/check-language.mjs`, `docs/reviews/2026-11-23-requesting-code-review-hero-slider.md`, `docs/ARCHITECTURE.md`, `AI_LOG.md`, `docs/CONTRIBUTING.md`, `docs/reviews/TEMPLATE.md` và `src/test/superpowers-process.test.ts` trước khi sửa.
+- `grep` ký tự U+0192 toàn repo: 9 lần ở 2 file; 5 lần trong file `.md` bị CI quét, 4 lần trong file `.txt` không bị quét vì `SCAN_EXTENSIONS` ở `scripts/check-language.mjs:28` không gồm `txt`.
+- `git merge origin/main --no-edit`: chỉ conflict ở `AI_LOG.md`; đã giữ cả hai entry PR 154 (`16:19:20`) và PR 155 (`16:04:27`) theo thứ tự mới trước cũ, commit merge `14452e8`.
+- RED: guard test mới `keeps review records language-clean for the CI static check` đỏ trên file review cũ với `expected [ U+0192 ] to deeply equal []`, EXIT=1. GREEN: sau khi thay ký tự, `npx vitest run src/test/superpowers-process.test.ts` → `Tests 8 passed (8)`, EXIT=0.
+- Full check set capture bằng Node `spawnSync` UTF-8 `NO_COLOR=1`: 8 lệnh đều `EXIT=0`, gồm `npm test` 84 files / 405 tests; output đầy đủ nằm trong file review.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong PR 154):** năm lần U+0192 trong `docs/reviews/2026-11-23-requesting-code-review-hero-slider.md` làm job `static` đỏ; đã thay bằng `F` và viết lại ghi chú theo rule 12.
+- **Accepted (sửa trong merge commit `14452e8` của `fix/remove-hero-pause-button`):** entry AI_LOG của PR 154 và PR 155 cùng chèn ở dòng 1 gây `CONFLICTING`; đã giữ cả hai, không viết lại nội dung verbatim.
+- **Accepted (sửa trong PR 154):** bằng chứng check:language trong PR body bị cũ so với commit docs cuối; đã thêm guard test trong `src/test/superpowers-process.test.ts` và chạy lại toàn bộ check set.
+- **Rejected:** viết lại bản capture `docs/reviews/2026-11-23-remove-hero-pause-button-checks.txt`; rule 9 cấm sửa nội dung verbatim lịch sử và file `.txt` không nằm trong `SCAN_EXTENSIONS`.
+- **Rejected:** mở lại quyết định a11y của PR 154; chủ dự án đã chọn "remove visible button only" và rule 10 yêu cầu tôn trọng sau khi kiểm chứng.
+
+### AI sai ở đâu
+
+- Tác giả PR 154 đã chạy full check set trước commit docs cuối `f6d7159`, rồi ghi `npm run check:language - EXIT=0` trong PR body; chính file review được thêm ở commit đó chứa ký tự U+0192, nên CI đỏ dù bằng chứng local nói xanh. Bài học: phải chạy lại check sau mỗi commit cuối, không dùng output cũ.
+- Đầu round này tôi dùng `&&` để nối lệnh trong PowerShell; PowerShell báo `The token '&&' is not a valid statement separator`, phải đổi sang `;`.
+- Capture helper đầu tiên gọi `spawnSync` với `npm.cmd` / `npx.cmd` mà thiếu `shell: true`, trả `EXIT=null` và không có stdout; thêm `shell: true` cùng `SIGNAL`/`ERROR` vào output thì capture đúng `EXIT=0` / `EXIT=1`.
+
+### Hạn chế
+
+- Chưa push nhánh tại thời điểm viết entry này, nên chưa có `gh pr checks 154` sau fix; review ghi rõ mục mergeable là `lacking evidence`.
+- Không chạy production check hay Vercel deploy thật; chỉ có build local và full check set như rule 7.
+- Không có distro WSL nên không dùng được script shell của Superpowers; dùng `git`, `gh` và Node `spawnSync` thay thế.
+
+---
+
 ## 2026-11-23 16:19:20 +07:00 - Bỏ nút pause khỏi hero slider
 
 ### Prompt nguyên văn đã dùng
