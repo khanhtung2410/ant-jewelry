@@ -1,3 +1,93 @@
+## 2026-11-23 15:11:05 +07:00 - C1: CI chạy đủ bộ kiểm tra và đổi tên workflow
+
+### Prompt nguyên văn đã dùng
+
+> You are a subagent spawned by another session.
+>
+> You are implementing Task 1: Complete CI, rename to ci.yml, enforce branch protection.
+>
+> ## Task Description
+>
+> Read your task brief first — it is your requirements, with the exact values to use verbatim:
+> C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\task-1-brief.md
+>
+> Also read the spec for binding context:
+> C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating\docs\superpowers\specs\2026-11-23-ci-deploy-gating-design.md
+>
+> ## Context
+>
+> You work in the git worktree at C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating on branch ci/full-checks-and-protection, already based on latest origin/main. This is the first of four sequential PRs. Node modules are installed; baseline `npm test` is green (389 tests). The task adds a Vitest guard test first (RED), then renames/rewrites the workflow (GREEN), then updates docs, AI_LOG and a review record.
+>
+> Controller ruling: do NOT perform the external branch-protection API call (brief Step 5). Leave that to the controller after your report; implement and verify all repo-side items, and note in your report that Step 5 is controller-owned. Do not fabricate protection evidence.
+>
+> ## Global constraints (binding)
+>
+> - Follow AGENTS.md in the worktree, especially rules 3-9 and 12: docs/AI_LOG updates, full check output with exit codes in the PR body later, Vietnamese/English letters only, check:language clean.
+> - Workflow `name:` must be exactly `ci`; jobs exactly `static`, `test`, `build`, `e2e`; required commands verbatim as in the brief.
+> - `push` restricted to `main`; `pull_request` for all PRs.
+> - Use TDD: write the failing guard test, run it to see it fail, then implement.
+> - Do not push, open PRs, or change GitHub settings. Commit locally only.
+>
+> ## Before You Begin
+>
+> If anything is unclear, ask before starting. Otherwise proceed.
+>
+> ## Your Job
+>
+> 1. Implement exactly the task's repo-side items.
+> 2. Write the test first and verify RED, then implement and verify GREEN.
+> 3. Run focused tests while iterating; run the full check set once before committing (lint, typecheck, test, format:check, build, check:language), capturing output via Node spawnSync UTF-8 NO_COLOR=1 if you record it.
+> 4. Commit with a Conventional Commits message.
+> 5. Self-review your diff.
+> 6. Write your full report to C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\task-1-report.md (what you did, RED/GREEN evidence with commands and output, files changed, concerns).
+>
+> ## You Do Not Dispatch Subagents
+>
+> Do all work yourself. Never spawn a subagent or reviewer.
+>
+> ## Report Back
+>
+> Return ONLY: Status (DONE / DONE_WITH_CONCERNS / BLOCKED / NEEDS_CONTEXT), commits (short SHA + subject), one-line test summary, concerns if any, report file path.
+
+Link review: `docs/reviews/2026-11-23-requesting-code-review-c1.md`.
+Link plan: `docs/superpowers/plans/2026-11-23-ci-deploy-gating.md`.
+Link brief: task-1-brief.md (outside the repository, in the agent temp directory).
+
+### Đã tự kiểm chứng
+
+- Đọc trọn `.github/workflows/ci.yml` (bản cũ `npm-ci.yml`), `package.json`, `vitest.config.mts`, `playwright.config.ts`, `scripts/check-language.mjs`, `docs/PERFORMANCE.md`, `docs/DEPLOY.md`, `docs/reviews/TEMPLATE.md`, entry `AI_LOG.md` mới nhất và spec.
+- `grep` chuỗi `npm-ci.yml` trong toàn repo: chỉ còn trong các bản ghi lịch sử (`AI_LOG.md` cũ, review 2026-11-19, spec, plan) và hai tài liệu sống đã sửa (`docs/PERFORMANCE.md`, `docs/DEPLOY.md`).
+- RED: `npm test -- src/test/ci-workflow.test.ts` khi chưa có `ci.yml` → `Tests 6 failed (6)`, lỗi đầu tiên `.github/workflows/ci.yml must exist: expected false to be true`.
+- GREEN: sau `git mv` và viết lại workflow, cùng lệnh → `Tests 7 passed (7)` (thêm 1 test cho chuỗi cài đặt sau self-review).
+- `npx prettier --check .github/workflows/ci.yml src/test/ci-workflow.test.ts` → `All matched files use Prettier code style!`.
+- Chạy đủ bộ lint, typecheck, test, format:check, build, check:language bằng Node `spawnSync` UTF-8 `NO_COLOR=1`, với hai bước chuẩn bị giống CI: `npx --no-install next typegen` (tsc cần `.next/types`) và `npm run db:push` (build cần schema SQLite), cùng `DATABASE_URL=file:./prisma/dev.db`; output đầy đủ nằm trong file review và task report.
+- Chạy thử `npm run build` khi chưa có `prisma/dev.db`: build vẫn `EXIT=0` nhưng log nhiều dòng `prisma:error ... The table main.Product does not exist`; đây là bằng chứng cho finding 9.
+- Không gọi `gh api` cho branch protection (quyết định của controller); không có bằng chứng protection nào được tạo.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong PR này):** thêm `permissions: contents: read`; mở rộng guard test để pin chuỗi `npm ci` → `db:generate` → `next typegen` trong cả bốn job, pin `npx playwright install --with-deps chromium`, `if: failure()` và hai đường dẫn artifact; cấm `branches:` trong block `pull_request`; thêm `npm run db:push` trước `npm run build` để job build chạy trên schema thật.
+- **Rejected (có lý do):** lặp bước cài đặt ở bốn job (cố ý, vì bốn job id là bốn required status check theo spec mục 8); pin action bằng SHA (giữ quy ước repo, cần quyết định của chủ dự án); thêm `timeout-minutes` (Playwright đã có timeout, là lựa chọn chi phí); escape regex trong helper `block` (mọi call site dùng literal); chấp nhận cả block style cho `branches` (brief pin nguyên văn `branches: [main]`).
+- Chi tiết từng finding, mức độ và cách tái hiện: `docs/reviews/2026-11-23-requesting-code-review-c1.md`.
+
+### AI sai ở đâu
+
+- Bản guard test đầu tiên chỉ kiểm bảy lệnh nên vẫn xanh nếu ai đó xóa `npm ci` hoặc `db:generate`; self-review phát hiện và thêm test chuỗi cài đặt.
+- Ban đầu job `test` không có `npx --no-install next typegen` dù brief ghi "same install steps"; guard test mới làm đỏ và tôi đã thêm bước này cho cả bốn job.
+- Viết assertion cho `if: failure()` bằng cách cắt chuỗi từ `uses: actions/upload-artifact@v4`, nhưng trong YAML `if:` nằm trước `uses:` nên đoạn cắt không bao giờ chứa dòng đó; đã đổi sang kiểm trong toàn block `e2e`.
+- Quên `permissions:` ở bản workflow đầu; thêm sau khi rà lại quyền của token.
+- Job `build` đầu tiên không có bước tạo schema: build vẫn xanh trên SQLite rỗng nhưng log đầy `prisma:error`. Chỉ phát hiện khi chạy `npm run build` thật với `DATABASE_URL`; đã thêm `npm run db:push` và ghi rõ đây là chỗ lệch so với danh sách literal của brief.
+
+### Hạn chế
+
+- Chưa chạy GitHub Actions thật, chưa có ảnh UI branch protection, chưa chứng minh nút Merge bị khóa; đây là việc của controller/chủ dự án sau khi PR được push.
+- Bước 5 của brief (gọi `gh api PUT .../protection`) không thực hiện trong task này; báo cáo ghi rõ là controller-owned.
+- Thêm bước `npm run db:push` vào job `build` (ngoài danh sách literal của brief) vì nếu không, build chạy trên SQLite rỗng, log `prisma:error` và vẫn xanh; đã ghi trong review finding 9 để controller quyết định giữ hay bỏ.
+- `npm run build` và `npm test` chạy trên Windows, không phải `ubuntu-latest`.
+- Không chạy `npm run test:e2e` trong bộ kiểm tra C1; job giữ nguyên lệnh và artifact như workflow cũ.
+
+---
+
 ## 2026-11-23 14:42:12 +07:00 - Spec và plan cho tách CI, deploy và migration
 
 ### Prompt nguyên văn đã dùng

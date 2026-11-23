@@ -1,0 +1,110 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# The workflow only reads the repository; keep the default token read-only.
+permissions:
+  contents: read
+
+env:
+  # prisma.config.ts reads env('DATABASE_URL') at load time; generate only
+  # needs a resolvable value, not a live database.
+  DATABASE_URL: file:./prisma/dev.db
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Clean install from lockfile
+        run: npm ci
+      - name: Generate Prisma Client (Prisma 7 does not do it automatically)
+        run: npm run db:generate
+      - name: Generate Next.js route types (needed by tsc on a clean checkout)
+        run: npx --no-install next typegen
+      - name: Lint
+        run: npm run lint
+      - name: Type check
+        run: npm run typecheck
+      - name: Check formatting
+        run: npm run format:check
+      - name: Check language rule
+        run: npm run check:language
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Clean install from lockfile
+        run: npm ci
+      - name: Generate Prisma Client (Prisma 7 does not do it automatically)
+        run: npm run db:generate
+      - name: Generate Next.js route types (needed by tsc on a clean checkout)
+        run: npx --no-install next typegen
+      - name: Unit and component tests
+        run: npm test
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Clean install from lockfile
+        run: npm ci
+      - name: Generate Prisma Client (Prisma 7 does not do it automatically)
+        run: npm run db:generate
+      - name: Generate Next.js route types (needed by tsc on a clean checkout)
+        run: npx --no-install next typegen
+      - name: Create the SQLite schema (the build collects page data from the database)
+        run: npm run db:push
+      - name: Production build
+        run: npm run build
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Clean install from lockfile
+        run: npm ci
+      - name: Generate Prisma Client (Prisma 7 does not do it automatically)
+        run: npm run db:generate
+      - name: Generate Next.js route types (needed by tsc on a clean checkout)
+        run: npx --no-install next typegen
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+      - name: Install Chromium for Playwright
+        run: npx playwright install --with-deps chromium
+      - name: E2E (production build, dedicated e2e.db)
+        run: npm run test:e2e
+      - name: Upload Playwright report and traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
