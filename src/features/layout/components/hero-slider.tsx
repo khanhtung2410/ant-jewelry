@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { HeroSlide } from '@/features/shared/domain/domain';
 import { shouldSkipImageOptimizer } from '@/features/shared/lib/image-url';
 import { isSafeLinkHref } from '@/features/shared/lib/safe-url';
@@ -12,10 +12,22 @@ interface HeroSliderProps {
   slides: HeroSlide[];
 }
 
+const AUTO_SLIDE_INTERVAL_MS = 5000;
+
 export function HeroSlider({ slides }: HeroSliderProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const currentIndex = Math.min(activeIndex, Math.max(slides.length - 1, 0));
   const activeSlide = slides[currentIndex];
+
+  useEffect(() => {
+    if (slides.length < 2) {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setActiveIndex((current) => (current + 1) % slides.length);
+    }, AUTO_SLIDE_INTERVAL_MS);
+    return () => window.clearTimeout(timer);
+  }, [currentIndex, slides.length]);
 
   if (!activeSlide) {
     return (
