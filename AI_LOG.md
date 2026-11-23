@@ -1,3 +1,52 @@
+## 2026-11-23 16:19:20 +07:00 - Bỏ nút pause khỏi hero slider
+
+### Prompt nguyên văn đã dùng
+
+> use new work tree, remove pause button workflow in hero slider (note: diffrent from customer figma)
+>
+> use A
+>
+> delete everything after done merging
+
+Link review: `docs/reviews/2026-11-23-requesting-code-review-hero-slider.md`.
+Link spec: `docs/superpowers/specs/2026-11-23-remove-hero-pause-button-design.md`.
+Link plan: `docs/superpowers/plans/2026-11-23-remove-hero-pause-button.md`.
+
+### Đã tự kiểm chứng
+
+- Đọc trọn `src/features/layout/components/hero-slider.tsx`, `hero-slider.auto-slide.test.tsx`, `hero-slider.test.tsx`, `e2e/hero-slider-a11y.spec.ts`, `docs/CONTRIBUTING.md`, `docs/ARCHITECTURE.md`, `docs/reviews/TEMPLATE.md` và entry AI_LOG cũ nhất trong work tree.
+- Phát hiện `main` local ở `86f286b`, thua `origin/main` ở `d7a51e7`; đã fetch và tạo nhánh `fix/remove-hero-pause-button` từ `origin/main` trong work tree mới.
+- Hỏi chủ dự án theo rule 11 vì nút pause là WAI-ARIA APG carousel pause control (WCAG 2.2.2). Chủ dự án chọn "remove visible button only" và chấp nhận khoảng trống a11y còn lại.
+- RED: test mới `does not render a pause or play control and announces while auto advancing` đỏ với thông báo `expected <button aria-label="Pause automatic slide changes"> to be null`. GREEN: `npx vitest run src/features/layout/components/hero-slider.auto-slide.test.tsx src/features/layout/components/hero-slider.test.tsx` → 16 passed, EXIT=0.
+- E2E: `npx playwright test e2e/hero-slider-a11y.spec.ts` → 2 passed trên desktop-chrome và pixel-7, EXIT=0.
+- Grep toàn `src/` sau khi sửa: chỉ còn assertion mới có chủ đích, không còn `isPlaying` hay nhãn pause/play nào khác.
+- Review độc lập bằng skill `requesting-code-review`: phát hiện `docs/ARCHITECTURE.md:72` vẫn mô tả nút Pause/Play; đã đọc trọn file và sửa.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong nhánh `fix/remove-hero-pause-button`):** `docs/ARCHITECTURE.md:72` còn quảng cáo nút Pause/Play đã bị xóa; đã sửa thành mô tả các cơ chế tạm dừng không hiển thị.
+- **Accepted (sửa trong nhánh `fix/remove-hero-pause-button`):** plan ghi Review Focus rằng e2e còn kiểm tra không có nút pause, trong khi Task 2 đã xóa assertion đó; đã sửa lại cho đúng.
+- **Accepted (xếp lịch ở nhánh follow-up `fix/hero-slider-test-name`):** tên test mới dùng cụm "announces while auto advancing" trong khi assertion kiểm tra `aria-live="off"`; chỉ là tên gây hiểu nhầm, không đổi hành vi, nên không đưa vào đợt sửa này.
+- **Rejected:** yêu cầu thêm lại nút pause hoặc cơ chế thay thế; chủ dự án đã chọn phạm vi "remove visible button only" và rule 10 yêu cầu tôn trọng quyết định đó sau khi đã kiểm chứng.
+- **Rejected:** sửa các bản ghi lịch sử `AI_LOG.md:213` và `docs/reviews/2026-11-23-receiving-code-review.md:30`; spec Non-goals cấm viết lại nội dung verbatim cũ.
+
+### AI sai ở đâu
+
+- Dùng cú pháp bash `$()` trong PowerShell khi detect worktree; PowerShell báo lỗi và phải viết lại bằng biến `$gitDir`, `$gitCommon`.
+- Để tool worktree native tạo worktree ở detached HEAD trên `main` local đã lỗi thời; phải chuyển sang `origin/main` và tạo nhánh mới trước khi làm việc.
+- Viết Review Focus trong plan với nhận định e2e vẫn pin assertion "không có nút pause", nhưng chính Task 2 lại xóa assertion đó; reviewer phải chỉ ra mâu thuẫn.
+- Bỏ sót `docs/ARCHITECTURE.md:72` trong danh sách file cần cập nhật dù rule 3 bắt buộc sửa docs khi đổi hành vi.
+- Đặt tên test mới với cụm từ diễn tả ngược contract (`aria-live="off"`); reviewer xếp Minor, đã ghi lịch thay vì sửa ngay.
+
+### Hạn chế
+
+- Còn khoảng trống WCAG 2.2.2: không còn điều khiển pause cố định, dễ tìm cho người không hover/focus slider. Đây là quyết định của chủ dự án, không phải lỗi sót.
+- Không có distro WSL nên các script shell của Superpowers (`sdd-workspace`, `task-start`, `task-done`, `review-package`) không chạy được; workspace và ledger được tạo thủ công theo cùng cấu trúc.
+- Không chạy production check trực tiếp trên môi trường deploy; chỉ có kết quả build local và e2e local.
+- Chưa xóa worktree và nhánh local vì chủ dự án sẽ merge PR trước, sau đó mới dọn theo đúng phạm vi đã chọn.
+
+---
+
 ## 2026-11-23 15:11:05 +07:00 - C1: CI chạy đủ bộ kiểm tra và đổi tên workflow
 
 ### Prompt nguyên văn đã dùng
