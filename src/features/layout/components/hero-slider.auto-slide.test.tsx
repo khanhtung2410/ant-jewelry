@@ -62,6 +62,40 @@ const slides: HeroSlide[] = [
   },
 ];
 
+const sixSlides: HeroSlide[] = [
+  ...slides,
+  {
+    slide_id: 'slide-4',
+    imageUrl: '/mock/hero/slide-4.svg',
+    alt: 'Featured collection 4',
+    title: 'Collection 4',
+    subtitle: 'Collection description 4',
+    linkUrl: '/c/collection-4',
+    sortOrder: 4,
+    status: 'VISIBLE',
+  },
+  {
+    slide_id: 'slide-5',
+    imageUrl: '/mock/hero/slide-5.svg',
+    alt: 'Featured collection 5',
+    title: 'Collection 5',
+    subtitle: 'Collection description 5',
+    linkUrl: '/c/collection-5',
+    sortOrder: 5,
+    status: 'VISIBLE',
+  },
+  {
+    slide_id: 'slide-6',
+    imageUrl: '/mock/hero/slide-6.svg',
+    alt: 'Featured collection 6',
+    title: 'Collection 6',
+    subtitle: 'Collection description 6',
+    linkUrl: '/c/collection-6',
+    sortOrder: 6,
+    status: 'VISIBLE',
+  },
+];
+
 function activeDot(): string | null {
   const dots = screen.queryAllByRole('button', { name: /Go to slide/ });
   return (
@@ -142,5 +176,31 @@ describe('HeroSlider auto slide', () => {
 
     unmount();
     expect(vi.getTimerCount()).toBe(baseline);
+  });
+
+  it('keeps advancing when the slides prop shrinks while mounted', () => {
+    const { rerender } = render(<HeroSlider slides={sixSlides} />);
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(activeDot()).toBe('Go to slide 5');
+
+    rerender(<HeroSlider slides={sixSlides.slice(0, 3)} />);
+    expect(activeDot()).toBe('Go to slide 3');
+
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(activeDot()).toBe('Go to slide 1');
   });
 });

@@ -24,7 +24,7 @@ export function HeroSlider({ slides }: HeroSliderProps) {
       return;
     }
     const timer = window.setTimeout(() => {
-      setActiveIndex((current) => (current + 1) % slides.length);
+      setActiveIndex((current) => (Math.min(current, slides.length - 1) + 1) % slides.length);
     }, AUTO_SLIDE_INTERVAL_MS);
     return () => window.clearTimeout(timer);
   }, [currentIndex, slides.length]);
