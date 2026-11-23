@@ -263,7 +263,13 @@ migration mới `20261118100000_add_product_image_blobs` trước/sau khi deploy
 
 1. Provision PostgreSQL và cấu hình `DATABASE_URL`, `AUTH_SECRET`,
    `SITE_URL`, `PRODUCT_IMAGE_UPLOAD_DIR` trong môi trường production (`DIRECT_URL` không bắt buộc).
-2. Deploy Production lên Vercel; `vercel.json` dùng `npm run build:production`, tự động chạy
+   Đặt `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` trong GitHub Environment `production`
+   (không đặt ở cấp repository).
+2. Deploy Production lên Vercel qua GitHub Actions: sau khi workflow `ci` xanh trên `main`,
+   `.github/workflows/deploy.yml` chạy Vercel CLI (`pull` → `build --prod` →
+   `deploy --prebuilt --prod`). Git integration của Vercel đã tắt
+   (`vercel.json`: `"git": { "deploymentEnabled": false }`).
+   `vercel.json` dùng `npm run build:production`, tự động chạy
    `prisma migrate deploy` trước `next build` (chỉ ở Production; Preview bỏ qua vì dùng chung DB).
    Có thể chạy migration thủ công bằng `npm run db:migrate:production` và
    `npm run db:migrate:status:production` với URL **direct** (`db.prisma.io`, không dùng pooled).
