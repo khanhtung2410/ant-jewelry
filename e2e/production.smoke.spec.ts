@@ -35,17 +35,26 @@ test(
   async ({ page, request, baseURL }) => {
     await page.goto('/p/ivy-tennis-bracelet', { waitUntil: 'domcontentloaded' });
 
-    const sources = await page
-      .locator('img[src*="/uploads/"]')
-      .evaluateAll((images) =>
-        images
-          .map((image) => image.getAttribute('src'))
-          .filter((src): src is string => Boolean(src)),
-      );
-    expect(sources.length, 'at least one uploaded image').toBeGreaterThan(0);
+    // next/image serves local uploads through the optimizer: the rendered src
+    // is "/_next/image?url=%2Fuploads%2F..." and the selected srcset candidate
+    // is in currentSrc. A literal img[src*="/uploads/"] selector matches none.
+    const sources = await page.locator('img').evaluateAll((images) =>
+      images
+        .map((image) => {
+          const element = image as HTMLImageElement;
+          return element.currentSrc || element.getAttribute('src') || '';
+        })
+        .filter((src) => src.includes('/uploads/') || src.includes('%2Fuploads%2F')),
+    );
+    // The optimizer response has no ETag; the stored /uploads/ blob does.
+    const uploadUrls = [...new Set(sources)].map((source) => {
+      const parsed = new URL(source, baseURL);
+      const inner = parsed.searchParams.get('url');
+      return inner ? new URL(inner, baseURL).toString() : parsed.toString();
+    });
+    expect(uploadUrls.length, 'at least one uploaded image').toBeGreaterThan(0);
 
-    for (const source of [...new Set(sources)]) {
-      const url = new URL(source, baseURL).toString();
+    for (const url of uploadUrls) {
       const response = await request.get(url);
 
       expect(response.status(), `${url} status`).toBe(200);
