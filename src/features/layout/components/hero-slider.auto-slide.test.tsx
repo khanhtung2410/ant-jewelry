@@ -273,7 +273,6 @@ describe('HeroSlider auto slide', () => {
     });
     expect(activeDot()).toBe('Go to slide 1');
     expect(container.querySelector('[aria-live]')?.getAttribute('aria-live')).toBe('polite');
-    expect(screen.queryByRole('button', { name: /automatic slide changes/i })).toBeNull();
   });
 
   it('stops auto advancing when the reduced motion preference changes', () => {
@@ -292,25 +291,10 @@ describe('HeroSlider auto slide', () => {
     expect(activeDot()).toBe('Go to slide 1');
   });
 
-  it('pauses and resumes from the Pause/Play button and updates the live region', () => {
+  it('does not render a pause or play control and announces while auto advancing', () => {
     const { container } = render(<HeroSlider slides={slides} />);
-    const liveRegion = () => container.querySelector('[aria-live]');
 
-    expect(liveRegion()?.getAttribute('aria-live')).toBe('off');
-    fireEvent.click(screen.getByRole('button', { name: 'Pause automatic slide changes' }));
-    expect(liveRegion()?.getAttribute('aria-live')).toBe('polite');
-    expect(screen.getByRole('button', { name: 'Resume automatic slide changes' })).toBeTruthy();
-
-    act(() => {
-      vi.advanceTimersByTime(10000);
-    });
-    expect(activeDot()).toBe('Go to slide 1');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Resume automatic slide changes' }));
-    expect(liveRegion()?.getAttribute('aria-live')).toBe('off');
-    act(() => {
-      vi.advanceTimersByTime(5000);
-    });
-    expect(activeDot()).toBe('Go to slide 2');
+    expect(screen.queryByRole('button', { name: /automatic slide changes/i })).toBeNull();
+    expect(container.querySelector('[aria-live]')?.getAttribute('aria-live')).toBe('off');
   });
 });
