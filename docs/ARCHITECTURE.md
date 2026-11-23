@@ -983,13 +983,13 @@ Deployment target: Next.js + PostgreSQL cho production; ảnh sản phẩm đư�
 - `SITE_URL`: canonical HTTPS origin của website.
 - `PRODUCT_IMAGE_UPLOAD_DIR`: (tùy chọn) đường dẫn thư mục lưu ảnh sản phẩm; mặc định `./uploads`. Phải có quyền ghi và bền vững ở production nếu cần giữ ảnh đã upload.
 
-Không commit credentials, passwords, tokens hoặc secrets vào Git repository. Lưu production values trong Vercel Environment Variables hoặc secret manager.
+Không commit credentials, passwords, tokens hoặc secrets vào Git repository. Lưu production values trong Vercel Environment Variables hoặc secret manager. Deploy production đọc `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` từ GitHub Environment `production`; đây là ba secret duy nhất trong GitHub, còn biến runtime của app vẫn nằm trong Vercel.
 
 ### 14.2. Database và triển khai
 
 - Local development/test tiếp tục dùng `prisma/schema.prisma` (SQLite).
 - Production client và migrations dùng `prisma/postgresql/schema.prisma` cùng migration directory riêng trong `prisma/postgresql/migrations/`.
-- Vercel dùng `npm run build:production` để sinh Prisma Client cho PostgreSQL trước khi build ứng dụng.
+- Vercel dùng `npm run build:production` để sinh Prisma Client cho PostgreSQL trước khi build ứng dụng. Git integration của Vercel đã tắt (`git.deploymentEnabled: false`); `.github/workflows/deploy.yml` deploy bằng Vercel CLI (`pull`, `build --prod`, `deploy --prebuilt --prod`) sau khi workflow `ci` xanh trên `main`.
 - Áp dụng migrations trước khi chuyển traffic; không chạy `prisma db push` hoặc demo seed trên production.
 - Tạo ADMIN đầu tiên bằng `npm run db:create-admin:production`, nhập password tương tác thay vì lưu trong repository hay command history.
 - Sao lưu PostgreSQL trước migration; nếu cần rollback, phục hồi backup hoặc triển khai forward-fix, không sửa migration đã áp dụng.

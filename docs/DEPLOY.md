@@ -53,6 +53,7 @@ Nếu vượt ngưỡng dung lượng hoặc cache HIT không cải thiện, m�
 ## Prerequisites
 
 - Vercel project connected to this repository (production environment). CLI nên dùng npm 10.9.9 (`packageManager`); npm 12 cũng được hỗ trợ vì `package.json` đã khai báo `allowScripts` cho `better-sqlite3`, `esbuild`, `prisma`, `@prisma/engines`. Kiểm tra lại bằng `npm install-scripts ls` sau mỗi lần nâng dependency.
+- GitHub Environment `production` chứa ba secret `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (chủ dự án đặt bằng `gh secret set --env production <name>`; không lưu giá trị trong repo và không đặt ở cấp repository).
 - PostgreSQL database with an application URL (`DATABASE_URL`). A separate direct URL (`DIRECT_URL`) is optional and not required by the current schema/build.
 - A real, monitored owner email for the first ADMIN (not `admin@antjewelry.local`).
 - Decide whether production starts empty or needs the demo catalogue. `npm run db:seed` is local SQLite only; production may use `npm run db:seed:production`, which seeds categories, products, blog posts, hero slides and settings but **never** the demo users.
@@ -71,19 +72,33 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 
 `vercel.json` runs `npm run build:production`: it generates the PostgreSQL Prisma client, applies pending migrations on **Production** Vercel builds (`scripts/migrate-production.mjs` → `prisma migrate deploy`), then runs `next build`. Local builds skip migrations. A production build now fails if the database is unreachable instead of deploying an app with no schema. Migrations can still be run manually (see below). Local dev/test use SQLite and write image bytes into that SQLite database's `ProductImageBlob` table — there is no filesystem upload path anymore; `PRODUCT_IMAGE_UPLOAD_DIR` only reads/removes legacy files from older versions.
 
-### Quyết định A3 — tắt Preview deploy
+### Deploy credentials (GitHub Environment `production`)
 
-**Lựa chọn:** chỉ deploy nhánh `main`; mọi branch/PR khác không tạo Preview deployment. Cấu hình trong `vercel.json`:
+`vercel.json` tắt Git deployment, nên `.github/workflows/deploy.yml` là nơi duy nhất deploy production. Workflow đọc ba secret của Environment `production`:
+
+| Secret | Purpose |
+|---|---|
+| `VERCEL_TOKEN` | Token của Vercel CLI |
+| `VERCEL_ORG_ID` | ID team/user trên Vercel |
+| `VERCEL_PROJECT_ID` | ID project trên Vercel |
+
+Không đặt ba giá trị này ở cấp repository. Chủ dự án đặt bằng `gh secret set --env production VERCEL_TOKEN` (tương tự hai biến còn lại) và kiểm tra tên bằng `gh api repos/<owner>/<repo>/environments/production/secrets`. Các biến runtime (`DATABASE_URL`, `AUTH_SECRET`, `SITE_URL`) vẫn chỉ nằm trong Vercel; workflow lấy chúng qua `vercel pull --environment=production`, không nhân bản sang GitHub.
+
+### Quyết định A3 — tắt toàn bộ Git deployment của Vercel
+
+**Lựa chọn:** Vercel không tự deploy từ Git cho bất kỳ nhánh nào. Cấu hình trong `vercel.json`:
 
 ```json
-"git": { "deploymentEnabled": { "main": true, "*": false } }
+"git": { "deploymentEnabled": false }
 ```
 
-**Lý do:** Preview từng trỏ tới cùng `DATABASE_URL` với Production và **không chạy migration** (`scripts/migrate-production.mjs` chỉ chạy trên build Production). Một Server Action hoặc upload từ Preview vì thế có thể ghi vào dữ liệu thật. Việc tách DB riêng cho Preview (lựa chọn khác) đòi thêm database + secrets + migration cho mỗi branch — tốn kém hơn nhiều so với việc chỉ giữ một môi trường có quyền ghi. Tắt Preview ở cấp nền tảng loại bỏ hoàn toàn đường ghi đó mà không cần thêm hạ tầng hay thay đổi code.
+Production chỉ được deploy bởi `.github/workflows/deploy.yml`, chạy sau khi workflow `ci` trên `main` kết thúc thành công.
 
-**Đánh đổi:** không còn URL preview tự động để reviewer xem thay đổi giao diện. Thay vào đó dùng `npm run build` local + `npm run test:screenshots` (6 ảnh desktop 1920px cho bảng R6.3) và `npm run test:e2e`, rồi smoke production sau khi merge `main`. Các kiểm tra này đã có trong repo và được dán output vào PR.
+**Lý do:** Trước đây Preview dùng chung `DATABASE_URL` với Production và **không chạy migration** (`scripts/migrate-production.mjs` chỉ chạy trên build Production), nên một Server Action hoặc upload từ Preview có thể ghi vào dữ liệu thật. Tắt Preview ở cấp nền tảng loại bỏ đường ghi đó mà không cần thêm database hay secrets. Đồng thời, khi Git integration còn bật cho `main`, mỗi push lên `main` tạo deployment ngay, không chờ CI, nên một commit đỏ vẫn lên Production và có thể đã đổi schema. Chuyển trigger sang `workflow_run` của workflow `ci` là cách duy nhất bảo đảm chỉ commit đã xanh mới được deploy; job `verify-ci` còn so `github.event.workflow_run.head_sha` với tip hiện tại của `main` để không deploy commit cũ khi có push mới trong lúc CI đang chạy.
 
-Cấu hình có hiệu lực sau lần deploy áp dụng `vercel.json`; không cần thay đổi biến môi trường. Nếu sau này bật lại Preview, bắt buộc cấp `DATABASE_URL` riêng (Neon branch) trước.
+**Đánh đổi:** không còn URL preview tự động để reviewer xem thay đổi giao diện; dùng `npm run build` local, `npm run test:e2e` và `npm run test:screenshots` (6 ảnh desktop 1920px cho bảng R6.3) thay thế. Deploy production phụ thuộc GitHub Actions và ba secret trong Environment `production` (xem mục "Deploy credentials"); nếu workflow lỗi trước bước deploy, production giữ nguyên bản cũ.
+
+Cấu hình có hiệu lực sau lần deploy đầu tiên áp dụng `vercel.json` mới; từ đó dashboard Vercel không còn deployment nguồn Git, chỉ có deployment do CLI tạo từ Actions. Nếu sau này bật lại Preview, bắt buộc cấp `DATABASE_URL` riêng (Neon branch) trước.
 
 ## Vercel deployment sequence
 
@@ -105,7 +120,18 @@ Cấu hình có hiệu lực sau lần deploy áp dụng `vercel.json`; không c
    npm run db:seed:production
    ```
    Upserts the demo categories, products, blog posts, hero slides and settings from the mocks. It refuses a SQLite URL, skips the demo `admin@antjewelry.local` / `editor@antjewelry.local` accounts, and is safe to re-run. Use the **direct** `db.prisma.io` string. If you seed after a deploy, redeploy (or wait for the 15-minute revalidate) so cached empty pages are regenerated.
-4. **Deploy** from Vercel (connected repo/branch). Build uses PostgreSQL Prisma client. `generateStaticParams` for blog/category/product slugs returns empty params if tables are missing (`P2021`) so a build can complete before data exists, but migrations should be applied for correct runtime data.
+4. **Deploy** bằng GitHub Actions, không phải Git integration của Vercel:
+   - Merge PR vào `main` sau khi bốn check `static`, `test`, `build`, `e2e` xanh. Workflow `ci` chạy lại trên `main`.
+   - Khi `ci` kết thúc, `.github/workflows/deploy.yml` nhận event `workflow_run`; job `verify-ci` chỉ cho đi tiếp khi `conclusion == 'success'` và commit của run đúng là tip hiện tại của `main`.
+   - Job `deploy` chạy trong Environment `production` (dừng chờ approval nếu Environment có required reviewers) với đúng ba lệnh:
+     ```bash
+     npx --yes vercel@66.6.0 pull --environment=production
+     npx --yes vercel@66.6.0 build --prod
+     npx --yes vercel@66.6.0 deploy --prebuilt --prod
+     ```
+     `vercel pull` lấy biến runtime từ Vercel; GitHub chỉ giữ ba secret của Vercel. Build dùng PostgreSQL Prisma client. `generateStaticParams` cho blog/category/product trả params rỗng khi bảng chưa có (`P2021`) nên build vẫn xong trước khi có dữ liệu, nhưng migration phải được áp dụng để dữ liệu runtime đúng.
+   - Không chạy `vercel --prod` tay từ máy cá nhân cho luồng thường; chỉ dùng khi rollback/khẩn cấp và ghi lại lý do.
+   - Sau deploy, chạy `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` và checklist bước 6.
 5. **Create the first ADMIN** (after migrations):
    ```bash
    npm run db:create-admin:production
@@ -257,7 +283,7 @@ If `next build` fails during page data collection with:
 | Vercel deployment accessible | [x] | 6 URL public + `/admin/login` trả 200 ngày 2026-11-18; ảnh chụp trong [`docs/deploy-screenshots/`](deploy-screenshots/) |
 | Vercel + PostgreSQL provisioned, env vars đúng, không lọt secret | [ ] | Cần ảnh/xuất danh sách biến trong Vercel dashboard (đã che giá trị). Repo chỉ có `.env.example`; production render được dữ liệu → gián tiếp chứng tỏ `DATABASE_URL` hoạt động |
 | `SITE_URL` đúng origin production | [x] | `curl https://ant-jewelry.vercel.app/` có `<link rel="canonical" href="https://ant-jewelry.vercel.app"/>` (6 lần xuất hiện origin trong HTML) |
-| A3 — Preview không ghi vào DB Production | [x] | `vercel.json` đặt `git.deploymentEnabled = { main: true, "*": false }`; chỉ deploy `main`. Quyết định + lý do ở mục "Quyết định A3" phía trên. Có hiệu lực sau lần deploy áp dụng config |
+| A3 — không còn deploy tự động từ Git, chỉ Actions sau CI | [x] (repo) / [ ] (live) | `vercel.json` đặt `git.deploymentEnabled = false`; `.github/workflows/deploy.yml` chỉ chạy từ `workflow_run` của `ci` trên `main`, có guard SHA. Bằng chứng repo: `src/test/deploy-workflow.test.ts`. Bằng chứng live (dashboard Vercel không còn deployment nguồn Git, một run Actions CI → deploy) cần chủ dự án cung cấp sau khi merge và đặt ba secret Environment |
 | Migration đã áp dụng, status sạch | [ ] | Cần output thật của `npm run db:migrate:status:production` (chạy với `DATABASE_URL` direct). Không thể tự lấy từ môi trường agent |
 | Script E1/B6 backfill ảnh legacy đã chạy | [ ] | Bắt buộc nếu DB có blob cũ: chạy `npx tsx scripts/reencode-legacy-uploads.ts --dry-run` rồi lệnh thật với `DATABASE_URL` direct; dán output số blob + ETag mới. Cho đến khi chạy, các blob có `etag = NULL` vẫn phải đọc bytes để trả 304 (đúng nhưng chậm hơn). Không nằm trong `prisma migrate deploy` vì cần sharp + cập nhật URL `?v=2` |
 | ADMIN đầu tiên bằng email thật | [ ] | Cần ảnh trang admin sau khi đăng nhập bằng tài khoản ADMIN vừa tạo (`db:create-admin:production`) |
