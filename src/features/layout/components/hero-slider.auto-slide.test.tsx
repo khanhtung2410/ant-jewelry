@@ -104,11 +104,30 @@ function activeDot(): string | null {
   );
 }
 
+function stubReducedMotion(matches: boolean): (next: boolean) => void {
+  let current = matches;
+  const listeners = new Set<() => void>();
+  const mediaQueryList = {
+    get matches() {
+      return current;
+    },
+    media: '(prefers-reduced-motion: reduce)',
+    addEventListener: (_type: string, listener: () => void) => listeners.add(listener),
+    removeEventListener: (_type: string, listener: () => void) => listeners.delete(listener),
+  };
+  vi.stubGlobal('matchMedia', () => mediaQueryList);
+  return (next: boolean) => {
+    current = next;
+    listeners.forEach((listener) => listener());
+  };
+}
+
 describe('HeroSlider auto slide', () => {
   beforeEach(() => vi.useFakeTimers());
 
   afterEach(() => {
     cleanup();
+    vi.unstubAllGlobals();
     vi.useRealTimers();
   });
 
@@ -202,5 +221,96 @@ describe('HeroSlider auto slide', () => {
       vi.advanceTimersByTime(5000);
     });
     expect(activeDot()).toBe('Go to slide 1');
+  });
+
+  it('pauses auto slide while the pointer is over the slider', () => {
+    const { container } = render(<HeroSlider slides={slides} />);
+    const carousel = container.querySelector('section')!;
+
+    act(() => {
+      vi.advanceTimersByTime(4000);
+    });
+    fireEvent.mouseEnter(carousel);
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(activeDot()).toBe('Go to slide 1');
+
+    fireEvent.mouseLeave(carousel);
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(activeDot()).toBe('Go to slide 2');
+  });
+
+  it('pauses auto slide while focus is inside the slider and resumes when focus leaves', () => {
+    render(<HeroSlider slides={slides} />);
+    const firstDot = screen.getByRole('button', { name: 'Go to slide 1' });
+
+    act(() => {
+      firstDot.focus();
+    });
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(activeDot()).toBe('Go to slide 1');
+
+    act(() => {
+      firstDot.blur();
+    });
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(activeDot()).toBe('Go to slide 2');
+  });
+
+  it('never auto slides when the user prefers reduced motion', () => {
+    stubReducedMotion(true);
+    const { container } = render(<HeroSlider slides={slides} />);
+
+    act(() => {
+      vi.advanceTimersByTime(20000);
+    });
+    expect(activeDot()).toBe('Go to slide 1');
+    expect(container.querySelector('[aria-live]')?.getAttribute('aria-live')).toBe('polite');
+    expect(screen.queryByRole('button', { name: /automatic slide changes/i })).toBeNull();
+  });
+
+  it('stops auto advancing when the reduced motion preference changes', () => {
+    const setReducedMotion = stubReducedMotion(false);
+    render(<HeroSlider slides={slides} />);
+
+    act(() => {
+      vi.advanceTimersByTime(4000);
+    });
+    act(() => {
+      setReducedMotion(true);
+    });
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(activeDot()).toBe('Go to slide 1');
+  });
+
+  it('pauses and resumes from the Pause/Play button and updates the live region', () => {
+    const { container } = render(<HeroSlider slides={slides} />);
+    const liveRegion = () => container.querySelector('[aria-live]');
+
+    expect(liveRegion()?.getAttribute('aria-live')).toBe('off');
+    fireEvent.click(screen.getByRole('button', { name: 'Pause automatic slide changes' }));
+    expect(liveRegion()?.getAttribute('aria-live')).toBe('polite');
+    expect(screen.getByRole('button', { name: 'Resume automatic slide changes' })).toBeTruthy();
+
+    act(() => {
+      vi.advanceTimersByTime(10000);
+    });
+    expect(activeDot()).toBe('Go to slide 1');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Resume automatic slide changes' }));
+    expect(liveRegion()?.getAttribute('aria-live')).toBe('off');
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(activeDot()).toBe('Go to slide 2');
   });
 });

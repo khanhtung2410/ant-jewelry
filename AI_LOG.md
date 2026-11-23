@@ -1,3 +1,83 @@
+## 2026-11-23 14:17:48 +07:00 - Đưa toàn bộ output kiểm tra vào PR body và thêm rule
+
+### Prompt nguyên văn đã dùng
+
+> rewrite pr body, you dont haave full output
+> add to rules
+
+Link review: `docs/reviews/2026-11-23-receiving-code-review.md`.
+
+### Đã tự kiểm chứng
+
+- Đọc lại mục Testing trong template PR của `docs/CONTRIBUTING.md`: yêu cầu dán output đầy đủ của các lệnh vào sau tick, không phải chỉ dẫn link tới file review.
+- TDD: thêm guard test `requires the full check output inside the pull request body` trong `src/test/superpowers-process.test.ts`, quan sát đỏ vì rule 12 chưa tồn tại, rồi thêm rule 12 vào `AGENTS.md` và thấy xanh 7/7.
+- Lấy nguyên văn output của full check set từ `spawnSync` UTF-8, `NO_COLOR=1`; bản ghi đầy đủ nằm ở `docs/reviews/2026-11-23-receiving-code-review.md`. Thay ký tự legend U+0192 bằng F và ghi chú để giữ rule 9.
+- Viết lại PR body với phần Testing chứa toàn bộ stdout/stderr và từng dòng `EXIT=0`, rồi cập nhật PR #150 bằng `gh`.
+- Chạy lại toàn bộ check set sau khi đổi rule và test; output được cập nhật trong file review.
+
+### Findings được nhận / bác
+
+- **Accepted:** yêu cầu đưa full output vào PR body và thêm rule tương ứng; thực hiện trên nhánh `fix/hero-slider-a11y-pause-controls`, PR #150.
+- **Rejected:** không có.
+
+### AI sai ở đâu
+
+- PR body ban đầu chỉ ghi "output đầy đủ trong file review" rồi liệt kê các dòng EXIT=0; như vậy là mới chỉ dẫn link và tóm tắt, không đúng yêu cầu của template PR.
+- Tôi từng cho rằng đưa output vào file review là đủ, trong khi yêu cầu là bản thân PR body phải có output đó.
+- Khi thêm rule mới, ban đầu định sửa trực tiếp `AGENTS.md`; đã đổi sang viết guard test trước để quan sát màu đỏ rồi mới sửa rule.
+
+### Hạn chế
+
+- Không chạy production smoke vì không có quyền truy cập deploy trong task này.
+- Output dán vào PR body là bản đã thay U+0192 bằng F; output gốc và ghi chú nằm trong file review.
+
+---
+
+## 2026-11-23 14:05:59 +07:00 - Thêm rule a11y và sửa hero slider có nút dừng
+
+### Prompt nguyên văn đã dùng
+
+> add rule
+>  Một yêu cầu bắt buộc về a11y không được bỏ qua chỉ vì spec không nhắc tới. Ít nhất phải hỏi lại chủ dự án.
+> example curent error
+> H1 — Không có cách dừng slide tự chuyển. hero-slider.tsx đổi slide mỗi 5 giây và lặp mãi. Không có nút Pause, không dừng khi hover hoặc focus vào slider, không tôn trọng prefers-reduced-motion. Như vậy vi phạm WCAG 2.2.2 (Pause, Stop, Hide), và mẫu carousel của WAI-ARIA APG cũng yêu cầu có nút dừng. axe không bắt được lỗi này nên E2E vẫn pass. Reviewer trong docs/reviews/2026-11-23-requesting-code-review.md:24,37-38 đã nêu, nhưng bị bỏ qua với lý do "non-goal / spec không nói". Một yêu cầu bắt buộc về a11y không được bỏ qua chỉ vì spec không nhắc tới. Ít nhất phải hỏi lại chủ dự án.
+>
+> recommend fix
+> Thêm: nút Pause/Play (aria-label đổi theo trạng thái); dừng khi hover và khi focus nằm trong slider; không tự chuyển nếu prefers-reduced-motion: reduce; khi đang tự chuyển, vùng slide đặt aria-live="off", khi dừng thì "polite". Test fake timer cho từng trường hợp + một E2E bằng page.emulateMedia({ reducedMotion: 'reduce' }).
+> after fix add test
+
+Link review: `docs/reviews/2026-11-23-receiving-code-review.md`.
+
+### Đã tự kiểm chứng
+
+- Đọc trọn `src/features/layout/components/hero-slider.tsx`, cả hai file test, `docs/reviews/2026-11-23-requesting-code-review.md` (dòng 24, 37-38), `AGENTS.md`, `docs/reviews/TEMPLATE.md`, `docs/CONTRIBUTING.md`, `docs/ARCHITECTURE.md` và tài liệu Next.js local `01-app/01-getting-started/05-server-and-client-components.md` trước khi sửa.
+- Xác nhận nguyên nhân gốc: effect cũ ở `hero-slider.tsx:22-30` lên lịch `setTimeout` vô điều kiện, không có trạng thái tạm dừng, không đọc media query và không xử lý hover/focus; axe chỉ quét DOM nên không phát hiện WCAG 2.2.2.
+- TDD: viết 5 unit test fake timer và 2 E2E test trước khi sửa; quan sát 5 unit test và 2 E2E test đỏ đúng lý do tính năng chưa có, rồi implement và thấy 16 unit test / 4 E2E test (hai project) xanh.
+- Sửa một lỗi ngay trong test E2E mới: ban đầu khẳng định `aria-live="off"` khi con trỏ và focus còn nằm trên nút Resume; đã buông focus và di chuyển chuột trước khi khẳng định, vì `aria-live` phản ánh trạng thái tự chuyển thực tế.
+- Thêm rule 11 vào `AGENTS.md` và cập nhật mô tả hiện trạng tại `docs/ARCHITECTURE.md:72`.
+- Chạy toàn bộ check set với output bắt qua `spawnSync` UTF-8, `NO_COLOR=1`; chi tiết trong file review.
+
+### Findings được nhận / bác
+
+- **Accepted:** finding H1 từ owner feedback, sửa trên nhánh `fix/hero-slider-a11y-pause-controls` gồm nút Pause/Play, dừng khi hover/focus, tôn trọng prefers-reduced-motion, aria-live đổi theo trạng thái, 5 unit test và 2 E2E test; đồng thời thêm rule 11 vào `AGENTS.md`.
+- **Accepted:** lỗi test E2E do chính tôi viết sai thứ tự khẳng định, sửa trong cùng nhánh.
+- **Rejected:** không có finding nào bị bác.
+
+### AI sai ở đâu
+
+- Review trước đó tại `docs/reviews/2026-11-23-requesting-code-review.md:24,37-38` đã ghi nhận pause-on-hover/focus là "non-goal" và prefers-reduced-motion là "spec silent" rồi bỏ qua; đó là sai vì yêu cầu a11y bắt buộc không được đóng với lý do như vậy khi chưa hỏi chủ dự án.
+- Tôi từng coi việc axe và E2E pass là đủ để kết luận a11y ổn, trong khi axe không phát hiện được WCAG 2.2.2.
+- Ở E2E mới tôi nhầm giữa trạng thái người dùng chọn (`isPlaying`) và trạng thái tự chuyển thực tế, dẫn đến khẳng định `aria-live` sai thời điểm.
+- Ban đầu chỉ định ẩn nút Pause khi reduced motion; phải đọc lại source mới thấy cần thêm điều kiện `slides.length >= 2` để không render nút vô tác dụng.
+
+### Hạn chế
+
+- Không chạy production smoke trên site đã deploy vì không có quyền truy cập trong task này.
+- Phát hiện prefers-reduced-motion phụ thuộc `window.matchMedia` của trình duyệt; unit test dùng stub, E2E dùng `page.emulateMedia`.
+- Lượt review này chỉ gồm owner feedback và đối chiếu checklist có sẵn, không có phát hiện độc lập mới ngoài checklist.
+
+---
+
 ## 2026-11-23 10:37:48 +07:00 - Ghi nhận hành vi tự động chuyển slide của hero slider
 
 ### Prompt nguyên văn đã dùng

@@ -34,6 +34,16 @@ describe('Superpowers process guard', () => {
     }
   });
 
+  it('requires the full check output inside the pull request body', () => {
+    const agents = read('AGENTS.md');
+    const rule12 = agents.split('\n').find((line) => /^12\.\s/.test(line));
+    expect(rule12, 'AGENTS.md must have item 12 in the standing list').toBeDefined();
+
+    for (const token of ['PR body', 'full check output', 'EXIT=', 'spawnSync', 'NO_COLOR=1']) {
+      expect(rule12, `rule 12 must contain ${token}`).toContain(token);
+    }
+  });
+
   it('requires the review template with its mandatory sections', () => {
     const template = read('docs/reviews/TEMPLATE.md');
     expect(template).toContain('- **Skill:** <exact skill id>');

@@ -16,18 +16,39 @@ const AUTO_SLIDE_INTERVAL_MS = 5000;
 
 export function HeroSlider({ slides }: HeroSliderProps) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+  const [isFocusWithin, setIsFocusWithin] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const currentIndex = Math.min(activeIndex, Math.max(slides.length - 1, 0));
   const activeSlide = slides[currentIndex];
 
   useEffect(() => {
-    if (slides.length < 2) {
+    const query =
+      typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)')
+        : null;
+    if (!query) {
+      return;
+    }
+    const update = () => setPrefersReducedMotion(query.matches);
+    update();
+    query.addEventListener('change', update);
+    return () => query.removeEventListener('change', update);
+  }, []);
+
+  const isAutoAdvancing =
+    slides.length >= 2 && isPlaying && !isHovered && !isFocusWithin && !prefersReducedMotion;
+
+  useEffect(() => {
+    if (!isAutoAdvancing) {
       return;
     }
     const timer = window.setTimeout(() => {
       setActiveIndex((current) => (Math.min(current, slides.length - 1) + 1) % slides.length);
     }, AUTO_SLIDE_INTERVAL_MS);
     return () => window.clearTimeout(timer);
-  }, [currentIndex, slides.length]);
+  }, [isAutoAdvancing, currentIndex, slides.length]);
 
   if (!activeSlide) {
     return (
@@ -41,7 +62,19 @@ export function HeroSlider({ slides }: HeroSliderProps) {
   }
 
   return (
-    <section aria-label="Featured collections" aria-roledescription="carousel" className="w-full">
+    <section
+      aria-label="Featured collections"
+      aria-roledescription="carousel"
+      className="w-full"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onFocus={() => setIsFocusWithin(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setIsFocusWithin(false);
+        }
+      }}
+    >
       <div className="relative aspect-[16/9] overflow-hidden bg-product-image sm:aspect-[2/1] lg:aspect-[64/30]">
         <Image
           src={activeSlide.imageUrl}
@@ -55,7 +88,7 @@ export function HeroSlider({ slides }: HeroSliderProps) {
           className="object-cover object-left"
         />
 
-        <div className="sr-only">
+        <div className="sr-only" aria-live={isAutoAdvancing ? 'off' : 'polite'}>
           <p>{activeSlide.title}</p>
           <p>{activeSlide.subtitle}</p>
         </div>
@@ -102,6 +135,38 @@ export function HeroSlider({ slides }: HeroSliderProps) {
             />
           ))}
         </div>
+        {slides.length >= 2 && !prefersReducedMotion ? (
+          <button
+            type="button"
+            aria-label={
+              isPlaying ? 'Pause automatic slide changes' : 'Resume automatic slide changes'
+            }
+            onClick={() => setIsPlaying((playing) => !playing)}
+            className="absolute right-4 bottom-4 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/70 bg-black/30 text-white transition-colors hover:bg-black/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
+          >
+            {isPlaying ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+                className="h-4 w-4"
+              >
+                <path d="M7 5h3v14H7zM14 5h3v14h-3z" />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+                className="h-4 w-4"
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            )}
+          </button>
+        ) : null}
       </div>
     </section>
   );
