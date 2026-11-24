@@ -16,7 +16,6 @@ const AUTO_SLIDE_INTERVAL_MS = 5000;
 
 export function HeroSlider({ slides }: HeroSliderProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
   const [isHovered, setIsHovered] = useState(false);
   const [isFocusWithin, setIsFocusWithin] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
@@ -38,7 +37,7 @@ export function HeroSlider({ slides }: HeroSliderProps) {
   }, []);
 
   const isAutoAdvancing =
-    slides.length >= 2 && isPlaying && !isHovered && !isFocusWithin && !prefersReducedMotion;
+    slides.length >= 2 && !isHovered && !isFocusWithin && !prefersReducedMotion;
 
   useEffect(() => {
     if (!isAutoAdvancing) {
@@ -135,38 +134,6 @@ export function HeroSlider({ slides }: HeroSliderProps) {
             />
           ))}
         </div>
-        {slides.length >= 2 && !prefersReducedMotion ? (
-          <button
-            type="button"
-            aria-label={
-              isPlaying ? 'Pause automatic slide changes' : 'Resume automatic slide changes'
-            }
-            onClick={() => setIsPlaying((playing) => !playing)}
-            className="absolute right-4 bottom-4 inline-flex h-7 w-7 items-center justify-center rounded-full border border-white/70 bg-black/30 text-white transition-colors hover:bg-black/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--control-outline)]"
-          >
-            {isPlaying ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden="true"
-                className="h-4 w-4"
-              >
-                <path d="M7 5h3v14H7zM14 5h3v14h-3z" />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                aria-hidden="true"
-                className="h-4 w-4"
-              >
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            )}
-          </button>
-        ) : null}
       </div>
     </section>
   );
