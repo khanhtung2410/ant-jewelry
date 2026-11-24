@@ -1,3 +1,74 @@
+## 2026-11-24 17:31:34 +07:00 - Follow-up: thay CLI rollback bang REST alias API
+
+### Prompt nguyên văn đã dùng
+
+> You are a subagent spawned by another session.
+> Implement a follow-up fix for the rollback step in `.github/workflows/deploy.yml`.
+>
+> ## Root cause (verified live)
+>
+> In deploy run 45372736476, `vercel rollback <host>` failed with `Error: User not found. (404)` because this team token cannot resolve a user for CLI commands `rollback`, `inspect` and `promote`. Project-scoped REST calls work. I verified this exact API call succeeds and rolls back production:
+>
+> POST https://api.vercel.com/v2/deployments/{deploymentId}/aliases?teamId={VERCEL_ORG_ID}
+> Authorization: Bearer {VERCEL_TOKEN}
+> Content-Type: application/json
+> body: {"alias":"ant-jewelry.vercel.app"}
+> Response 200 included `oldDeploymentId` (the bad deployment) and the alias now points to the previous good one.
+>
+> Also verified: SITE_URL was missing from the Vercel project, causing canonical `http://localhost:3000` and smoke failure. The controller has now added SITE_URL as a plain config env var in Vercel Production (`https://ant-jewelry.vercel.app`), so the next build should fix canonical.
+>
+> ## Required repo-side changes
+>
+> 1. In the `deploy` job's "Capture the current production deployment before promotion" step, also output the previous deployment **id** (`previous_id`) alongside `previous_url`, from the same `vercel ls --prod --json` data (field `uid`). Keep `previous_url`.
+> 2. In the `rollback` job, replace the failing `vercel rollback` CLI call with a project-scoped REST call using `curl` (or Node fetch) to the aliases endpoint above. Use `needs.deploy.outputs.previous_id` and the alias host derived from `${{ vars.SITE_URL }}` (strip the `https://` prefix). Keep `VERCEL_TOKEN` and `VERCEL_ORG_ID` from the Environment. Fail the step on non-2xx.
+> 3. For `workflow_dispatch` drills, add an input `previous_deployment_id` and use it when provided; keep the existing `previous_deployment_url` input for display/compat. Document this in `docs/DEPLOY.md`.
+> 4. Update guard tests (`src/test/smoke-rollback.test.ts`, `src/test/deploy-workflow.test.ts`) RED→GREEN to pin the new API-based rollback, `previous_id` output, and drill input.
+> 5. Add a short dated AI_LOG correction entry (do not rewrite historical entries) explaining the CLI user-resolution failure and the REST alias workaround.
+> 6. Update `docs/DEPLOY.md` rollback section: manual rollback now uses the REST alias endpoint (or Vercel dashboard promotion), and note that CLI rollback is unreliable with team-only tokens.
+>
+> ## Constraints
+>
+> - Work in C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating on branch ci/fix-rollback-api, based on origin/main.
+> - Do NOT push, open PRs, or change live Vercel/GitHub settings. Do NOT write secret values into files.
+> - Only Vietnamese and English letters in written text; follow AGENTS.md rules.
+> - No subagents. TDD RED→GREEN. Run full check set once before committing via Node spawnSync with DATABASE_URL=file:./prisma/dev.db.
+> - Write report to C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\fix-rollback-report.md and return ONLY status, commit, test summary, concerns, report path.
+
+Link review: `docs/reviews/2026-11-24-test-driven-development-fix-rollback-api.md`. Link lượt trước: `docs/reviews/2026-11-24-test-driven-development.md`.
+
+### Đã tự kiểm chứng
+
+- Đọc trọn `.github/workflows/deploy.yml`, hai guard test, `docs/DEPLOY.md` mục deploy/rollback, `docs/ARCHITECTURE.md:994`, `docs/CONTRIBUTING.md`, `docs/reviews/TEMPLATE.md`, `scripts/check-language.mjs`, `package.json`, entry AI_LOG gần nhất và skill `test-driven-development` theo đúng id.
+- `git rev-parse HEAD` và `git rev-parse origin/main` đều trả `0ae74f6c5c6dfcd8f3b0731f5c5c0d8cde6dcb8f`; nhánh `ci/fix-rollback-api` sạch, không push, không mở PR, không đổi setting live.
+- `grep previous_url|vercel rollback|previous_deployment_url|previous_id|vars.SITE_URL` trước khi sửa để tìm mọi consumer; sau khi sửa, workflow không còn lệnh `vercel rollback`, URL vẫn chỉ để hiển thị.
+- RED: thêm bốn assertion mới (hai file guard) rồi chạy Vitest qua Node `spawnSync` → `Tests 4 failed | 19 passed (23)`, `EXIT=1`. Lỗi đúng là thiếu `previous_id`, thiếu endpoint REST và thiếu input drill.
+- GREEN: cùng lệnh sau khi sửa workflow → `Test Files 2 passed (2)`, `Tests 23 passed (23)`, `EXIT=0`. Một assertion về JSON body được chỉnh cho khớp chuỗi escape trong shell; vẫn pin đúng field `alias` và biến `$alias_host`.
+- Flow test.parse YAML: tám job, output `previous_id`, input drill, đường dẫn `deploy.outputs.previous_id` → `rollback.env`, và `SITE_URL` → host `ant-jewelry.vercel.app` → body `{"alias":"ant-jewelry.vercel.app"}`; 18 dòng `PASS`, `FLOW=PASS`, `EXIT=0`.
+- Full check set chạy một lần bằng Node `spawnSync` UTF-8 `NO_COLOR=1`, `DATABASE_URL=file:./prisma/dev.db`: bảy lệnh đều `EXIT=0`; `npm test` có `Tests 425 passed (425)`; `lint`, `typecheck`, `format:check` sạch. Output đầy đủ lưu tại `docs/reviews/2026-11-24-test-driven-development-fix-rollback-api.md`.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong nhánh `ci/fix-rollback-api`):** capture thêm `uid` thành `previous_id`, giữ nguyên `previous_url`; rollback gọi alias REST API theo teamId và fail trên non-2xx.
+- **Accepted (sửa trong nhánh `ci/fix-rollback-api`):** input drill `previous_deployment_id` được dùng khi chạy `workflow_dispatch`; `previous_deployment_url` chỉ còn để hiển thị/đối chiếu.
+- **Accepted (sửa trong nhánh `ci/fix-rollback-api`):** guard test, `docs/DEPLOY.md`, `docs/ARCHITECTURE.md` và entry này được cập nhật; không viết lại entry lịch sử.
+- **Rejected:** push, mở PR, chạy drill hay đổi secret/Environment live; điều phối viên sở hữu và task cấm rõ ràng.
+- **Rejected:** giữ `vercel rollback` làm fallback trong workflow; lệnh trả 404 với token của team nên fallback thật là promote trên dashboard, đã ghi trong docs.
+
+### AI sai ở đâu
+
+- Thiết kế C4 dùng CLI `vercel rollback "$PREVIOUS_URL"` làm cơ chế duy nhất; read-only `--help` hồi đó là đủ để tin lệnh hợp lệ nhưng không chứng minh token của team resolve được user. Live run 45372736476 trả `Error: User not found. (404)`. Repository giờ dùng REST call có `teamId`, đúng phạm vi token.
+- Ban đầu guard test chỉ pin URL rollback; khi đổi sang REST thì không còn giá trị để gọi API. Phải capture `uid` ngay từ bước `ls --prod --json` thay vì suy ra từ URL.
+- Assertion JSON body lúc đầu viết dạng không escape, lệch với `-d "{\"alias\":\"$alias_host\"}"` trong shell; đã sửa assertion theo đúng implementation đã chọn, không hạ yếu yêu cầu.
+
+### Hạn chế
+
+- Không có live run mới của `deploy.yml` sau fix; endpoint REST đã được điều phối viên xác nhận trước khi giao task, còn workflow chỉ được kiểm chứng bằng guard test, flow test và parse YAML.
+- Không chạy smoke production, rollback/drill thật, không push hay mở PR; mọi thay đổi là repo-side, commit local.
+- Full check set chạy trên Windows với SQLite, không phải `ubuntu-latest` của Actions.
+- Không ghi giá trị secret nào vào file; chỉ nhắc tên `VERCEL_TOKEN`, `VERCEL_ORG_ID` và biến `SITE_URL`.
+
+---
+
 ## 2026-11-24 16:49:37 +07:00 - Follow-up: su deploy skip khi approval bi bo qua
 
 ### Prompt nguyên văn đã dùng

@@ -136,6 +136,29 @@ describe('production deploy guard', () => {
     }
   });
 
+  it('rolls back with the Vercel alias REST endpoint instead of the CLI', () => {
+    const content = readWorkflow();
+    const rollback = block(block(content, 'jobs'), 'rollback', 2);
+
+    expect(rollback, 'the rollback job must exist').not.toBe('');
+    expect(rollback, 'team-only tokens cannot resolve a CLI user for rollback').not.toContain(
+      'rollback "$PREVIOUS_URL"',
+    );
+    expect(rollback, 'the alias API is scoped by the team id').toContain(
+      'https://api.vercel.com/v2/deployments/$PREVIOUS_ID/aliases?teamId=$VERCEL_ORG_ID',
+    );
+    expect(rollback, 'the alias host must come from the canonical origin').toContain(
+      'SITE_URL: ${{ vars.SITE_URL }}',
+    );
+    expect(rollback, 'the https prefix must be stripped before calling the API').toContain(
+      '${SITE_URL#https://}',
+    );
+    expect(rollback).toContain('{\\"alias\\":\\"$alias_host\\"}');
+    expect(content, 'SITE_URL stays an Environment variable, never a secret').not.toContain(
+      'secrets.SITE_URL',
+    );
+  });
+
   it('checks pending migrations before the migration and deploy jobs', () => {
     const jobs = block(readWorkflow(), 'jobs');
     const check = block(jobs, 'check-migrations', 2);
