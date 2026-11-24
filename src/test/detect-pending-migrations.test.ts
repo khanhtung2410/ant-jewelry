@@ -27,7 +27,15 @@ describe('hasPendingMigrations', () => {
     expect(hasPendingMigrations('No pending migrations')).toBe(false);
   });
 
-  it('treats empty output as having no pending migrations', () => {
-    expect(hasPendingMigrations('')).toBe(false);
+  it('treats no migration file message as having no pending migrations', () => {
+    expect(hasPendingMigrations('No migration found in prisma/migrations')).toBe(false);
+  });
+
+  it('treats empty output as pending so the approval gate cannot be skipped', () => {
+    expect(hasPendingMigrations('')).toBe(true);
+  });
+
+  it('treats unknown output as pending when Prisma changes its wording', () => {
+    expect(hasPendingMigrations('A Prisma status line we do not recognise')).toBe(true);
   });
 });

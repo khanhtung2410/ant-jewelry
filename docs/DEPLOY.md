@@ -67,14 +67,13 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 | `DATABASE_URL` | Yes | PostgreSQL connection string for runtime and Prisma client generation; also mirrored as a direct string in the GitHub `production` Environment for build, status and migration |
 | `AUTH_SECRET` | Yes | Random signing key for admin sessions (`node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"`) |
 | `SITE_URL` | Yes | Canonical HTTPS origin for the deployment (e.g. `https://<project>.vercel.app`) |
-| `DIRECT_URL` | No | Optional; not required by the current PostgreSQL schema/build. Provide only if your migration/tooling setup needs it |
 | `PRODUCT_IMAGE_UPLOAD_DIR` | No | Legacy filesystem path used only to read/remove pre-migration uploads (default `./uploads`) |
 
 `vercel.json` runs `npm run build:production`: it generates the PostgreSQL Prisma client, then runs `next build`. The build never changes the database schema. Migrations run as a separate, approved job in `.github/workflows/deploy.yml` before `vercel build` and `vercel deploy` (see "Migration gate and backward compatibility" below). Local dev/test use SQLite and write image bytes into that SQLite database's `ProductImageBlob` table — there is no filesystem upload path anymore; `PRODUCT_IMAGE_UPLOAD_DIR` only reads/removes legacy files from older versions.
 
 ### Deploy credentials (GitHub Environment `production`)
 
-`vercel.json` tắt Git deployment, nên `.github/workflows/deploy.yml` là nơi duy nhất deploy production. Workflow đọc ba secret của Environment `production`:
+`vercel.json` tắt Git deployment, nên `.github/workflows/deploy.yml` là nơi duy nhất deploy production. Workflow đọc bốn secret của Environment `production`:
 
 | Secret | Purpose |
 |---|---|
@@ -96,7 +95,7 @@ Production chỉ được deploy bởi `.github/workflows/deploy.yml`, chạy sa
 
 **Lý do:** Trước đây Preview dùng chung `DATABASE_URL` với Production và **không chạy migration** (trước C3, migration chỉ nằm trong build Production), nên một Server Action hoặc upload từ Preview có thể ghi vào dữ liệu thật. Tắt Preview ở cấp nền tảng loại bỏ đường ghi đó mà không cần thêm database hay secrets. Đồng thời, khi Git integration còn bật cho `main`, mỗi push lên `main` tạo deployment ngay, không chờ CI, nên một commit đỏ vẫn lên Production và có thể đã đổi schema. Chuyển trigger sang `workflow_run` của workflow `ci` là cách duy nhất bảo đảm chỉ commit đã xanh mới được deploy; job `verify-ci` còn so `github.event.workflow_run.head_sha` với tip hiện tại của `main` để không deploy commit cũ khi có push mới trong lúc CI đang chạy.
 
-**Đánh đổi:** không còn URL preview tự động để reviewer xem thay đổi giao diện; dùng `npm run build` local, `npm run test:e2e` và `npm run test:screenshots` (6 ảnh desktop 1920px cho bảng R6.3) thay thế. Deploy production phụ thuộc GitHub Actions và ba secret trong Environment `production` (xem mục "Deploy credentials"); nếu workflow lỗi trước bước deploy, production giữ nguyên bản cũ.
+**Đánh đổi:** không còn URL preview tự động để reviewer xem thay đổi giao diện; dùng `npm run build` local, `npm run test:e2e` và `npm run test:screenshots` (6 ảnh desktop 1920px cho bảng R6.3) thay thế. Deploy production phụ thuộc GitHub Actions và bốn secret trong Environment `production` (xem mục "Deploy credentials"); nếu workflow lỗi trước bước deploy, production giữ nguyên bản cũ.
 
 Cấu hình có hiệu lực sau lần deploy đầu tiên áp dụng `vercel.json` mới; từ đó dashboard Vercel không còn deployment nguồn Git, chỉ có deployment do CLI tạo từ Actions. Nếu sau này bật lại Preview, bắt buộc cấp `DATABASE_URL` riêng (Neon branch) trước.
 
@@ -190,14 +189,23 @@ export VERCEL_TOKEN=...
 export VERCEL_ORG_ID=...
 # GET https://api.vercel.com/v1/aliases/<alias>?teamId=$VERCEL_ORG_ID
 # lay deploymentId cua deployment ma alias production dang tro toi.
-curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" \
-  "https://api.vercel.com/v1/aliases/ant-jewelry.vercel.app?teamId=$VERCEL_ORG_ID"
+response="$(curl -sS -w '\n%{http_code}' \
+  -H "Authorization: Bearer $VERCEL_TOKEN" \
+  "https://api.vercel.com/v1/aliases/ant-jewelry.vercel.app?teamId=$VERCEL_ORG_ID")"
+status="$(echo "$response" | tail -n 1)"
+body="$(echo "$response" | sed '$d')"
+echo "HTTP $status"
+echo "$body"
 # Chuyen alias ve deploymentId da chon.
-curl -sS -X POST \
+response="$(curl -sS -w '\n%{http_code}' -X POST \
   -H "Authorization: Bearer $VERCEL_TOKEN" \
   -H 'Content-Type: application/json' \
   -d '{"alias":"ant-jewelry.vercel.app"}' \
-  "https://api.vercel.com/v2/deployments/<previous-id>/aliases?teamId=$VERCEL_ORG_ID"
+  "https://api.vercel.com/v2/deployments/<previous-id>/aliases?teamId=$VERCEL_ORG_ID")"
+status="$(echo "$response" | tail -n 1)"
+body="$(echo "$response" | sed '$d')"
+echo "HTTP $status"
+echo "$body"
 ```
 
 Chọn `<previous-id>` từ trường `deploymentId` của GET alias ở trên, đối chiếu với `previous_id` trong log của job `deploy` trước khi chạy; `deployment.url` là URL để đối chiếu với `previous_url`. Kiểm tra HTTP 2xx và response có `oldDeploymentId` (deployment xấu vừa bị thay) trước khi coi rollback là xong. Sau rollback, chạy lại `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` và ghi kết quả vào PR/phần recovery; nếu vẫn đỏ, chuyển sang forward-fix thay vì cố rollback lần nữa.
@@ -347,7 +355,7 @@ If `next build` fails during page data collection with:
 | Vercel deployment accessible | [x] | 6 URL public + `/admin/login` trả 200 ngày 2026-11-18; ảnh chụp trong [`docs/deploy-screenshots/`](deploy-screenshots/) |
 | Vercel + PostgreSQL provisioned, env vars đúng, không lọt secret | [ ] | Cần ảnh/xuất danh sách biến trong Vercel dashboard (đã che giá trị). Repo chỉ có `.env.example`; production render được dữ liệu → gián tiếp chứng tỏ `DATABASE_URL` hoạt động |
 | `SITE_URL` đúng origin production | [x] | `curl https://ant-jewelry.vercel.app/` có `<link rel="canonical" href="https://ant-jewelry.vercel.app"/>` (6 lần xuất hiện origin trong HTML) |
-| A3 — không còn deploy tự động từ Git, chỉ Actions sau CI | [x] (repo) / [ ] (live) | `vercel.json` đặt `git.deploymentEnabled = false`; `.github/workflows/deploy.yml` chỉ chạy từ `workflow_run` của `ci` trên `main`, có guard SHA. Bằng chứng repo: `src/test/deploy-workflow.test.ts`. Bằng chứng live (dashboard Vercel không còn deployment nguồn Git, một run Actions CI → deploy) cần chủ dự án cung cấp sau khi merge và đặt ba secret Environment |
+| A3 — không còn deploy tự động từ Git, chỉ Actions sau CI | [x] (repo) / [ ] (live) | `vercel.json` đặt `git.deploymentEnabled = false`; `.github/workflows/deploy.yml` chỉ chạy từ `workflow_run` của `ci` trên `main`, có guard SHA. Bằng chứng repo: `src/test/deploy-workflow.test.ts`. Bằng chứng live (dashboard Vercel không còn deployment nguồn Git, một run Actions CI → deploy) cần chủ dự án cung cấp sau khi merge và đặt bốn secret Environment |
 | Migration đã áp dụng, status sạch | [ ] | Cần output thật của `npm run db:migrate:status:production` (chạy với `DATABASE_URL` direct). Không thể tự lấy từ môi trường agent |
 | Script E1/B6 backfill ảnh legacy đã chạy | [ ] | Bắt buộc nếu DB có blob cũ: chạy `npx tsx scripts/reencode-legacy-uploads.ts --dry-run` rồi lệnh thật với `DATABASE_URL` direct; dán output số blob + ETag mới. Cho đến khi chạy, các blob có `etag = NULL` vẫn phải đọc bytes để trả 304 (đúng nhưng chậm hơn). Không nằm trong `prisma migrate deploy` vì cần sharp + cập nhật URL `?v=2` |
 | ADMIN đầu tiên bằng email thật | [ ] | Cần ảnh trang admin sau khi đăng nhập bằng tài khoản ADMIN vừa tạo (`db:create-admin:production`) |

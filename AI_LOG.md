@@ -1,3 +1,279 @@
+## 2026-11-24 22:30:34 +07:00 - Scoped re-review va PR cho final fix wave
+
+### Prompt nguyên văn đã dùng
+
+> You are re-reviewing one fix round. A previous review produced findings; an implementer has attempted to fix them. Your job is to verdict each finding and inspect the fix diff - nothing else.
+>
+> Working directory: C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating
+>
+> ## The Task
+>
+> Read the task brief: C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\final-fix-brief.md
+>
+> ## The Findings Under Verification
+>
+> - **Important** - `scripts/detect-pending-migrations.mjs:14-16,32-46`, `src/test/detect-pending-migrations.test.ts:14-16`, `.github/workflows/deploy.yml:266-269,310-311`: Empty or unrecognised `prisma migrate status` output returns `false`; the CLI exits 0, `approval` is skipped, and `migrate` applies the migration without a reviewer. Reproduction: feed empty or unknown output to `hasPendingMigrations`; it returns false. The controller ruled that the spec's C3 requirement (pause for approval when a migration is pending) wins over the plan's "empty output -> false", so empty or unknown output must be treated as pending while explicit no-pending markers stay false, and a failed status command must still exit non-zero.
+> - **Important** - `docs/DEPLOY.md:56,70,77,99,350` and `README.md:70`: The runbook says three Environment secrets at three places while the workflow needs four, and still offers a `DIRECT_URL` row in two files, contrary to the owner decision. Reproduction: read the Deploy credentials section and the README env table.
+> - **Minor** - `docs/DEPLOY.md:193-203`: Manual rollback tells the operator to check HTTP 2xx and `oldDeploymentId`, but the `curl` commands do not print the HTTP status. Reproduction: run the documented command; the status code is not visible.
+>
+> ## The Fix
+>
+> Read the implementer's report: C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\final-fix-report.md
+>
+> **Fix base:** d51174b (the head the previous review saw)
+> **Head:** 846f11d5fe0c5094adf5e96f019e49d2c5cb43da
+> **Diff file:** C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\final-fix-rereview.md
+>
+> Read the diff file once - it contains the fix commit, a stat summary, and the fix diff with surrounding context. Do not re-run git commands. If the diff file is missing, fetch the diff yourself: `git diff --stat d51174b..846f11d` and `git diff d51174b..846f11d`.
+>
+> Your review is read-only on this checkout. Do not mutate the working tree, the index, HEAD, or branch state in any way.
+>
+> ## Project review requirements (binding)
+>
+> - Re-read the whole source of every file you use as evidence, and grep every consumer of a value that changed, before you accept or reject a finding. The diff alone is not enough for an "ADDRESSED" verdict on documentation or workflow semantics.
+> - For every "pass" claim, point to a named test or captured output; if there is no evidence, say so explicitly instead of assuming.
+> - Everything you write must use only Vietnamese and English letters (plus digits, punctuation, symbols). No other letter is allowed.
+>
+> ## You Do Not Dispatch Subagents
+>
+> Do all of this review yourself. Never spawn a subagent to review part of the diff, and never spawn another reviewer for a second opinion. If the diff feels too large for one pass, review it in passes yourself and say so in your report.
+>
+> ## Scope
+>
+> Your scope is the findings list and the fix diff. Verdict every finding. Inspect the fix diff for new problems the fix itself introduced. Do NOT re-review code the fix did not touch: if you notice an issue entirely outside the fix diff, report it under Out-of-Scope Observations - it does not block this task and does not extend the loop.
+>
+> ## Tests
+>
+> The implementer re-ran the tests covering the amended code and appended the results to the report file. Treat the report as unverified claims: confirm the fix report names the covering tests and shows their output, and verify the claims against the diff. Do not re-run the suite to confirm their report. Run a test only when reading the code raises a specific doubt that no existing run answers - and then a focused test, never a package-wide suite.
+>
+> ## Output Format
+>
+> Your final message is the report itself: begin directly with the first finding's verdict. Every line is a verdict, a finding with file:line, or a check you ran - no preamble, no process narration.
+>
+> ### Finding Verdicts
+>
+> For each finding in The Findings Under Verification, in order:
+> - **[finding one-liner]** - ADDRESSED | NOT ADDRESSED, with file:line evidence. "Attempted" is not addressed: the specific defect must no longer exist.
+>
+> ### New Breakage in the Fix Diff
+>
+> Anything the fix itself broke or introduced, with severity (Critical/Important/Minor) and file:line. "None" if clean.
+>
+> ### Out-of-Scope Observations
+>
+> Issues you noticed entirely outside the fix diff. Non-blocking; the controller ledgers these for the final record. "None" if none.
+>
+> ### Verdict
+>
+> **Fix round:** [All findings addressed, no new Critical/Important breakage | Findings remain open] - list the open ones.
+
+Link review: `docs/reviews/2026-11-24-subagent-driven-development-final-fix-wave.md`. Link final review: `docs/reviews/2026-11-24-requesting-code-review-final.md`.
+
+### Đã tự kiểm chứng
+
+- Dispatch một reviewer fresh-context theo đúng skill id `subagent-driven-development` với diff `d51174b..846f11d`, task brief, fix report và ba finding. Reviewer đọc trọn `.github/workflows/deploy.yml`, `scripts/detect-pending-migrations.mjs`, hai file test, `docs/DEPLOY.md`, `README.md`, `docs/ARCHITECTURE.md` và grep consumer của `hasPendingMigrations`, bốn tên secret và `DIRECT_URL`.
+- Verdict: cả ba finding ADDRESSED, không có Critical/Important mới. Ba Minor mới đều là độ chính xác của record và độ mạnh của guard; tôi sửa cả ba trong cùng nhánh.
+- Đọc lại `.env.example` và phát hiện dòng `DIRECT_URL` tùy chọn vẫn còn, trong khi `README.md` nói bảng của nó liệt kê biến trong `.env.example`; đã bỏ khối đó và thêm guard để `.env.example` không còn `DIRECT_URL`.
+- Tăng guard manual rollback: ngoài `%{http_code}`, khẳng định cả `tail -n 1`, `sed '$d'` và `echo "HTTP $status"` trong mục `### Manual rollback`.
+- Chạy focused `vitest run src/test/deploy-workflow.test.ts src/test/detect-pending-migrations.test.ts` đạt `Test Files 2 passed (2)`, `Tests 27 passed (27)`, `EXIT=0`; chạy lại toàn bộ check set trên cây cuối và nhúng đầy đủ output vào file review cùng PR body.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong `fix/ci-fail-closed-migrations`):** N1 - ba trích dẫn `docs/DEPLOY.md:133` đổi thành `:132` trong `AI_LOG.md` và record fix wave.
+- **Accepted (sửa trong `fix/ci-fail-closed-migrations`):** N2 - guard manual rollback khẳng định cả phần tách status và dòng `HTTP $status`; bỏ `DIRECT_URL` khỏi `.env.example` và thêm guard tương ứng.
+- **Accepted (sửa trong `fix/ci-fail-closed-migrations`):** N3 - trích dẫn `src/test/detect-pending-migrations.test.ts:30-32` đổi thành `:34-40`.
+- **Accepted (sửa trong `fix/ci-fail-closed-migrations`):** O1 - `.env.example` không còn khối `DIRECT_URL` tùy chọn.
+- **Rejected:** O2 - không sửa câu `DIRECT_URL` ở dòng 11 của spec; đó là hồ sơ thiết kế lịch sử, quyết định của chủ dự án ở dòng 40 và tài liệu sống đã thay thế, rule 3 cấm sửa hồ sơ cũ.
+- **Rejected:** O3 - không sửa các record lịch sử còn ghi ba secret; không phải runbook sống và là hồ sơ lịch sử.
+
+### AI sai ở đâu
+
+- Tôi để sót `DIRECT_URL` trong `.env.example` ở cả vòng final review và vòng fix wave, dù chính tôi là người nhắc "không reintroduce DIRECT_URL"; chỉ re-review bắt được vì nó đọc cả consumer của `.env.example` trong `README.md`.
+- Guard tôi yêu cầu chỉ khẳng định `%{http_code}` nên có thể xanh dù phần in status bị xóa; tôi đã coi "có chuỗi" là "có hành vi". Lần này guard khẳng định cả ba mảnh của lệnh.
+- Tôi chép số dòng `docs/DEPLOY.md:133` vào ba chỗ trong `AI_LOG.md` và record mà không kiểm tra lại sau khi xóa dòng phía trên, làm trích dẫn lệch một dòng.
+
+### Limitations
+
+- Chưa có live run của `deploy.yml` sau fix wave; hành vi fail-closed dựa trên unit test, flow test và probe CLI local.
+- Check set chạy trên Windows với SQLite, không phải `ubuntu-latest` với PostgreSQL.
+- Chưa chạy drill rollback tự động với chủ dự án; đây là khoảng trống bằng chứng đã biết.
+- Các record lịch sử còn nhắc `DIRECT_URL`/ba secret được giữ nguyên theo rule 3.
+
+---
+
+## 2026-11-24 21:40:00 +07:00 - Final whole-branch review cho CI deploy gating
+
+### Prompt nguyên văn đã dùng
+
+> You are a Senior Code Reviewer. Review the completed CI deploy-gating work as a whole, against its plan and spec, and identify issues before the work is considered finished. The work is already merged to `main`; your verdict decides whether follow-up fixes are required and which deferred minors must be fixed.
+>
+> Working directory: C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating
+>
+> ## What Was Implemented
+>
+> Four sequential PRs plus three live-discovered fixes, now on `main`:
+>
+> 1. C1 (#152, d7a51e7) - complete CI (`lint`, `typecheck`, `format:check`, `check:language`, `test`, `build`, `e2e`), workflow renamed to `ci.yml`, branch protection on the four required contexts.
+> 2. C2 (#155, 24ff8a2) - disable Vercel Git integration, add `.github/workflows/deploy.yml` triggered by `workflow_run` after `ci` on `main`, verify the run SHA is still `main`, deploy with pinned `vercel@66.6.0`.
+> 3. C3 (#156, 091c6be) - remove migration from `build:production`, add `check-migrations`, `approval` (Environment `migration-approval`), `migrate` before `deploy`, new `scripts/detect-pending-migrations.mjs`.
+> 4. C4 (#157, 74b14a2) - smoke against `vars.SITE_URL`, rollback on failure, artifact upload, `finalize`, dispatch drill inputs.
+> 5. #158 (0ae74f6) - run deploy when approval is skipped.
+> 6. #159 (8ae929d) - rollback and capture through project-scoped Vercel REST alias API, because CLI `rollback`/`inspect`/`promote` fail with `User not found (404)` for a team-only token.
+> 7. #160 (d51174b) - capture the previous deployment from `GET /v1/aliases/{alias}`, neutral no-target rollback path, finalize red only on real smoke failure or cancel, docs corrected.
+>
+> Live evidence after #160 merged: CI run 45413253843 success; deploy run 45413765905 success with `verify-ci`, `check-migrations`, `migrate` (no pending), `deploy` (capture printed `Previous production deployment: ant-jewelry-63tqslcvu-hmmm-a5e7.vercel.app (dpl_FSVPcRSPE63vufLyrYEppaXbjbTr)`, deployed `https://ant-jewelry-ei4y2b1m7-hmmm-a5e7.vercel.app`), `smoke` success, `finalize` success, `rollback` skipped; finalize log `smoke=success rollback=skipped`.
+>
+> ## Requirements / Plan
+>
+> - Plan: `docs/superpowers/plans/2026-11-23-ci-deploy-gating.md`
+> - Spec (binding authority): `docs/superpowers/specs/2026-11-23-ci-deploy-gating-design.md`
+> - Ledger with rulings and deferred minors: `C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\progress.md`
+> - Review records: `docs/reviews/2026-11-23-requesting-code-review-c1.md`, `-c2.md`, `-c3.md`, `-c4.md`, plus the dated follow-up records named `2026-11-24-*`.
+>
+> ## Git Range to Review
+>
+> **Base:** 86f286b
+> **Head:** d51174b
+> **Diff file (read this instead of re-running git):** `C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\final-review-package.md` (about 350 KB: commit list, stat, full diff with 10 lines of context)
+>
+> The worktree HEAD is `ae5c50e` (the pre-squash branch); review the merged range above. Read-only: do not mutate the working tree, index, HEAD or branch state.
+>
+> ## Deferred minors to triage
+>
+> Decide for each whether it must be fixed now or can stay deferred, with a reason:
+>
+> - Task 1: the CI guard asserts each job key but not that the job set is exactly four.
+> - Task 1: two file:line citations in the C1 review record are off by one.
+> - Task 1: the guard hard-codes action major tags, so routine action bumps break it.
+> - Task 1: `db:push` in CI validates a throwaway SQLite schema, not migrations.
+> - Task 2: `--token="$VERCEL_TOKEN"` is passed on Vercel CLI commands that already receive the token from the job environment.
+> - Task 3: `docs/DEPLOY.md` still lists a `DIRECT_URL` row and says three secrets where there are four.
+> - Task 3: `AI_LOG.md` contains a literal `\u0020` in one historical entry.
+> - Task 4: an older `AI_LOG.md` limitation still says `DATABASE_URL` is empty; a later dated entry corrects it.
+> - Task 4: `rollback` with an empty previous id on a real run exits cleanly and leaves the run red through `deploy`; confirm this cannot hide a broken deploy.
+> - Follow-up #159: the manual `curl` in `DEPLOY.md` does not print the HTTP status; captured build logs contain trailing spaces.
+> - Static guards for the workflow were accepted with live drill still pending.
+>
+> ## Project binding requirements
+>
+> - Read the whole relevant file before judging any line; `grep` every consumer of a changed value. Do not judge from the diff alone.
+> - For every "pass" claim, name the test or captured output; if evidence is missing, say so explicitly.
+> - Everything you write must use only Vietnamese and English letters (plus digits, punctuation, symbols).
+> - Do not ask for a live production drill in this review; the owner must be present for it, and that limitation is known.
+>
+> ## Declined to judge
+>
+> Before your verdict, list every behavior you considered and set aside as outside the plan or spec, one line each, with the reason. The controller rules on each line; nothing you set aside is dropped silently. An empty list means you set nothing aside.
+>
+> ## You Do Not Dispatch Subagents
+>
+> Do all of this review yourself. Never spawn a subagent to review part of the diff, and never spawn another reviewer for a second opinion. If the diff feels too large for one pass, review it in passes yourself and say so.
+>
+> ## What to Check
+>
+> **Plan alignment:** does the implementation match the plan and spec; are deviations justified; is all planned functionality present; does any guard test pass without asserting anything real.
+> **Code quality:** error handling in the workflow shell/Node steps, quoting and injection risks, type safety in the tests, DRY, edge cases.
+> **Architecture:** correctness of the workflow job graph (needs, if, outputs, environment, concurrency), rollback safety, migration ordering, secret handling, whether a red run can ever look green.
+> **Testing:** do the guards pin real behavior rather than strings that can drift; is the flow test of the embedded parser meaningful; are failure paths covered.
+> **Production readiness:** rollback correctness and blast radius, documentation accuracy, no secret in the repo, deploy and smoke targeting.
+>
+> ## Calibration
+>
+> Categorize by actual severity. Acknowledge what was done well before issues. Flag plan deviations explicitly. If the plan itself is wrong, say so.
+>
+> ## Output Format
+>
+> ### Strengths
+> ### Issues
+> #### Critical (Must Fix)
+> #### Important (Should Fix)
+> #### Minor (Nice to Have)
+>
+> For each issue: file:line, what is wrong, why it matters, how to fix.
+>
+> ### Deferred-minor triage
+> One line per item: fix now or stay deferred, with reason.
+>
+> ### Declined to judge
+> One line each with reason.
+>
+> ### Recommendations
+>
+> ### Assessment
+> **Ready to merge?** [Yes | No | With fixes]
+> **Reasoning:** 1-2 sentences.
+
+Link review: `docs/reviews/2026-11-24-requesting-code-review-final.md`. Skill dùng: `requesting-code-review` theo `code-reviewer.md`.
+
+### Đã tự kiểm chứng
+
+- Dispatch một reviewer fresh-context theo đúng skill id `requesting-code-review` với `code-reviewer.md`, đọc plan, spec, ledger, gói diff `86f286b..d51174b` (khoảng 350 KB), toàn bộ source của từng file bị chạm tại `d51174b` bằng `git show` chỉ đọc, và tự kiểm tra hai run live `45413253843`, `45413765905` cùng bảy PR body.
+- Tôi đọc lại kết luận của reviewer và tự xác nhận hai điểm Important: `scripts/detect-pending-migrations.mjs` trả `false` với output rỗng/lạ trong khi `approval` là cổng duyệt duy nhất trước `migrate`; `docs/DEPLOY.md` còn ba chỗ ghi ba secret và hai file còn dòng `DIRECT_URL`.
+- Đối chiếu spec C3 và plan Step 1: plan ghi "empty output -> false" nhưng spec yêu cầu dừng chờ duyệt khi có migration chờ; quyết định spec thắng vì hậu quả một chiều là dừng duyệt thừa, không bao giờ là migration không được duyệt.
+- Xác nhận run live `45413765905` xanh toàn chuỗi và log capture in đúng `previous_url`/`previous_id`.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong `fix/ci-fail-closed-migrations`):** F1 Important - detection fail closed; empty/unknown output thành pending, ba marker no-pending vẫn `false`, lệnh status lỗi vẫn exit 1.
+- **Accepted (sửa trong `fix/ci-fail-closed-migrations`):** F2 Important - ba chỗ đếm thành bốn secret, xóa hai dòng `DIRECT_URL` ở `docs/DEPLOY.md` và `README.md`, thêm doc guard.
+- **Accepted (sửa trong `fix/ci-fail-closed-migrations`):** F3 Minor - hai lệnh `curl` manual rollback in HTTP status và tách body/status, có doc test khóa.
+- **Deferred (có lý do trong review):** guard chưa khẳng định đúng bốn job; hai trích dẫn file:line lệch một dòng trong record C1; guard khóa major tag của action; `db:push` chỉ kiểm tra SQLite tạm; `--token` thừa; `\u0020` trong entry lịch sử; limitation cũ về `DATABASE_URL`; rollback không target thoát sạch trên run thật; khoảng trắng cuối trong log build lịch sử; drill rollback chờ chủ dự án.
+- **Rejected:** viết lại plan Step 1 và các entry lịch sử để khớp hành vi mới; đó là hồ sơ lịch sử và rule 3 cấm sửa hồ sơ cũ.
+
+### AI sai ở đâu
+
+- Tôi đã cho plan ghi "empty output -> false" mà không đối chiếu với chính spec C3 do mình duyệt; đó là nguồn của lỗi fail-open. Nếu không có final review, một thay đổi wording của Prisma có thể đưa migration lên production mà không có reviewer.
+- Trong các vòng trước tôi chỉ sửa đúng dòng được nêu thay vì grep toàn bộ tài liệu, nên ba chỗ đếm secret và hai dòng `DIRECT_URL` vẫn sót qua bốn PR.
+- Tôi từng chấp nhận "guard test xanh" là bằng chứng đủ cho migration gate, trong khi guard cũ chỉ khóa chuỗi chứ không khóa hành vi fail-closed.
+
+### Limitations
+
+- Chưa có drill rollback tự động với chủ dự án; chỉ có run happy-path và guard test.
+- Check set chạy trên Windows với SQLite, không phải `ubuntu-latest` với PostgreSQL.
+- Các entry `AI_LOG.md` và review lịch sử được giữ nguyên văn, gồm cả `DIRECT_URL` cũ và `\u0020`.
+
+---
+
+## 2026-11-24 21:54:09 +07:00 - Final fix wave: fail-closed migrations, docs and rollback status
+
+### Prompt nguyên văn đã dùng
+
+> Final whole-branch review found two Important issues and one Minor. Fix all three in one wave: (1) make pending-migration detection fail closed on empty or unknown status output while keeping explicit no-pending markers at false, update the unit cases and add a flow test that unknown output reaches the approval condition; (2) correct the Environment secret counts in DEPLOY.md to four, delete the DIRECT_URL rows in DEPLOY.md and README.md, and add doc guards; (3) make the manual rollback curl print the HTTP status and pin it in a doc test. Update AI_LOG and save the review record with the full check output. Do not push or change live settings.
+
+Link review: `docs/reviews/2026-11-24-receiving-code-review-final-fix-wave.md`. Skill dùng: `receiving-code-review` (cùng với `test-driven-development` và `verification-before-completion`).
+
+### Đã tự kiểm chứng
+
+- Đọc trọn `scripts/detect-pending-migrations.mjs`, `src/test/detect-pending-migrations.test.ts`, `src/test/deploy-workflow.test.ts`, `docs/DEPLOY.md`, `README.md`, `.github/workflows/deploy.yml`, `docs/reviews/TEMPLATE.md` và `docs/CONTRIBUTING.md` trước khi sửa. Grep mọi consumer của `hasPendingMigrations`, `DIRECT_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` và `DATABASE_URL` trước khi đổi giá trị.
+- TDD: viết assertion trước (hai case unit mới, flow test, doc guard), chạy `npx --no-install vitest run src/test/detect-pending-migrations.test.ts src/test/deploy-workflow.test.ts` → `Tests 4 failed | 23 passed (27)`, `EXIT=1`, đúng lý do thiếu hành vi; sau khi sửa → `Test Files 2 passed (2)`, `Tests 27 passed (27)`, `EXIT=0`.
+- Probe CLI với `DATABASE_URL=file:./prisma/dev.db`: `node scripts/detect-pending-migrations.mjs` in `[detect-pending-migrations] prisma migrate status failed; refusing to continue.`, `EXIT=1` — status lỗi và không có marker pending vẫn dừng run, không in `true`.
+- Chạy lại toàn bộ check set bằng Node `spawnSync` UTF-8 `NO_COLOR=1` `DATABASE_URL=file:./prisma/dev.db`: `next typegen`, `db:push`, `lint`, `typecheck`, `npm test`, `format:check`, `build`, `check:language` đều `EXIT=0`, `FAILED_COMMANDS=0`; `npm test` đạt `Test Files 86 passed (86)`, `Tests 435 passed (435)`. Output đầy đủ được nhúng nguyên văn vào file review và dùng U+0192 -> F theo rule 12.
+- Dán doc guard kiểm tra bốn cụm "bốn secret" tại các dòng đã sửa, hai bảng không còn dòng `DIRECT_URL`, và mục `### Manual rollback` có `%{http_code}`; kiểm tra riêng `DEPLOY.md:132` vẫn giữ nghĩa ba secret Vercel cộng `DATABASE_URL`.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong `fix/ci-fail-closed-migrations`):** F1 Important — detection fail closed; banner pending ưu tiên cao nhất, ba marker no-pending trả `false`, output rỗng/lạ trả `true`, kèm unit case, flow test và probe CLI.
+- **Accepted (sửa trong `fix/ci-fail-closed-migrations`):** F2 Important — ba vị trí đếm thành bốn secret, xóa hai dòng `DIRECT_URL`, thêm doc guard; giữ nguyên `DEPLOY.md:132`.
+- **Accepted (sửa trong `fix/ci-fail-closed-migrations`):** F3 Minor — hai lệnh `curl` trong mục Manual rollback in kèm HTTP status và tách body/status, được doc test khóa.
+- **Rejected:** viết lại Step 1 của plan nói "empty output -> false" và các entry lịch sử; controller chốt spec thắng plan và rule 3 cấm sửa hồ sơ cũ.
+- **Rejected:** push, mở PR, chạy deploy/drill thật hoặc đổi setting GitHub/Vercel; brief cấm rõ ràng và controller sở hữu.
+
+### AI sai ở đâu
+
+- Ban đầu tôi định giữ logic `empty output -> false` vì plan Step 1 ghi vậy. Nếu làm vậy, với output rỗng `hasPendingMigrations('')` vẫn trả `false`, workflow ở `deploy.yml:95` bỏ qua job `approval` nhưng `migrate` vẫn chạy `db:migrate:production`: migration lên production không có reviewer. Phán quyết của controller đã sửa hướng này trước khi tôi sửa code.
+- Tôi suýt thay toàn bộ "ba secret" thành "bốn secret" bằng replace toàn cục. Điều đó làm sai `DEPLOY.md:132`, vốn đúng nghĩa ba credential Vercel cộng `DATABASE_URL`. Đã đổi từng cụm và dùng doc guard để khóa.
+- Tôi định dùng một lời gọi `hasPendingMigrations(output)` duy nhất trong wrapper cho cả phân loại lẫn banner pending. Vì output lạ giờ trả `true`, một lệnh status lỗi với output rỗng sẽ in `true` và `EXIT=0` thay vì `EXIT=1`. Đã tách riêng kiểm tra banner bằng `PENDING_PATTERN` trước khi xét lỗi lệnh, rồi probe CLI để chứng minh vẫn `EXIT=1`.
+
+### Limitations
+
+- Chưa có live run của `deploy.yml` sau fix; hành vi fail-closed được chứng minh bằng unit test, flow test và probe CLI local, không phải migration thật trên production.
+- Check set chạy trên Windows với SQLite, không phải `ubuntu-latest` với PostgreSQL.
+- Ba cụm no-pending của Prisma được khóa cứng; wording mới hoàn toàn khác sẽ gây thêm một lần chờ duyệt, theo thiết kế có chủ đích, không bao giờ gây migration không duyệt.
+- `.env.example` vẫn nhắc `DIRECT_URL` tùy chọn; nằm ngoài phạm vi brief (chỉ `DEPLOY.md` và `README.md`) nên giữ nguyên.
+- File review được viết trước khi tạo commit fix, nên trường Head ghi theo tên nhánh; hash commit được báo riêng trong report cuối.
+
+---
+
 ## 2026-11-24 21:12:02 +07:00 - Scoped re-review va PR cho capture alias fix
 
 ### Prompt nguyên văn đã dùng
