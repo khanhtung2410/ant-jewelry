@@ -124,7 +124,7 @@ Cấu hình có hiệu lực sau lần deploy đầu tiên áp dụng `vercel.js
    - Merge PR vào `main` sau khi bốn check `static`, `test`, `build`, `e2e` xanh. Workflow `ci` chạy lại trên `main`.
    - Khi `ci` kết thúc, `.github/workflows/deploy.yml` nhận event `workflow_run`; job `verify-ci` chỉ cho đi tiếp khi `conclusion == 'success'` và commit của run đúng là tip hiện tại của `main`.
    - Job `check-migrations` chạy trong Environment `production`, gọi `npm run db:migrate:status:production` qua `scripts/detect-pending-migrations.mjs` và xuất `pending` là `true` hoặc `false`. Nếu `pending = true`, job `approval` dừng tại Environment `migration-approval` (có required reviewer); reviewer xác nhận đã có snapshot/PITR rồi mới duyệt. Job `migrate` chạy sau đó, hoặc chạy ngay khi không có migration mới, nhưng chỉ áp dụng `npm run db:migrate:production` sau khi kiểm tra kết quả `check-migrations` là thành công.
-   - Job `deploy` chạy trong Environment `production` với đúng ba lệnh:
+   - Job `deploy` chạy trong Environment `production` với đúng ba lệnh. Điều kiện của job dùng `always()` và bắt cả `needs.verify-ci.result` lẫn `needs.migrate.result` là `success`: khi không có migration mới, job `approval` bị bỏ qua nhưng `deploy` vẫn chạy; nếu một trong hai job kia fail hoặc drill `workflow_dispatch`, `deploy` vẫn bị bỏ qua.
      ```bash
      npx --yes vercel@66.6.0 pull --environment=production
      npx --yes vercel@66.6.0 build --prod

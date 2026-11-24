@@ -57,6 +57,14 @@ describe('production smoke and rollback guard', () => {
     expect(smoke).toContain('test-results/');
   });
 
+  it('smokes after a successful deploy or during an owner drill', () => {
+    const smoke = job('smoke');
+
+    expect(smoke, 'smoke must still run after a successful deploy').toContain(
+      "if: always() && (needs.deploy.result == 'success' || github.event_name == 'workflow_dispatch')",
+    );
+  });
+
   it('feeds SITE_URL through smoke into the canonical assertions', () => {
     const smoke = job('smoke');
     const config = read(configPath);
