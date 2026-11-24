@@ -13,7 +13,7 @@ export default defineConfig({
   expect: {
     timeout: 15_000,
   },
-  reporter: [['list']],
+  reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     ...devices['Desktop Chrome'],
     baseURL: process.env.BASE_URL?.trim() || 'https://ant-jewelry.vercel.app',

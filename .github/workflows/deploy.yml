@@ -9,6 +9,25 @@ on:
     workflows: [ci]
     types: [completed]
     branches: [main]
+  # Owner-present rehearsal only. A drill skips the real deploy and migration,
+  # smokes the given base_url and rolls back only the given previous URL. Both
+  # the smoke and rollback jobs use the production environment, so the
+  # controller's required reviewers gate every drill.
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Production origin to smoke during the drill
+        required: true
+        type: string
+      previous_deployment_url:
+        description: Deployment URL to roll back to during the drill
+        required: true
+        type: string
+      simulate_failure:
+        description: Force the drill smoke check to fail
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -23,7 +42,7 @@ jobs:
   verify-ci:
     name: verify-ci
     runs-on: ubuntu-latest
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.event_name != 'workflow_dispatch' && github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Compare the CI commit with the current tip of main
         env:
@@ -80,7 +99,7 @@ jobs:
   migrate:
     name: migrate
     needs: [check-migrations, approval]
-    if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
+    if: github.event_name != 'workflow_dispatch' && always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
     runs-on: ubuntu-latest
     environment: production
     env:
@@ -116,6 +135,7 @@ jobs:
   deploy:
     name: deploy
     needs: [verify-ci, migrate]
+    if: github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment: production
     # Application runtime variables stay in the Vercel project and are pulled
@@ -128,6 +148,7 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     outputs:
       deployment_url: ${{ steps.deploy.outputs.deployment_url }}
+      previous_url: ${{ steps.previous.outputs.previous_url }}
     steps:
       - name: Check out the commit that passed CI
         uses: actions/checkout@v7
@@ -143,9 +164,138 @@ jobs:
         run: npx --yes vercel@66.6.0 pull --environment=production --token="$VERCEL_TOKEN"
       - name: Build with the pulled production settings
         run: npx --yes vercel@66.6.0 build --prod --token="$VERCEL_TOKEN"
+      - name: Capture the current production deployment before promotion
+        id: previous
+        run: |
+          # The alias points at the newest READY production deployment. Read it
+          # before promoting so rollback has an explicit, verified target.
+          previous="$(npx --yes vercel@66.6.0 ls --prod --json --token="$VERCEL_TOKEN" | node -e '
+            let input = "";
+            process.stdin.on("data", (chunk) => { input += chunk; });
+            process.stdin.on("end", () => {
+              const data = JSON.parse(input);
+              const rows = Array.isArray(data) ? data : data.deployments;
+              const current = rows.find(
+                (row) => row.url && row.state === "READY" && row.target === "production",
+              );
+              if (!current) {
+                console.error("No READY production deployment found before promotion.");
+                process.exit(1);
+              }
+              console.log(current.url);
+            });
+          ')"
+          echo "previous_url=$previous" >>"$GITHUB_OUTPUT"
+          echo "Previous production deployment: $previous"
       - name: Deploy the prebuilt output to production
         id: deploy
         run: |
           url="$(npx --yes vercel@66.6.0 deploy --prebuilt --prod --token="$VERCEL_TOKEN")"
           echo "deployment_url=$url" >>"$GITHUB_OUTPUT"
           echo "Deployed $url"
+
+  smoke:
+    name: smoke
+    needs: deploy
+    if: always() && (needs.deploy.result == 'success' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    environment: production
+    # SITE_URL is an Environment variable, not a secret. Canonical assertions
+    # compare against it, so smoke must never target a per-deployment URL. A
+    # dispatch drill overrides BASE_URL in its own smoke step.
+    env:
+      BASE_URL: ${{ vars.SITE_URL }}
+    steps:
+      - name: Check out the commit that passed CI
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Clean install from lockfile
+        run: npm ci
+      - name: Install Chromium for the smoke suite
+        run: npx playwright install --with-deps chromium
+      - name: Run smoke in a dispatch drill
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          BASE_URL: ${{ inputs.base_url }}
+          SIMULATE_FAILURE: ${{ inputs.simulate_failure }}
+        run: |
+          if [ "$SIMULATE_FAILURE" = "true" ]; then
+            echo "::error::Drill requested a failing smoke result."
+            exit 1
+          fi
+          npm run test:smoke:production
+      - name: Run the production smoke suite
+        if: github.event_name != 'workflow_dispatch'
+        run: npm run test:smoke:production
+      - name: Upload the smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-smoke
+          path: |
+            playwright-report/
+            test-results/
+
+  rollback:
+    name: rollback
+    needs: [deploy, smoke]
+    if: failure()
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - name: Check out the commit that passed CI
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Select the previous production deployment
+        env:
+          DEPLOYED_PREVIOUS_URL: ${{ needs.deploy.outputs.previous_url }}
+          DRILL_PREVIOUS_URL: ${{ inputs.previous_deployment_url }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            PREVIOUS_URL="$DRILL_PREVIOUS_URL"
+          else
+            PREVIOUS_URL="$DEPLOYED_PREVIOUS_URL"
+          fi
+          if [ -z "$PREVIOUS_URL" ]; then
+            echo "::error::No previous production deployment is available for rollback."
+            exit 1
+          fi
+          echo "PREVIOUS_URL=$PREVIOUS_URL" >>"$GITHUB_ENV"
+          echo "Rollback target: $PREVIOUS_URL"
+      - name: Roll back to the previous production deployment
+        run: npx --yes vercel@66.6.0 rollback "$PREVIOUS_URL" --yes --token="$VERCEL_TOKEN"
+
+  finalize:
+    name: finalize
+    needs: [smoke, rollback]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Record the smoke and rollback results
+        env:
+          SMOKE_RESULT: ${{ needs.smoke.result }}
+          ROLLBACK_RESULT: ${{ needs.rollback.result }}
+        run: echo "smoke=$SMOKE_RESULT rollback=$ROLLBACK_RESULT"
+      - name: Fail when smoke did not pass
+        if: needs.smoke.result != 'success'
+        run: |
+          echo "::error::Smoke finished with ${{ needs.smoke.result }}; production must stay red after rollback."
+          exit 1
+      - name: Confirm the smoke check passed
+        if: needs.smoke.result == 'success'
+        run: echo "Smoke passed; the production deploy is complete."
