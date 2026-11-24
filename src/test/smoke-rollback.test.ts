@@ -97,18 +97,40 @@ describe('production smoke and rollback guard', () => {
     expect(deploy).toContain('deployment_url: ${{ steps.deploy.outputs.deployment_url }}');
   });
 
-  it('rolls back to the captured deployment when the chain fails', () => {
+  it('captures the previous production id for the REST rollback', () => {
+    const deploy = job('deploy');
+
+    expect(deploy, 'rollback needs the deployment id, not only its URL').toContain(
+      'previous_id: ${{ steps.previous.outputs.previous_id }}',
+    );
+    expect(deploy, 'the pinned CLI exposes the deployment id as uid').toContain('current.uid');
+    expect(deploy).toContain('previous_id=$previous_id');
+  });
+
+  it('rolls back through the project-scoped alias API when the chain fails', () => {
     const rollback = job('rollback');
 
     expect(rollback, 'the rollback job must exist').not.toBe('');
     expect(rollback).toContain('needs: [deploy, smoke]');
     expect(rollback).toContain('if: failure()');
     expect(rollback).toContain('environment: production');
-    expect(rollback).toContain('${{ needs.deploy.outputs.previous_url }}');
-    expect(rollback).toContain('vercel@66.6.0 rollback');
-    expect(rollback).toContain('--yes');
-    expect(rollback, 'an empty rollback target must stop before calling the CLI').toContain(
-      '-z "$PREVIOUS_URL"',
+    expect(rollback).toContain('${{ needs.deploy.outputs.previous_id }}');
+    expect(rollback, 'a team token can call the project-scoped REST API').toContain(
+      'https://api.vercel.com/v2/deployments/$PREVIOUS_ID/aliases?teamId=$VERCEL_ORG_ID',
+    );
+    expect(rollback).toContain('-X POST');
+    expect(rollback).toContain('Authorization: Bearer $VERCEL_TOKEN');
+    expect(rollback).toContain('Content-Type: application/json');
+    expect(rollback, 'the alias body must come from SITE_URL').toContain(
+      '{\\"alias\\":\\"$alias_host\\"}',
+    );
+    expect(rollback, 'non-2xx responses must fail the rollback step').toContain('%{http_code}');
+    expect(rollback).toContain('2??');
+    expect(rollback, 'the unsupported CLI command must be gone').not.toContain(
+      'vercel@66.6.0 rollback',
+    );
+    expect(rollback, 'an empty rollback target must stop before calling the API').toContain(
+      '-z "$PREVIOUS_ID"',
     );
   });
 
@@ -132,6 +154,7 @@ describe('production smoke and rollback guard', () => {
 
     expect(trigger, 'workflow_dispatch must exist').not.toBe('');
     expect(trigger).toContain('base_url:');
+    expect(trigger).toContain('previous_deployment_id:');
     expect(trigger).toContain('previous_deployment_url:');
     expect(trigger).toContain('simulate_failure:');
     expect(smoke, 'the drill must override BASE_URL with its input').toContain('inputs.base_url');
@@ -140,7 +163,10 @@ describe('production smoke and rollback guard', () => {
       'the drill smoke step must set BASE_URL explicitly instead of relying on GITHUB_ENV precedence',
     ).toContain('BASE_URL: ${{ inputs.base_url }}');
     expect(smoke).toContain('inputs.simulate_failure');
-    expect(rollback, 'the drill must never roll back a URL other than the given one').toContain(
+    expect(rollback, 'the drill must roll back the given deployment id').toContain(
+      'inputs.previous_deployment_id',
+    );
+    expect(rollback, 'the drill URL stays for display and compatibility').toContain(
       'inputs.previous_deployment_url',
     );
     expect(deploy, 'a drill must skip the real deploy').toContain(

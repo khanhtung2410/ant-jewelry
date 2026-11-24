@@ -19,8 +19,12 @@ on:
         description: Production origin to smoke during the drill
         required: true
         type: string
+      previous_deployment_id:
+        description: Deployment id passed to the Vercel alias API during the drill
+        required: true
+        type: string
       previous_deployment_url:
-        description: Deployment URL to roll back to during the drill
+        description: Deployment URL kept for display during the drill
         required: true
         type: string
       simulate_failure:
@@ -151,6 +155,7 @@ jobs:
     outputs:
       deployment_url: ${{ steps.deploy.outputs.deployment_url }}
       previous_url: ${{ steps.previous.outputs.previous_url }}
+      previous_id: ${{ steps.previous.outputs.previous_id }}
     steps:
       - name: Check out the commit that passed CI
         uses: actions/checkout@v7
@@ -170,7 +175,8 @@ jobs:
         id: previous
         run: |
           # The alias points at the newest READY production deployment. Read it
-          # before promoting so rollback has an explicit, verified target.
+          # before promoting so rollback has an explicit, verified target. The
+          # uid is the id required by the alias REST endpoint in the rollback job.
           previous="$(npx --yes vercel@66.6.0 ls --prod --json --token="$VERCEL_TOKEN" | node -e '
             let input = "";
             process.stdin.on("data", (chunk) => { input += chunk; });
@@ -184,11 +190,19 @@ jobs:
                 console.error("No READY production deployment found before promotion.");
                 process.exit(1);
               }
+              if (!current.uid) {
+                console.error("The current production deployment has no uid.");
+                process.exit(1);
+              }
               console.log(current.url);
+              console.log(current.uid);
             });
           ')"
-          echo "previous_url=$previous" >>"$GITHUB_OUTPUT"
-          echo "Previous production deployment: $previous"
+          previous_url="$(echo "$previous" | head -n 1)"
+          previous_id="$(echo "$previous" | tail -n 1)"
+          echo "previous_url=$previous_url" >>"$GITHUB_OUTPUT"
+          echo "previous_id=$previous_id" >>"$GITHUB_OUTPUT"
+          echo "Previous production deployment: $previous_url ($previous_id)"
       - name: Deploy the prebuilt output to production
         id: deploy
         run: |
@@ -264,23 +278,54 @@ jobs:
           cache: npm
       - name: Select the previous production deployment
         env:
+          DEPLOYED_PREVIOUS_ID: ${{ needs.deploy.outputs.previous_id }}
           DEPLOYED_PREVIOUS_URL: ${{ needs.deploy.outputs.previous_url }}
+          DRILL_PREVIOUS_ID: ${{ inputs.previous_deployment_id }}
           DRILL_PREVIOUS_URL: ${{ inputs.previous_deployment_url }}
           EVENT_NAME: ${{ github.event_name }}
         run: |
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            PREVIOUS_ID="$DRILL_PREVIOUS_ID"
             PREVIOUS_URL="$DRILL_PREVIOUS_URL"
           else
+            PREVIOUS_ID="$DEPLOYED_PREVIOUS_ID"
             PREVIOUS_URL="$DEPLOYED_PREVIOUS_URL"
           fi
-          if [ -z "$PREVIOUS_URL" ]; then
-            echo "::error::No previous production deployment is available for rollback."
+          if [ -z "$PREVIOUS_ID" ]; then
+            echo "::error::No previous production deployment id is available for rollback."
             exit 1
           fi
+          echo "PREVIOUS_ID=$PREVIOUS_ID" >>"$GITHUB_ENV"
           echo "PREVIOUS_URL=$PREVIOUS_URL" >>"$GITHUB_ENV"
-          echo "Rollback target: $PREVIOUS_URL"
+          echo "Rollback target: $PREVIOUS_URL ($PREVIOUS_ID)"
       - name: Roll back to the previous production deployment
-        run: npx --yes vercel@66.6.0 rollback "$PREVIOUS_URL" --yes --token="$VERCEL_TOKEN"
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          # A team-only token cannot resolve a user for the Vercel CLI rollback,
+          # inspect and promote commands, but it can call the project-scoped
+          # alias REST endpoint. Move the production alias to the earlier id.
+          alias_host="${SITE_URL#https://}"
+          alias_host="${alias_host%%/*}"
+          if [ -z "$alias_host" ]; then
+            echo "::error::SITE_URL is empty; cannot resolve the production alias."
+            exit 1
+          fi
+          status="$(curl -sS -o rollback-response.json -w '%{http_code}' \
+            -X POST \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d "{\"alias\":\"$alias_host\"}" \
+            "https://api.vercel.com/v2/deployments/$PREVIOUS_ID/aliases?teamId=$VERCEL_ORG_ID")"
+          cat rollback-response.json
+          case "$status" in
+            2??) ;;
+            *)
+              echo "::error::Vercel alias rollback failed with HTTP $status."
+              exit 1
+              ;;
+          esac
+          echo "Production alias $alias_host now points to $PREVIOUS_ID."
 
   finalize:
     name: finalize
