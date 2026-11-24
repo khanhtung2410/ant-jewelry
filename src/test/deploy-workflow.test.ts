@@ -199,10 +199,16 @@ describe('production deploy guard', () => {
   it('keeps the remaining application secrets in Vercel instead of GitHub', () => {
     const content = readWorkflow();
 
-    for (const name of ['AUTH_SECRET', 'SITE_URL', 'DIRECT_URL']) {
+    for (const name of ['AUTH_SECRET', 'DIRECT_URL']) {
       expect(content, `${name} belongs to the Vercel project, not to this workflow`).not.toContain(
         name,
       );
     }
+    expect(content, 'SITE_URL is an Environment variable, never a secret here').not.toContain(
+      'secrets.SITE_URL',
+    );
+    expect(content, 'the smoke job must read the canonical origin from the Environment').toContain(
+      'vars.SITE_URL',
+    );
   });
 });

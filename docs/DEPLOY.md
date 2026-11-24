@@ -82,7 +82,7 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 | `VERCEL_ORG_ID` | ID team/user trên Vercel |
 | `VERCEL_PROJECT_ID` | ID project trên Vercel |
 
-Không đặt bốn giá trị này ở cấp repository. Chủ dự án đặt bằng `gh secret set --env production VERCEL_TOKEN` (tương tự các biến còn lại) và kiểm tra tên bằng `gh api repos/<owner>/<repo>/environments/production/secrets`. `AUTH_SECRET` và `SITE_URL` vẫn chỉ nằm trong Vercel; workflow lấy chúng qua `vercel pull --environment=production`. Tuy nhiên `vercel pull` ghi `[SENSITIVE]` thay cho URL thật, nên `DATABASE_URL` từ Environment `production` được truyền vào `env` của mọi job dùng Prisma để build, kiểm tra trạng thái và migration không gặp lỗi P1013.
+Không đặt bốn giá trị này ở cấp repository. Chủ dự án đặt bằng `gh secret set --env production VERCEL_TOKEN` (tương tự các biến còn lại) và kiểm tra tên bằng `gh api repos/<owner>/<repo>/environments/production/secrets`. `AUTH_SECRET` vẫn chỉ nằm trong Vercel; workflow lấy qua `vercel pull --environment=production`. `SITE_URL` cũng được đặt trong Vercel cho canonical của app và được khai báo thêm làm **biến** (không phải secret) của Environment `production` bằng `gh variable set SITE_URL --env production`, để job `smoke` đọc `vars.SITE_URL`. Tuy nhiên `vercel pull` ghi `[SENSITIVE]` thay cho URL thật, nên `DATABASE_URL` từ Environment `production` được truyền vào `env` của mọi job dùng Prisma để build, kiểm tra trạng thái và migration không gặp lỗi P1013.
 
 ### Quyết định A3 — tắt toàn bộ Git deployment của Vercel
 
@@ -132,7 +132,7 @@ Cấu hình có hiệu lực sau lần deploy đầu tiên áp dụng `vercel.js
      ```
      `vercel pull` lấy phần lớn biến runtime từ Vercel; GitHub giữ ba secret Vercel và `DATABASE_URL` direct vì file Vercel kéo về chỉ chứa `[SENSITIVE]`. Build dùng PostgreSQL Prisma client và không đổi schema. `generateStaticParams` cho blog/category/product trả params rỗng khi bảng chưa có (`P2021`) nên build vẫn xong trước khi có dữ liệu, nhưng migration phải được áp dụng để dữ liệu runtime đúng.
    - Không chạy `vercel --prod` tay từ máy cá nhân cho luồng thường; chỉ dùng khi rollback/khẩn cấp và ghi lại lý do.
-   - Sau deploy, chạy `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` và checklist bước 6.
+   - Sau deploy, job `smoke` của workflow tự chạy `BASE_URL=${{ vars.SITE_URL }} npm run test:smoke:production` rồi làm checklist bước 6. Có thể chạy lại tay bằng `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` để đối chiếu, xem mục "Deploy & rollback".
 5. **Create the first ADMIN** (after migrations):
    ```bash
    npm run db:create-admin:production
@@ -152,6 +152,50 @@ Migration chạy **trước** deploy vì mã mới có thể cần bảng hoặc
 Migration phải **tương thích ngược**: bản code đang chạy trên Production vẫn phải đọc/ghi được trên schema mới. Thực tế: thêm cột nullable hoặc có default, tạo bảng mới trước khi chuyển luồng đọc/ghi, không xoá cột hay đổi kiểu trong cùng một bản phát hành, và dời việc xoá dữ liệu sang một migration sau khi code mới chạy ổn định. Nhờ vậy, nếu smoke test hoặc giám sát bắt buộc rollback code, bản cũ vẫn làm việc trên schema đã migrate; rollback không cần đảo ngược migration và không làm mất dữ liệu. Không dùng `prisma db push` hay sửa migration đã áp dụng trên Production.
 
 Trước mỗi migration, reviewer phải xác nhận có snapshot hoặc điểm PITR còn dùng được. Job `migrate` chỉ in commit SHA và lời nhắc này vì workflow không có credentials của provider để tự tạo snapshot; đây là cửa kiểm soát thủ công, không phải bước tự động giả tạo.
+
+## Deploy & rollback
+
+Chuỗi production bắt đầu sau khi workflow `ci` xanh trên `main`:
+
+```text
+ci (static, test, build, e2e xanh)
+  -> deploy.yml: verify-ci (head SHA cua run phai la tip hien tai cua main)
+  -> check-migrations (Environment production, output pending)
+  -> approval (migration-approval, chi khi pending = true)
+  -> migrate (prisma migrate deploy)
+  -> deploy (production): vercel pull -> build --prod -> capture previous_url -> deploy --prebuilt --prod
+  -> smoke (production): BASE_URL = vars.SITE_URL, npm run test:smoke:production
+  -> rollback (if: failure())
+  -> finalize (if: always(), red neu smoke khong success)
+```
+
+- Smoke chạy trên origin `SITE_URL`, không phải URL của deployment mới, vì assertion canonical trong `e2e/production.smoke.spec.ts` so sánh `BASE_URL + path` với `<link rel="canonical">` của app. URL deployment mới chỉ được lưu ở output `deployment_url` để đối chiếu; nó không được dùng làm `BASE_URL`.
+- Trước khi promotion, job `deploy` đọc `npx --yes vercel@66.6.0 ls --prod --json`, chọn deployment `READY` đầu tiên và ghi vào output `previous_url`. Nếu bước này lỗi thì không có deployment mới nào được tạo.
+- Job `rollback` chạy khi `deploy` hoặc `smoke` fail (`if: failure()`), dùng `npx --yes vercel@66.6.0 rollback "$PREVIOUS_URL" --yes` với `PREVIOUS_URL` lấy từ `needs.deploy.outputs.previous_url`. Job `finalize` vẫn đỏ nếu `needs.smoke.result != 'success'`, kể cả khi rollback xanh, nên run không bao giờ được coi là thành công sau một smoke fail.
+- Migration chạy trước deploy và phải tương thích ngược (xem mục trước), nên rollback code không cần đảo ngược schema. Không dùng rollback thay cho backup/PITR khi dữ liệu đã bị ghi sai.
+
+### Inspect the smoke artifact
+
+- Trong Actions run của `deploy.yml`, mở job `smoke`, tab **Artifacts**, tải `playwright-report-smoke`. Step upload dùng `if: always()` nên artifact vẫn có khi smoke đỏ.
+- Giải nén rồi mở `playwright-report/index.html` bằng trình duyệt; `test-results/` chứa trace và screenshot của test fail. `playwright.production.config.ts` dùng `[['list'], ['html', { open: 'never' }]]` để tạo report mà không tự mở trình duyệt trên runner.
+
+### Manual rollback
+
+Trên máy đã có ba biến môi trường của Environment `production` (`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`):
+
+```bash
+export VERCEL_TOKEN=...
+export VERCEL_ORG_ID=...
+export VERCEL_PROJECT_ID=...
+npx --yes vercel@66.6.0 ls --prod
+npx --yes vercel@66.6.0 rollback <previous-url>
+```
+
+Chọn `<previous-url>` từ danh sách `vercel ls --prod`, đối chiếu với `previous_url` trong log của job `deploy` trước khi chạy. Sau rollback, chạy lại `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` và ghi kết quả vào PR/phần recovery; nếu vẫn đỏ, chuyển sang forward-fix thay vì cố rollback lần nữa.
+
+### Drill: smoke fail co y
+
+`workflow_dispatch` của `deploy.yml` nhận ba input: `base_url` (origin dùng cho smoke), `previous_deployment_url` (URL rollback duy nhất của drill) và `simulate_failure` (bắt smoke step trả lỗi giả để diễn tập rollback). Ở chế độ này `verify-ci`, `check-migrations`, `approval`, `migrate` và `deploy` đều bị bỏ qua; smoke và rollback khai báo `environment: production` nên phải qua required reviewer của Environment này. Chỉ chạy drill khi có chủ dự án; không dùng input để thao tác trên deployment thật ngoài URL đã được cung cấp.
 
 ### Bằng chứng upload thật trên production (2026-11-18)
 

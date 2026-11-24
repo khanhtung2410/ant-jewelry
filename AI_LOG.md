@@ -1,3 +1,93 @@
+## 2026-11-24 16:13:16 +07:00 - C4: smoke sau deploy, rollback va tai lieu khoi phuc
+
+### Prompt nguyên văn đã dùng
+
+> You are a subagent spawned by another session.
+> You are implementing Task 4: Smoke after deploy, rollback on failure, documented recovery.
+>
+> ## Task Description
+>
+> Read your task brief first — it is your requirements, with exact values to use verbatim:
+> C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\task-4-brief.md
+>
+> Also read the spec:
+> C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating\docs\superpowers\specs\2026-11-23-ci-deploy-gating-design.md
+>
+> Work from C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating on branch ci/smoke-and-rollback, freshly based on origin/main after C3 merged. Node modules installed.
+>
+> ## Controller rulings (binding)
+>
+> - Live deploy/rollback drills are controller-owned; do NOT run them. Repo-side only.
+> - Do NOT push or open a PR. Commit locally only.
+> - The live deploy is currently blocked because the GitHub Environment secret `DATABASE_URL` is empty (Vercel will not expose sensitive values). This does not change your repo-side work; note it as a known live blocker in your limitations, not as a code defect.
+> - TDD: write the failing guard test first, verify RED, then implement.
+>
+> ## Global constraints
+>
+> - `playwright.production.config.ts`: add `['html', { open: 'never' }]` to existing `list` reporter.
+> - `deploy.yml`: capture previous production URL/output before deploy; add `smoke` job (needs deploy, `BASE_URL: ${{ vars.SITE_URL }}`, `npm run test:smoke:production`), artifact upload `playwright-report/` + `test-results/` with `if: always()`, `rollback` job `if: failure()` using `vercel rollback` with captured previous URL, and `finalize` job that fails if smoke failed.
+> - Smoke must target the SITE_URL origin, not the per-deployment URL, because canonical assertions use SITE_URL.
+> - Add `workflow_dispatch` drill inputs `base_url`, `previous_deployment_url`, `simulate_failure` as specified in the brief; drill must be gated by Environment production.
+> - `docs/DEPLOY.md` gets a "Deploy & rollback" section with the full chain, artifact inspection, and manual rollback commands.
+> - Only Vietnamese and English letters in written files; AGENTS.md rules 3-9 and 12 apply.
+>
+> ## Your Job
+>
+> 1. Implement exactly the task.
+> 2. TDD RED then GREEN.
+> 3. Run focused tests while iterating; run the full check set once before committing via spawnSync UTF-8 NO_COLOR=1 with DATABASE_URL=file:./prisma/dev.db.
+> 4. Commit with a Conventional Commits message.
+> 5. Self-review the diff.
+> 6. Write your full report to C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\task-4-report.md.
+>
+> ## You Do Not Dispatch Subagents
+>
+> Do all work yourself; never spawn a subagent or reviewer.
+>
+> ## Report Back
+>
+> Return ONLY: Status, commits (short SHA + subject), one-line test summary, concerns, report file path.
+
+Link review: `docs/reviews/2026-11-23-requesting-code-review-c4.md`. Link brief: task-4-brief.md (outside the repository, in the agent temp directory). Link plan: `docs/superpowers/plans/2026-11-23-ci-deploy-gating.md`.
+
+### Đã tự kiểm chứng
+
+- Đọc trọn brief, spec, plan, `playwright.production.config.ts`, `.github/workflows/deploy.yml`, `src/test/deploy-workflow.test.ts`, `e2e/production.smoke.spec.ts`, `docs/DEPLOY.md`, `docs/ARCHITECTURE.md`, `docs/CONTRIBUTING.md`, `docs/reviews/TEMPLATE.md`, `package.json`, `scripts/check-language.mjs` và hai skill `test-driven-development` / `requesting-code-review` kèm tài liệu tham chiếu.
+- `git fetch origin` rồi xác nhận HEAD và `origin/main` đều là `091c6be`; nhánh `ci/smoke-and-rollback` mới từ `origin/main` sau C3.
+- RED: `npx vitest run src/test/smoke-rollback.test.ts` -> `7 failed (7)` vì reporter html, job smoke/rollback/finalize và trigger drill chưa có. RED vòng self-review: ba assertion mới -> `3 failed (3)`. GREEN: `npx vitest run src/test/smoke-rollback.test.ts src/test/deploy-workflow.test.ts` -> `19 passed (19)`.
+- Đọc CLI pinned `npx --yes vercel@66.6.0 rollback --help` (`rollback <deployment> --yes` hợp lệ) và gọi read-only `npx --yes vercel@66.6.0 ls --prod --json`: output là object có mảng `deployments`, không phải mảng. Phát hiện này dẫn đến sửa parser trước khi commit; không có deploy hay rollback nào được chạy.
+- Parse `deploy.yml` bằng package `yaml`: đủ tám job, hai trigger và ba input `workflow_dispatch`; `smoke.env.BASE_URL` là `${{ vars.SITE_URL }}`.
+- `grep BASE_URL|SITE_URL` và `grep previous_url|simulate_failure|playwright-report-smoke` để kiểm tra mọi consumer trước khi đổi guard app-secret; cập nhật docs chỗ `SITE_URL` từng "chỉ nằm trong Vercel".
+- Chạy đủ bộ lint, typecheck, test, format:check, build, check:language bằng Node `spawnSync` UTF-8 `NO_COLOR=1`, `DATABASE_URL=file:./prisma/dev.db`, sau `next typegen` và `db:push` như CI: tám lệnh đều `EXIT=0`, `Tests 421 passed (421)`. Lần đầu `format:check` đỏ do file test mới chưa format; đã chạy prettier rồi capture lại. Output đầy đủ nằm trong file review và task report.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong nhánh này):** parser `previous_url` giả định mảng trong khi CLI pinned trả object có `deployments`; đã đổi thành `Array.isArray(data) ? data : data.deployments`, lọc `READY` + `target === 'production'` và thêm guard cụ thể.
+- **Accepted (sửa trong nhánh này):** drill ghi `BASE_URL` qua `GITHUB_ENV` trong khi job-level env cũng đặt biến này; đã thay bằng smoke step riêng với `BASE_URL: ${{ inputs.base_url }}` tường minh.
+- **Accepted (sửa trong nhánh này):** rollback kiểm tra `$PREVIOUS_URL` ngay trong step ghi biến qua `GITHUB_ENV` (biến chưa tồn tại trong shell đó); đã dùng biến shell cục bộ rồi mới export.
+- **Accepted (sửa trong nhánh này):** guard cũ cấm mọi `SITE_URL` trong workflow; đã thu hẹp thành cấm `secrets.SITE_URL`, vẫn cấm `AUTH_SECRET` và `DIRECT_URL`, đồng thời khẳng định `vars.SITE_URL` hiện diện.
+- **Accepted (sửa trong nhánh này):** `docs/DEPLOY.md` còn nói `SITE_URL` chỉ nằm trong Vercel; đã ghi rõ biến Environment `production` dùng cho smoke.
+- **Rejected:** dùng URL deployment mới làm `BASE_URL` như câu chữ cũ của spec/plan, vì assertion canonical so với `SITE_URL` sẽ đỏ sai; giữ `deployment_url` chỉ để đối chiếu.
+- **Rejected:** chạy deploy, smoke, rollback hoặc drill thật; điều phối viên sở hữu và secret `DATABASE_URL` của Environment đang trống (live blocker, không phải lỗi code). Không push, không mở PR.
+- **Rejected:** thêm `if-no-files-found: ignore` cho artifact; drill cố ý fail trước khi tạo report, nhưng trong deploy thật cảnh báo file thiếu cần được thấy.
+
+### AI sai ở đâu
+
+- Ban đầu viết parser `JSON.parse(input).find(...)` theo giả định `vercel ls --json` trả mảng; chỉ phát hiện khi tự gọi read-only CLI pinned và thấy object `deployments`. Đây là lỗi Critical vì deploy đã thất bại trước khi promotion, mất luôn rollback target.
+- Ban đầu đặt `if: always()` cho smoke rồi dùng `GITHUB_ENV` để đổi `BASE_URL` cho drill; không chứng minh được ưu tiên giữa `GITHUB_ENV` và job-level env, nên đổi sang env tường minh trên step riêng.
+- Trong rollback selector, tôi kiểm tra `$PREVIOUS_URL` ngay sau khi ghi vào `GITHUB_ENV`; giá trị đó chỉ có ở step sau. Phát hiện khi tự đọc lại toàn bộ file sau khi sửa, không phải từ test.
+- Guard test đầu tiên đòi chuỗi `vercel ls --prod` nhưng workflow có thêm `--json --token`; đã đổi sang regex `/vercel@66\.6\.0 ls --prod --json/` thay vì nới sai implementation.
+- Lần capture đầu tiên quên format file test mới nên `format:check` đỏ; đã chạy prettier và capture lại đủ tám lệnh.
+
+### Hạn chế
+
+- Chưa có live run của `workflow_run`, drill `workflow_dispatch`, smoke production hay rollback Vercel; controller sở hữu. Secret `DATABASE_URL` của Environment `production` đang trống, nên deploy thật vẫn bị chặn; đây là live blocker đã biết, không đổ lỗi cho code.
+- Chưa tạo biến `SITE_URL`, secret hay required reviewer của Environment `production`; "gated by Environment production" mới chỉ là cấu hình repo.
+- Guard là so cấu trúc YAML và CLI help/output read-only, không thay thế chạy runner thật; build/test chạy trên Windows với SQLite, không phải `ubuntu-latest`.
+- Không push nhánh và không mở PR theo lệnh của điều phối viên.
+
+---
+
 ## 2026-11-23 17:12:55 +07:00 - C3: tach migration khoi build va gate bang approval
 
 ### Prompt nguyên văn đã dùng
