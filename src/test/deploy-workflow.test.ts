@@ -89,6 +89,15 @@ describe('production deploy guard', () => {
     );
   });
 
+  it('deploys when approval was skipped and both real needs succeeded', () => {
+    const deploy = block(block(readWorkflow(), 'jobs'), 'deploy', 2);
+
+    expect(deploy, 'the deploy job must exist').not.toBe('');
+    expect(deploy, 'a skipped approval must not propagate a skip to deploy').toContain(
+      "if: always() && needs.verify-ci.result == 'success' && needs.migrate.result == 'success' && github.event_name != 'workflow_dispatch'",
+    );
+  });
+
   it('builds from the lockfile with the npm cache', () => {
     const deploy = block(block(readWorkflow(), 'jobs'), 'deploy', 2);
 

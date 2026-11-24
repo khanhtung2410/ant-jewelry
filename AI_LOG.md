@@ -1,3 +1,92 @@
+## 2026-11-24 16:49:37 +07:00 - Follow-up: su deploy skip khi approval bi bo qua
+
+### Prompt nguyên văn đã dùng
+
+> You are a subagent spawned by another session.
+> You are implementing a small follow-up fix: make the production `deploy` job run when the `approval` job is skipped because there are no pending migrations.
+>
+> ## Root cause
+>
+> Live deploy runs 45335589737 and 45367918187 both had: verify-ci success, check-migrations success with `pending=false`, approval SKIPPED, migrate SUCCESS, but `deploy` SKIPPED, which then skips smoke and rollback and makes finalize fail. The `deploy` job currently has only `if: github.event_name != 'workflow_dispatch'` and `needs: [verify-ci, migrate]`; the skipped `approval` job in the dependency chain propagates a skip to `deploy`.
+>
+> Work from C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating on branch ci/fix-deploy-simply (actually use the checked-out branch ci/fix-deploy-skip), based on origin/main. The existing guard tests are in src/test/deploy-workflow.test.ts and src/test/smoke-rollback.test.ts.
+>
+> ## Required change
+>
+> 1. Add an explicit condition to the `deploy` job so it runs when both real needs succeeded despite the skipped approval:
+>    `if: always() && needs.verify-ci.result == 'success' && needs.migrate.result == 'success' && github.event_name != 'workflow_dispatch'`
+>    Keep the existing workflow_dispatch drill behaviour.
+> 2. Verify the smoke job still runs after a successful deploy (it already uses `always()` with `needs.deploy.result == 'success'`).
+> 3. Update the guard test(s) to pin the new deploy condition, and run them RED→GREEN: first add the assertion, watch it fail, then change the workflow.
+> 4. Update the relevant AI_LOG with a short dated correction note (do NOT rewrite historical entries) that the earlier "DATABASE_URL empty" limitation is resolved and that the deploy-skip bug was fixed in this branch. Keep the verbatim prompt from the owner's original CI/deploy request, plus a note that this is the follow-up fix.
+> 5. Run the full check set once before committing, capturing via Node spawnSync UTF-8 NO_COLOR=1 with DATABASE_URL=file:./prisma/dev.db.
+>
+> ## Constraints
+>
+> - Do NOT push, open PRs, or change live GitHub settings. Commit locally only.
+> - Do NOT write any secret values into files.
+> - Only Vietnamese and English letters in written text.
+> - No subagents.
+>
+> ## Report
+>
+> Write your full report to C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\fix-deploy-skip-report.md and return ONLY: Status, commit, one-line test summary, concerns, report path.
+>
+> Prompt goc cua chu du an, giu nguyen tu muc `2026-11-23 14:42:12 +07:00 - Spec va plan cho tach CI, deploy va migration`. Day la follow-up fix, khong viet lai cac entry lich su:
+>
+> > Hiện tại CI và deploy tách rời nhau. .github/workflows/npm-ci.yml chỉ chạy lint, typecheck và E2E, chưa chạy npm test, format:check, check:language. Vercel Git integration (vercel.json) tự deploy mỗi khi có push lên main, không chờ CI. Migration production chạy ngay trong bước build (build:production → scripts/migrate-production.mjs). Như vậy một commit đỏ CI vẫn lên production và có thể đã đổi schema DB. Mục tiêu: chỉ code đã pass CI mới được deploy, migration là một bước riêng có kiểm soát, deploy xong tự kiểm tra và rollback được. Làm theo thứ tự, mỗi mục một PR, có spec + plan trong docs/superpowers/.
+> >
+> > spec + plan trong docs/superpowers/.
+> >
+> > C1 — CI chạy đủ bộ kiểm tra. Đổi tên workflow thành ci.yml, gồm các job: lint + typecheck + format:check + check:language; npm test; npm run build; test:e2e. Dùng cache npm và cache trình duyệt Playwright. Bật branch protection cho main: bắt buộc PR, bắt buộc các job trên xanh, không push thẳng.
+> > Bằng chứng: ảnh cấu hình branch protection; một PR thử cố ý làm fail npm test → nút Merge bị khóa.
+> > C2 — Deploy production từ GitHub Actions sau khi CI xanh. Tắt auto-deploy của Vercel Git ("git": { "deploymentEnabled": false }). Thêm workflow deploy.yml chạy khi push vào main, needs các job của C1, dùng Vercel CLI: vercel pull --environment=production → vercel build --prod → vercel deploy --prebuilt --prod. Secrets (VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID) đặt trong GitHub Environment production, không đặt ở mức repo. Đặt concurrency: production để hai lần deploy không chạy chồng nhau.
+> > Bằng chứng: link một run Actions có đủ chuỗi CI → deploy; Vercel dashboard hiện deployment do CLI tạo, không còn deployment từ Git integration.
+> > C3 — Tách migration khỏi bước build. Bỏ migrate-production.mjs khỏi build:production. Trong deploy.yml thêm job migrate chạy trước deploy: prisma migrate status → nếu có migration mới thì dừng chờ duyệt (GitHub Environment có required reviewers) → prisma migrate deploy với DIRECT_URL. Giải thích trong PR: vì sao migration chạy trước deploy, và migration phải tương thích ngược (code cũ vẫn chạy được trên schema mới) để rollback không làm hỏng dữ liệu.
+> > Bằng chứng: output migrate status trong log Actions; một lần deploy có migration bị dừng ở bước chờ duyệt.
+> > C4 — Smoke test sau deploy và rollback. Job smoke sau deploy chạy BASE_URL=<url vừa deploy> npm run test:smoke:production. Nếu fail: tự chạy vercel rollback về deployment trước, và workflow báo đỏ. Upload report Playwright làm artifact. Viết vào DEPLOY.md mục “Deploy & rollback” mô tả cả quy trình, kể cả cách rollback tay.
+> > Bằng chứng: chạy thử một lần với smoke test cố ý fail (trên nhánh thử, workflow_dispatch) → production quay về bản trước; dán link run.
+> > C5 — Preview deploy cho PR, dùng DB riêng. Không bắt buộc. Preview đang bị tắt vì dùng chung DB production (A3). Nếu bật lại: workflow preview.yml cho mỗi PR, dùng một DB preview riêng (Neon branch hoặc Prisma Postgres riêng, seed dữ liệu mẫu), comment link preview vào PR, xóa DB/branch khi PR đóng.
+> > Điều kiện: chứng minh preview không thể ghi vào DB production (biến DATABASE_URL của Preview khác Production; ảnh cấu hình).
+> >
+> > (Quyết định bổ sung) C3 dùng DATABASE_URL là chuỗi direct, không thêm lại DIRECT_URL; live actions do tôi thực hiện khi được cấp credentials; spec được duyệt để viết plan.
+
+Link review: `docs/reviews/2026-11-24-test-driven-development.md`. Link lượt trước: `docs/reviews/2026-11-23-requesting-code-review-c4.md`.
+
+### Đã tự kiểm chứng
+
+- Đọc trọn `.github/workflows/deploy.yml`, `src/test/deploy-workflow.test.ts`, `src/test/smoke-rollback.test.ts`, `docs/DEPLOY.md` mục deploy chain, `docs/CONTRIBUTING.md`, `docs/reviews/TEMPLATE.md`, `scripts/check-language.mjs`, `package.json`, entry C4 trong `AI_LOG.md` và hai skill `using-superpowers` / `test-driven-development`.
+- `git fetch origin` rồi xác nhận HEAD và `origin/main` đều là `74b14a2`; nhánh `ci/fix-deploy-skip` đã checkout sẵn, không tạo nhánh mới, không push.
+- `grep` mọi consumer của `needs.deploy.result`, `needs.approval.result` và `github.event_name` trong hai file guard test và workflow trước khi đổi; chỉ có đúng chuỗi điều kiện của `deploy` cần thay, smoke giữ nguyên.
+- RED: thêm assertion mới cho `deploy.if` và assertion pin cho `smoke.if`, rồi chạy `npx vitest run src/test/deploy-workflow.test.ts src/test/smoke-rollback.test.ts` → `Tests 1 failed | 20 passed (21)`, EXIT=1. Lỗi đúng là thiếu điều kiện `always() && needs.verify-ci.result ...`, không phải lỗi cú pháp. Assertion smoke xanh ngay vì hành vi đã đúng từ trước; đây là pin chống hồi quy, không phải RED driver.
+- GREEN: cùng lệnh sau khi sửa `deploy.yml` → `Test Files 2 passed (2)`, `Tests 21 passed (21)`, EXIT=0.
+- Parse YAML bằng package `yaml`: đủ tám job, `deploy.if` khớp nguyên biểu thức bắt buộc, `smoke.if` giữ nguyên; bảng bốn tình huống gồm approval skipped, verify fail, migrate fail và dispatch drill đều cho kết quả mong đợi, EXIT=0.
+- Full check set chạy bằng Node `spawnSync` UTF-8 `NO_COLOR=1`, `DATABASE_URL=file:./prisma/dev.db`, sau hai bước chuẩn bị giống CI (`next typegen`, `db:push`): tám lệnh đều `EXIT=0`, `npm test` có `Tests 423 passed (423)`, `format:check` và `check:language` sạch; output đầy đủ nằm trong review và report.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong nhánh `ci/fix-deploy-skip`):** condition của `deploy` đổi sang `always() && needs.verify-ci.result == 'success' && needs.migrate.result == 'success' && github.event_name != 'workflow_dispatch'`, giữ drill `workflow_dispatch` bị skip.
+- **Accepted (sửa trong nhánh `ci/fix-deploy-skip`):** guard test mới pin condition đó; docs chain ghi rõ lý do `always()`; entry này ghi nhận deploy-skip bug đã sửa.
+- **Accepted (ghi nhận, giữ nguyên):** smoke đã có `always() && (needs.deploy.result == 'success' || github.event_name == 'workflow_dispatch')`, chỉ thêm assertion pin, không đổi logic.
+- **Accepted (correction):** limitation "secret `DATABASE_URL` của Environment đang trống" trong entry C4 đã resolved; hai live run 45335589737 và 45367918187 có `check-migrations` success với `pending=false` nên Prisma đọc được URL thật. Không sửa nội dung entry cũ.
+- **Rejected:** push, mở PR, đổi setting GitHub hay chạy deploy/drill thật; chủ dự án/điều phối viên sở hữu và task cấm rõ ràng.
+- **Rejected:** viết lại prompt nguyên văn hoặc limitation của các entry lịch sử; chỉ prepend entry hiệu chỉnh.
+
+### AI sai ở đâu
+
+- Lỗi gốc do tôi thiết kế guard của C3/C4: chỉ dùng `if: github.event_name != 'workflow_dispatch'` cho `deploy`, tưởng `needs: [verify-ci, migrate]` đủ. Khi `approval` bị skip (không có migration), dependency chain truyền skip sang `deploy`, rồi smoke/rollback cũng skip và `finalize` đỏ dù mọi bước thật đều xanh.
+- Ban đầu tôi định chỉ đọc guard smoke và kết luận "đủ" mà không pin bằng assertion; nếu sau này ai đổi `needs.deploy.result` thì lỗi lặp lại. Đã thêm assertion pin dù assertion này xanh ngay.
+- Lần đầu tiên tôi định dùng bốn space trước dấu `-` trong `docs/DEPLOY.md` nhưng file có ba; phát hiện khi đọc byte thật và đã sửa, không đoán implementation.
+
+### Hạn chế
+
+- Không có live run mới của `deploy.yml` sau fix; bốn tình huống chỉ được mô phỏng từ biểu thức YAML đã parse, chạy trên runner thật vẫn do điều phối viên xác nhận.
+- Không push, không mở PR, không đổi Environment hay secret; mọi thay đổi là repo-side, local commit.
+- Full check set chạy trên Windows với SQLite, không phải `ubuntu-latest`; không chạy smoke production hay rollback Vercel.
+- Không ghi giá trị secret nào vào file; chỉ nhắc tên `DATABASE_URL` và trạng thái đã resolved.
+
+---
+
 ## 2026-11-24 16:13:16 +07:00 - C4: smoke sau deploy, rollback va tai lieu khoi phuc
 
 ### Prompt nguyên văn đã dùng

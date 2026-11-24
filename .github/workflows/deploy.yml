@@ -135,7 +135,9 @@ jobs:
   deploy:
     name: deploy
     needs: [verify-ci, migrate]
-    if: github.event_name != 'workflow_dispatch'
+    # `always()` keeps a skipped approval from propagating a skip here. The two
+    # real needs must still succeed, and a dispatch drill still skips deploy.
+    if: always() && needs.verify-ci.result == 'success' && needs.migrate.result == 'success' && github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment: production
     # Application runtime variables stay in the Vercel project and are pulled
