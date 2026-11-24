@@ -977,20 +977,21 @@ Deployment target: Next.js + PostgreSQL cho production; ảnh sản phẩm đư�
 
 ### 14.1. Environment variables
 
-- `DATABASE_URL`: PostgreSQL connection string của production.
-- `DIRECT_URL`: tùy chọn; schema PostgreSQL hiện tại không yêu cầu trường này. Có thể cấu hình riêng nếu quy trình migration/tooling cần kết nối trực tiếp.
+- `DATABASE_URL`: PostgreSQL connection string của production, dùng cho runtime, build, kiểm tra trạng thái và migration. Trong GitHub Environment `production` đây là chuỗi direct `db.prisma.io`, vì file do `vercel pull` tạo chỉ chứa `[SENSITIVE]`.
+- Không dùng biến direct riêng: schema PostgreSQL hiện tại chỉ đọc `DATABASE_URL`.
 - `AUTH_SECRET`: secret ngẫu nhiên dùng ký session cookie.
 - `SITE_URL`: canonical HTTPS origin của website.
 - `PRODUCT_IMAGE_UPLOAD_DIR`: (tùy chọn) đường dẫn thư mục lưu ảnh sản phẩm; mặc định `./uploads`. Phải có quyền ghi và bền vững ở production nếu cần giữ ảnh đã upload.
 
-Không commit credentials, passwords, tokens hoặc secrets vào Git repository. Lưu production values trong Vercel Environment Variables hoặc secret manager. Deploy production đọc `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` từ GitHub Environment `production`; đây là ba secret duy nhất trong GitHub, còn biến runtime của app vẫn nằm trong Vercel.
+Không commit credentials, passwords, tokens hoặc secrets vào Git repository. Lưu production values trong Vercel Environment Variables hoặc secret manager. Deploy production đọc `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` và `DATABASE_URL` direct từ GitHub Environment `production`; các secret runtime còn lại của app vẫn nằm trong Vercel.
 
 ### 14.2. Database và triển khai
 
 - Local development/test tiếp tục dùng `prisma/schema.prisma` (SQLite).
 - Production client và migrations dùng `prisma/postgresql/schema.prisma` cùng migration directory riêng trong `prisma/postgresql/migrations/`.
-- Vercel dùng `npm run build:production` để sinh Prisma Client cho PostgreSQL trước khi build ứng dụng. Git integration của Vercel đã tắt (`git.deploymentEnabled: false`); `.github/workflows/deploy.yml` deploy bằng Vercel CLI (`pull`, `build --prod`, `deploy --prebuilt --prod`) sau khi workflow `ci` xanh trên `main`.
-- Áp dụng migrations trước khi chuyển traffic; không chạy `prisma db push` hoặc demo seed trên production.
+- Vercel dùng `npm run build:production` để sinh Prisma Client cho PostgreSQL rồi build ứng dụng; bản build không đổi schema. Git integration của Vercel đã tắt (`git.deploymentEnabled: false`); `.github/workflows/deploy.yml` deploy bằng Vercel CLI (`pull`, `build --prod`, `deploy --prebuilt --prod`) sau khi workflow `ci` xanh trên `main`.
+- Job `check-migrations` đọc `prisma migrate status`; nếu có migration mới, job `approval` dừng tại Environment `migration-approval` có required reviewer, sau đó job `migrate` mới chạy `prisma migrate deploy`. Deploy chỉ chạy sau khi migration job thành công.
+- Áp dụng migrations trước khi chuyển traffic; migration phải tương thích ngược để bản code cũ vẫn chạy được sau rollback. Không chạy `prisma db push` hoặc demo seed trên production.
 - Tạo ADMIN đầu tiên bằng `npm run db:create-admin:production`, nhập password tương tác thay vì lưu trong repository hay command history.
 - Sao lưu PostgreSQL trước migration; nếu cần rollback, phục hồi backup hoặc triển khai forward-fix, không sửa migration đã áp dụng.
 

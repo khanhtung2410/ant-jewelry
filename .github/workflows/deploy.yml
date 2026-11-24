@@ -37,17 +37,95 @@ jobs:
           fi
           echo "Deploying $HEAD_SHA, the current tip of main."
 
-  deploy:
-    name: deploy
+  check-migrations:
+    name: check-migrations
     needs: verify-ci
     runs-on: ubuntu-latest
     environment: production
+    # The pulled Vercel file redacts runtime variables, so Prisma needs the
+    # real direct connection from the production environment for status too.
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    outputs:
+      pending: ${{ steps.check.outputs.pending }}
+    steps:
+      - name: Check out the commit that passed CI
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Clean install from lockfile
+        run: npm ci
+      - name: Detect pending migrations (npm run db:migrate:status:production)
+        id: check
+        run: |
+          pending="$(node scripts/detect-pending-migrations.mjs)"
+          echo "pending=$pending" >>"$GITHUB_OUTPUT"
+          echo "Pending migrations: $pending"
+
+  approval:
+    name: approval
+    needs: check-migrations
+    if: needs.check-migrations.outputs.pending == 'true'
+    runs-on: ubuntu-latest
+    # Required reviewers are configured on this environment by the controller.
+    environment: migration-approval
+    steps:
+      - name: Record the approval gate
+        run: echo "Migration approved in environment migration-approval."
+
+  migrate:
+    name: migrate
+    needs: [check-migrations, approval]
+    if: always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: Check out the commit that passed CI
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - name: Clean install from lockfile
+        run: npm ci
+      - name: Refuse to migrate when the status check failed
+        env:
+          CHECK_RESULT: ${{ needs.check-migrations.result }}
+        run: |
+          if [ "$CHECK_RESULT" != "success" ]; then
+            echo "::error::check-migrations finished with $CHECK_RESULT; refusing to migrate."
+            exit 1
+          fi
+      - name: Print the commit and the snapshot reminder
+        env:
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          echo "Migrating database for commit $COMMIT_SHA"
+          echo "Reminder: confirm a snapshot or point-in-time checkpoint exists before applying migrations."
+      - name: Apply pending migrations
+        run: npm run db:migrate:production
+
+  deploy:
+    name: deploy
+    needs: [verify-ci, migrate]
+    runs-on: ubuntu-latest
+    environment: production
     # Application runtime variables stay in the Vercel project and are pulled
-    # below; only the three Vercel credentials are GitHub Environment secrets.
+    # below; the direct database URL is injected here because the pulled file
+    # redacts it, and the three Vercel credentials are Environment secrets.
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
     outputs:
       deployment_url: ${{ steps.deploy.outputs.deployment_url }}
     steps:
