@@ -2,7 +2,7 @@
 
 - **Skill:** `receiving-code-review`
 - **Scope:** the three findings from the final review of `86f286b..d51174b`, fixed in one wave: fail-closed migration detection, live-configuration documentation, and an observable manual rollback HTTP status
-- **Base:** `d51174b` | **Head:** `fix/ci-fail-closed-migrations` (single fix commit on `origin/main`)
+- **Base:** `d51174b` | **Head:** `846f11d` (`fix/ci-fail-closed-migrations`)
 - **Prompt nguyên văn:** xem `AI_LOG.md` mục `2026-11-24 21:54:09 +07:00 - Final fix wave: fail-closed migrations, docs and rollback status`.
 
 ## Method
@@ -13,8 +13,8 @@ Self-review under the exact skill id `receiving-code-review` (loaded with the `s
 
 | # | Severity · file:line | Reproduction / effect | Decision |
 |---|---|---|---|
-| F1 | Important · `scripts/detect-pending-migrations.mjs:14-16,32-46`, `src/test/detect-pending-migrations.test.ts:30-32`, `.github/workflows/deploy.yml:95` | Empty or unrecognised `prisma migrate status` output returned `false`, so the wrapper printed `false` and exited 0, `approval` was skipped by `needs.check-migrations.outputs.pending == 'true'`, and `migrate` applied the migration with no reviewer. A Prisma wording change could therefore ship an unreviewed schema change. | **Accepted (fixed in `fix/ci-fail-closed-migrations`)** - the pending banner is checked first, only three explicit no-pending markers return `false`, and empty/truncated/unknown output returns `true`. The CLI still checks the banner separately so a failed status command with no marker exits 1. Unit, flow and CLI probe evidence below. |
-| F2 | Important · `docs/DEPLOY.md:56,70,77,99,350`, `README.md:70` | `DEPLOY.md:56` correctly listed four Environment secrets, but `:77`, `:99` and `:350` said three; `:70` and `README.md:70` still offered `DIRECT_URL`, which the owner explicitly rejected. An operator following the runbook would provision the wrong set of secrets. | **Accepted (fixed in `fix/ci-fail-closed-migrations`)** - all three counts now say four, both `DIRECT_URL` rows are deleted, and `DEPLOY.md:133` is unchanged because it correctly means three Vercel credentials plus `DATABASE_URL`. Doc guard evidence below. |
+| F1 | Important · `scripts/detect-pending-migrations.mjs:14-16,32-46`, `src/test/detect-pending-migrations.test.ts:34-40`, `.github/workflows/deploy.yml:95` | Empty or unrecognised `prisma migrate status` output returned `false`, so the wrapper printed `false` and exited 0, `approval` was skipped by `needs.check-migrations.outputs.pending == 'true'`, and `migrate` applied the migration with no reviewer. A Prisma wording change could therefore ship an unreviewed schema change. | **Accepted (fixed in `fix/ci-fail-closed-migrations`)** - the pending banner is checked first, only three explicit no-pending markers return `false`, and empty/truncated/unknown output returns `true`. The CLI still checks the banner separately so a failed status command with no marker exits 1. Unit, flow and CLI probe evidence below. |
+| F2 | Important · `docs/DEPLOY.md:56,70,77,99,350`, `README.md:70` | `DEPLOY.md:56` correctly listed four Environment secrets, but `:77`, `:99` and `:350` said three; `:70` and `README.md:70` still offered `DIRECT_URL`, which the owner explicitly rejected. An operator following the runbook would provision the wrong set of secrets. | **Accepted (fixed in `fix/ci-fail-closed-migrations`)** - all three counts now say four, both `DIRECT_URL` rows are deleted, and `DEPLOY.md:132` is unchanged because it correctly means three Vercel credentials plus `DATABASE_URL`. Doc guard evidence below. |
 | F3 | Minor · `docs/DEPLOY.md:193-203` | Manual rollback told the operator to check HTTP 2xx and `oldDeploymentId`, but both `curl` commands printed the body only, so the status was never observable. | **Accepted (fixed in `fix/ci-fail-closed-migrations`)** - both commands now use `-w '\n%{http_code}'` and split the last line into `status` with `tail -n 1` and `body` with `sed '$d'`, mirroring `.github/workflows/deploy.yml:189-193`; the exact command is pinned by a doc test. |
 
 ## Declined to judge
@@ -185,6 +185,6 @@ FAILED_COMMANDS=0
 - No live `deploy.yml` run, drill or GitHub/Vercel setting was changed; fail-closed behavior is proven by unit and flow tests plus a local CLI probe, not by a production migration.
 - The check set ran on Windows with SQLite, not on `ubuntu-latest` with PostgreSQL.
 - The exact Prisma no-pending phrases are pinned to three known messages; an entirely new no-pending wording causes an extra approval pause by design, never an unreviewed migration.
-- The review record was written before the fix commit was created, so its Head is named by branch rather than hash; the commit hash is reported separately in the final report.
+- The review record was written before the fix commit was created; the Head line now names the exact commit `846f11d`.
 
 Link AI_LOG entry: `AI_LOG.md` mục `2026-11-24 21:54:09 +07:00 - Final fix wave: fail-closed migrations, docs and rollback status`.

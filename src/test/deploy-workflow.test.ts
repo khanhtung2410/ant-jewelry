@@ -366,7 +366,15 @@ describe('production deploy guard', () => {
       /^\|\s*`DIRECT_URL`/m,
     );
     expect(readme, 'README.md must not offer a DIRECT_URL row').not.toMatch(/^\|\s*`DIRECT_URL`/m);
+    expect(read('.env.example'), '.env.example must not offer DIRECT_URL').not.toContain(
+      'DIRECT_URL',
+    );
     expect(manual, 'manual rollback must print the HTTP status').toContain('%{http_code}');
+    expect(manual, 'manual rollback must split the status from the body').toContain('tail -n 1');
+    expect(manual, 'manual rollback must strip the status line from the body').toContain(
+      "sed '$d'",
+    );
+    expect(manual, 'manual rollback must print the status').toContain('echo "HTTP $status"');
   });
 
   it('injects the direct database URL into every job that uses Prisma', () => {
