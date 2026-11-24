@@ -173,31 +173,50 @@ jobs:
         run: npx --yes vercel@66.6.0 build --prod --token="$VERCEL_TOKEN"
       - name: Capture the current production deployment before promotion
         id: previous
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
         run: |
-          # The alias points at the newest READY production deployment. Read it
-          # before promoting so rollback has an explicit, verified target. The
-          # uid is the id required by the alias REST endpoint in the rollback job.
-          previous="$(npx --yes vercel@66.6.0 ls --prod --json --token="$VERCEL_TOKEN" | node -e '
+          # `vercel ls --prod --json` has no id or uid field. Read the production
+          # alias instead: its response names the deployment the alias points at,
+          # which stays correct after a rollback, and gives the id the alias REST
+          # endpoint needs for a later rollback.
+          alias_host="${SITE_URL#https://}"
+          alias_host="${alias_host%%/*}"
+          if [ -z "$alias_host" ]; then
+            echo "::error::SITE_URL is empty; cannot resolve the production alias."
+            exit 1
+          fi
+          response="$(curl -sS -w '\n%{http_code}' \
+            -H "Authorization: Bearer $VERCEL_TOKEN" \
+            "https://api.vercel.com/v1/aliases/$alias_host?teamId=$VERCEL_ORG_ID")"
+          status="$(echo "$response" | tail -n 1)"
+          body="$(echo "$response" | sed '$d')"
+          case "$status" in
+            2??) ;;
+            *)
+              echo "::error::Vercel alias lookup failed with HTTP $status."
+              echo "$body"
+              exit 1
+              ;;
+          esac
+          if ! previous="$(echo "$body" | node -e '
             let input = "";
             process.stdin.on("data", (chunk) => { input += chunk; });
             process.stdin.on("end", () => {
               const data = JSON.parse(input);
-              const rows = Array.isArray(data) ? data : data.deployments;
-              const current = rows.find(
-                (row) => row.url && row.state === "READY" && row.target === "production",
-              );
-              if (!current) {
-                console.error("No READY production deployment found before promotion.");
+              const url = data.deployment && data.deployment.url;
+              const id = data.deploymentId;
+              if (!url || !id) {
+                console.error("The alias response is missing deployment.url or deploymentId.");
                 process.exit(1);
               }
-              if (!current.uid) {
-                console.error("The current production deployment has no uid.");
-                process.exit(1);
-              }
-              console.log(current.url);
-              console.log(current.uid);
+              console.log(url);
+              console.log(id);
             });
-          ')"
+          ')"; then
+            echo "::error::The production alias response did not contain a usable deployment."
+            exit 1
+          fi
           previous_url="$(echo "$previous" | head -n 1)"
           previous_id="$(echo "$previous" | tail -n 1)"
           echo "previous_url=$previous_url" >>"$GITHUB_OUTPUT"
@@ -260,7 +279,9 @@ jobs:
   rollback:
     name: rollback
     needs: [deploy, smoke]
-    if: failure()
+    # A failure before promotion leaves no target to roll back to. A drill
+    # always has its own explicit target, so it must keep rehearsing rollback.
+    if: failure() && (needs.deploy.result != 'skipped' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
     environment: production
     env:
@@ -338,11 +359,16 @@ jobs:
           SMOKE_RESULT: ${{ needs.smoke.result }}
           ROLLBACK_RESULT: ${{ needs.rollback.result }}
         run: echo "smoke=$SMOKE_RESULT rollback=$ROLLBACK_RESULT"
-      - name: Fail when smoke did not pass
-        if: needs.smoke.result != 'success'
+      - name: Fail when smoke ran and did not pass
+        if: needs.smoke.result == 'failure' || needs.smoke.result == 'cancelled'
         run: |
           echo "::error::Smoke finished with ${{ needs.smoke.result }}; production must stay red after rollback."
           exit 1
       - name: Confirm the smoke check passed
         if: needs.smoke.result == 'success'
         run: echo "Smoke passed; the production deploy is complete."
+      # A skipped smoke follows an upstream failure that already marks the run
+      # red; printing the smoke failure here would misreport the root cause.
+      - name: Record a smoke skipped by an upstream failure
+        if: needs.smoke.result == 'skipped'
+        run: echo "Smoke was skipped; the failed upstream job already marks this run red."
