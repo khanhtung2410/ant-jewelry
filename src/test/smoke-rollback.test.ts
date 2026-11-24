@@ -87,13 +87,12 @@ describe('production smoke and rollback guard', () => {
 
     expect(deploy).toContain('previous_url: ${{ steps.previous.outputs.previous_url }}');
     expect(deploy, 'the previous URL must be read before the new deployment is promoted').toMatch(
-      /vercel@66\.6\.0 ls --prod --json/,
+      /api\.vercel\.com\/v1\/aliases\//,
     );
     expect(deploy.indexOf('id: previous')).toBeLessThan(deploy.indexOf('id: deploy'));
-    expect(
-      deploy,
-      'the pinned CLI returns an object with a deployments array, not a bare array',
-    ).toContain('data.deployments');
+    expect(deploy, 'the canonical URL comes from the alias response').toContain(
+      'data.deployment.url',
+    );
     expect(deploy).toContain('deployment_url: ${{ steps.deploy.outputs.deployment_url }}');
   });
 
@@ -103,7 +102,9 @@ describe('production smoke and rollback guard', () => {
     expect(deploy, 'rollback needs the deployment id, not only its URL').toContain(
       'previous_id: ${{ steps.previous.outputs.previous_id }}',
     );
-    expect(deploy, 'the pinned CLI exposes the deployment id as uid').toContain('current.uid');
+    expect(deploy, 'the alias response exposes the deployment id as deploymentId').toContain(
+      'data.deploymentId',
+    );
     expect(deploy).toContain('previous_id=$previous_id');
   });
 
@@ -112,7 +113,9 @@ describe('production smoke and rollback guard', () => {
 
     expect(rollback, 'the rollback job must exist').not.toBe('');
     expect(rollback).toContain('needs: [deploy, smoke]');
-    expect(rollback).toContain('if: failure()');
+    expect(rollback, 'rollback must not claim a target when promotion never happened').toContain(
+      "if: failure() && (needs.deploy.result != 'skipped' || github.event_name == 'workflow_dispatch')",
+    );
     expect(rollback).toContain('environment: production');
     expect(rollback).toContain('${{ needs.deploy.outputs.previous_id }}');
     expect(rollback, 'a team token can call the project-scoped REST API').toContain(
@@ -134,14 +137,50 @@ describe('production smoke and rollback guard', () => {
     );
   });
 
+  it('skips the alias call cleanly when capture produced no target', () => {
+    const rollback = job('rollback');
+
+    expect(rollback, 'the selection step must expose whether a target exists').toContain(
+      'has_target=false',
+    );
+    expect(rollback, 'the alias call must be skipped without a target').toContain(
+      "if: steps.select.outputs.has_target == 'true'",
+    );
+    expect(rollback, 'a real run must not print a misleading second error').not.toContain(
+      '::error::No previous production deployment id is available for rollback.',
+    );
+    expect(rollback, 'a drill must still fail loudly when its input id is missing').toContain(
+      'The drill needs previous_deployment_id',
+    );
+  });
+
   it('leaves the workflow red when smoke failed even after a rollback', () => {
     const finalize = job('finalize');
 
     expect(finalize, 'the finalize job must exist').not.toBe('');
     expect(finalize).toContain('needs: [smoke, rollback]');
     expect(finalize).toContain('if: always()');
-    expect(finalize).toContain("needs.smoke.result != 'success'");
+    expect(finalize, 'only a smoke that ran and failed may fail finalize').toContain(
+      "if: needs.smoke.result == 'failure' || needs.smoke.result == 'cancelled'",
+    );
+    expect(finalize, 'a skipped smoke must not print the misleading failure').not.toContain(
+      "if: needs.smoke.result != 'success'",
+    );
+    expect(finalize, 'a skipped smoke is recorded without failing the run').toContain(
+      "if: needs.smoke.result == 'skipped'",
+    );
     expect(finalize).toContain('exit 1');
+  });
+
+  it('does not roll back when an upstream job fails before promotion', () => {
+    const rollback = job('rollback');
+
+    expect(rollback, 'a skipped deploy must skip rollback outside a drill').toContain(
+      "needs.deploy.result != 'skipped'",
+    );
+    expect(rollback, 'a drill still rolls back even though its deploy is skipped').toContain(
+      "github.event_name == 'workflow_dispatch'",
+    );
   });
 
   it('gates a dispatch drill behind the production environment', () => {

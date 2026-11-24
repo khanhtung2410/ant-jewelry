@@ -1,3 +1,208 @@
+## 2026-11-24 21:12:02 +07:00 - Scoped re-review va PR cho capture alias fix
+
+### Prompt nguyên văn đã dùng
+
+> You are re-reviewing one task's fix round. A previous review produced findings; an implementer has attempted to fix them. Your job is to verdict each finding and inspect the fix diff — nothing else.
+>
+> Working directory: C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating
+>
+> ## The Task
+>
+> Read the task brief: C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\task-4-brief.md
+>
+> ## The Findings Under Verification
+>
+> - **Important** · `docs/DEPLOY.md:190,198`, `docs/ARCHITECTURE.md:994` — Manual rollback still says to read `uid` from `vercel ls --prod --json`, which the verified root cause says does not exist; the architecture doc still says rollback uses `uid` and finalize is red whenever smoke is not `success`. Reproduction: open the Manual rollback section and follow it; no `uid` field is available to select `<previous-id>`. This is not introduced by the diff, but the diff updates the same doc and the corrected root cause makes these lines false. Needs update to the alias `deploymentId` / logged `previous_id` and the new finalize condition.
+> - **Minor** · `.github/workflows/deploy.yml:284` (with `:302-318`) — A failure during the capture step leaves `deploy` at `failure`, not `skipped`, so rollback still starts and reports "No previous production deployment id is available". This is the same symptom the fix targets, now from a different upstream step. Acknowledged in `AI_LOG.md:60` and review finding #8; the run is already red, so there is no false success.
+> - **Minor** · `.github/workflows/deploy.yml:183-184` — Alias host handling strips only `https://` and a trailing path. An `http://` origin, port, or query string would produce a malformed alias. Low risk because `SITE_URL` is documented as a canonical https origin.
+>
+> ## The Fix
+>
+> Read the implementer's report (fix reports are appended at the end): C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\fix-capture-report.md
+>
+> **Fix base:** d58149a (the head the previous review saw)
+> **Head:** 82c22b3
+> **Diff file:** C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\fix-capture-rereview.md
+>
+> Read the diff file once — it contains the fix commits, a stat summary, and the fix diff with surrounding context. Do not re-run git commands. If the diff file is missing, fetch the diff yourself: `git diff --stat d58149a..82c22b3` and `git diff d58149a..82c22b3`.
+>
+> Your review is read-only on this checkout. Do not mutate the working tree, the index, HEAD, or branch state in any way.
+>
+> ## Project review requirements (binding)
+>
+> - Re-read the whole source of every file you use as evidence, and grep every consumer of a value that changed, before you accept or reject a finding. The diff alone is not enough for a "ADDRESSED" verdict on documentation or workflow semantics.
+> - For every "pass" claim, point to a named test or captured output; if there is no evidence, say so explicitly instead of assuming.
+> - Everything you write must use only Vietnamese and English letters (plus digits, punctuation, symbols). No other letter is allowed.
+>
+> ## You Do Not Dispatch Subagents
+>
+> Do all of this review yourself. Never spawn a subagent to review part of the diff, and never spawn another reviewer for a second opinion. This process already provides every review seat the work gets; a reviewer you spawn duplicates one of them at full cost, and its verdict counts for nothing. If the diff feels too large for one pass, review it in passes yourself and say so in your report.
+>
+> ## Scope
+>
+> Your scope is the findings list and the fix diff. Verdict every finding. Inspect the fix diff for new problems the fix itself introduced. Do NOT re-review code the fix did not touch: if you notice an issue entirely outside the fix diff, report it under Out-of-Scope Observations — it does not block this task and does not extend the loop. A broad whole-branch review happens after all tasks are complete.
+>
+> ## Tests
+>
+> The implementer re-ran the tests covering the amended code and appended the results to the report file. Treat the report as unverified claims: confirm the fix report names the covering tests and shows their output, and verify the claims against the diff. Do not re-run the suite to confirm their report. Run a test only when reading the code raises a specific doubt that no existing run answers — and then a focused test, never a package-wide suite.
+>
+> ## Output Format
+>
+> Your final message is the report itself: begin directly with the first finding's verdict. Every line is a verdict, a finding with file:line, or a check you ran — no preamble, no process narration.
+>
+> ### Finding Verdicts
+>
+> For each finding in The Findings Under Verification, in order:
+> - **[finding one-liner]** — ADDRESSED | NOT ADDRESSED, with file:line evidence. "Attempted" is not addressed: the specific defect must no longer exist.
+>
+> ### New Breakage in the Fix Diff
+>
+> Anything the fix itself broke or introduced, with severity (Critical/Important/Minor) and file:line. "None" if clean.
+>
+> ### Out-of-Scope Observations
+>
+> Issues you noticed entirely outside the fix diff. Non-blocking; the controller ledgers these for the final review. "None" if none.
+>
+> ### Verdict
+>
+> **Fix round:** [All findings addressed, no new Critical/Important breakage | Findings remain open] — list the open ones.
+
+Link review: `docs/reviews/2026-11-24-subagent-driven-development-capture-fix.md`. Link lượt trước: `docs/reviews/2026-11-24-receiving-code-review-fix-capture-round1.md`.
+
+### Đã tự kiểm chứng
+
+- Dispatch một reviewer fresh-context theo đúng skill id `subagent-driven-development` với diff `d58149a..82c22b3`, task brief, fix report và ba finding. Reviewer đọc trọn `.github/workflows/deploy.yml`, `docs/DEPLOY.md`, `docs/ARCHITECTURE.md`, hai file guard test và grep `has_target|steps.select|previous_id|previous_url|deploymentId` trước khi kết luận.
+- Tôi đọc lại trực tiếp step capture, step rollback, `finalize`, mục "Deploy & rollback" của `DEPLOY.md` và mục 14.2 của `ARCHITECTURE.md`; xác nhận capture fail closed khi HTTP ngoài 2xx hoặc thiếu `deploymentId`/`deployment.url`, rollback có `has_target` và điều kiện `needs.deploy.result != 'skipped'`, `finalize` chỉ đỏ trên `failure`/`cancelled`.
+- Chạy lại toàn bộ check set bằng Node `spawnSync` UTF-8 `NO_COLOR=1` `DATABASE_URL=file:./prisma/dev.db`: `next typegen`, `db:push`, `lint`, `typecheck`, `npm test`, `format:check`, `build`, `check:language` đều `EXIT=0`, `FAILED_COMMANDS=0`; `npm test` đạt `Test Files 86 passed (86)`, `Tests 431 passed (431)`. Output đầy đủ được nhúng vào cả hai file review và PR body.
+- Chạy lại `format:check` và `check:language` sau khi thêm hai file review và entry này; cả hai `EXIT=0`.
+- Xác nhận GitHub Environment `production` có `SITE_URL` dạng variable và bốn secret `DATABASE_URL`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `VERCEL_TOKEN` trước khi mở PR.
+
+### Findings được nhận / bác
+
+- **Accepted (đã sửa trong `ci/fix-capture-alias-api`):** cả ba finding của vòng trước (tài liệu `uid` cũ, rollback không target, ràng buộc HTTPS của `SITE_URL`) đều được re-review xác nhận ADDRESSED.
+- **Accepted (đã sửa trong `ci/fix-capture-alias-api`):** finding Minor mới của re-review về file review vòng 1 chỉ trỏ tới đường dẫn tạm; nay output đầy đủ đã được nhúng trực tiếp.
+- **Rejected:** không có finding nào bị bác trong vòng này.
+- **Rejected:** chạy live deploy/drill trước khi merge; việc đó thuộc controller sau khi PR xanh.
+
+### AI sai ở đâu
+
+- File review vòng 1 do tôi yêu cầu implementer viết chỉ ghi "xem report" thay vì dán output đầy đủ, trái `docs/reviews/TEMPLATE.md`. Re-review bắt được; lần này output được nhúng nguyên văn vào cả hai file.
+- Ở vòng review capture trước, tôi chỉ sửa các dòng `DEPLOY.md` được nêu mà không đọc hết mục "Manual rollback", nên còn hai dòng vẫn hướng dẫn `uid`. Lần này tôi đọc trọn mục và grep toàn `docs/` trước khi chấp nhận là đã sửa.
+- Tôi tin `vercel ls --prod --json` có `uid` mà không kiểm tra payload thật, dẫn tới hai vòng sửa liên tiếp. Bài học đã ghi ở entry trước; lần này mọi kết luận về payload đều dựa trên response alias do controller xác nhận trực tiếp.
+
+### Limitations
+
+- Chưa có live run của `deploy.yml` sau fix; PR này phải merge rồi mới xác minh được chuỗi verify-ci, migrate, deploy, smoke, finalize.
+- Check set chạy trên Windows với SQLite, không phải `ubuntu-latest` của Actions.
+- Các file plan và review lịch sử vẫn nhắc `uid`/CLI rollback; giữ nguyên vì là hồ sơ lịch sử, đã ghi rõ trong review.
+
+---
+
+## 2026-11-24 18:40:38 +07:00 - Fix round 1: cap nhat docs va guard rollback
+
+### Prompt nguyên văn đã dùng
+
+> Fix round 1: the task reviewer found one Important finding plus two Minors. Address them in this order:
+>
+> 1. IMPORTANT — `docs/DEPLOY.md:190,198` and `docs/ARCHITECTURE.md:994` still describe reading `uid` from `vercel ls --prod --json` and say finalize is red whenever smoke is not success. Update them to the verified reality: capture uses GET /v1/aliases/{alias}?teamId=... and `deploymentId` / `deployment.url`; manual rollback uses the alias REST endpoint (or Vercel dashboard promotion); finalize fails only when smoke actually failed or was cancelled, and records skipped separately. Re-read the whole affected sections before editing.
+> 2. MINOR — capture-step failure still leaves deploy at `failure`, so rollback may start with no target. Add a guard in the rollback selection step so it exits cleanly (no misleading second error) when no previous id is available; keep the run red. If this is already handled, state that with file:line evidence in your fix report.
+> 3. MINOR — alias host handling strips only https://. Extend it to tolerate http:// and trailing slash safely, or document the constraint explicitly in DEPLOY.md. Choose the smaller safe option and record your call.
+>
+> Update the guard tests for anything you change, re-run the focused tests, append a fix report to C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\fix-capture-report.md with the covering tests, commands and output, and return the short status contract. Do not push or change live settings.
+
+Link review: `docs/reviews/2026-11-24-receiving-code-review-fix-capture-round1.md`. Link lượt trước: `docs/reviews/2026-11-24-test-driven-development-fix-capture-alias-api.md`.
+
+### Đã tự kiểm chứng
+
+- Doc lai toan bo muc "Deploy & rollback" cua `DEPLOY.md` va muc 14.2 cua `ARCHITECTURE.md`; grep tat ca lan nhac `uid`, `vercel ls`, `!= 'success'` trong `docs/` truoc khi doi. Chi ba dong duoc bao report la con sai; giu nguyen plan/review lich su.
+- Doc lai step capture va step rollback trong workflow; xac nhan khong co guard nao chon target rong truoc round nay.
+- RED: them mot test doc-trong `deploy-workflow.test.ts` va mot test guard rollback trong `smoke-rollback.test.ts`; chay Vitest hai file → `Tests 2 failed | 27 passed (29)`, EXIT=1, dung ly do thieu hanh vi.
+- GREEN: sua docs, them `id: select` / `has_target` / `if: steps.select.outputs.has_target == 'true'`, va sua helper doc test de bo qua fence code → `Tests 29 passed (29)`, EXIT=0.
+- Full check set chay lai bang Node `spawnSync` UTF-8 `NO_COLOR=1`, `DATABASE_URL=file:./prisma/dev.db`; output va `EXIT=` tung lenh duoc ghi vao fix report.
+
+### Findings được nhận / bác
+
+- **Accepted (sua trong nhanh `ci/fix-capture-alias-api`):** ba dong docs trong finding 1, them constraint HTTPS cua `SITE_URL`, va guard `has_target` cho rollback.
+- **Rejected:** push, mo PR, chay drill that hoac doi setting GitHub; task cam.
+- **Rejected:** viet lai cac file plan/review lich su van nhac `uid`; chi cap nhat ba vi tri duoc bao cao va them entry nay.
+
+### AI sai ở đâu
+
+- Round truoc chi sua dong 166, 168-169, 173-174 cua `DEPLOY.md` va khong doc den muc "Manual rollback" (dong 190, 198) cung nhu khong grep `ARCHITECTURE.md`. De sot hai mo ta sai. Lan nay doc tron muc va grep toan `docs/` truoc khi sua.
+- Thiet ke ban dau cua rollback selection chi co `::error::` + `exit 1`; neu chi doi thanh `exit 0` ma khong skip step tiep theo thi van goi API voi id rong. Da them output `has_target` va dieu kien `if` tren step rollback.
+- Helper doc test ban dau coi dong `# GET ...` trong code block la heading, lam test van do sau khi da sua doc. Da cho helper bo qua moi dong nam trong fence.
+
+### Limitations
+
+- Khong co live run hay drill that; khong push, khong mo PR.
+- Full check set chay tren Windows voi SQLite, khong phai `ubuntu-latest`.
+- Chon ghi ro constraint HTTPS thay vi doi workflow (phu an nho hon); neu sau nay can ho tro `http://` thi mo follow-up rieng.
+
+---
+
+## 2026-11-24 18:18:40 +07:00 - Follow-up: doc lai alias bang GET va sua dieu kien rollback/finalize
+
+### Prompt nguyên văn đã dùng
+
+> You are a subagent spawned by another session.
+> Implement a final live-discovered fix in `.github/workflows/deploy.yml`.
+>
+> ## Verified root causes (controller tested these live)
+>
+> 1. `vercel ls --prod --json` output has keys `url,name,state,target,createdAt,...` and has NO `id`/`uid`. The capture step therefore failed with "The current production deployment has no uid", so deploy was skipped.
+> 2. The correct source is `GET https://api.vercel.com/v1/aliases/{alias}?teamId={VERCEL_ORG_ID}` with `Authorization: Bearer {VERCEL_TOKEN}`. Verified response includes `deploymentId: "dpl_..."` and `deployment.url`. This returns the deployment the production alias actually points at, which stays correct after a rollback (unlike "newest READY").
+> 3. When `migrate` fails before deploy, the `rollback` job still runs because its `if: failure()`, then fails with "No previous production deployment id is available" and `finalize` prints a misleading smoke-skipped error.
+>
+> ## Required changes
+>
+> 1. Replace the deploy job's "Capture the current production deployment before promotion" step with a REST call (curl or Node) to the alias endpoint above. Derive the alias host from `${{ vars.SITE_URL }}` (strip `https://`). Set outputs `previous_url` (from `deployment.url`) and `previous_id` (from `deploymentId`). Fail on non-2xx or missing fields. Keep both outputs consumed by rollback.
+> 2. Make `rollback` run only when a promotion was actually attempted: add `&& needs.deploy.result != 'skipped'` to its `if: failure()` condition. Keep drill behaviour.
+> 3. Make `finalize` fail only when smoke actually ran and failed: adjust its condition/logic so a skipped smoke caused by an earlier infrastructure failure does not produce the misleading "Smoke finished with skipped" error, while a failed smoke still leaves the run red.
+> 4. Update guard tests in `src/test/deploy-workflow.test.ts` and `src/test/smoke-rollback.test.ts` RED→GREEN for the new capture source and conditions.
+> 5. Add a short dated AI_LOG correction entry (do not rewrite history) and update `docs/DEPLOY.md` if needed to describe the alias-based capture.
+> 6. Run full check set once before committing via Node spawnSync with DATABASE_URL=file:./prisma/dev.db.
+>
+> ## Constraints
+>
+> - Work in C:\Users\Hello\.local\share\opencode\worktree\43112d\ci-deploy-gating on branch ci/fix-capture-alias-api based on origin/main.
+> - Do NOT push, open PRs, or change live settings. Do NOT write secrets into files.
+> - Only Vietnamese and English letters; no subagents; TDD RED→GREEN.
+> - Write report to C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\fix-capture-report.md and return ONLY status, commit, test summary, concerns, report path.
+
+Link review: `docs/reviews/2026-11-24-test-driven-development-fix-capture-alias-api.md`. Link lượt trước: `docs/reviews/2026-11-24-test-driven-development-fix-rollback-api.md`.
+
+### Đã tự kiểm chứng
+
+- `git fetch origin` rồi reset nhánh `ci/fix-capture-alias-api` về `origin/main` = `8ae929d`; đây là fix trước đó đọc `uid` từ `vercel ls`, chính là nguồn lỗi live. Không push, không mở PR.
+- Đọc trọn `.github/workflows/deploy.yml`, hai file guard test, `docs/DEPLOY.md` mục deploy chain, `docs/CONTRIBUTING.md`, `docs/reviews/TEMPLATE.md`, `package.json` và hai skill `test-driven-development` / `verification-before-completion`.
+- `grep` mọi consumer của `previous_url`, `previous_id`, `needs.deploy.result`, `needs.smoke.result` và `vars.SITE_URL` trong workflow và test trước khi đổi; rollback vẫn dùng cả hai output, drill vẫn dùng `inputs.previous_deployment_id`.
+- RED: thêm 3 test trong `deploy-workflow.test.ts` (gồm flow test chạy đúng script Node nhúng trong step với payload alias có `deploymentId` và `deployment.url`) và 5 assertion/test mới trong `smoke-rollback.test.ts`; chạy Vitest hai file → `Tests 8 failed | 19 passed (27)`, EXIT=1. Lỗi đúng là thiếu endpoint alias, thiếu `data.deploymentId`, condition rollback và condition finalize, không phải lỗi cú pháp.
+- GREEN: cùng lệnh sau khi sửa workflow → `Test Files 2 passed (2)`, `Tests 27 passed (27)`, EXIT=0.
+- Full check set chạy bằng Node `spawnSync` UTF-8 `NO_COLOR=1`, `DATABASE_URL=file:./prisma/dev.db`; output đầy đủ và `EXIT=` từng lệnh nằm trong file review và report.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong nhánh `ci/fix-capture-alias-api`):** thay capture bằng `GET /v1/aliases/{alias}?teamId=...`, lấy `deployment.url` và `deploymentId`, fail khi HTTP ngoài 2xx hoặc thiếu field; thêm `SITE_URL` làm env của step capture.
+- **Accepted (sửa trong nhánh `ci/fix-capture-alias-api`):** `rollback.if` thành `failure() && (needs.deploy.result != 'skipped' || github.event_name == 'workflow_dispatch')` để giữ drill; `finalize` chỉ đỏ khi smoke `failure` hoặc `cancelled`, có step riêng ghi nhận smoke `skipped`.
+- **Accepted:** guard test đổi RED→GREEN, có flow test chạy script parse thật; `docs/DEPLOY.md` mô tả nguồn alias.
+- **Rejected:** push, mở PR, đổi setting GitHub hay chạy deploy/drill thật; task cấm và tài sản thuộc điều phối viên.
+- **Rejected:** viết lại các entry lịch sử (đặc biệt entry 17:31 vẫn giữ nguyên dù hướng dẫn `vercel ls` ở đó đã sai); chỉ prepend entry hiệu chỉnh này.
+
+### AI sai ở đâu
+
+- Ở entry 17:31 tôi tin rằng `vercel ls --prod --json` có field `uid` và dùng nó làm `previous_id`. Live trả `url,name,state,target,createdAt,...` nên bước capture đỏ ngay với "The current production deployment has no uid". Lần này tôi không đoán field nữa mà chạy parser với payload có cấu trúc thật do điều phối viên xác nhận.
+- Tôi cũng thiết kế `finalize.if: needs.smoke.result != 'success'` nên smoke `skipped` sau lỗi migrate in ra "Smoke finished with skipped", đổ lỗi sai chỗ. Đã đổi sang hai trạng thái chạy thật.
+- Ban đầu tôi định thêm literal `if: failure() && needs.deploy.result != 'skipped'` nhưng như vậy drill (deploy luôn skipped) mất rollback. Đã đọc lại condition của smoke và thêm nhánh `github.event_name == 'workflow_dispatch'`.
+
+### Limitations
+
+- Không có live run mới của `deploy.yml` sau fix; endpoint và payload chỉ do điều phối viên xác nhận, workflow được kiểm chứng bằng guard/flow test và parse YAML cục bộ.
+- Không chạy smoke production, rollback hay drill thật; không push, không mở PR.
+- Full check set chạy trên Windows với SQLite, không phải `ubuntu-latest` của Actions.
+- Chưa xử lý riêng trường hợp capture fail trước khi promotion: deploy đỏ, rollback vẫn có thể chạy rồi báo thiếu id (run đã đỏ sẵn). Cân nhắc ở follow-up nếu muốn tách biệt hẳn.
+
+---
+
 ## 2026-11-24 17:31:34 +07:00 - Follow-up: thay CLI rollback bang REST alias API
 
 ### Prompt nguyên văn đã dùng

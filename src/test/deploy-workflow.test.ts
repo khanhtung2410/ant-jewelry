@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -9,6 +10,40 @@ const VERCEL = 'npx --yes vercel@66.6.0';
 const read = (relativePath: string): string => readFileSync(path.join(root, relativePath), 'utf8');
 
 const readWorkflow = (): string => read(workflowPath);
+
+// A markdown section is bounded by the next heading, so a doc assertion cannot
+// accidentally match a different section with a similar phrase.
+const section = (content: string, heading: string): string => {
+  const lines = content.replace(/\r\n/g, '\n').split('\n');
+  const start = lines.findIndex((line) => line.trim() === heading);
+  if (start === -1) return '';
+  const collected: string[] = [];
+  let inFence = false;
+  for (const line of lines.slice(start + 1)) {
+    if (line.trimStart().startsWith('```')) {
+      inFence = !inFence;
+      collected.push(line);
+      continue;
+    }
+    if (!inFence && /^#{1,3} /.test(line)) break;
+    collected.push(line);
+  }
+  return collected.join('\n');
+};
+
+const job = (name: string): string => block(block(readWorkflow(), 'jobs'), name, 2);
+
+// The capture step pipes the alias response into an embedded Node script. Run
+// that exact script against a controller-verified payload so the test covers
+// the value crossing from the REST body into the two GITHUB_OUTPUT lines.
+const runCaptureParser = (payload: unknown) => {
+  const script = job('deploy').match(/node -e '([\s\S]*?)'\)/)?.[1];
+  if (!script) throw new Error('The capture step no longer embeds a Node parser.');
+  return spawnSync(process.execPath, ['-e', script], {
+    input: JSON.stringify(payload),
+    encoding: 'utf8',
+  });
+};
 
 // The same block reader as the CI guard: it returns the indented body of one
 // YAML mapping key so an assertion cannot accidentally match a sibling block.
@@ -134,6 +169,85 @@ describe('production deploy guard', () => {
     ]) {
       expect(content, `deploy.yml must read ${secret}`).toContain(secret);
     }
+  });
+
+  it('captures the previous deployment from the production alias endpoint', () => {
+    const deploy = job('deploy');
+
+    expect(deploy, 'the capture step must read the canonical alias from SITE_URL').toContain(
+      'SITE_URL: ${{ vars.SITE_URL }}',
+    );
+    expect(deploy, 'the https prefix must be stripped from the alias host').toContain(
+      '${SITE_URL#https://}',
+    );
+    expect(deploy, 'the alias endpoint returns the deployment the alias points at').toContain(
+      'https://api.vercel.com/v1/aliases/$alias_host?teamId=$VERCEL_ORG_ID',
+    );
+    expect(deploy, 'the request must authenticate with the Vercel token').toContain(
+      'Authorization: Bearer $VERCEL_TOKEN',
+    );
+    expect(deploy, 'a non-2xx response must fail before promotion').toContain('%{http_code}');
+    expect(deploy, 'the deployment listing capture must be gone').not.toContain(
+      'vercel@66.6.0 ls --prod --json',
+    );
+    expect(deploy, 'vercel ls has no uid field').not.toContain('current.uid');
+  });
+
+  it('parses the alias response into the deployment url and id', () => {
+    const result = runCaptureParser({
+      alias: 'ant-jewelry.vercel.app',
+      deploymentId: 'dpl_previous123',
+      deployment: { url: 'previous-deployment.vercel.app', state: 'READY' },
+      target: 'production',
+    });
+
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout.trim().split('\n')).toEqual([
+      'previous-deployment.vercel.app',
+      'dpl_previous123',
+    ]);
+  });
+
+  it('rejects an alias response missing the deployment url or id', () => {
+    const missingId = runCaptureParser({
+      deployment: { url: 'previous-deployment.vercel.app' },
+    });
+    const missingUrl = runCaptureParser({ deploymentId: 'dpl_previous123', deployment: {} });
+
+    expect(missingId.status).not.toBe(0);
+    expect(missingId.stderr).toContain('deployment.url or deploymentId');
+    expect(missingUrl.status).not.toBe(0);
+    expect(missingUrl.stderr).toContain('deployment.url or deploymentId');
+  });
+
+  it('documents the alias capture, the alias fallback and the exact finalize cases', () => {
+    const deployDoc = read('docs/DEPLOY.md');
+    const manual = section(deployDoc, '### Manual rollback');
+    const architectureDeploy = read('docs/ARCHITECTURE.md')
+      .split('\n')
+      .filter((line) => line.includes('Job `finalize`'))
+      .join('\n');
+
+    expect(manual, 'manual rollback must take the id from the alias endpoint').toContain(
+      'GET https://api.vercel.com/v1/aliases/',
+    );
+    expect(manual).toContain('deploymentId');
+    expect(manual, 'uid is not a field of vercel ls').not.toContain('`uid`');
+    expect(manual).not.toContain('ls --prod --json');
+    expect(manual, 'dashboard promotion stays the fallback').toContain('Vercel dashboard');
+    expect(architectureDeploy, 'architecture must describe the alias capture').toContain(
+      '/v1/aliases/',
+    );
+    expect(architectureDeploy).toContain('deploymentId');
+    expect(architectureDeploy, 'architecture must not claim uid').not.toContain('(`uid`)');
+    expect(
+      architectureDeploy,
+      'finalize must not be red for every smoke that is not success',
+    ).not.toContain('không `success`');
+    expect(architectureDeploy).toContain('`cancelled`');
+    expect(deployDoc, 'the https only alias input constraint must be explicit').toContain(
+      'không chuyển `http://`',
+    );
   });
 
   it('rolls back with the Vercel alias REST endpoint instead of the CLI', () => {
