@@ -1,3 +1,45 @@
+## 2026-11-24 18:40:38 +07:00 - Fix round 1: cap nhat docs va guard rollback
+
+### Prompt nguyên văn đã dùng
+
+> Fix round 1: the task reviewer found one Important finding plus two Minors. Address them in this order:
+>
+> 1. IMPORTANT — `docs/DEPLOY.md:190,198` and `docs/ARCHITECTURE.md:994` still describe reading `uid` from `vercel ls --prod --json` and say finalize is red whenever smoke is not success. Update them to the verified reality: capture uses GET /v1/aliases/{alias}?teamId=... and `deploymentId` / `deployment.url`; manual rollback uses the alias REST endpoint (or Vercel dashboard promotion); finalize fails only when smoke actually failed or was cancelled, and records skipped separately. Re-read the whole affected sections before editing.
+> 2. MINOR — capture-step failure still leaves deploy at `failure`, so rollback may start with no target. Add a guard in the rollback selection step so it exits cleanly (no misleading second error) when no previous id is available; keep the run red. If this is already handled, state that with file:line evidence in your fix report.
+> 3. MINOR — alias host handling strips only https://. Extend it to tolerate http:// and trailing slash safely, or document the constraint explicitly in DEPLOY.md. Choose the smaller safe option and record your call.
+>
+> Update the guard tests for anything you change, re-run the focused tests, append a fix report to C:\Users\Hello\AppData\Local\Temp\opencode\sdd-ci-deploy-gating\fix-capture-report.md with the covering tests, commands and output, and return the short status contract. Do not push or change live settings.
+
+Link review: `docs/reviews/2026-11-24-receiving-code-review-fix-capture-round1.md`. Link lượt trước: `docs/reviews/2026-11-24-test-driven-development-fix-capture-alias-api.md`.
+
+### Đã tự kiểm chứng
+
+- Doc lai toan bo muc "Deploy & rollback" cua `DEPLOY.md` va muc 14.2 cua `ARCHITECTURE.md`; grep tat ca lan nhac `uid`, `vercel ls`, `!= 'success'` trong `docs/` truoc khi doi. Chi ba dong duoc bao report la con sai; giu nguyen plan/review lich su.
+- Doc lai step capture va step rollback trong workflow; xac nhan khong co guard nao chon target rong truoc round nay.
+- RED: them mot test doc-trong `deploy-workflow.test.ts` va mot test guard rollback trong `smoke-rollback.test.ts`; chay Vitest hai file → `Tests 2 failed | 27 passed (29)`, EXIT=1, dung ly do thieu hanh vi.
+- GREEN: sua docs, them `id: select` / `has_target` / `if: steps.select.outputs.has_target == 'true'`, va sua helper doc test de bo qua fence code → `Tests 29 passed (29)`, EXIT=0.
+- Full check set chay lai bang Node `spawnSync` UTF-8 `NO_COLOR=1`, `DATABASE_URL=file:./prisma/dev.db`; output va `EXIT=` tung lenh duoc ghi vao fix report.
+
+### Findings được nhận / bác
+
+- **Accepted (sua trong nhanh `ci/fix-capture-alias-api`):** ba dong docs trong finding 1, them constraint HTTPS cua `SITE_URL`, va guard `has_target` cho rollback.
+- **Rejected:** push, mo PR, chay drill that hoac doi setting GitHub; task cam.
+- **Rejected:** viet lai cac file plan/review lich su van nhac `uid`; chi cap nhat ba vi tri duoc bao cao va them entry nay.
+
+### AI sai ở đâu
+
+- Round truoc chi sua dong 166, 168-169, 173-174 cua `DEPLOY.md` va khong doc den muc "Manual rollback" (dong 190, 198) cung nhu khong grep `ARCHITECTURE.md`. De sot hai mo ta sai. Lan nay doc tron muc va grep toan `docs/` truoc khi sua.
+- Thiet ke ban dau cua rollback selection chi co `::error::` + `exit 1`; neu chi doi thanh `exit 0` ma khong skip step tiep theo thi van goi API voi id rong. Da them output `has_target` va dieu kien `if` tren step rollback.
+- Helper doc test ban dau coi dong `# GET ...` trong code block la heading, lam test van do sau khi da sua doc. Da cho helper bo qua moi dong nam trong fence.
+
+### Limitations
+
+- Khong co live run hay drill that; khong push, khong mo PR.
+- Full check set chay tren Windows voi SQLite, khong phai `ubuntu-latest`.
+- Chon ghi ro constraint HTTPS thay vi doi workflow (phu an nho hon); neu sau nay can ho tro `http://` thi mo follow-up rieng.
+
+---
+
 ## 2026-11-24 18:18:40 +07:00 - Follow-up: doc lai alias bang GET va sua dieu kien rollback/finalize
 
 ### Prompt nguyên văn đã dùng

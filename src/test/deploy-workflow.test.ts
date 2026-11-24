@@ -11,6 +11,26 @@ const read = (relativePath: string): string => readFileSync(path.join(root, rela
 
 const readWorkflow = (): string => read(workflowPath);
 
+// A markdown section is bounded by the next heading, so a doc assertion cannot
+// accidentally match a different section with a similar phrase.
+const section = (content: string, heading: string): string => {
+  const lines = content.replace(/\r\n/g, '\n').split('\n');
+  const start = lines.findIndex((line) => line.trim() === heading);
+  if (start === -1) return '';
+  const collected: string[] = [];
+  let inFence = false;
+  for (const line of lines.slice(start + 1)) {
+    if (line.trimStart().startsWith('```')) {
+      inFence = !inFence;
+      collected.push(line);
+      continue;
+    }
+    if (!inFence && /^#{1,3} /.test(line)) break;
+    collected.push(line);
+  }
+  return collected.join('\n');
+};
+
 const job = (name: string): string => block(block(readWorkflow(), 'jobs'), name, 2);
 
 // The capture step pipes the alias response into an embedded Node script. Run
@@ -198,6 +218,36 @@ describe('production deploy guard', () => {
     expect(missingId.stderr).toContain('deployment.url or deploymentId');
     expect(missingUrl.status).not.toBe(0);
     expect(missingUrl.stderr).toContain('deployment.url or deploymentId');
+  });
+
+  it('documents the alias capture, the alias fallback and the exact finalize cases', () => {
+    const deployDoc = read('docs/DEPLOY.md');
+    const manual = section(deployDoc, '### Manual rollback');
+    const architectureDeploy = read('docs/ARCHITECTURE.md')
+      .split('\n')
+      .filter((line) => line.includes('Job `finalize`'))
+      .join('\n');
+
+    expect(manual, 'manual rollback must take the id from the alias endpoint').toContain(
+      'GET https://api.vercel.com/v1/aliases/',
+    );
+    expect(manual).toContain('deploymentId');
+    expect(manual, 'uid is not a field of vercel ls').not.toContain('`uid`');
+    expect(manual).not.toContain('ls --prod --json');
+    expect(manual, 'dashboard promotion stays the fallback').toContain('Vercel dashboard');
+    expect(architectureDeploy, 'architecture must describe the alias capture').toContain(
+      '/v1/aliases/',
+    );
+    expect(architectureDeploy).toContain('deploymentId');
+    expect(architectureDeploy, 'architecture must not claim uid').not.toContain('(`uid`)');
+    expect(
+      architectureDeploy,
+      'finalize must not be red for every smoke that is not success',
+    ).not.toContain('không `success`');
+    expect(architectureDeploy).toContain('`cancelled`');
+    expect(deployDoc, 'the https only alias input constraint must be explicit').toContain(
+      'không chuyển `http://`',
+    );
   });
 
   it('rolls back with the Vercel alias REST endpoint instead of the CLI', () => {

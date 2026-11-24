@@ -171,6 +171,7 @@ ci (static, test, build, e2e xanh)
 
 - Smoke chạy trên origin `SITE_URL`, không phải URL của deployment mới, vì assertion canonical trong `e2e/production.smoke.spec.ts` so sánh `BASE_URL + path` với `<link rel="canonical">` của app. URL deployment mới chỉ được lưu ở output `deployment_url` để đối chiếu; nó không được dùng làm `BASE_URL`.
 - Trước khi promotion, job `deploy` gọi `GET https://api.vercel.com/v1/aliases/{alias}?teamId={VERCEL_ORG_ID}` với header `Authorization: Bearer $VERCEL_TOKEN`. Alias là host của `vars.SITE_URL` sau khi bỏ prefix `https://` và mọi path phía sau. Response có `deploymentId` và `deployment.url`; hai giá trị này được ghi vào output `previous_id` và `previous_url` để rollback. Step đỏ khi HTTP không phải 2xx hoặc response thiếu một trong hai field. Dùng alias API thay vì `vercel ls --prod --json` vì danh sách deployment không có `id`/`uid`, và alias luôn trỏ đúng deployment hiện tại kể cả sau một lần rollback (khác với "deployment READY mới nhất"). Nếu bước này lỗi thì không có deployment mới nào được tạo.
+- Capture chỉ hỗ trợ `SITE_URL` dạng HTTPS origin (đúng như canonical trong Vercel): workflow không chuyển `http://` sang `https://`. Mọi path và dấu `/` cuối sau host đã được bỏ qua. Nếu `SITE_URL` sai định dạng, alias lookup trả HTTP ngoài 2xx nên bước capture đỏ và không có promotion nào xảy ra.
 - Job `rollback` chạy khi `deploy` hoặc `smoke` fail, nhưng chỉ khi promotion thực sự được thử (`needs.deploy.result != 'skipped'`); drill `workflow_dispatch` vẫn được phép vì nó có sẵn `inputs.previous_deployment_id`. Nó lấy `previous_id` từ `needs.deploy.outputs.previous_id`, rồi gọi `POST https://api.vercel.com/v2/deployments/$PREVIOUS_ID/aliases?teamId=$VERCEL_ORG_ID` với header `Authorization: Bearer $VERCEL_TOKEN` và body `{"alias":"<host>"}`. Host được lấy từ `vars.SITE_URL` bằng cách bỏ prefix `https://`. Step đỏ khi curl lỗi hoặc HTTP không phải 2xx. `previous_url` vẫn được in ra log để đối chiếu. Job `finalize` chỉ đỏ khi `needs.smoke.result` là `failure` hoặc `cancelled`; smoke bị skip do lỗi hạ tầng upstream đã làm run đỏ sẵn nên không in thêm lỗi gây hiểu lầm. Khi smoke chạy và fail thì run vẫn đỏ kể cả rollback xanh.
 - Không dùng `vercel rollback`, `vercel inspect` hay `vercel promote` với token của team: các lệnh này cần resolve một user và trả `Error: User not found. (404)`, trong khi REST call có `teamId` vẫn chạy được. Khi không gọi được API, promote bản cũ từ Vercel dashboard (xem mục Manual rollback).
 - Migration chạy trước deploy và phải tương thích ngược (xem mục trước), nên rollback code không cần đảo ngược schema. Không dùng rollback thay cho backup/PITR khi dữ liệu đã bị ghi sai.
@@ -187,7 +188,11 @@ Trên máy đã có biến môi trường của Environment `production` (`VERCE
 ```bash
 export VERCEL_TOKEN=...
 export VERCEL_ORG_ID=...
-# Doc uid cua deployment READY truoc do tu "npx --yes vercel@66.6.0 ls --prod --json".
+# GET https://api.vercel.com/v1/aliases/<alias>?teamId=$VERCEL_ORG_ID
+# lay deploymentId cua deployment ma alias production dang tro toi.
+curl -sS -H "Authorization: Bearer $VERCEL_TOKEN" \
+  "https://api.vercel.com/v1/aliases/ant-jewelry.vercel.app?teamId=$VERCEL_ORG_ID"
+# Chuyen alias ve deploymentId da chon.
 curl -sS -X POST \
   -H "Authorization: Bearer $VERCEL_TOKEN" \
   -H 'Content-Type: application/json' \
@@ -195,7 +200,7 @@ curl -sS -X POST \
   "https://api.vercel.com/v2/deployments/<previous-id>/aliases?teamId=$VERCEL_ORG_ID"
 ```
 
-Chọn `<previous-id>` từ trường `uid` của `vercel ls --prod --json`, đối chiếu với `previous_id` trong log của job `deploy` trước khi chạy. Kiểm tra HTTP 2xx và response có `oldDeploymentId` (deployment xấu vừa bị thay) trước khi coi rollback là xong. Sau rollback, chạy lại `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` và ghi kết quả vào PR/phần recovery; nếu vẫn đỏ, chuyển sang forward-fix thay vì cố rollback lần nữa.
+Chọn `<previous-id>` từ trường `deploymentId` của GET alias ở trên, đối chiếu với `previous_id` trong log của job `deploy` trước khi chạy; `deployment.url` là URL để đối chiếu với `previous_url`. Kiểm tra HTTP 2xx và response có `oldDeploymentId` (deployment xấu vừa bị thay) trước khi coi rollback là xong. Sau rollback, chạy lại `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` và ghi kết quả vào PR/phần recovery; nếu vẫn đỏ, chuyển sang forward-fix thay vì cố rollback lần nữa.
 
 `npx --yes vercel@66.6.0 rollback <previous-url>` **không đáng tin** với token của team: lệnh trả `Error: User not found. (404)` vì CLI cần resolve một user, trong khi REST call ở trên vẫn thành công. Cách dự phòng không cần token là promote bản cũ trên Vercel dashboard (tab Deployments, chọn deployment tốt, Promote to Production).
 

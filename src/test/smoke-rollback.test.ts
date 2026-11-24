@@ -137,6 +137,23 @@ describe('production smoke and rollback guard', () => {
     );
   });
 
+  it('skips the alias call cleanly when capture produced no target', () => {
+    const rollback = job('rollback');
+
+    expect(rollback, 'the selection step must expose whether a target exists').toContain(
+      'has_target=false',
+    );
+    expect(rollback, 'the alias call must be skipped without a target').toContain(
+      "if: steps.select.outputs.has_target == 'true'",
+    );
+    expect(rollback, 'a real run must not print a misleading second error').not.toContain(
+      '::error::No previous production deployment id is available for rollback.',
+    );
+    expect(rollback, 'a drill must still fail loudly when its input id is missing').toContain(
+      'The drill needs previous_deployment_id',
+    );
+  });
+
   it('leaves the workflow red when smoke failed even after a rollback', () => {
     const finalize = job('finalize');
 
