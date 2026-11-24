@@ -2,6 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { hasPendingMigrations } from '../../scripts/detect-pending-migrations.mjs';
 
 const root = process.cwd();
 const workflowPath = '.github/workflows/deploy.yml';
@@ -329,6 +330,43 @@ describe('production deploy guard', () => {
       'hasPendingMigrations(output)',
     );
     expect(pkg.scripts['db:migrate:status:production']).toContain('prisma migrate status');
+  });
+
+  it('feeds unknown status output through to the approval condition', () => {
+    expect(hasPendingMigrations('A Prisma status line we do not recognise')).toBe(true);
+
+    const jobs = block(readWorkflow(), 'jobs');
+    const check = block(jobs, 'check-migrations', 2);
+    const approval = block(jobs, 'approval', 2);
+
+    expect(check, 'check-migrations must publish the pending output').toContain(
+      'pending: ${{ steps.check.outputs.pending }}',
+    );
+    expect(approval, 'the pending output must drive the exact approval condition').toContain(
+      "needs.check-migrations.outputs.pending == 'true'",
+    );
+  });
+
+  it('keeps the Environment secret counts and direct URL rows consistent', () => {
+    const deployDoc = read('docs/DEPLOY.md');
+    const readme = read('README.md');
+    const manual = section(deployDoc, '### Manual rollback');
+
+    for (const phrase of [
+      'chứa bốn secret',
+      'đọc bốn secret của Environment',
+      'bốn secret trong Environment',
+      'đặt bốn secret Environment',
+    ]) {
+      expect(deployDoc, `DEPLOY.md must state four Environment secrets: ${phrase}`).toContain(
+        phrase,
+      );
+    }
+    expect(deployDoc, 'DEPLOY.md must not offer a DIRECT_URL row').not.toMatch(
+      /^\|\s*`DIRECT_URL`/m,
+    );
+    expect(readme, 'README.md must not offer a DIRECT_URL row').not.toMatch(/^\|\s*`DIRECT_URL`/m);
+    expect(manual, 'manual rollback must print the HTTP status').toContain('%{http_code}');
   });
 
   it('injects the direct database URL into every job that uses Prisma', () => {

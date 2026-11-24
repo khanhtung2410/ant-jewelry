@@ -4,16 +4,20 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const PENDING_PATTERN = /Following migrations? have not yet been applied:/i;
+const NO_PENDING_PATTERN =
+  /Database schema is up to date|No pending migrations|No migration found in prisma\/migrations/i;
 
 /**
- * Detects the banner printed by `prisma migrate status` when migrations exist
- * in the migration directory but have not reached the database. Empty or
- * unrelated output means "no pending migration"; a command failure is handled
- * by the CLI wrapper below, which fails closed.
+ * Classifies `prisma migrate status` output for the deploy gate. The pending
+ * banner wins first; only an explicit no-pending marker means "false". Empty,
+ * truncated or unknown output is pending, so a Prisma wording change pauses for
+ * approval instead of applying an unreviewed migration. A command failure is
+ * still handled by the CLI wrapper below, which exits non-zero.
  */
 export function hasPendingMigrations(output) {
-  if (typeof output !== 'string' || output.length === 0) return false;
-  return PENDING_PATTERN.test(output);
+  if (typeof output === 'string' && PENDING_PATTERN.test(output)) return true;
+  if (typeof output === 'string' && NO_PENDING_PATTERN.test(output)) return false;
+  return true;
 }
 
 const invokedDirectly =
@@ -29,7 +33,9 @@ if (invokedDirectly) {
   const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}`;
 
   // A pending banner wins even when Prisma exits non-zero for pending work.
-  if (hasPendingMigrations(output)) {
+  // The banner is checked separately from the fail-closed classifier so a
+  // failed status command with empty or unknown output still stops the run.
+  if (typeof output === 'string' && PENDING_PATTERN.test(output)) {
     console.log('true');
     process.exit(0);
   }
@@ -43,5 +49,5 @@ if (invokedDirectly) {
     process.exit(1);
   }
 
-  console.log('false');
+  console.log(hasPendingMigrations(output) ? 'true' : 'false');
 }

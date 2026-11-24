@@ -1,3 +1,43 @@
+## 2026-11-24 21:54:09 +07:00 - Final fix wave: fail-closed migrations, docs and rollback status
+
+### Prompt nguyên văn đã dùng
+
+> Final whole-branch review found two Important issues and one Minor. Fix all three in one wave: (1) make pending-migration detection fail closed on empty or unknown status output while keeping explicit no-pending markers at false, update the unit cases and add a flow test that unknown output reaches the approval condition; (2) correct the Environment secret counts in DEPLOY.md to four, delete the DIRECT_URL rows in DEPLOY.md and README.md, and add doc guards; (3) make the manual rollback curl print the HTTP status and pin it in a doc test. Update AI_LOG and save the review record with the full check output. Do not push or change live settings.
+
+Link review: `docs/reviews/2026-11-24-receiving-code-review-final-fix-wave.md`. Skill dùng: `receiving-code-review` (cùng với `test-driven-development` và `verification-before-completion`).
+
+### Đã tự kiểm chứng
+
+- Đọc trọn `scripts/detect-pending-migrations.mjs`, `src/test/detect-pending-migrations.test.ts`, `src/test/deploy-workflow.test.ts`, `docs/DEPLOY.md`, `README.md`, `.github/workflows/deploy.yml`, `docs/reviews/TEMPLATE.md` và `docs/CONTRIBUTING.md` trước khi sửa. Grep mọi consumer của `hasPendingMigrations`, `DIRECT_URL`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` và `DATABASE_URL` trước khi đổi giá trị.
+- TDD: viết assertion trước (hai case unit mới, flow test, doc guard), chạy `npx --no-install vitest run src/test/detect-pending-migrations.test.ts src/test/deploy-workflow.test.ts` → `Tests 4 failed | 23 passed (27)`, `EXIT=1`, đúng lý do thiếu hành vi; sau khi sửa → `Test Files 2 passed (2)`, `Tests 27 passed (27)`, `EXIT=0`.
+- Probe CLI với `DATABASE_URL=file:./prisma/dev.db`: `node scripts/detect-pending-migrations.mjs` in `[detect-pending-migrations] prisma migrate status failed; refusing to continue.`, `EXIT=1` — status lỗi và không có marker pending vẫn dừng run, không in `true`.
+- Chạy lại toàn bộ check set bằng Node `spawnSync` UTF-8 `NO_COLOR=1` `DATABASE_URL=file:./prisma/dev.db`: `next typegen`, `db:push`, `lint`, `typecheck`, `npm test`, `format:check`, `build`, `check:language` đều `EXIT=0`, `FAILED_COMMANDS=0`; `npm test` đạt `Test Files 86 passed (86)`, `Tests 435 passed (435)`. Output đầy đủ được nhúng nguyên văn vào file review và dùng U+0192 -> F theo rule 12.
+- Dán doc guard kiểm tra bốn cụm "bốn secret" tại các dòng đã sửa, hai bảng không còn dòng `DIRECT_URL`, và mục `### Manual rollback` có `%{http_code}`; kiểm tra riêng `DEPLOY.md:133` vẫn giữ nghĩa ba secret Vercel cộng `DATABASE_URL`.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong `fix/ci-fail-closed-migrations`):** F1 Important — detection fail closed; banner pending ưu tiên cao nhất, ba marker no-pending trả `false`, output rỗng/lạ trả `true`, kèm unit case, flow test và probe CLI.
+- **Accepted (sửa trong `fix/ci-fail-closed-migrations`):** F2 Important — ba vị trí đếm thành bốn secret, xóa hai dòng `DIRECT_URL`, thêm doc guard; giữ nguyên `DEPLOY.md:133`.
+- **Accepted (sửa trong `fix/ci-fail-closed-migrations`):** F3 Minor — hai lệnh `curl` trong mục Manual rollback in kèm HTTP status và tách body/status, được doc test khóa.
+- **Rejected:** viết lại Step 1 của plan nói "empty output -> false" và các entry lịch sử; controller chốt spec thắng plan và rule 3 cấm sửa hồ sơ cũ.
+- **Rejected:** push, mở PR, chạy deploy/drill thật hoặc đổi setting GitHub/Vercel; brief cấm rõ ràng và controller sở hữu.
+
+### AI sai ở đâu
+
+- Ban đầu tôi định giữ logic `empty output -> false` vì plan Step 1 ghi vậy. Nếu làm vậy, với output rỗng `hasPendingMigrations('')` vẫn trả `false`, workflow ở `deploy.yml:95` bỏ qua job `approval` nhưng `migrate` vẫn chạy `db:migrate:production`: migration lên production không có reviewer. Phán quyết của controller đã sửa hướng này trước khi tôi sửa code.
+- Tôi suýt thay toàn bộ "ba secret" thành "bốn secret" bằng replace toàn cục. Điều đó làm sai `DEPLOY.md:133`, vốn đúng nghĩa ba credential Vercel cộng `DATABASE_URL`. Đã đổi từng cụm và dùng doc guard để khóa.
+- Tôi định dùng một lời gọi `hasPendingMigrations(output)` duy nhất trong wrapper cho cả phân loại lẫn banner pending. Vì output lạ giờ trả `true`, một lệnh status lỗi với output rỗng sẽ in `true` và `EXIT=0` thay vì `EXIT=1`. Đã tách riêng kiểm tra banner bằng `PENDING_PATTERN` trước khi xét lỗi lệnh, rồi probe CLI để chứng minh vẫn `EXIT=1`.
+
+### Limitations
+
+- Chưa có live run của `deploy.yml` sau fix; hành vi fail-closed được chứng minh bằng unit test, flow test và probe CLI local, không phải migration thật trên production.
+- Check set chạy trên Windows với SQLite, không phải `ubuntu-latest` với PostgreSQL.
+- Ba cụm no-pending của Prisma được khóa cứng; wording mới hoàn toàn khác sẽ gây thêm một lần chờ duyệt, theo thiết kế có chủ đích, không bao giờ gây migration không duyệt.
+- `.env.example` vẫn nhắc `DIRECT_URL` tùy chọn; nằm ngoài phạm vi brief (chỉ `DEPLOY.md` và `README.md`) nên giữ nguyên.
+- File review được viết trước khi tạo commit fix, nên trường Head ghi theo tên nhánh; hash commit được báo riêng trong report cuối.
+
+---
+
 ## 2026-11-24 21:12:02 +07:00 - Scoped re-review va PR cho capture alias fix
 
 ### Prompt nguyên văn đã dùng
