@@ -53,7 +53,7 @@ Nếu vượt ngưỡng dung lượng hoặc cache HIT không cải thiện, m�
 ## Prerequisites
 
 - Vercel project connected to this repository (production environment). CLI nên dùng npm 10.9.9 (`packageManager`); npm 12 cũng được hỗ trợ vì `package.json` đã khai báo `allowScripts` cho `better-sqlite3`, `esbuild`, `prisma`, `@prisma/engines`. Kiểm tra lại bằng `npm install-scripts ls` sau mỗi lần nâng dependency.
-- GitHub Environment `production` chứa bốn secret: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` và `DATABASE_URL` (chuỗi direct của Prisma Postgres). Chủ dự án đặt bằng `gh secret set --env production <name>`; không lưu giá trị trong repo và không đặt ở cấp repository. Environment `migration-approval` có required reviewer do chủ dự án cấu hình.
+- GitHub Environment `production` chứa bốn secret: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` và `DATABASE_URL` (chuỗi direct của Prisma Postgres). Chủ dự án đặt bằng `gh secret set --env production <name>`; không lưu giá trị trong repo và không đặt ở cấp repository. Deployment branches của `production` chỉ cho `main`; `production` không có required reviewer để luồng deploy thường không phải chờ. Environment `migration-approval` và `production-drill` có required reviewer do chủ dự án cấu hình; `production-drill` chỉ dùng làm cửa duyệt cho drill, không chứa secret.
 - PostgreSQL database reached through the direct connection string in `DATABASE_URL` (Prisma Postgres `db.prisma.io`, not `pooled.db.prisma.io`). The current schema and build do not use a second direct URL variable.
 - A real, monitored owner email for the first ADMIN (not `admin@antjewelry.local`).
 - Decide whether production starts empty or needs the demo catalogue. `npm run db:seed` is local SQLite only; production may use `npm run db:seed:production`, which seeds categories, products, blog posts, hero slides and settings but **never** the demo users.
@@ -218,7 +218,23 @@ Chọn `<previous-id>` từ trường `deploymentId` của GET alias ở trên, 
 
 ### Drill: smoke fail co y
 
-`workflow_dispatch` của `deploy.yml` nhận bốn input: `base_url` (origin dùng cho smoke), `previous_deployment_id` (id truyền cho alias API lúc rollback), `previous_deployment_url` (URL của drill, chỉ để hiển thị và đối chiếu) và `simulate_failure` (bắt smoke step trả lỗi giả để diễn tập rollback). Ở chế độ này `verify-ci`, `check-migrations`, `approval`, `migrate` và `deploy` đều bị bỏ qua; smoke và rollback khai báo `environment: production` nên phải qua required reviewer của Environment này. Chỉ chạy drill khi có chủ dự án; không dùng input để thao tác trên deployment thật ngoài id và URL đã được cung cấp.
+`workflow_dispatch` của `deploy.yml` nhận bốn input: `base_url` (origin dùng cho smoke), `previous_deployment_id` (id truyền cho alias API lúc rollback), `previous_deployment_url` (URL của drill, chỉ để hiển thị và đối chiếu) và `simulate_failure` (bắt smoke step trả lỗi giả để diễn tập rollback). Ở chế độ này `verify-ci`, `check-migrations`, `approval`, `migrate` và `deploy` đều bị bỏ qua. Job `drill-approval` khai báo `environment: production-drill` và là job duy nhất có required reviewer; job này chỉ chạy cho `workflow_dispatch`, nên luồng deploy thường trên `main` không phải chờ duyệt. Environment `production` chỉ cho phép branch `main` (Deployment branches qua API) và không có required reviewer. Smoke và rollback vẫn khai báo `environment: production` để đọc Vercel token: GitHub API không đọc hay copy được giá trị secret giữa hai Environment, và drill không được đưa secret lên cấp repository. Trước rollback, job ghi output GET `/v1/aliases/<host>`; sau rollback, job GET lại và so sánh `deploymentId` với id đã truyền, đồng thời in response POST có `oldDeploymentId`. Nếu job `drill-approval` không xanh thì smoke, rollback bị bỏ qua và `finalize` vẫn làm run đỏ. Chỉ chạy drill khi có chủ dự án; không dùng input để thao tác trên deployment thật ngoài id và URL đã được cung cấp.
+
+Cấu hình Environment được kiểm bằng API ngày 2026-11-25 (output thật, không chỉ đọc tài liệu):
+
+```text
+COMMAND=gh api repos/khanhtung2410/ant-jewelry/environments --jq ".environments[] | {name, can_admins_bypass, protection_rules: [.protection_rules[] | {type, prevent_self_review, reviewers: [.reviewers[]?.reviewer.login]}], deployment_branch_policy}"
+{"can_admins_bypass":true,"deployment_branch_policy":null,"name":"migration-approval","protection_rules":[{"prevent_self_review":false,"reviewers":["khanhtung2410"],"type":"required_reviewers"}]}
+{"can_admins_bypass":true,"deployment_branch_policy":{"custom_branch_policies":true,"protected_branches":false},"name":"production","protection_rules":[{"prevent_self_review":null,"reviewers":[],"type":"branch_policy"}]}
+{"can_admins_bypass":true,"deployment_branch_policy":null,"name":"production-drill","protection_rules":[{"prevent_self_review":false,"reviewers":["khanhtung2410"],"type":"required_reviewers"}]}
+EXIT=0
+
+COMMAND=gh api repos/khanhtung2410/ant-jewelry/environments/production/deployment-branch-policies --jq ".branch_policies[] | {name, type}"
+{"name":"main","type":"branch"}
+EXIT=0
+```
+
+Bằng chứng hai lần drill (link run, giờ chạy, cửa sổ alias trỏ về bản cũ và output GET trước/sau) sẽ được bổ sung vào mục này sau khi chạy xanh trên `main`.
 
 ### Bằng chứng upload thật trên production (2026-11-18)
 
@@ -360,6 +376,7 @@ If `next build` fails during page data collection with:
 | Vercel + PostgreSQL provisioned, env vars đúng, không lọt secret | [ ] | Cần ảnh/xuất danh sách biến trong Vercel dashboard (đã che giá trị). Repo chỉ có `.env.example`; production render được dữ liệu → gián tiếp chứng tỏ `DATABASE_URL` hoạt động |
 | `SITE_URL` đúng origin production | [x] | `curl https://ant-jewelry.vercel.app/` có `<link rel="canonical" href="https://ant-jewelry.vercel.app"/>` (6 lần xuất hiện origin trong HTML) |
 | A3 — không còn deploy tự động từ Git, chỉ Actions sau CI | [x] | `vercel.json` đặt `git.deploymentEnabled = false`; `.github/workflows/deploy.yml` chỉ chạy từ `workflow_run` của `ci` trên `main`, có guard SHA. Bằng chứng repo: `src/test/deploy-workflow.test.ts`. Bằng chứng live: [vercel-production-deployments](deploy-screenshots/vercel-production-deployments.png) (dashboard ngày 2026-11-25, deployment gắn commit `649f951`/`d51174b`/`0ae74f6`) và run [45428604255](https://github.com/khanhtung2410/ant-jewelry/actions/runs/45428604255) với chuỗi CI → deploy → smoke xanh |
+| Environment protection được kiểm bằng API, không chỉ đọc tài liệu | [x] | `gh api repos/khanhtung2410/ant-jewelry/environments` ngày 2026-11-25: `production` có `deployment_branch_policy.custom_branch_policies = true` và rule branch `main`, `protection_rules` chỉ có `branch_policy`; `production-drill` có `required_reviewers`. Output đầy đủ ở mục Drill bên dưới |
 | Migration đã áp dụng, status sạch | [ ] | Cần output thật của `npm run db:migrate:status:production` (chạy với `DATABASE_URL` direct). Không thể tự lấy từ môi trường agent |
 | Script E1/B6 backfill ảnh legacy đã chạy | [ ] | Bắt buộc nếu DB có blob cũ: chạy `npx tsx scripts/reencode-legacy-uploads.ts --dry-run` rồi lệnh thật với `DATABASE_URL` direct; dán output số blob + ETag mới. Cho đến khi chạy, các blob có `etag = NULL` vẫn phải đọc bytes để trả 304 (đúng nhưng chậm hơn). Không nằm trong `prisma migrate deploy` vì cần sharp + cập nhật URL `?v=2` |
 | ADMIN đầu tiên bằng email thật | [ ] | Cần ảnh trang admin sau khi đăng nhập bằng tài khoản ADMIN vừa tạo (`db:create-admin:production`) |

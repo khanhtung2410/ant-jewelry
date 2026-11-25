@@ -71,9 +71,10 @@ describe('deploy workflow graph', () => {
     expect(needsOf(content, 'approval')).toEqual(['check-migrations']);
     expect(needsOf(content, 'migrate')).toEqual(['check-migrations', 'approval']);
     expect(needsOf(content, 'deploy')).toEqual(['verify-ci', 'migrate']);
-    expect(needsOf(content, 'smoke')).toEqual(['deploy']);
-    expect(needsOf(content, 'rollback')).toEqual(['deploy', 'smoke']);
-    expect(needsOf(content, 'finalize')).toEqual(['smoke', 'rollback']);
+    expect(needsOf(content, 'drill-approval')).toEqual([]);
+    expect(needsOf(content, 'smoke')).toEqual(['deploy', 'drill-approval']);
+    expect(needsOf(content, 'rollback')).toEqual(['deploy', 'smoke', 'drill-approval']);
+    expect(needsOf(content, 'finalize')).toEqual(['smoke', 'rollback', 'drill-approval']);
   });
 
   it('names the CI workflow exactly and wires workflow_run to it', () => {
