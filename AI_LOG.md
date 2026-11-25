@@ -23,6 +23,7 @@ Hai câu trả lời về phạm vi được dùng trong suốt công việc: "n
 - **Accepted, lên follow-up có tên:** `follow-up/cli-runner-contract` cho stub runner và assertion `encoding: 'utf8'`, `follow-up/cli-output-flush` cho `process.exit` có thể cắt output, `follow-up/workflow-graph-parser-hardening` cho bốn finding parser của Task 4. Xem [Task 3](docs/reviews/2026-11-25-subagent-driven-development-task3.md), [Task 4](docs/reviews/2026-11-25-subagent-driven-development-task4.md).
 - **Rejected:** cảnh báo `No build cache found`, đề xuất mở rộng live-region trạng thái tạm dừng, kiểm tra trạng thái production trực tiếp, cảnh báo LF sang CRLF, gợi ý hiệu năng `isolate: false` của Vitest, và các lý do cụ thể khác đã ghi trong bảng Finding của bốn review record ở trên; những mục này không phải lỗi hành vi trong phạm vi branch này.
 - Audit coverage đầy đủ nằm tại [coverage audit](docs/reviews/2026-11-25-requesting-code-review-test-coverage.md).
+- Final review xác nhận branch sẵn sàng merge, không có finding Critical hay Important; mọi finding Minor đều được phán quyết tại [final review](docs/reviews/2026-11-25-requesting-code-review-final.md).
 
 ### AI sai ở đâu
 
@@ -37,7 +38,7 @@ Hai câu trả lời về phạm vi được dùng trong suốt công việc: "n
 - Không có pixel diff với Figma vì file thiết kế không nằm trong repo.
 - Bằng chứng trình duyệt chỉ là output Playwright trên `desktop-chrome` và `pixel-7`.
 - Parser hardening và CLI robustness được hẹn ở các follow-up có tên, không sửa trong branch này.
-- Final review và link PR do controller thêm sau bước này.
+- Final review đã lưu tại `docs/reviews/2026-11-25-requesting-code-review-final.md`; link PR do controller thêm sau bước này.
 
 ---
 
