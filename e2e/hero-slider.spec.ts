@@ -37,7 +37,9 @@ test(
     await releasePointerAndFocus(page);
     await carousel(page).hover();
     await page.waitForTimeout(5_500);
-    await expect(currentSlide(page)).toHaveAttribute('aria-label', 'Go to slide 1');
+    await expect(currentSlide(page)).toHaveAttribute('aria-label', 'Go to slide 1', {
+      timeout: 2_000,
+    });
     await page.mouse.move(1, 1);
     await expect(currentSlide(page)).toHaveAttribute('aria-label', 'Go to slide 2', {
       timeout: 12_000,
@@ -53,7 +55,9 @@ test(
     await releasePointerAndFocus(page);
     await currentSlide(page).focus();
     await page.waitForTimeout(5_500);
-    await expect(currentSlide(page)).toHaveAttribute('aria-label', 'Go to slide 1');
+    await expect(currentSlide(page)).toHaveAttribute('aria-label', 'Go to slide 1', {
+      timeout: 2_000,
+    });
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await expect(currentSlide(page)).toHaveAttribute('aria-label', 'Go to slide 2', {
       timeout: 12_000,
