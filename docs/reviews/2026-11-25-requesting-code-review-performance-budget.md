@@ -17,9 +17,11 @@ Before accepting any finding I re-read the whole source of every touched file: `
 the three `generateStaticParams` pages, the reconciled spec and plan, `docs/reviews/TEMPLATE.md`,
 and both task review results. I grepped every consumer of the changed values (`lhci-report`,
 `lighthouse-report`, `CHROME_PATH`, `lhci autorun`, `__empty__`, `P2021`, `generateStaticParams`)
-across tracked text files and checked `git status` for stray report files. The check set was run
-fresh with Node `spawnSync`, `encoding: 'utf8'` and `NO_COLOR: '1'`; its complete output is attached
-below.
+across tracked text files and checked `git status` for stray report files. The single authoritative
+capture for this fix round is `.superpowers/sdd/2026-11-25-performance-budget/final-checks.md`,
+re-run with the prepared helper through Node `spawnSync`, `encoding: 'utf8'` and `NO_COLOR: '1'`.
+The `## Verification output` block below is copied verbatim from that same file; no earlier check
+run is used as evidence.
 
 Spec Compliance: four storefront URLs, three mobile runs, median thresholds 0.85/0.90/0.95/0.1 at
 `error` level, `lighthouse-report` artifact with `if: always()`, no report committed, and a verified
@@ -59,7 +61,7 @@ with concrete reasons.
 | Workflow steps and artifact settings | `src/test/ci-workflow.test.ts:110-131`, focused guard run in `final-checks.md` | đạt/pass |
 | Build succeeds with no Prisma tables | Empty-database capture in `AI_LOG.md`, `EXIT=0`, 24/24 static pages and three `__empty__` routes | đạt/pass |
 | Reports not committed | `.gitignore:17`, config test, `git status --porcelain=v1` | đạt/pass |
-| Full check set | `final-checks.md`, every command with stdout, stderr and `EXIT=` line | đạt/pass |
+| Full check set | Single authoritative capture at `final-checks.md`, re-run after the fix edits; its verbatim copy is in `## Verification output`, seven `EXIT=` lines | đạt/pass |
 | Language rule | `npm run check:language` `EXIT=0` plus the explicit `findDisallowedLetters` scan | đạt/pass |
 | PR body carries the full captured output | `pr-body.md` contains `final-checks.md` verbatim with every `EXIT=` line | đạt/pass |
 
@@ -98,11 +100,11 @@ $ npm test
 
  Test Files  90 passed (90)
       Tests  458 passed (458)
-   Start at  21:38:29
-   Duration  54.07s (tests 47%, import 32%, environment 11%, transform 5%, setup 2%, worker 2%)
+   Start at  22:29:30
+   Duration  55.27s (tests 47%, import 33%, environment 11%, transform 4%, setup 2%, worker 2%)
 
-     Import  214 modules were evaluated 682 times · 9.82s total, 32% of tracked time
-             ~6.74s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
+     Import  214 modules were evaluated 682 times · 10.22s total, 33% of tracked time
+             ~7.02s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
              learn more: https://vitest.dev/guide/improving-performance#test-isolation
 
 
@@ -129,22 +131,22 @@ $ npm run build
 
 ▲ Next.js 16.4.5 (Turbopack)
 - Environments: .env.production.local, .env.local, .env
-✓ Running next.config.ts took 205ms
+✓ Running next.config.ts took 204ms
 - Cache Components enabled
 - Partial Prefetching enabled
 - Experiments (use with caution):
   ✓ agentFeedback
 
   Creating an optimized production build ...
-✓ Compiled successfully in 3.4s
+✓ Compiled successfully in 4.6s
   Running TypeScript ...
-  Finished TypeScript in 5.7s ...
+  Finished TypeScript in 5.3s ...
   Collecting page data using 7 workers ...
   Generating static pages using 7 workers (0/53) ...
   Generating static pages using 7 workers (13/53) 
   Generating static pages using 7 workers (26/53) 
   Generating static pages using 7 workers (39/53) 
-✓ Generating static pages using 7 workers (53/53) in 5.9s
+✓ Generating static pages using 7 workers (53/53) in 6.7s
   Finalizing page optimization ...
 
 Route (app)                                 Revalidate  Expire
@@ -212,16 +214,17 @@ $ npx vitest run src/test/lighthouse-config.test.ts src/test/ci-workflow.test.ts
 
  Test Files  2 passed (2)
       Tests  11 passed (11)
-   Start at  21:39:52
-   Duration  8.31s (import 25%, transform 25%, tests 19%, setup 17%, worker 14%)
+   Start at  22:30:57
+   Duration  8.20s (tests 29%, import 21%, setup 19%, transform 18%, worker 13%, environment 1%)
 
 
 
 EXIT=0
 ```
 
-Ký hiệu legend U+0192 của Next.js đã được thay bằng `F` trong output dán ở trên và trong
-`pr-body.md`, theo yêu cầu của `AGENTS.md`; bản capture raw trong workspace giữ ký hiệu gốc.
+Ký hiệu legend U+0192 của Next.js được helper thay bằng `F` trước khi ghi `final-checks.md`; cùng
+bản output đã làm sạch này được dán ở trên và trong `pr-body.md` theo `AGENTS.md`. Không có file
+capture raw được giữ trong workspace SDD; không có bản check cũ nào được dùng làm bằng chứng.
 
 ## Limitations
 

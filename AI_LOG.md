@@ -31,8 +31,9 @@ không nằm trong phạm vi entry này.
   `generateStaticParams`.
 - Thử build với database SQLite rỗng nằm ngoài git
   (`file:C:/Users/Hello/AppData/Local/Temp/opencode/k1-empty-build-20261125.db`). Dùng Node
-  `spawnSync` với `encoding: 'utf8'`, `NO_COLOR: '1'`; capture raw và bản đã thay ký hiệu legend
-  U+0192 thành `F` theo `AGENTS.md`. Kết quả `EXIT=0`, vẫn in `prisma:error` P2021 ở dạng
+  `spawnSync` với `encoding: 'utf8'`, `NO_COLOR: '1'`; output được ghi sau khi thay ký hiệu legend
+  U+0192 bằng `F` theo `AGENTS.md`, và chỉ bản đã làm sạch được giữ lại. Kết quả `EXIT=0`, vẫn in
+  `prisma:error` P2021 ở dạng
   `The table main.<Model> does not exist`, đồng thời prerender đủ 24/24 trang với
   `/blog/__empty__`, `/c/__empty__`, `/p/__empty__`. File DB tạm đã bị xoá sau khi capture; không sửa
   logging của app. Output đầy đủ (đã thay U+0192 bằng `F`):
@@ -170,11 +171,11 @@ EXIT=0
 - Thêm mục "Ngân sách hiệu năng trong CI (K1, 2026-11-25)" vào cuối `docs/PERFORMANCE.md`: bốn
   trang, ba lần mobile, trung vị, ngưỡng 85/90/95/0,1 và artifact `lighthouse-report`; không chép
   số của một run vào bảng baseline.
-- Chạy toàn bộ check set bằng `capture-checks.mjs` (Node `spawnSync`, `utf8`, `NO_COLOR=1`), với
-  `DATABASE_URL=file:./prisma/e2e.db` cho `npm run build`. stdout/stderr và mọi dòng `EXIT=` nằm trong
-  `.superpowers/sdd/2026-11-25-performance-budget/final-checks.md` và được dán nguyên vẹn vào
-  `pr-body.md`. Ký hiệu legend U+0192 của Next.js được thay bằng `F` trong văn bản dán; capture raw
-  vẫn giữ bản gốc trong workspace.
+- Chạy toàn bộ check set bằng `capture-checks.mjs` (Node `spawnSync`, `encoding: 'utf8'`,
+  `NO_COLOR: '1'`), với `DATABASE_URL=file:./prisma/e2e.db` cho `npm run build`. stdout/stderr và
+  mọi dòng `EXIT=` nằm trong `.superpowers/sdd/2026-11-25-performance-budget/final-checks.md`,
+  được dán nguyên vẹn vào `pr-body.md` và review record. Helper thay ký hiệu legend U+0192 bằng `F`
+  trước khi ghi file; chỉ bản output đã làm sạch được giữ lại, không có file capture raw.
 - Vì `npm run check:language` không in dòng thành công trên Windows do lỗi path có sẵn, tôi chạy thêm
   một lượt quét trực tiếp bằng hàm `findDisallowedLetters` cho mọi file `.md/.ts/.tsx/.mjs/.js/.json/.css/.html/.yml/.yaml` ngoài các thư mục bỏ qua; không có chữ cái ngoài bảng Anh/Việt.
 - Kiểm tra ngay sau khi prepend entry này: dòng `---` mới theo sau bởi header
@@ -204,6 +205,14 @@ EXIT=0
   Windows; file nằm ngoài phạm vi K1 và lệnh vẫn exit 0, nên chỉ ghi limitation và quét bổ sung.
 - Reviewer KHÔNG đưa ra finding Critical hay Important nào còn mở sau khi các mục trên được phán quyết.
 
+### Findings vòng fix sau final review
+
+- **Accepted, đã sửa trong branch `k1-performance-budget`:** FR-1 Important - review record trước đó dán bản check cũ `21:38:29` / `21:39:52` nhưng gọi `final-checks.md` là bản có thẩm quyền. Đã chạy lại toàn bộ check set bằng helper và đồng bộ khối output trong review record với bản capture mới; xem [final review](docs/reviews/2026-11-25-requesting-code-review-final-performance-budget.md).
+- **Accepted, đã sửa trong branch `k1-performance-budget`:** FR-2 Important - bốn chỗ khẳng định còn file capture raw U+0192, trong khi helper thay ký tự trước khi ghi. Đã sửa `AI_LOG.md`, review K1, `pr-body.md` và `task-3-report.md`; vẫn giữ ghi chú U+0192 được thay bằng `F`. Cùng link final review ở trên.
+- **Rejected:** FR-3 Minor - hardening guard tests bằng assert chính xác lệnh server và parse step upload; Task 2 brief chỉ pin substring và controller đã bác parser thứ tự index, nên không đổi `src/test/lighthouse-config.test.ts` hay `src/test/ci-workflow.test.ts`.
+- **Accepted, đã sửa trong branch `k1-performance-budget`:** FR-4 Minor - ô T1-2 của review Task 1 chỉ ghi `package-lock.json`; đã đổi thành `package-lock.json:13327` theo mục `tldts-core` hiện tại, không đổi ruling.
+- **Rejected:** FR-5 Minor - đổi dependency từ `^0.16.1` thành `0.16.1`; lockfile đang pin 0.16.1 và controller xác định churn cài đặt lại nằm ngoài đợt sửa bằng chứng, nên không đổi `package.json`.
+
 ### AI sai ở đâu
 
 - Lần đầu chạy script build rỗng, tôi `require('better-sqlite3')` từ file script nằm trong temp nên
@@ -218,6 +227,12 @@ EXIT=0
   điều đó, nên Task 3 phải chạy lại toàn bộ check set bằng `spawnSync` và dán output thật vào PR.
 - `npm run check:language` trên máy này exit 0 nhưng không in dòng thành công; nếu chỉ đọc output
   tôi có thể tưởng script không chạy, nên phải gọi trực tiếp hàm quét để có bằng chứng.
+- Tôi dán bản check `21:38:29` / `21:39:52` vào review record rồi lại gọi bản `21:45:23` /
+  `21:46:44` trong `final-checks.md` là có thẩm quyền; hai bản không khớp nên người đọc không biết
+  output nào xác minh tree cuối. Tôi cũng khẳng định sai rằng bản gốc chưa thay ký tự vẫn nằm trong
+  workspace ở bốn nơi dù `capture-checks.mjs:21,26-28` thay U+0192 trước khi ghi và thư mục SDD không
+  có file raw; vòng fix đã chạy lại helper, dùng một bản duy nhất và sửa thành mô tả đúng về output
+  đã làm sạch.
 
 ### Limitations
 
