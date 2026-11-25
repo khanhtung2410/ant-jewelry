@@ -23,7 +23,7 @@ Nguồn: `.superpowers/sdd/2026-11-25-performance-budget/verbatim-prompt.txt`. E
 - Giải nén artifact `lighthouse-report` của run đó và run xanh `45651127274` để so sánh từng báo cáo: cùng code ứng dụng, nhưng hai lần blog ở run đỏ ghi `Unsized image element` trên ảnh bìa và dịch footer `0.2515`; run xanh CLS bằng `0` ở cả 12 lần.
 - Dùng skill `systematic-debugging` để truy nguyên nhân rồi `test-driven-development`: thêm test trong `blog-detail.test.tsx` đỏ trước khi sửa (`EXIT=1`, `cls-red-checks.md`), xanh sau khi thêm `width={1200} height={630}` (`EXIT=0`, 3/3 test).
 - Reviewer chỉ ra thuộc tính width/height với `h-auto` vẫn để ảnh tỉ lệ khác đổi chiều cao khung. Đọc lại component, test, schema form và mọi consumer của `1200`/`630` rồi viết guard mới đỏ (`EXIT=1`, `cls-aspect-red-checks.md`) trước khi chuyển sang khung `aspect-[1200/630]` cố định với ảnh `absolute inset-0 h-full w-full object-cover`; guard xanh 4/4.
-- Không đổi ngưỡng, URL hay số lần chạy; `git diff 58ace2f..cfd291f -- lighthouserc.json` rỗng. Run `45658516997` (commit trung gian `cfd291f`) xanh cả bốn check, trong đó `e2e` 6m26s; bản khung cố định cần run riêng. Full check set capture lại với 7 dòng `EXIT=0` trong `final-checks.md`.
+- Không đổi ngưỡng, URL hay số lần chạy; `git diff 58ace2f..cfd291f -- lighthouserc.json` rỗng. Run `45658516997` (commit trung gian `cfd291f`) xanh cả bốn check, trong đó `e2e` 6m26s. Run cuối `45660888483` trên head `f0fe22a` cũng xanh cả bốn check, `e2e` 6m27s với đủ 12 lần Lighthouse; Task 6 Step 3 đã tick. Full check set capture lại với 7 dòng `EXIT=0` trong `final-checks.md`.
 
 ### AI sai ở đâu
 
@@ -36,7 +36,7 @@ Xem `docs/reviews/2026-11-25-requesting-code-review-cls-fix.md` sau khi vòng re
 
 ### Limitations
 
-- Không có runner GitHub tại local; kết quả assert sau sửa chỉ xác nhận được bằng run hosted mới trên PR 166.
+- Không có runner GitHub tại local; kết quả assert sau sửa được xác nhận qua run hosted `45660888483` trên PR 166, không phải bằng lệnh local.
 - Một lần Home trong run đỏ ghi CLS `0,5164` nhưng trung vị vẫn `0`; chưa xác định được phần tử gây dịch chuyển từ artifact nên ghi nhận là rủi ro nhiễu, không sửa trong đợt này.
 - `npm run check:language` exit 0 nhưng không in dòng thành công trên Windows; dùng `EXIT=0` kèm quét chữ cái bổ sung làm bằng chứng.
 

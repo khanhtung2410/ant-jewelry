@@ -212,6 +212,6 @@ Add a case to `src/features/blog/components/blog-detail.test.tsx` asserting the 
 
 Add `width={1200}` and `height={630}` to the cover image in `src/features/blog/components/blog-detail.tsx`. Do not change the 0.1 CLS threshold or the 0.85 Performance threshold. Record the artifact evidence in `docs/PERFORMANCE.md` and reconcile the spec. Review refinement: attributes alone are not enough when the real cover has a different ratio, so the image now sits in a fixed `aspect-[1200/630]` box with `absolute inset-0 h-full w-full object-cover`; arbitrary covers are cropped. The guard reads the seed asset `viewBox` and uses shared dimension constants.
 
-- [ ] **Step 3: Verify and record**
+- [x] **Step 3: Verify and record**
 
-Run the focused guard and the full check set, push the fix, confirm a green CI run on PR 166, and save a review record plus an AI_LOG entry that states the artifact evidence and the rejected option of widening thresholds. Run `45658516997` was green for the intermediate attributes-only commit `cfd291f`; the final fixed-box commit needs its own green run before this box is ticked.
+Run the focused guard and the full check set, push the fix, confirm a green CI run on PR 166, and save a review record plus an AI_LOG entry that states the artifact evidence and the rejected option of widening thresholds. Run `45658516997` was green for the intermediate attributes-only commit `cfd291f`; the final fixed-box head `f0fe22a` passed all four checks in run `45660888483` (`e2e` in 6m27s). The review record and AI_LOG link both runs and reject widening the thresholds.

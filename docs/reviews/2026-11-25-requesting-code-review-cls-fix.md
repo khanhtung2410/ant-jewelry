@@ -19,7 +19,7 @@ or rejecting any finding. No finding was accepted from the subagent report alone
 | # | Severity · file:line | Reproduction / effect | Decision |
 |---|---|---|---|
 | CF-1 | Important · `src/features/blog/components/blog-detail.tsx:31-33` | With `width`/`height` attributes and `className="h-auto w-full object-cover"`, the presentational hint is `aspect-ratio: auto 1200 / 630`; the browser replaces it with the natural ratio once an arbitrary admin cover loads, so a 4:3 or portrait image still shifts the footer. The admin form accepts any site path or http(s) URL with no dimension constraint. | **Accepted (fixed in PR 166 branch):** wrap the image in a fixed `aspect-[1200/630]` box and use `absolute inset-0 h-full w-full object-cover`, so arbitrary covers are cropped and the box height cannot change. Shared dimension constants and a guard reading the seed asset `viewBox` keep the values honest. |
-| CF-2 | Important · `docs/superpowers/plans/2026-11-25-performance-budget.md:215-217`, `AI_LOG.md:38` | Task 6 Step 3 was unchecked and AI_LOG said the hosted confirmation was pending; the first fix commit had no green CI run proving both the CLS and the Performance assertions cleared. | **Accepted (fixed in PR 166 branch):** run `45658516997` on intermediate commit `cfd291f` passed all four checks; after the CF-1 refinement a fresh run is required and the plan box stays unchecked until it is captured. Both links and assertion status are recorded in the PR description. |
+| CF-2 | Important · `docs/superpowers/plans/2026-11-25-performance-budget.md:215-217`, `AI_LOG.md:38` | Task 6 Step 3 was unchecked and AI_LOG said the hosted confirmation was pending; the first fix commit had no green CI run proving both the CLS and the Performance assertions cleared. | **Accepted (fixed in PR 166 branch):** run `45658516997` on intermediate commit `cfd291f` passed all four checks; after the CF-1 refinement, run `45660888483` on final head `f0fe22a` passed `static`, `test`, `build` and `e2e` with `e2e` completing 12 Lighthouse runs in 6m27s. Task 6 Step 3 is ticked and both links are recorded in the PR description. |
 | CF-3 | Minor · `src/features/blog/components/blog-detail.test.tsx:43-49` | The old case name claimed "cannot shift the footer" while it only checked two emitted attributes, and hard-coded numbers could drift from the seeded asset. | **Accepted (fixed in PR 166 branch):** rename the case to describe the emitted box, assert the fixed aspect class and absolute image classes, export `BLOG_COVER_WIDTH`/`BLOG_COVER_HEIGHT` from the component, and add a case reading `cover-wedding-band.svg` `viewBox`. The hosted Lighthouse run remains the authoritative CLS proof. |
 | CF-4 | Minor · `docs/PERFORMANCE.md:141` | The exact Home CLS `0,5164` was read from an artifact that is deliberately not committed, so a reader of the repository cannot reproduce the figure. | **Accepted (fixed in PR 166 branch):** qualify the sentence with the run id `45655992481` and state that the artifact is not in the repository. |
 | CF-1-alt | Important · alternative to CF-1 in `blog-post-form-schema.ts` and the admin hint | The reviewer proposed requiring every cover to be exactly 1200x630 in validation, the form hint and the docs. | **Rejected:** it restricts editors and cannot fix existing stored URLs that already point elsewhere; the fixed CSS box handles every input without a migration and matches the cropping pattern already used by `BlogRow`. |
@@ -46,7 +46,7 @@ or rejecting any finding. No finding was accepted from the subagent report alone
 | The guard passes with the fix | `npx vitest run src/features/blog/components/blog-detail.test.tsx`: `EXIT=0`, 4/4 tests | đạt/pass |
 | Thresholds were not weakened | `git diff 58ace2f..cfd291f -- lighthouserc.json` is empty; `src/test/lighthouse-config.test.ts` still pins 0.85/0.9/0.95/0.1 | đạt/pass |
 | The intermediate fix passed hosted CI | run `45658516997`, `e2e` pass in 6m26s, four required checks pass | đạt/pass |
-| The final refined fix passed hosted CI | pending the new run after the fixed-box commit; not claimed before evidence exists | lacking evidence until run completes |
+| The final refined fix passed hosted CI | run `45660888483` on head `f0fe22a`: `static`, `test`, `build`, `e2e` all pass; `e2e` 6m27s with 12 Lighthouse runs | đạt/pass |
 | Full check set passes for the final tree | fresh `final-checks.md`: seven `EXIT=0` lines | đạt/pass |
 
 ## Verification output
@@ -84,11 +84,11 @@ $ npm test
 
  Test Files  90 passed (90)
       Tests  461 passed (461)
-   Start at  00:01:45
-   Duration  68.58s (tests 48%, import 33%, environment 11%, transform 4%, setup 2%, worker 2%)
+   Start at  00:14:44
+   Duration  58.79s (tests 47%, import 33%, environment 12%, transform 4%, setup 2%, worker 2%)
 
-     Import  214 modules were evaluated 682 times · 12.41s total, 33% of tracked time
-             ~8.52s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
+     Import  214 modules were evaluated 682 times · 10.67s total, 33% of tracked time
+             ~7.32s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
              learn more: https://vitest.dev/guide/improving-performance#test-isolation
 
 
@@ -115,22 +115,22 @@ $ npm run build
 
 ▲ Next.js 16.4.5 (Turbopack)
 - Environments: .env.production.local, .env.local, .env
-✓ Running next.config.ts took 206ms
+✓ Running next.config.ts took 282ms
 - Cache Components enabled
 - Partial Prefetching enabled
 - Experiments (use with caution):
   ✓ agentFeedback
 
   Creating an optimized production build ...
-✓ Compiled successfully in 4.0s
+✓ Compiled successfully in 3.8s
   Running TypeScript ...
-  Finished TypeScript in 9.9s ...
+  Finished TypeScript in 5.8s ...
   Collecting page data using 7 workers ...
   Generating static pages using 7 workers (0/53) ...
   Generating static pages using 7 workers (13/53) 
   Generating static pages using 7 workers (26/53) 
   Generating static pages using 7 workers (39/53) 
-✓ Generating static pages using 7 workers (53/53) in 8.1s
+✓ Generating static pages using 7 workers (53/53) in 7.1s
   Finalizing page optimization ...
 
 Route (app)                                 Revalidate  Expire
@@ -198,8 +198,8 @@ $ npx vitest run src/test/lighthouse-config.test.ts src/test/ci-workflow.test.ts
 
  Test Files  2 passed (2)
       Tests  12 passed (12)
-   Start at  00:03:32
-   Duration  9.84s (tests 28%, import 24%, setup 17%, worker 16%, transform 14%)
+   Start at  00:16:14
+   Duration  8.35s (tests 22%, import 21%, worker 20%, transform 19%, setup 17%, environment 1%)
 
 
 
@@ -208,7 +208,7 @@ EXIT=0
 
 ## Limitations
 
-- No hosted runner locally; each hosted run is recorded by its id and link, and the final refined head still needs its own run.
+- No hosted runner locally; each hosted run is recorded by its id and link, and the final refined head passed in run `45660888483`.
 - One Home measurement in the failed run had CLS 0.5164 but the median was 0; the culprit element was not identified and the artifact is not committed, so the figure is qualified in the docs.
 - The reviewer was read-only; all fixes and re-verification were applied by the coordinator.
 - Widening thresholds or retrying the run was rejected because the artifact identified a real layout defect.
