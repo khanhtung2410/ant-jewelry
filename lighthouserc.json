@@ -10,7 +10,8 @@
       ],
       "settings": {
         "formFactor": "mobile",
-        "throttlingMethod": "simulate"
+        "throttlingMethod": "simulate",
+        "chromeFlags": "--no-sandbox"
       },
       "startServerCommand": "npm run start -- --hostname 127.0.0.1 --port 3200",
       "startServerReadyPattern": "Local:\\s+http://127\\.0\\.0\\.1:3200"

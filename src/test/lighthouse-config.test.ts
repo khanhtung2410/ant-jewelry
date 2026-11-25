@@ -13,7 +13,7 @@ type LighthouseConfig = {
     collect?: {
       url?: string[];
       numberOfRuns?: number;
-      settings?: { formFactor?: string; throttlingMethod?: string };
+      settings?: { formFactor?: string; throttlingMethod?: string; chromeFlags?: string };
       startServerCommand?: string;
       startServerReadyPattern?: string;
     };
@@ -46,6 +46,12 @@ describe('Lighthouse CI configuration guard', () => {
     expect(settings.settings?.throttlingMethod).toBe('simulate');
     expect(settings.startServerCommand).toContain('--port 3200');
     expect(settings.startServerReadyPattern).toBe('Local:\\s+http://127\\.0\\.0\\.1:3200');
+  });
+
+  it('launches Chromium without the sandbox so hosted runners can collect Lighthouse data', () => {
+    const settings = collect(readConfig()).settings ?? {};
+
+    expect(settings.chromeFlags ?? '').toContain('--no-sandbox');
   });
 
   it('enforces exactly the four median budget assertions at error level', () => {

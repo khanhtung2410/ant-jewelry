@@ -48,7 +48,9 @@ the same thresholds that are documented today are enforced automatically.
     `/blog/cach-chon-nhan-cuoi-phu-hop`. These slugs already exist in the E2E seed and in the current
     production smoke suite.
   - `ci.collect.numberOfRuns: 3`, `ci.collect.settings.formFactor: mobile`,
-    `ci.collect.settings.throttlingMethod: simulate`.
+    `ci.collect.settings.throttlingMethod: simulate`,
+    `ci.collect.settings.chromeFlags: --no-sandbox` so the hosted runner can launch Chromium before
+    any assertion runs.
   - `ci.collect.startServerCommand: npm run start -- --hostname 127.0.0.1 --port 3200` and a ready
     pattern matching the verified Next.js 16 `Local:` banner, so LHCI starts and stops the server
     itself.

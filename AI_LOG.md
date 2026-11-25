@@ -1,3 +1,43 @@
+## 2026-11-25 23:10:00 +07:00 - Sửa lỗi Chrome sandbox trong ngân sách hiệu năng K1
+
+### Prompt nguyên văn đã dùng
+
+> use current worktree from :D/thuc tap/ant jewlwry
+>
+> K. Task tiếp theo: chất lượng trong pipeline
+> Pipeline deploy đã chạy. Bước tiếp theo là để CI tự chặn các vấn đề chất lượng mà hiện vẫn phải kiểm tay: hiệu năng trang và dependency cũ/có lỗ hổng. Hiện repo chưa đo hiệu năng trong pipeline, chưa có cập nhật dependency tự động. Làm sau C6 và C4b, theo thứ tự K1 → K2, mỗi mục một PR, có spec + plan trong docs/superpowers/.
+>
+> K1 — Ngân sách hiệu năng trong pipeline. Số Lighthouse hiện chỉ đo tay rồi ghi vào PERFORMANCE.md, nên một PR làm chậm trang sẽ không bị phát hiện. Thêm Lighthouse CI (@lhci/cli) vào job e2e của ci.yml: chạy trên production build local cho Home, /c/<slug>, /p/<slug>, /blog/<slug>, 3 lần mỗi trang, mobile. Ngưỡng assert: Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95, CLS ≤ 0,1; dưới ngưỡng thì job đỏ. Upload báo cáo làm artifact, không commit vào repo.
+> Bằng chứng: một PR thử cố ý thêm ảnh lớn không tối ưu vào Home → job đỏ vì Performance; link run.
+> K2 — Cập nhật dependency và quét bảo mật tự động. Thêm .github/dependabot.yml (npm + github-actions, hằng tuần, gom các bản minor/patch vào một PR). Thêm CodeQL cho JavaScript/TypeScript, và bước npm audit --omit=dev --audit-level=high trong job static. Lỗ hổng hiện có nằm trong dependency gián tiếp của Prisma (effect) thì ghi vào docs/SECURITY.md kèm lý do chấp nhận tạm và ngày xem lại, thay vì tắt bước audit.
+> Bằng chứng: PR Dependabot đầu tiên chạy đủ CI và merge được; tab Security có kết quả CodeQL; output npm audit trong log CI.
+>
+> fix num run build have no prisma table if not break
+
+Nguồn: `.superpowers/sdd/2026-11-25-performance-budget/verbatim-prompt.txt`. Entry này chỉ ghi đợt sửa lỗi chạy LHCI trên runner sau khi đã mở PR 166.
+
+### Đã tự kiểm chứng
+
+- Đọc toàn bộ `.github/workflows/ci.yml`, `lighthouserc.json`, `src/test/lighthouse-config.test.ts`, `src/test/ci-workflow.test.ts`, `docs/PERFORMANCE.md`, spec và plan K1 trước khi sửa. Grep `chromeFlags` trong `node_modules/@lhci` để xác nhận LHCI truyền flag từ `ci.collect.settings` sang `chrome-launcher`.
+- Run `45648594463` của PR 166 và run `45649277989` của PR 167 đều đỏ ở job `e2e`, cả hai dừng ngay lần Lighthouse đầu tiên với `No usable sandbox!`, `waiting for dynamic debugging port in chrome-err.log`; chưa có assert Performance nào chạy. Đây là nguyên nhân gốc, không phải bằng chứng ngân sách.
+- Dùng skill `systematic-debugging` để phân tích log và `test-driven-development` để viết guard test trước: `src/test/lighthouse-config.test.ts` đỏ với `AssertionError: expected '' to contain '--no-sandbox'`, capture tại `.superpowers/sdd/2026-11-25-performance-budget/sandbox-red-checks.md` (`EXIT=1`).
+- Sau khi thêm `chromeFlags: "--no-sandbox"` vào `lighthouserc.json`, guard tập trung xanh (`EXIT=0`, `sandbox-green-checks.md`) và toàn bộ check set từ `checks-config.json` xanh 7/7 (`EXIT=0`, `final-checks.md`): lint, typecheck, 458 test, format, build, language, guard tập trung.
+- Cập nhật `docs/PERFORMANCE.md`, spec và plan K1 để mô tả flag và lý do; không đổi ngưỡng, URL, số lần chạy hay cách upload artifact.
+
+### AI sai ở đâu
+
+- Tôi ban đầu coi run đỏ của PR 167 là bằng chứng Performance vì biết ảnh 12 MB được thêm vào Home. Thực tế log cho thấy Chrome không khởi động được do sandbox; nếu dán link đó vào PR 166 thì bằng chứng sai sự thật. Tôi đã đọc toàn bộ log failed, so sánh với run của PR 166 và sửa nguyên nhân trước khi thử lại.
+- Tôi cũng tạo helper `verify-sync.mjs` rồi quên chạy Prettier, làm `npm run format:check` đỏ `EXIT=1`; đã format helper và capture lại `EXIT=0` thay vì cho rằng file ngoài git được miễn kiểm tra.
+
+### Limitations
+
+- Chưa có runner GitHub tại local; kết quả assert thật chỉ có sau khi push bản sửa và run CI mới. Bằng chứng đỏ vì Performance của Task 4 phải lặp lại từ head K1 đã sửa.
+- `npm run check:language` exit 0 nhưng không in dòng thành công trên Windows; dùng `EXIT=0` và quét chữ cái bổ sung làm bằng chứng.
+- K2 vẫn tách PR riêng; file spec K2 giữ nguyên trạng chưa track trong đợt này.
+- Review record cho vòng sửa này sẽ được ghi theo `docs/reviews/TEMPLATE.md` sau khi có reviewer.
+
+---
+
 ## 2026-11-25 21:34:21 +07:00 - Ngân sách hiệu năng trong pipeline K1
 
 ### Prompt nguyên văn đã dùng

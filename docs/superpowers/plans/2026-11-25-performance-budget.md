@@ -27,6 +27,7 @@
 - A report directory committed by accident: the config test and `lighthouse-reports.test.ts` both guard allowed report files, and `.gitignore` carries `/lhci-report/`.
 - An artifact upload that only runs on success: the workflow guard asserts `if: always()` and the exact `lhci-report/` path.
 - A server that never becomes ready because the Next.js banner changed: verify `startServerReadyPattern` against a real `next start` log before relying on CI.
+- Chromium that cannot start on `ubuntu-latest`: `ci.collect.settings.chromeFlags` must include `--no-sandbox`, guarded by `lighthouse-config.test.ts`, or the job fails before reaching the budget assertions.
 - A build with no Prisma tables that is assumed broken: capture a real empty-database `npm run build` exit code instead of repeating documentation hearsay.
 
 ---
@@ -168,3 +169,26 @@ Push the branch, open a draft PR, wait for the `e2e` job, and save the run link 
 - [ ] **Step 3: Record the evidence**
 
 Add the run link and the observed assertion output to the K1 PR description or the review record. Mark clearly that this branch was intentionally never merged.
+
+---
+
+### Task 5: Hosted-runner Chromium fix (2026-11-25, after the first CI runs)
+
+**Files:**
+- Modify: `lighthouserc.json`, `src/test/lighthouse-config.test.ts`, `docs/PERFORMANCE.md`, this plan and its spec.
+
+**Interfaces:**
+- Consumes: the two red `ci` runs on PR 166 and the throwaway PR 167, both failing in `ChromeLauncher` with `No usable sandbox!`.
+- Produces: an `e2e` job that reaches the Lighthouse assertions on `ubuntu-latest`; the guard test must fail before the config change.
+
+- [x] **Step 1: Write the failing guard test**
+
+Add a case to `src/test/lighthouse-config.test.ts` asserting `ci.collect.settings.chromeFlags` contains `--no-sandbox`. Capture the RED output with the required `spawnSync` helper before editing the config.
+
+- [x] **Step 2: Add the minimal config and documentation fix**
+
+Set `ci.collect.settings.chromeFlags` to `--no-sandbox` in `lighthouserc.json`. Document the runner restriction in `docs/PERFORMANCE.md` and reconcile the spec and plan with the new setting.
+
+- [x] **Step 3: Verify and record**
+
+Run the focused guards, the full check set and a fresh CI run on the K1 branch before treating the red Performance evidence as valid. Record the original sandbox failure and the fix in AI_LOG and a review record.
