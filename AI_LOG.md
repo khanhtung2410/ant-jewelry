@@ -1,3 +1,243 @@
+## 2026-11-25 21:34:21 +07:00 - Ngân sách hiệu năng trong pipeline K1
+
+### Prompt nguyên văn đã dùng
+
+> use current worktree from :D/thuc tap/ant jewlwry
+>
+> K. Task tiếp theo: chất lượng trong pipeline
+> Pipeline deploy đã chạy. Bước tiếp theo là để CI tự chặn các vấn đề chất lượng mà hiện vẫn phải kiểm tay: hiệu năng trang và dependency cũ/có lỗ hổng. Hiện repo chưa đo hiệu năng trong pipeline, chưa có cập nhật dependency tự động. Làm sau C6 và C4b, theo thứ tự K1 → K2, mỗi mục một PR, có spec + plan trong docs/superpowers/.
+>
+> K1 — Ngân sách hiệu năng trong pipeline. Số Lighthouse hiện chỉ đo tay rồi ghi vào PERFORMANCE.md, nên một PR làm chậm trang sẽ không bị phát hiện. Thêm Lighthouse CI (@lhci/cli) vào job e2e của ci.yml: chạy trên production build local cho Home, /c/<slug>, /p/<slug>, /blog/<slug>, 3 lần mỗi trang, mobile. Ngưỡng assert: Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95, CLS ≤ 0,1; dưới ngưỡng thì job đỏ. Upload báo cáo làm artifact, không commit vào repo.
+> Bằng chứng: một PR thử cố ý thêm ảnh lớn không tối ưu vào Home → job đỏ vì Performance; link run.
+> K2 — Cập nhật dependency và quét bảo mật tự động. Thêm .github/dependabot.yml (npm + github-actions, hằng tuần, gom các bản minor/patch vào một PR). Thêm CodeQL cho JavaScript/TypeScript, và bước npm audit --omit=dev --audit-level=high trong job static. Lỗ hổng hiện có nằm trong dependency gián tiếp của Prisma (effect) thì ghi vào docs/SECURITY.md kèm lý do chấp nhận tạm và ngày xem lại, thay vì tắt bước audit.
+> Bằng chứng: PR Dependabot đầu tiên chạy đủ CI và merge được; tab Security có kết quả CodeQL; output npm audit trong log CI.
+>
+> fix num run build have no prisma table if not break
+
+Nguồn: `.superpowers/sdd/2026-11-25-performance-budget/verbatim-prompt.txt`. Task 3 chỉ lo K1; K2
+không nằm trong phạm vi entry này.
+
+### Đã tự kiểm chứng
+
+- Làm việc trên `k1-performance-budget` từ `b91f7a9` (`origin/main`), có `87fc30b` (Task 1) và
+  `2813873` (Task 2) ở trên; không push, không mở PR, không commit vào `main`. `git status` trước khi
+  sửa cho thấy ba file spec/plan chưa track; chỉ đưa spec và plan của K1 vào commit, để file spec K2
+  nguyên trạng.
+- Đọc trọn brief Task 3, `docs/CONTRIBUTING.md`, `docs/reviews/TEMPLATE.md`, `docs/PERFORMANCE.md`,
+  `docs/DEPLOY.md`, phần đầu và phần cuối `AI_LOG.md`, `lighthouserc.json`, `.gitignore`,
+  `src/test/lighthouse-config.test.ts`, `.github/workflows/ci.yml`, `src/test/ci-workflow.test.ts`,
+  ba file `generateStaticParams`, các review result và report của Task 1/2. Grep consumer của
+  `lhci-report`, `lighthouse-report`, `CHROME_PATH`, `lhci autorun`, `__empty__`, `P2021` và
+  `generateStaticParams`.
+- Thử build với database SQLite rỗng nằm ngoài git
+  (`file:C:/Users/Hello/AppData/Local/Temp/opencode/k1-empty-build-20261125.db`). Dùng Node
+  `spawnSync` với `encoding: 'utf8'`, `NO_COLOR: '1'`; capture raw và bản đã thay ký hiệu legend
+  U+0192 thành `F` theo `AGENTS.md`. Kết quả `EXIT=0`, vẫn in `prisma:error` P2021 ở dạng
+  `The table main.<Model> does not exist`, đồng thời prerender đủ 24/24 trang với
+  `/blog/__empty__`, `/c/__empty__`, `/p/__empty__`. File DB tạm đã bị xoá sau khi capture; không sửa
+  logging của app. Output đầy đủ (đã thay U+0192 bằng `F`):
+
+```text
+$ DATABASE_URL=file:C:/Users/Hello/AppData/Local/Temp/opencode/k1-empty-build-20261125.db npm run build
+
+> ant-jewelry@0.1.0 build
+> next build
+
+▲ Next.js 16.4.5 (Turbopack)
+- Environments: .env.production.local, .env.local, .env
+✓ Running next.config.ts took 226ms
+- Cache Components enabled
+- Partial Prefetching enabled
+- Experiments (use with caution):
+  ✓ agentFeedback
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 3.7s
+  Running TypeScript ...
+  Finished TypeScript in 5.3s ...
+  Collecting page data using 7 workers ...
+prisma:error 
+Invalid `prisma.blogPost.findMany()` invocation:
+
+
+The table `main.BlogPost` does not exist in the current database.
+prisma:error 
+Invalid `prisma.product.findMany()` invocation:
+
+
+The table `main.Product` does not exist in the current database.
+prisma:error 
+Invalid `prisma.category.findMany()` invocation:
+
+
+The table `main.Category` does not exist in the current database.
+  Generating static pages using 7 workers (0/24) ...
+prisma:error 
+Invalid `prisma.category.findMany()` invocation:
+
+
+The table `main.Category` does not exist in the current database.
+prisma:error 
+Invalid `prisma.setting.findFirst()` invocation:
+
+
+The table `main.Setting` does not exist in the current database.
+prisma:error 
+Invalid `prisma.blogPost.findFirst()` invocation:
+
+
+The table `main.BlogPost` does not exist in the current database.
+prisma:error 
+Invalid `prisma.category.findFirst()` invocation:
+
+
+The table `main.Category` does not exist in the current database.
+prisma:error 
+Invalid `prisma.product.findFirst()` invocation:
+
+
+The table `main.Product` does not exist in the current database.
+prisma:error 
+Invalid `prisma.blogPost.findMany()` invocation:
+
+
+The table `main.BlogPost` does not exist in the current database.
+prisma:error 
+Invalid `prisma.heroSlide.findMany()` invocation:
+
+
+The table `main.HeroSlide` does not exist in the current database.
+prisma:error 
+Invalid `prisma.blogPost.findMany()` invocation:
+
+
+The table `main.BlogPost` does not exist in the current database.
+  Generating static pages using 7 workers (6/24) 
+  Generating static pages using 7 workers (12/24) 
+prisma:error 
+Invalid `prisma.product.findMany()` invocation:
+
+
+The table `main.Product` does not exist in the current database.
+  Generating static pages using 7 workers (18/24) 
+✓ Generating static pages using 7 workers (24/24) in 3.9s
+  Finalizing page optimization ...
+
+Route (app)                                 Revalidate  Expire
+┌ ○ /                                              15m      1y
+├ ○ /_not-found
+├ ◐ /admin
+├ ◐ /admin/blog
+├ ◐ /admin/categories
+├ ◐ /admin/hero-slides
+├ ◐ /admin/login
+├ ◐ /admin/products
+├ ◐ /admin/settings
+├ ◐ /admin/users
+├ F /api/admin/products/[productId]/images
+├ ○ /blog                                          15m      1y
+├   /blog/[slug]                                   15m      1y
+│ ├ ◐ /blog/[slug]                                 15m      1y
+│ └ ○ /blog/__empty__                              15m      1y
+├   /c/[slug]                                      15m      1y
+│ ├ ◐ /c/[slug]                                    15m      1y
+│ └ ◐ /c/__empty__                                 15m      1y
+├ ○ /jewelry-care                                  15m      1y
+├   /p/[slug]                                      15m      1y
+│ ├ ◐ /p/[slug]                                    15m      1y
+│ └ ○ /p/__empty__                                 15m      1y
+├ ○ /privacy                                       15m      1y
+├ ○ /robots.txt
+├ ○ /ship                                          15m      1y
+├ ○ /sitemap.xml                                   15m      1y
+├ ○ /terms                                         15m      1y
+└ F /uploads/[...path]
+
+
+F Proxy (Middleware)
+
+○  (Static)             prerendered as static content
+◐  (Partial Prerender)  prerendered as static HTML with dynamic server-streamed content
+F  (Dynamic)            server-rendered on demand
+
+
+
+EXIT=0
+```
+
+- Sửa `docs/DEPLOY.md:132` và `:421`: thay nhận định `generateStaticParams` trả params rỗng bằng
+  placeholder `{ slug: '__empty__' }` và link tới output đã capture ở entry này.
+- Thêm mục "Ngân sách hiệu năng trong CI (K1, 2026-11-25)" vào cuối `docs/PERFORMANCE.md`: bốn
+  trang, ba lần mobile, trung vị, ngưỡng 85/90/95/0,1 và artifact `lighthouse-report`; không chép
+  số của một run vào bảng baseline.
+- Chạy toàn bộ check set bằng `capture-checks.mjs` (Node `spawnSync`, `utf8`, `NO_COLOR=1`), với
+  `DATABASE_URL=file:./prisma/e2e.db` cho `npm run build`. stdout/stderr và mọi dòng `EXIT=` nằm trong
+  `.superpowers/sdd/2026-11-25-performance-budget/final-checks.md` và được dán nguyên vẹn vào
+  `pr-body.md`. Ký hiệu legend U+0192 của Next.js được thay bằng `F` trong văn bản dán; capture raw
+  vẫn giữ bản gốc trong workspace.
+- Vì `npm run check:language` không in dòng thành công trên Windows do lỗi path có sẵn, tôi chạy thêm
+  một lượt quét trực tiếp bằng hàm `findDisallowedLetters` cho mọi file `.md/.ts/.tsx/.mjs/.js/.json/.css/.html/.yml/.yaml` ngoài các thư mục bỏ qua; không có chữ cái ngoài bảng Anh/Việt.
+- Kiểm tra ngay sau khi prepend entry này: dòng `---` mới theo sau bởi header
+  `## 2026-11-25 16:42:28 +07:00 - Ghi bằng chứng drill rollback alias thật vào DEPLOY.md` của entry cũ.
+
+### Findings được nhận / bác
+
+- **Accepted, đã sửa trong branch `k1-performance-budget`:** T1-1 ready pattern `Local:` thay cho
+  `Ready on` theo Step 5, được verify bằng stdout thật; spec và plan đã được controller reconcile.
+  Xem [Task 1](docs/reviews/2026-11-25-subagent-driven-development-task1-performance-budget.md).
+- **Accepted:** T1-2 bản lockfile cập nhật `tldts-core` 7.5.5 -> 7.5.6 là hệ quả của lệnh cài đặt
+  `@lhci/cli@0.16.1` đã pin; cùng review record ở trên.
+- **Accepted, ghi nhận là kiểm chứng ngoài diff:** T2-3 nguồn gốc branch, T2-4 mã thoát check set,
+  T2-5 cơ chế capture và thân PR, T2-6 giá trị config của Task 1, T2-7 handoff runtime. Xem
+  [Task 2](docs/reviews/2026-11-25-subagent-driven-development-task2-performance-budget.md).
+- **Rejected:** T2-1 đề xuất asserting thứ tự bằng index trong workflow guard; thứ tự đã được đọc
+  trực tiếp tại `.github/workflows/ci.yml:102-124` và brief chỉ pin substring, nên không thêm parser
+  YAML thứ hai.
+- **Rejected:** T2-2 đề xuất `if-no-files-found: ignore`; `if: always()` là bắt buộc và cảnh báo khi
+  thiếu report là tín hiệu thật cho thấy LHCI không chạy, không nên che.
+- **Accepted, đã sửa trong branch này:** BR-1 hai chỗ trong `docs/DEPLOY.md` còn chép nhận định cũ
+  về params rỗng; BR-2 mục CI mới trong `docs/PERFORMANCE.md` ban đầu bị chèn giữa hai bullet nên tách
+  danh sách, đã dời xuống cuối file. Cả hai nằm trong
+  [final review](docs/reviews/2026-11-25-requesting-code-review-performance-budget.md).
+- **Rejected:** BR-3 đưa spec K2 chưa track vào commit này; brief chỉ cho phép đưa spec và plan K1
+  vào commit, spec K2 để dành cho PR K2. BR-4 đổi `scripts/check-language.mjs` để in output trên
+  Windows; file nằm ngoài phạm vi K1 và lệnh vẫn exit 0, nên chỉ ghi limitation và quét bổ sung.
+- Reviewer KHÔNG đưa ra finding Critical hay Important nào còn mở sau khi các mục trên được phán quyết.
+
+### AI sai ở đâu
+
+- Lần đầu chạy script build rỗng, tôi `require('better-sqlite3')` từ file script nằm trong temp nên
+  `MODULE_NOT_FOUND`; sửa bằng `createRequire` từ `package.json` của repo rồi chạy lại, capture
+  `EXIT=0`.
+- Tôi ban đầu tin câu của `docs/DEPLOY.md` rằng `generateStaticParams` trả mảng rỗng; output build
+  thật cho thấy Next.js 16 chấp nhận placeholder `__empty__`, còn mảng rỗng đã từng làm build fail
+  theo entry 2026-11-16 15:05:00. Đây là lý do phải chạy thử trước khi sửa docs.
+- Khi thêm mục CI vào `docs/PERFORMANCE.md`, tôi đặt anchor vào bullet `CI` và vô tình chèn section
+  trước bullet `Đánh đổi E3`, làm gãy danh sách; tự review bằng cách đọc lại toàn file và sửa.
+- Tôi định dựa vào bảng `EXIT=0` trong report của Task 2; reviewer chỉ ra diff không chứng minh được
+  điều đó, nên Task 3 phải chạy lại toàn bộ check set bằng `spawnSync` và dán output thật vào PR.
+- `npm run check:language` trên máy này exit 0 nhưng không in dòng thành công; nếu chỉ đọc output
+  tôi có thể tưởng script không chạy, nên phải gọi trực tiếp hàm quét để có bằng chứng.
+
+### Limitations
+
+- Không push branch, không mở PR theo chỉ định của controller; liên kết PR và việc đẩy code do
+  controller thực hiện sau review cuối cùng.
+- Không có runner GitHub để chạy `npx lhci autorun` thật; bằng chứng đỏ có chủ đích là Task 4, chưa
+  nằm trong commit này.
+- Thử build rỗng dùng SQLite trong temp, không phải PostgreSQL production; output P2021 ở dạng
+  `main.*`, trong khi `docs/DEPLOY.md` mô tả `public.*` trên Postgres. Không có credentials production
+  để thử trên Postgres.
+- Không đổi logging app: các dòng `prisma:error` vẫn được in, đúng yêu cầu "không làm im lặng P2021".
+- `check:language` có lỗi path trên Windows nên không in output; lượt quét bổ sung được ghi ở trên,
+  nhưng vẫn giữ nguyên script vì nằm ngoài phạm vi K1.
+- Không có pixel diff với Figma vì file thiết kế không nằm trong repo; không chạy smoke production
+  trong round này.
+- Ba review record là self-review/transcribe từ các round đã hoàn tất, không có reviewer subagent
+  thứ hai trong round này.
+
+---
+
 ## 2026-11-25 16:42:28 +07:00 - Ghi bằng chứng drill rollback alias thật vào DEPLOY.md
 
 ### Prompt nguyên văn đã dùng

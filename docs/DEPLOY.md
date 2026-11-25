@@ -129,7 +129,7 @@ Cấu hình có hiệu lực sau lần deploy đầu tiên áp dụng `vercel.js
      npx --yes vercel@66.6.0 build --prod
      npx --yes vercel@66.6.0 deploy --prebuilt --prod
      ```
-     `vercel pull` lấy phần lớn biến runtime từ Vercel; GitHub giữ ba secret Vercel và `DATABASE_URL` direct vì file Vercel kéo về chỉ chứa `[SENSITIVE]`. Build dùng PostgreSQL Prisma client và không đổi schema. `generateStaticParams` cho blog/category/product trả params rỗng khi bảng chưa có (`P2021`) nên build vẫn xong trước khi có dữ liệu, nhưng migration phải được áp dụng để dữ liệu runtime đúng.
+     `vercel pull` lấy phần lớn biến runtime từ Vercel; GitHub giữ ba secret Vercel và `DATABASE_URL` direct vì file Vercel kéo về chỉ chứa `[SENSITIVE]`. Build dùng PostgreSQL Prisma client và không đổi schema. Khi bảng chưa có (`P2021`), `generateStaticParams` cho blog/category/product trả một placeholder `{ slug: '__empty__' }` thay vì mảng rỗng (Cache Components của Next.js 16 yêu cầu ít nhất một param), nên build vẫn xong trước khi có dữ liệu; migration vẫn phải được áp dụng để dữ liệu runtime đúng. Bằng chứng build với file SQLite rỗng (`EXIT=0`, vẫn có `prisma:error` và các route `/blog/__empty__`, `/c/__empty__`, `/p/__empty__`): xem `AI_LOG.md` mục `2026-11-25 21:34:21 +07:00 - Ngân sách hiệu năng trong pipeline K1`.
    - Không chạy `vercel --prod` tay từ máy cá nhân cho luồng thường; chỉ dùng khi rollback/khẩn cấp và ghi lại lý do.
    - Sau deploy, job `smoke` của workflow tự chạy `BASE_URL=${{ vars.SITE_URL }} npm run test:smoke:production` rồi làm checklist bước 6. Có thể chạy lại tay bằng `BASE_URL=https://ant-jewelry.vercel.app npm run test:smoke:production` để đối chiếu, xem mục "Deploy & rollback".
 5. **Create the first ADMIN** (after migrations):
@@ -418,7 +418,7 @@ If `next build` fails during page data collection with:
 
 1. Confirm `DATABASE_URL` points to the intended production database.
 2. Run `npm run db:migrate:production` and `npm run db:migrate:status:production`.
-3. Redeploy. The app also guards `generateStaticParams` for blog/category/product slugs against P2021 so builds are more resilient, but the database must be migrated for runtime pages and admin content to work.
+3. Redeploy. For blog/category/product slugs, `generateStaticParams` catches `P2021` and returns one `{ slug: '__empty__' }` placeholder instead of an empty array, so Cache Components builds still finish; the `prisma:error` lines are left visible by design. The database must still be migrated for runtime pages and admin content. The verified empty-database build output is in `AI_LOG.md` mục `2026-11-25 21:34:21 +07:00 - Ngân sách hiệu năng trong pipeline K1`.
 
 ## Migration, backup, restore, rollback
 

@@ -131,3 +131,9 @@ Bảng Lighthouse ngay trước mục này là lượt đo 2026-11-18; số li�
 - **Ảnh đối chiếu:** `npm run test:screenshots` tạo 6 ảnh desktop 1920px (chờ `networkidle` + font/ảnh eager) trong `docs/deploy-screenshots/`; dùng cho bảng R6.3 trong `docs/DEPLOY.md`.
 - **CI:** job `e2e` trong `.github/workflows/ci.yml` chạy browser + `npm run test:e2e` và upload `playwright-report/`, `test-results/` (trace) khi fail.
 - **Đánh đổi E3 đã đóng:** ảnh upload từng được phục vụ `unoptimized` ở mọi kích thước như một workaround cho lỗi 400 chưa rõ trên Vercel — không phải để tiết kiệm dung lượng, mà ngược lại làm tăng bytes. Sau khi sửa `images.localPatterns` và đo production 2026-11-20 (optimizer trả 13.350 B cho ảnh raw 337.464 B), ảnh `/uploads/` đã đi qua optimizer. Lỗi 400 ban đầu với URL không query vẫn chưa rõ nguyên nhân. Chi tiết + số đo trong `docs/DEPLOY.md` mục S3/E3.
+
+## Ngân sách hiệu năng trong CI (K1, 2026-11-25)
+
+CI không thay thế baseline đo tay ở trên. Job `e2e` trong [`.github/workflows/ci.yml`](../.github/workflows/ci.yml) chạy `npx lhci autorun` sau `npm run test:e2e`, trên production build local đã reset database E2E. [`lighthouserc.json`](../lighthouserc.json) quy định bốn trang: Home `/`, danh mục `/c/wedding-ring`, sản phẩm `/p/aurora-band` và blog chi tiết `/blog/cach-chon-nhan-cuoi-phu-hop`; mỗi trang **3 lần mobile** với simulated throttling, aggregation **median**. Ngưỡng assert ở mức `error`: Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95, CLS ≤ 0,1. Assert dưới ngưỡng làm job `e2e` đỏ; không dùng `continue-on-error`.
+
+Báo cáo gốc được ghi vào `lhci-report/` (đã nằm trong `.gitignore`) rồi upload làm artifact **`lighthouse-report`** với `if: always()`, giữ 7 ngày. Không commit báo cáo CI vào repo; xem artifact của từng run trên [workflow `ci`](https://github.com/khanhtung2410/ant-jewelry/actions/workflows/ci.yml) để đối chiếu, không chép số của một run vào bảng baseline tay ở trên.
