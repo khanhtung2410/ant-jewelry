@@ -21,20 +21,32 @@ Nguồn: `.superpowers/sdd/2026-11-25-performance-budget/verbatim-prompt.txt`. E
 - Đọc toàn bộ `.github/workflows/ci.yml`, `lighthouserc.json`, `src/test/lighthouse-config.test.ts`, `src/test/ci-workflow.test.ts`, `docs/PERFORMANCE.md`, spec và plan K1 trước khi sửa. Grep `chromeFlags` trong `node_modules/@lhci` để xác nhận LHCI truyền flag từ `ci.collect.settings` sang `chrome-launcher`.
 - Run `45648594463` của PR 166 và run `45649277989` của PR 167 đều đỏ ở job `e2e`, cả hai dừng ngay lần Lighthouse đầu tiên với `No usable sandbox!`, `waiting for dynamic debugging port in chrome-err.log`; chưa có assert Performance nào chạy. Đây là nguyên nhân gốc, không phải bằng chứng ngân sách.
 - Dùng skill `systematic-debugging` để phân tích log và `test-driven-development` để viết guard test trước: `src/test/lighthouse-config.test.ts` đỏ với `AssertionError: expected '' to contain '--no-sandbox'`, capture tại `.superpowers/sdd/2026-11-25-performance-budget/sandbox-red-checks.md` (`EXIT=1`).
-- Sau khi thêm `chromeFlags: "--no-sandbox"` vào `lighthouserc.json`, guard tập trung xanh (`EXIT=0`, `sandbox-green-checks.md`) và toàn bộ check set từ `checks-config.json` xanh 7/7 (`EXIT=0`, `final-checks.md`): lint, typecheck, 458 test, format, build, language, guard tập trung.
-- Cập nhật `docs/PERFORMANCE.md`, spec và plan K1 để mô tả flag và lý do; không đổi ngưỡng, URL, số lần chạy hay cách upload artifact.
+- Sau khi thêm `chromeFlags: "--no-sandbox"` vào `lighthouserc.json`, guard tập trung xanh (`EXIT=0`, `sandbox-green-checks.md`) và toàn bộ check set từ `checks-config.json` xanh 7/7 (`EXIT=0`, `final-checks.md`): lint, typecheck, 459 test, format, build, language, guard tập trung.
+- Sau review, thay flag bằng `--no-sandbox-disabled` tạm thời để kiểm guard đã siết: `EXIT=1`, `expected [ '--no-sandbox-disabled' ] to include '--no-sandbox'`; config được khôi phục đúng từng byte (`sandbox-token-check.md`).
+- Cập nhật `docs/PERFORMANCE.md`, spec và plan K1 để mô tả đúng phạm vi flag và lý do; không đổi ngưỡng, URL, số lần chạy hay cách upload artifact.
 
 ### AI sai ở đâu
 
 - Tôi ban đầu coi run đỏ của PR 167 là bằng chứng Performance vì biết ảnh 12 MB được thêm vào Home. Thực tế log cho thấy Chrome không khởi động được do sandbox; nếu dán link đó vào PR 166 thì bằng chứng sai sự thật. Tôi đã đọc toàn bộ log failed, so sánh với run của PR 166 và sửa nguyên nhân trước khi thử lại.
 - Tôi cũng tạo helper `verify-sync.mjs` rồi quên chạy Prettier, làm `npm run format:check` đỏ `EXIT=1`; đã format helper và capture lại `EXIT=0` thay vì cho rằng file ngoài git được miễn kiểm tra.
 
+### Findings từ review và quyết định
+
+Bản ghi đầy đủ, kèm reproduction và mọi finding bị gạt bỏ: `docs/reviews/2026-11-25-requesting-code-review-sandbox-fix.md`.
+
+- **Chấp nhận SR-1** (Important, `docs/PERFORMANCE.md:141`): tài liệu nói flag chỉ bật trong CI nhưng config JSON áp dụng cho cả LHCI local. Đã sửa thành mô tả đúng: flag có hiệu lực với mọi lần chạy LHCI đọc config này.
+- **Chấp nhận SR-2** (Important, PR 166 và `AI_LOG.md:24`): output check trong PR body còn số 458 test và guard 11 test của bản trước sửa. Đã thay bằng bản capture `final-checks.md` mới nhất với 459 test và 12 guard, mọi dòng `EXIT=` giữ nguyên.
+- **Chấp nhận SR-3** (Important, `AI_LOG.md:34,37`): link chứng cứ chỉ nằm ở file bị ignore. Đã ghi run xanh `45651127274`, run đỏ `45652227977` và đoạn assert Performance vào PR 166, AI_LOG này và review record.
+- **Chấp nhận SR-4** (Minor, `src/test/lighthouse-config.test.ts:54`): so khớp chuỗi con cũng xanh với `--no-sandbox-disabled`. Đã đổi sang so khớp token chính xác qua `split(/\s+/)`.
+- **Chấp nhận SR-5** (Minor, plan K1): các ô Task 3/4 còn để trống dù PR đã mở và bằng chứng đã có. Đã đánh dấu xong và đính kèm link PR/run.
+- **Từ chối phương án thay thế của SR-1** (dùng `.lighthouserc.cjs` để bật flag chỉ khi `CI`): config `.cjs` được LHCI ưu tiên hơn `.json`, bắt viết lại guard và tách nhánh hành vi local/CI mà không có bằng chứng gây hại; công cụ chỉ chạy khi người dùng chủ động gọi trên server local. Đã chọn sửa cho đúng tài liệu thay vì tăng độ phức tạp.
+
 ### Limitations
 
-- Chưa có runner GitHub tại local; kết quả assert thật chỉ có sau khi push bản sửa và run CI mới. Bằng chứng đỏ vì Performance của Task 4 phải lặp lại từ head K1 đã sửa.
+- Không có runner GitHub tại local; assert thật chỉ kiểm chứng được qua run hosted. Run xanh `45651127274` gắn đúng head `f451e67`; run đỏ `45652227977` gắn head `3afec1d` có cha là `f451e67`.
 - `npm run check:language` exit 0 nhưng không in dòng thành công trên Windows; dùng `EXIT=0` và quét chữ cái bổ sung làm bằng chứng.
-- K2 vẫn tách PR riêng; file spec K2 giữ nguyên trạng chưa track trong đợt này.
-- Review record cho vòng sửa này sẽ được ghi theo `docs/reviews/TEMPLATE.md` sau khi có reviewer.
+- K2 vẫn tách PR riêng; spec và plan K2 nằm ngoài PR này.
+- Không có credentials PostgreSQL production nên thử nghiệm database rỗng dùng SQLite ngoài git; log `prisma:error` được giữ nguyên.
 
 ---
 

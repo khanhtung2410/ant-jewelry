@@ -143,9 +143,9 @@ Using Node `spawnSync` with `encoding: 'utf8'` and `NO_COLOR: '1'`, run `npm run
 
 Load the exact skill id `requesting-code-review`, re-read every touched file and grep every consumer of the changed values, then save the complete review in `docs/reviews/2026-11-25-requesting-code-review-performance-budget.md` using `docs/reviews/TEMPLATE.md`. Prepend an `AI_LOG.md` entry with the verbatim prompt, accepted and rejected findings, `AI sai ở đâu` with concrete examples, and limitations. Verify the previous `##` header immediately follows the new `---`.
 
-- [ ] **Step 6: Commit and open the PR**
+- [x] **Step 6: Commit and open the PR**
 
-Commit docs and records with a Conventional Commits `docs(ci)` or `chore(ci)` title. Push `k1-performance-budget`, open the PR with the full captured check output in the body, and report the link.
+Commit docs and records with a Conventional Commits `docs(ci)` or `chore(ci)` title. Push `k1-performance-budget`, open the PR with the full captured check output in the body, and report the link: https://github.com/khanhtung2410/ant-jewelry/pull/166.
 
 ---
 
@@ -158,17 +158,17 @@ Commit docs and records with a Conventional Commits `docs(ci)` or `chore(ci)` ti
 - Consumes: merged or pushed K1 workflow from Task 3.
 - Produces: a link to a red `e2e` run whose Lighthouse assertion failed on Performance.
 
-- [ ] **Step 1: Create the throwaway branch**
+- [x] **Step 1: Create the throwaway branch**
 
-From the K1 branch, create `perf/negative-lighthouse-evidence`. Add one large unoptimized image reference on Home that raises the rendered image payload without using the optimizer. Do not merge the branch.
+From the K1 branch, create `perf/negative-lighthouse-evidence`. Add one large unoptimized image reference on Home that raises the rendered image payload without using the optimizer. Do not merge the branch. Commit `3afec1d` added a 13,060,440-byte WebP through a plain `<img>` on Home; it was never merged.
 
-- [ ] **Step 2: Capture the red run**
+- [x] **Step 2: Capture the red run**
 
-Push the branch, open a draft PR, wait for the `e2e` job, and save the run link plus the Lighthouse assertion lines proving Performance fell below 0.85. Close the draft PR and delete the branch afterward.
+Push the branch, open a draft PR, wait for the `e2e` job, and save the run link plus the Lighthouse assertion lines proving Performance fell below 0.85. Close the draft PR and delete the branch afterward. Run: https://github.com/khanhtung2410/ant-jewelry/actions/runs/45652227977; draft PR: https://github.com/khanhtung2410/ant-jewelry/pull/167 (closed, never merged); branch deleted.
 
-- [ ] **Step 3: Record the evidence**
+- [x] **Step 3: Record the evidence**
 
-Add the run link and the observed assertion output to the K1 PR description or the review record. Mark clearly that this branch was intentionally never merged.
+Add the run link and the observed assertion output to the K1 PR description or the review record. Mark clearly that this branch was intentionally never merged. The output is in PR 166 and `docs/reviews/2026-11-25-requesting-code-review-sandbox-fix.md`: `categories.performance failure for minScore assertion`, `expected: >=0.85`, `found: 0.72`, `all values: 0.63, 0.72, 0.73`.
 
 ---
 
@@ -191,4 +191,4 @@ Set `ci.collect.settings.chromeFlags` to `--no-sandbox` in `lighthouserc.json`. 
 
 - [x] **Step 3: Verify and record**
 
-Run the focused guards, the full check set and a fresh CI run on the K1 branch before treating the red Performance evidence as valid. Record the original sandbox failure and the fix in AI_LOG and a review record.
+Run the focused guards, the full check set and a fresh CI run on the K1 branch before treating the red Performance evidence as valid. Record the original sandbox failure and the fix in AI_LOG and `docs/reviews/2026-11-25-requesting-code-review-sandbox-fix.md`. Green CI run: https://github.com/khanhtung2410/ant-jewelry/actions/runs/45651127274. The first 167 run (`45649277989`) was invalid because it stopped at `No usable sandbox!`; that error is recorded in AI_LOG and was corrected before the valid red run above.

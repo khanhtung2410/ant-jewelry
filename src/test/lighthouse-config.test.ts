@@ -51,7 +51,7 @@ describe('Lighthouse CI configuration guard', () => {
   it('launches Chromium without the sandbox so hosted runners can collect Lighthouse data', () => {
     const settings = collect(readConfig()).settings ?? {};
 
-    expect(settings.chromeFlags ?? '').toContain('--no-sandbox');
+    expect(settings.chromeFlags?.split(/\s+/)).toContain('--no-sandbox');
   });
 
   it('enforces exactly the four median budget assertions at error level', () => {
