@@ -212,6 +212,7 @@ EXIT=0
 - **Rejected:** FR-3 Minor - hardening guard tests bằng assert chính xác lệnh server và parse step upload; Task 2 brief chỉ pin substring và controller đã bác parser thứ tự index, nên không đổi `src/test/lighthouse-config.test.ts` hay `src/test/ci-workflow.test.ts`.
 - **Accepted, đã sửa trong branch `k1-performance-budget`:** FR-4 Minor - ô T1-2 của review Task 1 chỉ ghi `package-lock.json`; đã đổi thành `package-lock.json:13327` theo mục `tldts-core` hiện tại, không đổi ruling.
 - **Rejected:** FR-5 Minor - đổi dependency từ `^0.16.1` thành `0.16.1`; lockfile đang pin 0.16.1 và controller xác định churn cài đặt lại nằm ngoài đợt sửa bằng chứng, nên không đổi `package.json`.
+- Scoped re-review xác nhận FR-1, FR-2 và FR-4 đều `ADDRESSED`, không có breakage Critical/Important và không có observation ngoài diff; xem [fix re-review](docs/reviews/2026-11-25-subagent-driven-development-final-fix-re-review.md).
 
 ### AI sai ở đâu
 
@@ -233,6 +234,9 @@ EXIT=0
   workspace ở bốn nơi dù `capture-checks.mjs:21,26-28` thay U+0192 trước khi ghi và thư mục SDD không
   có file raw; vòng fix đã chạy lại helper, dùng một bản duy nhất và sửa thành mô tả đúng về output
   đã làm sạch.
+- Sau fix tôi tạo thêm file helper `verify-sync.mjs` trong workspace SDD mà không chạy Prettier cho nó;
+  `npm run format:check` đỏ vì file này, dù file nằm ngoài git. Tôi chạy `prettier --write` cho helper
+  rồi capture lại `EXIT=0`, thay vì cho rằng file bị ignore là khỏi kiểm tra format.
 
 ### Limitations
 

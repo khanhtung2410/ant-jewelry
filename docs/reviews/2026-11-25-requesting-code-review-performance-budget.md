@@ -100,11 +100,11 @@ $ npm test
 
  Test Files  90 passed (90)
       Tests  458 passed (458)
-   Start at  22:29:30
-   Duration  55.27s (tests 47%, import 33%, environment 11%, transform 4%, setup 2%, worker 2%)
+   Start at  22:37:22
+   Duration  59.66s (tests 48%, import 33%, environment 11%, transform 3%, setup 2%, worker 2%)
 
-     Import  214 modules were evaluated 682 times · 10.22s total, 33% of tracked time
-             ~7.02s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
+     Import  214 modules were evaluated 682 times · 10.97s total, 33% of tracked time
+             ~7.53s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
              learn more: https://vitest.dev/guide/improving-performance#test-isolation
 
 
@@ -131,22 +131,22 @@ $ npm run build
 
 ▲ Next.js 16.4.5 (Turbopack)
 - Environments: .env.production.local, .env.local, .env
-✓ Running next.config.ts took 204ms
+✓ Running next.config.ts took 200ms
 - Cache Components enabled
 - Partial Prefetching enabled
 - Experiments (use with caution):
   ✓ agentFeedback
 
   Creating an optimized production build ...
-✓ Compiled successfully in 4.6s
+✓ Compiled successfully in 3.8s
   Running TypeScript ...
-  Finished TypeScript in 5.3s ...
+  Finished TypeScript in 5.2s ...
   Collecting page data using 7 workers ...
   Generating static pages using 7 workers (0/53) ...
   Generating static pages using 7 workers (13/53) 
   Generating static pages using 7 workers (26/53) 
   Generating static pages using 7 workers (39/53) 
-✓ Generating static pages using 7 workers (53/53) in 6.7s
+✓ Generating static pages using 7 workers (53/53) in 6.8s
   Finalizing page optimization ...
 
 Route (app)                                 Revalidate  Expire
@@ -214,8 +214,8 @@ $ npx vitest run src/test/lighthouse-config.test.ts src/test/ci-workflow.test.ts
 
  Test Files  2 passed (2)
       Tests  11 passed (11)
-   Start at  22:30:57
-   Duration  8.20s (tests 29%, import 21%, setup 19%, transform 18%, worker 13%, environment 1%)
+   Start at  22:38:52
+   Duration  8.16s (import 24%, setup 24%, tests 23%, transform 16%, worker 13%)
 
 
 
