@@ -37,6 +37,15 @@ export default async function Home() {
   return (
     <main className="space-y-12 pb-16 sm:space-y-16">
       <h1 className="sr-only">ANT JEWELRY</h1>
+      {/* Deliberate negative Lighthouse evidence only; this branch is never merged. */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/mock/negative-lighthouse-evidence.webp"
+        alt=""
+        width={1600}
+        height={900}
+        className="h-auto w-full"
+      />
       <HeroSlider slides={heroSlides} />
 
       <div className="mx-auto w-full max-w-7xl space-y-14 px-4 sm:px-6 lg:px-8">
