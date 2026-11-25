@@ -40,15 +40,8 @@ export default async function Home() {
       <HeroSlider slides={heroSlides} />
 
       <div className="mx-auto w-full max-w-7xl space-y-14 px-4 sm:px-6 lg:px-8">
-        {productSections.map(({ category, products }, index) => (
-          <div
-            key={category.category_id}
-            style={
-              index > 0
-                ? { contentVisibility: 'auto', containIntrinsicSize: '1px 420px' }
-                : undefined
-            }
-          >
+        {productSections.map(({ category, products }) => (
+          <div key={category.category_id}>
             <Carousel
               title={category.name}
               products={products}
@@ -57,10 +50,7 @@ export default async function Home() {
           </div>
         ))}
 
-        <section
-          aria-labelledby="home-blog-heading"
-          style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 320px' }}
-        >
+        <section aria-labelledby="home-blog-heading">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
             <h2
               id="home-blog-heading"
