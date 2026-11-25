@@ -1,3 +1,40 @@
+## 2026-11-25 10:07:17 +07:00 - Bằng chứng ảnh cấu hình branch protection và Vercel deployment
+
+### Prompt nguyên văn đã dùng
+
+> Chụp ảnh bằng chứng còn thiếu
+
+Hai ảnh đính kèm trong cùng lượt: `Settings → Branches → Branch protection rule` của repo `khanhtung2410/ant-jewelry` và trang `Deployments` của project `ant-jewelry` trên Vercel.
+
+### Đã tự kiểm chứng
+
+- Trích đúng hai ảnh người dùng gửi từ `session_message` (không tạo lại, không chỉnh sửa), kiểm tra magic bytes: ảnh 1 là JPEG 1347x2000, ảnh 2 là PNG 1901x869.
+- Đối chiếu ảnh branch protection với API thật `gh api repos/khanhtung2410/ant-jewelry/branches/main/protection`: PR bắt buộc, contexts `static,test,build,e2e`, strict, `enforce_admins=true`, `required_approving_review_count=0`. Ảnh hiển thị đúng bốn check và "Do not allow bypassing the above settings".
+- Đối chiếu ảnh Vercel với lịch sử merge: ba deployment trong ảnh gắn commit `649f951`, `d51174b`, `0ae74f6`, khớp PR #161, #160, #158; chạy lại `gh run view 45428604255` xác nhận chuỗi CI → deploy → smoke xanh.
+- Lưu ảnh vào `docs/deploy-screenshots/branch-protection-main.jpg` và `docs/deploy-screenshots/vercel-production-deployments.png`; thêm mục "Branch protection trên `main`" và cập nhật dòng A3 trong `docs/DEPLOY.md` để trỏ tới ảnh và run live.
+- Chạy toàn bộ check set trên cây cuối, output đầy đủ nhúng trong `docs/reviews/2026-11-25-superpowers-deploy-evidence.md` và PR body.
+
+### Findings được nhận / bác
+
+- **Accepted:** dòng A3 trong bảng readiness còn ghi `[x] (repo) / [ ] (live)` dù đã có deployment CLI thật; nay đổi thành `[x]` kèm ảnh dashboard và run `45428604255`.
+- **Accepted:** cấu hình branch protection chưa được mô tả trong `docs/DEPLOY.md`; nay có mục riêng kèm ảnh và bằng chứng merge bị khóa ở PR #153.
+- **Rejected:** tự chụp lại hai trang bằng trình duyệt trong app; trình duyệt chưa có phiên đăng nhập GitHub/Vercel nên không thể tạo ảnh xác thực, và ảnh giả lập không được dùng làm bằng chứng.
+
+### AI sai ở đâu
+
+- Tôi mở trang settings bằng trình duyệt trong app và nhận 404 vì chưa đăng nhập, nhưng trước đó đã nói "tôi sẽ chụp" như thể trình duyệt đã có phiên. Đáng lẽ phải kiểm tra trạng thái đăng nhập trước khi hứa chụp.
+- Lần trích ảnh đầu tiên tôi tìm trong bảng `blob`/`blob_ref` và không thấy gì; ảnh người dùng dán nằm trong `session_message.files[].data`. Tôi phải đọc schema rồi mới lấy đúng, thay vì đoán đường lưu.
+- Tôi suýt ghi đè dòng A3 bằng câu "đã có ảnh" mà không nêu run live; ảnh dashboard một mình không chứng minh chuỗi CI → deploy, nên đã bổ sung link run `45428604255`.
+
+### Limitations
+
+- Ảnh là bằng chứng tại thời điểm chụp 2026-11-25; cấu hình có thể đổi sau đó.
+- Ảnh Vercel không hiển thị trường "creator"; việc deployment do CLI tạo được suy ra từ `vercel.json` tắt Git integration, workflow `deploy.yml`, và commit gắn trên từng deployment.
+- Ảnh branch protection cho thấy "Require approvals" không bật; đây là cấu hình thật (0 required approvals), không phải thiếu sót của ảnh.
+- Chưa chạy drill rollback và drill dừng chờ duyệt; hai bằng chứng đó vẫn còn thiếu.
+
+---
+
 ## 2026-11-24 22:30:34 +07:00 - Scoped re-review va PR cho final fix wave
 
 ### Prompt nguyên văn đã dùng

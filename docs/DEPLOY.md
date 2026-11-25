@@ -81,7 +81,7 @@ Set in Vercel **Production** (and Preview/Development as appropriate). Never com
 | `VERCEL_ORG_ID` | ID team/user trên Vercel |
 | `VERCEL_PROJECT_ID` | ID project trên Vercel |
 
-Không đặt bốn giá trị này ở cấp repository. Chủ dự án đặt bằng `gh secret set --env production VERCEL_TOKEN` (tương tự các biến còn lại) và kiểm tra tên bằng `gh api repos/<owner>/<repo>/environments/production/secrets`. `AUTH_SECRET` vẫn chỉ nằm trong Vercel; workflow lấy qua `vercel pull --environment=production`. `SITE_URL` cũng được đặt trong Vercel cho canonical của app và được khai báo thêm làm **biến** (không phải secret) của Environment `production` bằng `gh variable set SITE_URL --env production`, để job `smoke` đọc `vars.SITE_URL`. Tuy nhiên `vercel pull` ghi `[SENSITIVE]` thay cho URL thật, nên `DATABASE_URL` từ Environment `production` được truyền vào `env` của mọi job dùng Prisma để build, kiểm tra trạng thái và migration không gặp lỗi P1013.
+Không đặt bốn giá trị này ở cấp repository: chủ dự án đặt bốn secret Environment bằng `gh secret set --env production VERCEL_TOKEN` (tương tự các biến còn lại) và kiểm tra tên bằng `gh api repos/<owner>/<repo>/environments/production/secrets`. `AUTH_SECRET` vẫn chỉ nằm trong Vercel; workflow lấy qua `vercel pull --environment=production`. `SITE_URL` cũng được đặt trong Vercel cho canonical của app và được khai báo thêm làm **biến** (không phải secret) của Environment `production` bằng `gh variable set SITE_URL --env production`, để job `smoke` đọc `vars.SITE_URL`. Tuy nhiên `vercel pull` ghi `[SENSITIVE]` thay cho URL thật, nên `DATABASE_URL` từ Environment `production` được truyền vào `env` của mọi job dùng Prisma để build, kiểm tra trạng thái và migration không gặp lỗi P1013.
 
 ### Quyết định A3 — tắt toàn bộ Git deployment của Vercel
 
@@ -151,6 +151,10 @@ Migration chạy **trước** deploy vì mã mới có thể cần bảng hoặc
 Migration phải **tương thích ngược**: bản code đang chạy trên Production vẫn phải đọc/ghi được trên schema mới. Thực tế: thêm cột nullable hoặc có default, tạo bảng mới trước khi chuyển luồng đọc/ghi, không xoá cột hay đổi kiểu trong cùng một bản phát hành, và dời việc xoá dữ liệu sang một migration sau khi code mới chạy ổn định. Nhờ vậy, nếu smoke test hoặc giám sát bắt buộc rollback code, bản cũ vẫn làm việc trên schema đã migrate; rollback không cần đảo ngược migration và không làm mất dữ liệu. Không dùng `prisma db push` hay sửa migration đã áp dụng trên Production.
 
 Trước mỗi migration, reviewer phải xác nhận có snapshot hoặc điểm PITR còn dùng được. Job `migrate` chỉ in commit SHA và lời nhắc này vì workflow không có credentials của provider để tự tạo snapshot; đây là cửa kiểm soát thủ công, không phải bước tự động giả tạo.
+
+### Branch protection trên `main`
+
+Rule `main` bắt buộc pull request trước khi merge, bắt buộc bốn status check `static`, `test`, `build`, `e2e`, bật "Require branches to be up to date before merging", và bật "Do not allow bypassing the above settings" nên cả admin cũng không push thẳng. Ảnh cấu hình: [branch-protection-main](deploy-screenshots/branch-protection-main.jpg), chụp ngày 2026-11-25. Bằng chứng merge bị khóa khi `test` đỏ: PR thử #153 đã đóng, `mergeStateStatus = BLOCKED`.
 
 ## Deploy & rollback
 
@@ -355,7 +359,7 @@ If `next build` fails during page data collection with:
 | Vercel deployment accessible | [x] | 6 URL public + `/admin/login` trả 200 ngày 2026-11-18; ảnh chụp trong [`docs/deploy-screenshots/`](deploy-screenshots/) |
 | Vercel + PostgreSQL provisioned, env vars đúng, không lọt secret | [ ] | Cần ảnh/xuất danh sách biến trong Vercel dashboard (đã che giá trị). Repo chỉ có `.env.example`; production render được dữ liệu → gián tiếp chứng tỏ `DATABASE_URL` hoạt động |
 | `SITE_URL` đúng origin production | [x] | `curl https://ant-jewelry.vercel.app/` có `<link rel="canonical" href="https://ant-jewelry.vercel.app"/>` (6 lần xuất hiện origin trong HTML) |
-| A3 — không còn deploy tự động từ Git, chỉ Actions sau CI | [x] (repo) / [ ] (live) | `vercel.json` đặt `git.deploymentEnabled = false`; `.github/workflows/deploy.yml` chỉ chạy từ `workflow_run` của `ci` trên `main`, có guard SHA. Bằng chứng repo: `src/test/deploy-workflow.test.ts`. Bằng chứng live (dashboard Vercel không còn deployment nguồn Git, một run Actions CI → deploy) cần chủ dự án cung cấp sau khi merge và đặt bốn secret Environment |
+| A3 — không còn deploy tự động từ Git, chỉ Actions sau CI | [x] | `vercel.json` đặt `git.deploymentEnabled = false`; `.github/workflows/deploy.yml` chỉ chạy từ `workflow_run` của `ci` trên `main`, có guard SHA. Bằng chứng repo: `src/test/deploy-workflow.test.ts`. Bằng chứng live: [vercel-production-deployments](deploy-screenshots/vercel-production-deployments.png) (dashboard ngày 2026-11-25, deployment gắn commit `649f951`/`d51174b`/`0ae74f6`) và run [45428604255](https://github.com/khanhtung2410/ant-jewelry/actions/runs/45428604255) với chuỗi CI → deploy → smoke xanh |
 | Migration đã áp dụng, status sạch | [ ] | Cần output thật của `npm run db:migrate:status:production` (chạy với `DATABASE_URL` direct). Không thể tự lấy từ môi trường agent |
 | Script E1/B6 backfill ảnh legacy đã chạy | [ ] | Bắt buộc nếu DB có blob cũ: chạy `npx tsx scripts/reencode-legacy-uploads.ts --dry-run` rồi lệnh thật với `DATABASE_URL` direct; dán output số blob + ETag mới. Cho đến khi chạy, các blob có `etag = NULL` vẫn phải đọc bytes để trả 304 (đúng nhưng chậm hơn). Không nằm trong `prisma migrate deploy` vì cần sharp + cập nhật URL `?v=2` |
 | ADMIN đầu tiên bằng email thật | [ ] | Cần ảnh trang admin sau khi đăng nhập bằng tài khoản ADMIN vừa tạo (`db:create-admin:production`) |
