@@ -1,3 +1,48 @@
+## 2026-11-25 16:00:04 +07:00 - Bảo vệ Environment production và gate drill bằng production-drill
+
+### Prompt nguyên văn đã dùng
+
+> C6 — "Đặt Deployment branches của production chỉ cho main. Cho drill dùng một Environment riêng (ví dụ production-drill) có required reviewer, để luồng deploy thường không phải chờ duyệt."
+> C6 — "Bằng chứng: output gh api repos/<repo>/environments có rule branch_policy cho production và required_reviewers cho Environment drill; sửa DEPLOY.md và comment trong deploy.yml cho khớp cấu hình thật. Thêm vào checklist deploy: 'cấu hình Environment được kiểm bằng API, không chỉ đọc tài liệu'."
+> C4b — "Sau C6, chạy workflow_dispatch với simulate_failure=true và previous_deployment_id là deployment production hiện tại; kiểm tra job rollback xanh, response có oldDeploymentId, alias vẫn trỏ đúng deployment, smoke chạy lại thủ công xanh."
+> C4b — "Chạy thêm một drill trỏ tới deployment liền trước để thấy alias thật sự đổi, rồi đưa alias về lại bản hiện tại."
+> C4b — "Dán link 2 run và output GET /v1/aliases/<host> trước/sau vào DEPLOY.md mục 'Drill'. Ghi giờ chạy và khoảng thời gian production trỏ về bản cũ."
+
+Hai lựa chọn của chủ dự án: "Merge PR trước, rồi drill (Recommended)"; "Có, chạy và duyệt drill (Recommended)".
+
+### Đã tự kiểm chứng
+
+- Kéo `origin/main`, tạo branch `chore/ci-production-environment-protection` từ `eeeb94d`; đọc trọn `.github/workflows/deploy.yml`, `docs/DEPLOY.md`, `docs/ARCHITECTURE.md`, `AI_LOG.md`, `docs/CONTRIBUTING.md`, `docs/reviews/TEMPLATE.md` và bốn file test liên quan trước khi sửa.
+- Cấu hình trực tiếp bằng `gh api`: `production` có `protection_rules: [branch_policy]` và rule `{"name":"main","type":"branch"}`; `production-drill` có `required_reviewers` cho `khanhtung2410`. Output đầy đủ nằm ở `C:\Users\Hello\AppData\Local\Temp\opencode\environment-api-evidence.txt` và được dán vào `docs/DEPLOY.md`.
+- Viết test RED cho gate drill, response POST thiếu `oldDeploymentId`, drill không được duyệt, khóa concurrency cấp run và docs sai; sau đó sửa workflow và docs để các test này xanh: 4 file, 44 test, `EXIT=0`.
+- Dùng `js-yaml` để xác nhận không còn `concurrency` cấp workflow và bốn job `migrate`, `deploy`, `smoke`, `rollback` có `group: production`, `cancel-in-progress: false`; job `drill-approval` không có lock.
+- Chạy lại toàn bộ check set với `DATABASE_URL=file:./prisma/e2e.db` cho `npm run build`; output đầy đủ và các dòng `EXIT=` được ghi trong review record và thân PR.
+
+### Findings được nhận / bác
+
+- **Accepted, sửa trong branch này:** Important `.github/workflows/deploy.yml` concurrency cấp run giữ lock trong lúc chờ reviewer → chuyển lock xuống bốn job chạm trạng thái production; Minor so sánh `oldDeploymentId` với id của GET ngay trước; Minor mô tả reviewer chỉ đúng trong drill; Minor link "mục Drill bên dưới" sai vị trí; Minor thiếu mô tả drill trong `docs/ARCHITECTURE.md`; Minor before-GET thiếu guard `SITE_URL` rỗng. Xem [review record](docs/reviews/2026-11-25-requesting-code-review-environment-guard.md).
+- **Accepted, ghi rõ limitation:** `can_admins_bypass: true` và `prevent_self_review: false` của `production-drill` được giữ nguyên vì là cấu hình của chủ dự án; docs nêu rõ không phải kiểm soát độc lập. Nếu cần độc lập, sẽ đổi cấu hình trong một PR riêng sau khi chủ dự án xác nhận.
+- **Rejected:** đánh giá việc chưa có link hai lần drill là lỗi của commit này; chủ dự án đã chọn merge PR trước rồi mới drill trên `main`, vì Environment `production` chỉ cho phép `main`.
+- **Rejected:** tự đổi `can_admins_bypass` hay `prevent_self_review` ngay trong PR này; đây là thay đổi chính sách Environment ngoài phạm vi được phê duyệt.
+
+### AI sai ở đâu
+
+- Ban đầu regex của test POST parser giả định dòng lệnh bắt đầu bằng `node -e '`; sau khi thêm `OLD_ID=...` vào workflow, test fail với `SyntaxError: Invalid or unexpected token`. Đã sửa regex để khớp đúng dòng có `OLD_ID="${{ steps.before.outputs.deployment_id }}"`.
+- Ban đầu đặt bước kiểm tra response POST trước khi kiểm tra HTTP status; như vậy một lỗi HTTP không 2xx có thể bị báo là thiếu `oldDeploymentId`. Đã dời parser xuống sau `case "$status"` để thông báo đúng nguyên nhân.
+- Tôi giữ nguyên `concurrency` cấp workflow từ thiết kế C2 cũ và chỉ coi việc bổ sung gate là xong; reviewer chỉ ra rằng job chờ duyệt vẫn chiếm lock và có thể làm deploy thường bị xếp hàng. Đã sửa thành lock cấp job và thêm test chống tái phạm.
+- `docs/DEPLOY.md` ban đầu viết drill là "job duy nhất có required reviewer" dù `migration-approval` cũng có reviewer, và dẫn "mục Drill bên dưới" dù mục này nằm trên checklist. Đã sửa cả hai.
+- Lần capture check set đầu tiên `npm run build` trả `EXIT=1` vì thiếu `DATABASE_URL`; đã chạy lại với giá trị SQLite được docs hướng dẫn thay vì bỏ qua bước build.
+
+### Limitations
+
+- Hai drill live chưa chạy vì workflow mới chỉ có hiệu lực sau khi merge vào `main`; link run, khung giờ và output alias trước/sau sẽ bổ sung trong PR thứ hai.
+- Máy này không có `VERCEL_TOKEN`, `VERCEL_ORG_ID` hay `VERCEL_PROJECT_ID`; mọi output `GET /v1/aliases/<host>` phải lấy từ log GitHub Actions, không gọi trực tiếp từ local.
+- Không có PostgreSQL production nên không chạy `db:migrate:status:production` thật.
+- Không có pixel diff với Figma vì file thiết kế không nằm trong repo.
+- `production-drill` cho phép admin bypass và self-review theo cấu hình hiện tại; PR này chỉ ghi nhận, không thay đổi.
+
+---
+
 ## 2026-11-25 12:44:33 +07:00 - Bổ sung coverage và verification cho các cập nhật mới
 
 ### Prompt nguyên văn đã dùng

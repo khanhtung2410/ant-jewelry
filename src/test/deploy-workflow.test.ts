@@ -144,12 +144,25 @@ describe('production deploy guard', () => {
     expect(deploy).toContain('run: npm ci');
   });
 
-  it('serialises deploys in the production group without cancelling the running one', () => {
-    const concurrency = block(readWorkflow(), 'concurrency');
+  it('serialises production state jobs without holding a lock during drill approval', () => {
+    const content = readWorkflow();
+    const jobs = block(content, 'jobs');
 
-    expect(concurrency, 'a top-level concurrency block must exist').not.toBe('');
-    expect(concurrency).toContain('group: production');
-    expect(concurrency).toContain('cancel-in-progress: false');
+    expect(block(content, 'concurrency'), 'a run-level lock would include a waiting drill').toBe(
+      '',
+    );
+    expect(
+      block(jobs, 'drill-approval', 2),
+      'the approval job must not hold the lock',
+    ).not.toContain('concurrency:');
+
+    for (const name of ['migrate', 'deploy', 'smoke', 'rollback']) {
+      const concurrency = block(block(jobs, name, 2), 'concurrency', 4);
+      expect(concurrency, `${name} must serialise production state`).toContain('group: production');
+      expect(concurrency, `${name} must not cancel an in-flight promotion`).toContain(
+        'cancel-in-progress: false',
+      );
+    }
   });
 
   it('runs the three pinned Vercel commands with the environment token secrets', () => {

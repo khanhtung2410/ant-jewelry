@@ -44,7 +44,7 @@ describe('production smoke and rollback guard', () => {
     const smoke = job('smoke');
 
     expect(smoke, 'the smoke job must exist').not.toBe('');
-    expect(smoke).toContain('needs: deploy');
+    expect(smoke).toContain('needs: [deploy, drill-approval]');
     expect(smoke).toContain('environment: production');
     expect(smoke).toContain('npm run test:smoke:production');
     expect(
@@ -61,7 +61,7 @@ describe('production smoke and rollback guard', () => {
     const smoke = job('smoke');
 
     expect(smoke, 'smoke must still run after a successful deploy').toContain(
-      "if: always() && (needs.deploy.result == 'success' || github.event_name == 'workflow_dispatch')",
+      "if: always() && ((github.event_name == 'workflow_dispatch' && needs.drill-approval.result == 'success') || (github.event_name != 'workflow_dispatch' && needs.deploy.result == 'success'))",
     );
   });
 
@@ -112,9 +112,9 @@ describe('production smoke and rollback guard', () => {
     const rollback = job('rollback');
 
     expect(rollback, 'the rollback job must exist').not.toBe('');
-    expect(rollback).toContain('needs: [deploy, smoke]');
+    expect(rollback).toContain('needs: [deploy, smoke, drill-approval]');
     expect(rollback, 'rollback must not claim a target when promotion never happened').toContain(
-      "if: failure() && (needs.deploy.result != 'skipped' || github.event_name == 'workflow_dispatch')",
+      "if: failure() && (needs.deploy.result != 'skipped' || (github.event_name == 'workflow_dispatch' && needs.drill-approval.result == 'success'))",
     );
     expect(rollback).toContain('environment: production');
     expect(rollback).toContain('${{ needs.deploy.outputs.previous_id }}');
@@ -158,8 +158,11 @@ describe('production smoke and rollback guard', () => {
     const finalize = job('finalize');
 
     expect(finalize, 'the finalize job must exist').not.toBe('');
-    expect(finalize).toContain('needs: [smoke, rollback]');
+    expect(finalize).toContain('needs: [smoke, rollback, drill-approval]');
     expect(finalize).toContain('if: always()');
+    expect(finalize, 'a rejected dispatch drill must not finish green').toContain(
+      "if: github.event_name == 'workflow_dispatch' && needs.drill-approval.result != 'success'",
+    );
     expect(finalize, 'only a smoke that ran and failed may fail finalize').toContain(
       "if: needs.smoke.result == 'failure' || needs.smoke.result == 'cancelled'",
     );
