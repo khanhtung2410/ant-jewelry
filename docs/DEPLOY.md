@@ -234,7 +234,72 @@ COMMAND=gh api repos/khanhtung2410/ant-jewelry/environments/production/deploymen
 EXIT=0
 ```
 
-Bằng chứng hai lần drill (link run, giờ chạy, cửa sổ alias trỏ về bản cũ và output GET trước/sau) sẽ được bổ sung vào mục này sau khi chạy xanh trên `main`.
+### Drill: kết quả chạy thật (2026-11-25)
+
+Sau khi PR #164 được merge vào `main` lúc 16:12:55 +07, tôi chạy một lượt discovery để đọc id hiện tại, rồi hai drill và một lượt khôi phục. Tất cả đều được dispatch từ `main` và được reviewer `khanhtung2410` duyệt qua `production-drill`. Giờ ghi dưới đây là +07; `updatedAt` là giá trị Vercel trả về trong response GET.
+
+| Mục đích | Run | Giờ bắt đầu - kết thúc | Kết quả |
+|---|---|---|---|
+| Discovery, đọc alias hiện tại (không đổi alias) | [45584811243](https://github.com/khanhtung2410/ant-jewelry/actions/runs/45584811243) | 16:22:34 - 16:24:06 | success |
+| Drill 1: `simulate_failure=true` về chính deployment hiện tại | [45585112647](https://github.com/khanhtung2410/ant-jewelry/actions/runs/45585112647) | 16:24:27 - 16:26:08 | `rollback` success; smoke đỏ giả; run đỏ đúng thiết kế |
+| Drill 2: `simulate_failure=true` về deployment liền trước | [45585601527](https://github.com/khanhtung2410/ant-jewelry/actions/runs/45585601527) | 16:27:33 - 16:29:49 | `rollback` success; alias đổi thật; run đỏ đúng thiết kế |
+| Khôi phục alias về deployment hiện tại | [45586030821](https://github.com/khanhtung2410/ant-jewelry/actions/runs/45586030821) | 16:30:16 - 16:32:18 | `rollback` success; alias về lại id hiện tại |
+
+Id hiện tại: `dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH` (`ant-jewelry-rf9hlfbwe-hmmm-a5e7.vercel.app`). Id liền trước: `dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3` (`ant-jewelry-ask9gf5i6-hmmm-a5e7.vercel.app`).
+
+Discovery - GET trước khi đổi alias:
+
+```text
+Current production alias (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","url":"ant-jewelry-rf9hlfbwe-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","projectId":"prj_KP5xOPzi47p4b5JAGQO8TgqSmQpZ","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795598404411}
+```
+
+Drill 1 - GET trước rollback, response POST và GET sau rollback (alias không đổi):
+
+```text
+Alias before rollback (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","url":"ant-jewelry-rf9hlfbwe-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","projectId":"***","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795598404411}
+{"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","oldDeploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH"}
+oldDeploymentId dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH
+Alias after rollback (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","url":"ant-jewelry-rf9hlfbwe-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","projectId":"***","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795598754489}
+Confirmed alias deploymentId dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH.
+```
+
+Manual smoke sau drill 1, chạy tại local với origin chuẩn:
+
+```text
+Running 8 tests using 1 worker
+  8 passed (31.5s)
+EXIT=0
+```
+
+Drill 2 - GET trước, response POST và GET sau (alias đổi thật sang bản liền trước):
+
+```text
+Alias before rollback (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","url":"ant-jewelry-rf9hlfbwe-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","projectId":"***","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795598754489}
+{"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","oldDeploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH"}
+oldDeploymentId dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH
+Alias after rollback (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3","url":"ant-jewelry-ask9gf5i6-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3","projectId":"***","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795598976980}
+Confirmed alias deploymentId dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3.
+```
+
+Khôi phục - GET trước, response POST và GET sau (alias quay về bản hiện tại):
+
+```text
+Alias before rollback (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3","url":"ant-jewelry-ask9gf5i6-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3","projectId":"***","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795598976980}
+{"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","oldDeploymentId":"dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3"}
+oldDeploymentId dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3
+Alias after rollback (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","url":"ant-jewelry-rf9hlfbwe-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","projectId":"***","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795599119062}
+Confirmed alias deploymentId dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH.
+```
+
+Cửa sổ production trỏ về bản cũ: `updatedAt` 1795598976980 (16:29:36.980) đến 1795599119062 (16:31:59.062), tổng 142082 ms (~2 phút 22 giây). Trong các run này, smoke đỏ là do input `simulate_failure=true`, nên `finalize` đỏ là kết quả mong đợi; riêng job `rollback` xanh trong cả ba lượt có POST alias.
+
+Manual smoke sau khi khôi phục alias:
+
+```text
+Running 8 tests using 1 worker
+  8 passed (17.5s)
+EXIT=0
+```
 
 ### Bằng chứng upload thật trên production (2026-11-18)
 
