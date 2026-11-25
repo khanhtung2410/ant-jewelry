@@ -18,8 +18,11 @@ Dependabot, CodeQL, CI gate and security-record assertions at `:83-232`) and `pa
 checked the consumers of `ALLOWED_ADVISORIES`, `audit:production` and the four required check names
 before accepting any earlier decision.
 
-The Task 3 agent did not run a fresh whole-branch reviewer pass. The final whole-branch reviewer
-verdict is therefore recorded as pending controller, not claimed here.
+The controller then dispatched one fresh whole-branch reviewer over `b91f7a9..23a26f9` with the
+`requesting-code-review` skill. That reviewer read all 14 files at head in full, re-ran the two
+focused guard files (`2 files, 29 tests`, `EXIT=0`), grepped for suppressed audit failures, and
+verified the AI_LOG separator and the review-record citations against the real source. Its verdict
+was **Ready to merge? Yes**, with no Critical or Important finding.
 
 ## Findings and decisions
 
@@ -262,10 +265,27 @@ EXIT=0
 
 ## Whole-branch verdict
 
-**Pending controller.** The Task 3 agent did not perform a fresh whole-branch reviewer pass, so this
-record does not claim a whole-branch SPEC PASS or QUALITY PASS. The two task-level verdicts above
-(Task 1: SPEC PASS, QUALITY PASS, READY_FOR_TASK_2 YES; Task 2: SPEC PASS, QUALITY PASS,
-READY_FOR_TASK_3 YES) are the only verdicts recorded here.
+**Ready to merge? Yes — đạt/pass.** The fresh whole-branch reviewer found no Critical or Important
+issue and no required Minor fix. It verified that the fail-closed classification pins every failure
+path (`scripts/audit-dependencies.mjs:96-178`), that the guard tests read real files
+(`src/test/security-audit.test.ts:208-251`, `src/test/security-automation.test.ts:8-12`), that no
+`continue-on-error` or `|| true` exists in `.github/workflows/ci.yml`, and that the AI_LOG entry
+keeps the previous `##` header after the `---` (`AI_LOG.md:52-54`). The reviewer re-ran the focused
+guards: `2 files, 29 tests`, `EXIT=0`. One optional documentation sentence about development
+dependencies was considered and explicitly judged not a defect because the existing
+`Why this exception exists` section already covers the risk.
+
+Task-level verdicts remain: Task 1 SPEC PASS, QUALITY PASS, READY_FOR_TASK_2 YES; Task 2 SPEC PASS,
+QUALITY PASS, READY_FOR_TASK_3 YES. The controller accepts the whole-branch verdict and records the
+existing deferred items in the triage below rather than reopening them.
+
+## Deferred-minor triage
+
+- T1-1 Windows `check:language` no-op: stays deferred, pre-existing path predicate outside this diff; direct scan substituted and limitation recorded.
+- T1-2 cycle test for `via`: stays deferred, the `seen` set prevents recursion and the real npm report is acyclic.
+- T1-3 SDD helper formatting: accepted and fixed in `chore/security-automation`.
+- Task 2 concerns (no live Dependabot PR, no Security-tab result, fork SARIF downgrade): stay deferred because they require post-push GitHub behavior and are outside this plan.
+- Transient silent `npm run build` exit 1 during an earlier capture: stays disclosed, not used as evidence; a fresh controller capture passed all eight commands with `EXIT=0`.
 
 ## Limitations
 

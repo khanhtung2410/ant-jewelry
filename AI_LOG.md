@@ -30,7 +30,7 @@ Nguồn: `.superpowers/sdd/2026-11-25-performance-budget/verbatim-prompt.txt`. E
 - **Accepted (sửa trong nhánh `chore/security-automation`):** T1-3 định dạng lại helper `.superpowers/sdd/2026-11-25-security-automation/capture-checks.mjs` để toàn bộ `npm run format:check` xanh thay vì chỉ các file trong diff. Xem [review Task 1](docs/reviews/2026-11-26-requesting-code-review-security-task-1.md).
 - **Rejected:** T1-1 lỗi có sẵn của `scripts/check-language.mjs` trên Windows, vì nằm ngoài Task 1 và không do diff này gây ra; ghi thành limitation và quét trực tiếp các file đã đổi. **Rejected:** T1-2 test chu trình `via`, vì hàm đã có `seen` và báo cáo npm thật không có chu trình.
 - Task 2 không có finding nào: reviewer mới trả SPEC PASS, QUALITY PASS, READY_FOR_TASK_3 YES. Tôi không thêm finding để lấp bảng; ba điểm còn nghi ngờ được ghi thành limitation kèm lý do trong [review Task 2](docs/reviews/2026-11-26-requesting-code-review-security-task-2.md).
-- **Chưa có verdict:** review toàn nhánh K2 do controller quyết định; [review cuối](docs/reviews/2026-11-25-requesting-code-review-security-automation.md) ghi rõ verdict đó còn chờ controller thay vì tự nhận.
+- **Accepted (ghi trong `chore/security-automation`):** reviewer toàn nhánh mới trả `Ready to merge? Yes`, không có finding Critical hay Important; tôi đọc lại toàn bộ 14 file tại head, đối chiếu consumer và chấp nhận verdict đó trong [review cuối](docs/reviews/2026-11-25-requesting-code-review-security-automation.md). **Rejected:** nhận định Minor về một câu tùy chọn trong `docs/SECURITY.md` về dependency development, vì mục `Why this exception exists` đã giải thích rủi ro; reviewer cũng xác nhận đây không phải lỗi.
 
 ### AI sai ở đâu
 
@@ -44,7 +44,7 @@ Nguồn: `.superpowers/sdd/2026-11-25-performance-budget/verbatim-prompt.txt`. E
 - `npm run check:language` exit 0 nhưng không quét trên Windows do lỗi đường dẫn có sẵn; đã quét trực tiếp các file K2 và không thấy chữ cái ngoài tiếng Việt và tiếng Anh.
 - Dependabot và CodeQL chỉ có tác dụng trên GitHub sau khi push; chưa có PR Dependabot hay kết quả Security tab để trích dẫn, không được coi là bằng chứng hoàn tất.
 - Capture cuối được chạy trên Windows local, không phải runner `ubuntu-latest`; `check:language` trên Windows vẫn là no-op có sẵn nên kết quả quét trực tiếp bằng `findDisallowedLetters` là bằng chứng thay thế.
-- Verdict reviewer cho toàn nhánh K2 còn chờ controller; entry này và review cuối không tự nhận đã có verdict đó.
+- Kết quả `Ready to merge? Yes` của reviewer toàn nhánh là đánh giá tĩnh trên Windows local; nó không thay thế kết quả CI trên `ubuntu-latest` hay bằng chứng live của Dependabot và CodeQL.
 - Một lần capture lại có `npm run build` thoát với mã 1 mà không in lỗi, cùng lúc một session khác đang chạy tiến trình Node trong workspace; nguyên nhân chưa được xác định chắc chắn. Chạy lại toàn bộ capture thì cả tám lệnh `EXIT=0`; lần hỏng đó không được dùng làm bằng chứng.
 - PR K2 chưa được mở tại thời điểm ghi entry này; controller sở hữu bước commit, push và mở PR.
 - PR 166 của K1 đang đỏ ở run `45663125186` với footer layout shift `0,5164` trên Home; việc điều tra nguyên nhân vẫn đang chạy và không được thay thế bằng retry hay nới ngưỡng.
