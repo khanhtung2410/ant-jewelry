@@ -39,11 +39,9 @@ on:
 permissions:
   contents: read
 
-# One production deploy at a time. A run that arrives while another deploy is
-# in flight waits instead of cancelling work that may already be promoting.
-concurrency:
-  group: production
-  cancel-in-progress: false
+# The production lock is job-scoped below, so a drill waiting for its reviewer
+# does not hold up a real deploy. Jobs that promote or assert production state
+# serialise in that group without cancelling work already in flight.
 
 jobs:
   verify-ci:
@@ -118,6 +116,9 @@ jobs:
     if: github.event_name != 'workflow_dispatch' && always() && (needs.approval.result == 'success' || needs.approval.result == 'skipped')
     runs-on: ubuntu-latest
     environment: production
+    concurrency:
+      group: production
+      cancel-in-progress: false
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
     steps:
@@ -156,6 +157,9 @@ jobs:
     if: always() && needs.verify-ci.result == 'success' && needs.migrate.result == 'success' && github.event_name != 'workflow_dispatch'
     runs-on: ubuntu-latest
     environment: production
+    concurrency:
+      group: production
+      cancel-in-progress: false
     # Application runtime variables stay in the Vercel project and are pulled
     # below; the direct database URL is injected here because the pulled file
     # redacts it, and the three Vercel credentials are Environment secrets.
@@ -247,6 +251,9 @@ jobs:
     if: always() && ((github.event_name == 'workflow_dispatch' && needs.drill-approval.result == 'success') || (github.event_name != 'workflow_dispatch' && needs.deploy.result == 'success'))
     runs-on: ubuntu-latest
     environment: production
+    concurrency:
+      group: production
+      cancel-in-progress: false
     # SITE_URL is an Environment variable, not a secret. Canonical assertions
     # compare against it, so smoke must never target a per-deployment URL. A
     # dispatch drill overrides BASE_URL in its own smoke step.
@@ -324,6 +331,9 @@ jobs:
     if: failure() && (needs.deploy.result != 'skipped' || (github.event_name == 'workflow_dispatch' && needs.drill-approval.result == 'success'))
     runs-on: ubuntu-latest
     environment: production
+    concurrency:
+      group: production
+      cancel-in-progress: false
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -370,12 +380,17 @@ jobs:
           echo "has_target=true" >>"$GITHUB_OUTPUT"
           echo "Rollback target: $PREVIOUS_URL ($PREVIOUS_ID)"
       - name: Record the alias before rollback
+        id: before
         if: steps.select.outputs.has_target == 'true'
         env:
           SITE_URL: ${{ vars.SITE_URL }}
         run: |
           alias_host="${SITE_URL#https://}"
           alias_host="${alias_host%%/*}"
+          if [ -z "$alias_host" ]; then
+            echo "::error::SITE_URL is empty; cannot resolve the production alias."
+            exit 1
+          fi
           response="$(curl -sS -w '\n%{http_code}' \
             -H "Authorization: Bearer $VERCEL_TOKEN" \
             "https://api.vercel.com/v1/aliases/$alias_host?teamId=$VERCEL_ORG_ID")"
@@ -389,6 +404,22 @@ jobs:
               exit 1
               ;;
           esac
+          # The POST response names the deployment it displaced. Keep the GET
+          # id too, so a concurrent alias change between the two calls fails
+          # instead of being pasted as misleading drill evidence.
+          deployment_id="$(echo "$body" | node -e '
+            let input = "";
+            process.stdin.on("data", (chunk) => { input += chunk; });
+            process.stdin.on("end", () => {
+              const data = JSON.parse(input);
+              if (!data.deploymentId) {
+                console.error("The alias response is missing deploymentId.");
+                process.exit(1);
+              }
+              console.log(data.deploymentId);
+            });
+          ')"
+          echo "deployment_id=$deployment_id" >>"$GITHUB_OUTPUT"
           echo "Alias before rollback (HTTP $status): $body"
       - name: Roll back to the previous production deployment
         if: steps.select.outputs.has_target == 'true'
@@ -418,10 +449,14 @@ jobs:
               exit 1
               ;;
           esac
-          node -e '
+          OLD_ID="${{ steps.before.outputs.deployment_id }}" node -e '
             const data = JSON.parse(process.argv[1]);
             if (!data.oldDeploymentId) {
               console.error("The Vercel response is missing oldDeploymentId.");
+              process.exit(1);
+            }
+            if (data.oldDeploymentId !== process.env.OLD_ID) {
+              console.error(`oldDeploymentId ${data.oldDeploymentId} is not the alias before rollback ${process.env.OLD_ID}.`);
               process.exit(1);
             }
             console.log(`oldDeploymentId ${data.oldDeploymentId}`);

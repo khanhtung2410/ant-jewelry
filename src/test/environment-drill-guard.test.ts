@@ -65,13 +65,14 @@ const runAliasParser = (payload: unknown, target: string) => {
 
 // The POST body crosses from the Vercel REST response into the evidence line
 // that the drill records, so a response without the old id must fail the step.
-const runPostParser = (payload: unknown) => {
+const runPostParser = (payload: unknown, oldId?: string) => {
   const script = job('rollback').match(
-    /\n          node -e '([\s\S]*?)' "\$\(cat rollback-response\.json\)"/,
+    /\n          OLD_ID="\$\{\{ steps\.before\.outputs\.deployment_id \}\}" node -e '([\s\S]*?)' "\$\(cat rollback-response\.json\)"/,
   )?.[1];
   if (!script) throw new Error('The rollback job no longer embeds the POST parser.');
   return spawnSync(process.execPath, ['-e', script, JSON.stringify(payload)], {
     encoding: 'utf8',
+    env: { ...process.env, OLD_ID: oldId ?? '' },
   });
 };
 
@@ -118,6 +119,9 @@ describe('production drill environment guard', () => {
     const after = rollback.indexOf('Record the alias after rollback');
     expect(before).toBeLessThan(post);
     expect(post).toBeLessThan(after);
+    expect(rollback, 'the before GET must expose the id the POST displaced').toContain(
+      'steps.before.outputs.deployment_id',
+    );
   });
 
   it('verifies the deployment id that crosses from the alias REST response', () => {
@@ -145,17 +149,24 @@ describe('production drill environment guard', () => {
   });
 
   it('requires oldDeploymentId in the rollback POST response', () => {
-    const matching = runPostParser({
-      alias: 'ant-jewelry.vercel.app',
-      oldDeploymentId: 'dpl_current123',
-      uid: 'dpl_old456',
-    });
+    const matching = runPostParser(
+      {
+        alias: 'ant-jewelry.vercel.app',
+        oldDeploymentId: 'dpl_current123',
+        uid: 'dpl_old456',
+      },
+      'dpl_current123',
+    );
     expect(matching.status, matching.stderr).toBe(0);
     expect(matching.stdout).toContain('oldDeploymentId dpl_current123');
 
     const missing = runPostParser({ alias: 'ant-jewelry.vercel.app', uid: 'dpl_old456' });
     expect(missing.status).toBe(1);
     expect(missing.stderr).toContain('missing oldDeploymentId');
+
+    const changed = runPostParser({ oldDeploymentId: 'dpl_other789' }, 'dpl_current123');
+    expect(changed.status).toBe(1);
+    expect(changed.stderr).toContain('not the alias before rollback dpl_current123');
   });
 
   it('fails a dispatch drill whose approval gate never succeeded', () => {
@@ -207,6 +218,13 @@ describe('production drill environment guard', () => {
     );
     expect(drillDoc, 'the API output must name the drill reviewer').toContain(
       '"reviewers":["khanhtung2410"]',
+    );
+    expect(drillDoc, 'the reviewer claim must be scoped to drills').toContain('trong drill');
+    expect(checklist, 'the Drill section is above the checklist').not.toContain('bên dưới');
+
+    const architecture = read('docs/ARCHITECTURE.md');
+    expect(architecture, 'architecture must describe the dispatch drill').toContain(
+      'production-drill',
     );
   });
 });
