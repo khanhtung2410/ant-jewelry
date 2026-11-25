@@ -1,3 +1,47 @@
+## 2026-11-25 12:44:33 +07:00 - Bổ sung coverage và verification cho các cập nhật mới
+
+### Prompt nguyên văn đã dùng
+
+> clean stale report, review docs
+> use superpower to create new test flow (unit, integration, workflow) for all new update
+> review and check relevant changes again
+
+Hai câu trả lời về phạm vi được dùng trong suốt công việc: "new update" là hai wave sau 2026-11-21 gồm hero slider tự chạy, tạm dừng, reduced motion, bỏ nút Pause và deploy gate gồm required checks, migration approval, alias capture, smoke, rollback; "review docs" là xoá bản capture trùng lặp và sửa hai tham chiếu, không viết lại lịch sử.
+
+### Đã tự kiểm chứng
+
+- Đọc trọn task brief, `docs/reviews/TEMPLATE.md`, design spec, bốn review record và 80 dòng đầu `AI_LOG.md` trước khi viết; không dispatch reviewer subagent trong round audit này theo đúng yêu cầu của brief.
+- Đối chiếu cây `eb7e241` với `4aff895`: `git ls-tree` cho thấy chỉ có `e2e/hero-slider-a11y.spec.ts` ở base, còn ba file mới `e2e/hero-slider.spec.ts`, `src/test/detect-pending-migrations-cli.test.ts`, `src/test/deploy-workflow-graph.test.ts` chỉ có trên branch này.
+- Gọi từng lệnh bằng Node `spawnSync` với `encoding: 'utf8'`, `NO_COLOR: '1'`, đặt `DATABASE_URL=file:./prisma/e2e.db` cho `npm run db:push`, `npm run build` và E2E; toàn bộ output và chín dòng `EXIT=0` nằm trong `docs/reviews/2026-11-25-requesting-code-review-test-coverage.md` và `.superpowers/sdd/2026-11-25-new-update-test-flow/final-checks.md`.
+- Đọc lại đoạn capture chuẩn hoá: `npm test` đạt 88 file và 445 test, `npm run build` đạt `EXIT=0`, `npm run test:e2e -- e2e/hero-slider.spec.ts` đạt 10/10 trên `desktop-chrome` và `pixel-7`, `npm run check:language` đạt `EXIT=0`.
+- Kiểm tra ngay sau khi prepend entry này: dòng `---` mới theo sau bởi header `## 2026-11-25 10:07:17 +07:00 - Bằng chứng ảnh cấu hình branch protection và Vercel deployment` của entry cũ.
+
+### Findings được nhận / bác
+
+- **Accepted, đã sửa trong branch này:** tham chiếu tới bản capture `.txt` trùng lặp tại `docs/reviews/2026-11-23-requesting-code-review-hero-slider.md` và `docs/reviews/2026-11-23-systematic-debugging-pr154.md:32`; lệnh capture `npx --no-install prisma db push` của Task 1 nay được thay bằng `npm run db:push` trong check set cuối; cửa sổ quan sát 2 giây và hydration gate của Task 2 được giữ tại `e2e/hero-slider.spec.ts:46,69` và `:37-43,60-66`. Xem [Task 1](docs/reviews/2026-11-25-subagent-driven-development-task1.md), [Task 2](docs/reviews/2026-11-25-subagent-driven-development-task2.md).
+- **Accepted, chuyển sang final review:** hai nhận định `.txt` còn ghi "giữ nguyên" tại `docs/reviews/2026-11-23-systematic-debugging-pr154.md:25,244`; không sửa văn bản lịch sử mà để controller phán quyết trong round cuối.
+- **Accepted, lên follow-up có tên:** `follow-up/cli-runner-contract` cho stub runner và assertion `encoding: 'utf8'`, `follow-up/cli-output-flush` cho `process.exit` có thể cắt output, `follow-up/workflow-graph-parser-hardening` cho bốn finding parser của Task 4. Xem [Task 3](docs/reviews/2026-11-25-subagent-driven-development-task3.md), [Task 4](docs/reviews/2026-11-25-subagent-driven-development-task4.md).
+- **Rejected:** cảnh báo `No build cache found`, đề xuất mở rộng live-region trạng thái tạm dừng, kiểm tra trạng thái production trực tiếp, cảnh báo LF sang CRLF, gợi ý hiệu năng `isolate: false` của Vitest, và các lý do cụ thể khác đã ghi trong bảng Finding của bốn review record ở trên; những mục này không phải lỗi hành vi trong phạm vi branch này.
+- Audit coverage đầy đủ nằm tại [coverage audit](docs/reviews/2026-11-25-requesting-code-review-test-coverage.md).
+- Final review xác nhận branch sẵn sàng merge, không có finding Critical hay Important; mọi finding Minor đều được phán quyết tại [final review](docs/reviews/2026-11-25-requesting-code-review-final.md).
+
+### AI sai ở đâu
+
+- Lần capture đầu tiên của Task 1 dùng `npx --no-install prisma db push` thay vì script chuẩn `npm run db:push`; sửa bằng cách chạy đúng script npm trong check set cuối và ghi rõ môi trường con tại bảng `COMMAND` của capture.
+- Assertion tạm dừng ban đầu của Task 2 dùng timeout mặc định nên không thể fail khi bỏ guard hover hoặc focus, vì cửa sổ mặc định dài hơn vòng ba slide 5 giây; sửa bằng cửa sổ `{ timeout: 2_000 }` tại `e2e/hero-slider.spec.ts:46,69` và chứng minh RED bằng mutation được ghi trong [Task 2](docs/reviews/2026-11-25-subagent-driven-development-task2.md).
+- Cách sửa hydration ban đầu của Task 2 vẫn flake một lần trên `pixel-7`; sửa bằng hydration gate chờ lần tự chuyển đầu tiên, bấm dot 1 rồi buông pointer và focus tại `e2e/hero-slider.spec.ts:37-43,60-66`.
+- Lần `format:check` đầu của Task 3 và Task 4 fail trước khi chuẩn hoá Prettier (`docs/reviews/2026-11-25-subagent-driven-development-task3.md:18`, `docs/reviews/2026-11-25-subagent-driven-development-task4.md:20`); sửa bằng `prettier --write` trên đúng file đã đổi, rồi để `npm run format:check` đạt `EXIT=0` trong capture cuối.
+
+### Limitations
+
+- Không có PostgreSQL production hay kiểm tra deploy trực tiếp; không chạy `db:migrate:status:production` trên production.
+- Không có pixel diff với Figma vì file thiết kế không nằm trong repo.
+- Bằng chứng trình duyệt chỉ là output Playwright trên `desktop-chrome` và `pixel-7`.
+- Parser hardening và CLI robustness được hẹn ở các follow-up có tên, không sửa trong branch này.
+- Final review đã lưu tại `docs/reviews/2026-11-25-requesting-code-review-final.md`; link PR do controller thêm sau bước này.
+
+---
+
 ## 2026-11-25 10:07:17 +07:00 - Bằng chứng ảnh cấu hình branch protection và Vercel deployment
 
 ### Prompt nguyên văn đã dùng

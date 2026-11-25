@@ -208,7 +208,7 @@ EXIT=0
 
 ```
 
-Bản chép đầy đủ cũng nằm trong `docs/reviews/2026-11-23-remove-hero-pause-button-checks.txt`. Ký tự legend U+0192 của Next.js đã được thay bằng `F` trong bản trích dẫn ở file này và trong PR body theo rule 12; file `.txt` giữ nguyên bản capture của build.
+Bản capture thô đã được xóa vào 2026-11-25 vì trùng lặp với khối output ở trên; toàn bộ output vẫn nằm trong chính review record này. Ký tự legend U+0192 của Next.js đã được thay bằng `F` trong bản trích dẫn ở file này và trong PR body theo rule 12.
 
 ## Limitations
 
