@@ -82,6 +82,10 @@ The four existing required status checks (`static`, `test`, `build`, `e2e`) keep
   runs, mobile settings, all four thresholds with median aggregation, filesystem upload, and that
   `.gitignore` ignores the report directory. This is the flow test for values crossing from config
   into the workflow: the artifact path in the config must equal the uploaded path in `ci.yml`.
+- If a budget assertion reveals a real layout defect, fix the source rather than widening the
+  threshold. The first hosted run after the sandbox fix showed an unsized blog cover causing CLS
+  0.2515; `BlogDetail` now gives the image explicit dimensions and `blog-detail.test.tsx` guards
+  them.
 
 ### Documentation and evidence
 

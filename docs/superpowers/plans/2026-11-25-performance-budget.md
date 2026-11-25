@@ -192,3 +192,26 @@ Set `ci.collect.settings.chromeFlags` to `--no-sandbox` in `lighthouserc.json`. 
 - [x] **Step 3: Verify and record**
 
 Run the focused guards, the full check set and a fresh CI run on the K1 branch before treating the red Performance evidence as valid. Record the original sandbox failure and the fix in AI_LOG and `docs/reviews/2026-11-25-requesting-code-review-sandbox-fix.md`. Green CI run: https://github.com/khanhtung2410/ant-jewelry/actions/runs/45651127274. The first 167 run (`45649277989`) was invalid because it stopped at `No usable sandbox!`; that error is recorded in AI_LOG and was corrected before the valid red run above.
+
+---
+
+### Task 6: Fix the layout shift found by the new budget (2026-11-25, after PR 166 was opened)
+
+**Files:**
+- Modify: `src/features/blog/components/blog-detail.tsx`, `src/features/blog/components/blog-detail.test.tsx`, `docs/PERFORMANCE.md`, this plan and its spec.
+
+**Interfaces:**
+- Consumes: run `45655992481` and its `lighthouse-report` artifact, where the blog detail page had median CLS 0.2515 and Performance 0.76 against the 0.85 budget.
+- Produces: explicit cover dimensions so the browser reserves space before a late image loads, with a test that fails without them.
+
+- [x] **Step 1: Write the failing test**
+
+Add a case to `src/features/blog/components/blog-detail.test.tsx` asserting the cover `<img>` carries `width="1200"` and `height="630"`. Capture the RED output in `.superpowers/sdd/2026-11-25-performance-budget/cls-red-checks.md` (`EXIT=1`) before touching the component.
+
+- [x] **Step 2: Fix the source**
+
+Add `width={1200}` and `height={630}` to the cover image in `src/features/blog/components/blog-detail.tsx`. Do not change the 0.1 CLS threshold or the 0.85 Performance threshold. Record the artifact evidence in `docs/PERFORMANCE.md` and reconcile the spec.
+
+- [ ] **Step 3: Verify and record**
+
+Run the focused guard and the full check set, push the fix, confirm a green CI run on PR 166, and save a review record plus an AI_LOG entry that states the artifact evidence and the rejected option of widening thresholds.

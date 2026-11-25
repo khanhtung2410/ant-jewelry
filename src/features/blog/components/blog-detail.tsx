@@ -28,6 +28,8 @@ export function BlogDetail({ post, otherPosts }: BlogDetailProps) {
           <img
             src={post.coverImageUrl}
             alt={post.title}
+            width={1200}
+            height={630}
             className="h-auto w-full object-cover"
             loading="eager"
             fetchPriority="high"

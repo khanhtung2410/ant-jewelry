@@ -40,6 +40,14 @@ describe('BlogDetail', () => {
     expect(html).toContain('Bài chính');
   });
 
+  it('reserves the cover image box so a late image cannot shift the footer', () => {
+    const html = renderToStaticMarkup(
+      <BlogDetail post={makePost('bai-chinh', 'Bài chính')} otherPosts={[]} />,
+    );
+
+    expect(html).toMatch(/<img[^>]+width="1200"[^>]+height="630"/);
+  });
+
   it('shows only one related post in OTHER BLOGS', () => {
     const html = renderToStaticMarkup(
       <BlogDetail
