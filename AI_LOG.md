@@ -1,3 +1,56 @@
+## 2026-11-26 01:01:52 +07:00 - K2 cập nhật dependency và quét bảo mật tự động
+
+### Prompt nguyên văn đã dùng
+
+> use current worktree from :D/thuc tap/ant jewlwry
+>
+> K. Task tiếp theo: chất lượng trong pipeline
+> Pipeline deploy đã chạy. Bước tiếp theo là để CI tự chặn các vấn đề chất lượng mà hiện vẫn phải kiểm tay: hiệu năng trang và dependency cũ/có lỗ hổng. Hiện repo chưa đo hiệu năng trong pipeline, chưa có cập nhật dependency tự động. Làm sau C6 và C4b, theo thứ tự K1 → K2, mỗi mục một PR, có spec + plan trong docs/superpowers/.
+>
+> K1 — Ngân sách hiệu năng trong pipeline. Số Lighthouse hiện chỉ đo tay rồi ghi vào PERFORMANCE.md, nên một PR làm chậm trang sẽ không bị phát hiện. Thêm Lighthouse CI (@lhci/cli) vào job e2e của ci.yml: chạy trên production build local cho Home, /c/<slug>, /p/<slug>, /blog/<slug>, 3 lần mỗi trang, mobile. Ngưỡng assert: Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95, CLS ≤ 0,1; dưới ngưỡng thì job đỏ. Upload báo cáo làm artifact, không commit vào repo.
+> Bằng chứng: một PR thử cố ý thêm ảnh lớn không tối ưu vào Home → job đỏ vì Performance; link run.
+> K2 — Cập nhật dependency và quét bảo mật tự động. Thêm .github/dependabot.yml (npm + github-actions, hằng tuần, gom các bản minor/patch vào một PR). Thêm CodeQL cho JavaScript/TypeScript, và bước npm audit --omit=dev --audit-level=high trong job static. Lỗ hổng hiện có nằm trong dependency gián tiếp của Prisma (effect) thì ghi vào docs/SECURITY.md kèm lý do chấp nhận tạm và ngày xem lại, thay vì tắt bước audit.
+> Bằng chứng: PR Dependabot đầu tiên chạy đủ CI và merge được; tab Security có kết quả CodeQL; output npm audit trong log CI.
+>
+> fix num run build have no prisma table if not break
+
+Nguồn: `.superpowers/sdd/2026-11-25-performance-budget/verbatim-prompt.txt`. Entry này ghi riêng phần K2; K1 được ghi trong các entry trước đó.
+
+### Đã tự kiểm chứng
+
+- Kéo `origin/main`, tạo branch `chore/security-automation` từ `b91f7a9`; đọc trọn spec, plan, `docs/CONTRIBUTING.md`, `docs/reviews/TEMPLATE.md` và toàn bộ source của từng file bị chạm trước khi nhận kết quả implementer.
+- Task 1 commit `4e4bbc9`: implementer mới viết guard trước, chạy 15 test tập trung, 469 test đầy đủ và `npm run audit:production` thật, exit 0 với thông báo `GHSA-7589-6fvf-x4pw`. Reviewer mới chạy lại các lệnh đó, lint và typecheck; controller chạy lại `npm run format:check` sau khi định dạng helper SDD bị bỏ qua, kết quả `All matched files use Prettier code style!`, `EXIT=0`.
+- Task 2 commit `ae39d6e`: implementer báo 14 test guard, 483 test đầy đủ, lint, typecheck, format, language và audit đều `EXIT=0`. Reviewer mới chạy lại gói diff `4e4bbc9..ae39d6e` theo skill `requesting-code-review` và trả SPEC PASS, QUALITY PASS, READY_FOR_TASK_3 YES, không có finding; tôi đọc lại toàn bộ năm file và đối chiếu từng dòng trích dẫn trước khi ghi [review Task 2](docs/reviews/2026-11-26-requesting-code-review-security-task-2.md).
+- Task 3: chạy `.superpowers/sdd/2026-11-25-security-automation/capture-checks.mjs` bằng Node `spawnSync` với `encoding: 'utf8'`, `NO_COLOR: '1'` và `DATABASE_URL=file:./prisma/e2e.db` cho `npm run build`. Capture đủ tám lệnh, mọi dòng `EXIT=0`: lint, typecheck, test (91 file, 483 test), format:check, build, check:language, audit:production và hai file guard tập trung (2 file, 29 test). Output nằm ở `.superpowers/sdd/2026-11-25-security-automation/final-checks.md`; tôi tự chạy lại cùng lệnh ra `.superpowers/sdd/2026-11-25-security-automation/controller-final-checks.md`, cũng tám dòng `EXIT=0`, không có U+0192 hay CR, và dán bản do tôi capture vào [review cuối](docs/reviews/2026-11-25-requesting-code-review-security-automation.md).
+- Quét trực tiếp `findDisallowedLetters` export từ `scripts/check-language.mjs` trên các file K2 đã đổi cùng hai review record và chính entry này: không có chữ cái ngoài tiếng Việt và tiếng Anh.
+- Không đổi bốn tên check bắt buộc `static`, `test`, `build`, `e2e`. Lệnh audit vẫn là `npm audit --omit=dev --audit-level=high`, không có `continue-on-error`, `|| true` hay advisory nào ngoài `GHSA-7589-6fvf-x4pw`.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong nhánh `chore/security-automation`):** T1-3 định dạng lại helper `.superpowers/sdd/2026-11-25-security-automation/capture-checks.mjs` để toàn bộ `npm run format:check` xanh thay vì chỉ các file trong diff. Xem [review Task 1](docs/reviews/2026-11-26-requesting-code-review-security-task-1.md).
+- **Rejected:** T1-1 lỗi có sẵn của `scripts/check-language.mjs` trên Windows, vì nằm ngoài Task 1 và không do diff này gây ra; ghi thành limitation và quét trực tiếp các file đã đổi. **Rejected:** T1-2 test chu trình `via`, vì hàm đã có `seen` và báo cáo npm thật không có chu trình.
+- Task 2 không có finding nào: reviewer mới trả SPEC PASS, QUALITY PASS, READY_FOR_TASK_3 YES. Tôi không thêm finding để lấp bảng; ba điểm còn nghi ngờ được ghi thành limitation kèm lý do trong [review Task 2](docs/reviews/2026-11-26-requesting-code-review-security-task-2.md).
+- **Chưa có verdict:** review toàn nhánh K2 do controller quyết định; [review cuối](docs/reviews/2026-11-25-requesting-code-review-security-automation.md) ghi rõ verdict đó còn chờ controller thay vì tự nhận.
+
+### AI sai ở đâu
+
+- Tôi tạo helper capture trong SDD rồi quên chạy Prettier, làm `npm run format:check` đỏ dù ba file Task 1 đều sạch; đã định dạng helper và capture lại `EXIT=0`.
+- Ban đầu tôi coi `npm run check:language` `EXIT=0` là bằng chứng đủ trên Windows; reviewer chỉ ra predicate so sánh đường dẫn có lỗi có sẵn, nên phải quét trực tiếp từng file đã đổi và ghi rõ limitation.
+- Tôi cũng suýt gọi trạng thái K1 là xanh dựa trên run `45660888483`, trong khi run mới `45663125186` tại cùng source runtime đã đỏ; đã sửa thân PR 166 để nêu rõ đang điều tra nguyên nhân gốc.
+- Lần chạy capture đầu tiên (chạy nền) thoát với mã 1 và không tạo `final-checks.md`; chạy lại đúng lệnh đó ở foreground thì cả tám lệnh đều `EXIT=0`. Tôi không dùng lần chạy hỏng làm bằng chứng và cũng không che nó.
+
+### Limitations
+
+- `npm run check:language` exit 0 nhưng không quét trên Windows do lỗi đường dẫn có sẵn; đã quét trực tiếp các file K2 và không thấy chữ cái ngoài tiếng Việt và tiếng Anh.
+- Dependabot và CodeQL chỉ có tác dụng trên GitHub sau khi push; chưa có PR Dependabot hay kết quả Security tab để trích dẫn, không được coi là bằng chứng hoàn tất.
+- Capture cuối được chạy trên Windows local, không phải runner `ubuntu-latest`; `check:language` trên Windows vẫn là no-op có sẵn nên kết quả quét trực tiếp bằng `findDisallowedLetters` là bằng chứng thay thế.
+- Verdict reviewer cho toàn nhánh K2 còn chờ controller; entry này và review cuối không tự nhận đã có verdict đó.
+- Một lần capture lại có `npm run build` thoát với mã 1 mà không in lỗi, cùng lúc một session khác đang chạy tiến trình Node trong workspace; nguyên nhân chưa được xác định chắc chắn. Chạy lại toàn bộ capture thì cả tám lệnh `EXIT=0`; lần hỏng đó không được dùng làm bằng chứng.
+- PR K2 chưa được mở tại thời điểm ghi entry này; controller sở hữu bước commit, push và mở PR.
+- PR 166 của K1 đang đỏ ở run `45663125186` với footer layout shift `0,5164` trên Home; việc điều tra nguyên nhân vẫn đang chạy và không được thay thế bằng retry hay nới ngưỡng.
+
+---
+
 ## 2026-11-25 16:42:28 +07:00 - Ghi bằng chứng drill rollback alias thật vào DEPLOY.md
 
 ### Prompt nguyên văn đã dùng
