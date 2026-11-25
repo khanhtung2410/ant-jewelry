@@ -1,3 +1,50 @@
+## 2026-11-25 16:42:28 +07:00 - Ghi bằng chứng drill rollback alias thật vào DEPLOY.md
+
+### Prompt nguyên văn đã dùng
+
+> C6 — "Đặt Deployment branches của production chỉ cho main. Cho drill dùng một Environment riêng (ví dụ production-drill) có required reviewer, để luồng deploy thường không phải chờ duyệt."
+> C6 — "Bằng chứng: output gh api repos/<repo>/environments có rule branch_policy cho production và required_reviewers cho Environment drill; sửa DEPLOY.md và comment trong deploy.yml cho khớp cấu hình thật. Thêm vào checklist deploy: 'cấu hình Environment được kiểm bằng API, không chỉ đọc tài liệu'."
+> C4b — "Sau C6, chạy workflow_dispatch với simulate_failure=true và previous_deployment_id là deployment production hiện tại; kiểm tra job rollback xanh, response có oldDeploymentId, alias vẫn trỏ đúng deployment, smoke chạy lại thủ công xanh."
+> C4b — "Chạy thêm một drill trỏ tới deployment liền trước để thấy alias thật sự đổi, rồi đưa alias về lại bản hiện tại."
+> C4b — "Dán link 2 run và output GET /v1/aliases/<host> trước/sau vào DEPLOY.md mục 'Drill'. Ghi giờ chạy và khoảng thời gian production trỏ về bản cũ."
+
+Hai lựa chọn của chủ dự án vẫn áp dụng: "Merge PR trước, rồi drill (Recommended)" và "Có, chạy và duyệt drill (Recommended)". Entry này bổ sung bằng chứng sau khi PR #164 đã merge; limitation "hai drill live chưa chạy" của entry trước chỉ đúng tại thời điểm đó.
+
+### Đã tự kiểm chứng
+
+- Kéo `origin/main` sau merge `e12662e`, tạo branch `docs/drill-alias-evidence`; đọc trọn `docs/DEPLOY.md`, `AI_LOG.md`, `docs/reviews/TEMPLATE.md` và grep các id `dpl_` cùng bốn link run trước khi sửa.
+- Đối chiếu từng dòng evidence đã dán với các file capture thô `drill-discovery.txt`, `drill1-current.txt`, `drill2-previous-watch.txt`, `drill2-restore-watch.txt`, `manual-smoke-after-drill1.txt`, `manual-smoke-after-restore.txt`: 22 dòng GET, POST, `oldDeploymentId` và smoke trùng khớp; bốn run id tồn tại trong log thật.
+- Tính cửa sổ alias cũ từ `updatedAt`: `1795599119062 - 1795598976980 = 142082` ms, tức 16:29:36.980 đến 16:31:59.062 +07 (~2 phút 22 giây); chuỗi id trước/sau khớp nhau qua ba lượt POST.
+- Gọi `gh api repos/khanhtung2410/ant-jewelry/actions/runs/45585112647/jobs` để bổ sung dòng kết luận `rollback` success cho drill 1, và lấy `created_at` / `updated_at` của bốn run từ GitHub API để thống nhất cột giờ.
+- Chạy lại toàn bộ check set bằng Node `spawnSync` với `encoding: 'utf8'`, `NO_COLOR: '1'`, `DATABASE_URL=file:./prisma/e2e.db` cho `npm run build`; capture cuối có mọi dòng `EXIT=0` và được dán nguyên vẹn vào thân PR.
+
+### Findings được nhận / bác
+
+- **Accepted, đã sửa trong branch `docs/drill-alias-evidence`:** Important `docs/DEPLOY.md` để lộ `projectId` thật ở response discovery → che bằng `***` và ghi chú đây là che lúc dán tài liệu; Important AI_LOG còn nói drill chưa chạy → thêm entry này. Xem [review record](docs/reviews/2026-11-25-requesting-code-review-drill-evidence.md).
+- **Accepted, đã sửa trong branch `docs/drill-alias-evidence`:** Minor câu "Trong các run này" gộp cả discovery → giới hạn ba run có `simulate_failure=true`; Minor cột giờ trộn nguồn → dùng `created_at` / `updated_at` của GitHub; Minor drill 1 thiếu kết luận job → dán output `gh api .../jobs`; Minor "mục Drill ở trên" → đổi tên mục cụ thể. Cùng review record ở trên.
+- **Rejected:** không có. Reviewer đưa sáu finding, tôi đã đọc lại toàn bộ `docs/DEPLOY.md` và các consumer trước khi nhận cả sáu.
+- Các mục reviewer ghi "declined to judge" (smoke trong cửa sổ alias cũ, thứ tự deployment liền trước, danh tính reviewer, tên từng test smoke, dòng checklist mới, check set) được ghi đầy đủ trong review record, không bỏ ngầm.
+
+### AI sai ở đâu
+
+- Lần đầu trích evidence tôi dán cả dòng `echo "`/`console.log(` kèm mã ANSI vào `docs/DEPLOY.md`; sửa bằng cách loại các dòng script và strip ANSI trước khi commit.
+- Tôi để nguyên `projectId` thật trong response discovery dù các response khác đã che; reviewer chỉ ra và tôi đổi thành `***`, đồng thời thêm một dòng giải thích ngay đầu mục Drill.
+- Bảng giờ ban đầu trộn giờ dispatch local, giờ watcher kết thúc và `updated_at` của GitHub; tôi gọi lại API để lấy `created_at` / `updated_at` cho cả bốn run. Lần đầu gọi nhầm khoá `createdAt` / `updatedAt` nên trả `null`, sau đó đổi sang `created_at` / `updated_at`.
+- Tôi viết "Trong các run này" dù discovery chạy `simulate_failure=false` và xanh; đã giới hạn lại ba run POST.
+- Tôi khẳng định `rollback` success của drill 1 mà không có dòng `conclusion` trong capture; đã gọi GitHub API và dán dòng `{...,"conclusion":"success","name":"rollback",...}`.
+- Tôi suýt mở PR với entry AI_LOG cũ khẳng định drill chưa chạy; entry mới này sửa lại trước khi mở PR.
+
+### Limitations
+
+- Máy này không có `VERCEL_TOKEN`, `VERCEL_ORG_ID` hay `VERCEL_PROJECT_ID`; mọi output `GET /v1/aliases/<host>` lấy từ log GitHub Actions, không gọi trực tiếp từ local.
+- Không có PostgreSQL production nên không chạy `db:migrate:status:production` thật.
+- Không có pixel diff với Figma vì file thiết kế không nằm trong repo.
+- `production-drill` cho phép admin bypass và self-review theo cấu hình của chủ dự án; đây không phải kiểm soát độc lập.
+- Deployment `dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3` được coi là bản liền trước theo chỉ định của chủ dự án; tôi không có capture danh sách deployment của Vercel để chứng minh thứ tự đó.
+- Không chạy lại drill live trong round documentation này; bằng chứng là kết quả các run đã chạy trên `main`, không phải mô phỏng lại.
+
+---
+
 ## 2026-11-25 16:00:04 +07:00 - Bảo vệ Environment production và gate drill bằng production-drill
 
 ### Prompt nguyên văn đã dùng

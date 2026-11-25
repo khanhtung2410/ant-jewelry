@@ -234,7 +234,78 @@ COMMAND=gh api repos/khanhtung2410/ant-jewelry/environments/production/deploymen
 EXIT=0
 ```
 
-Bằng chứng hai lần drill (link run, giờ chạy, cửa sổ alias trỏ về bản cũ và output GET trước/sau) sẽ được bổ sung vào mục này sau khi chạy xanh trên `main`.
+### Drill: kết quả chạy thật (2026-11-25)
+
+Sau khi PR #164 được merge vào `main` lúc 16:12:55 +07, tôi chạy một lượt discovery để đọc id hiện tại, rồi hai drill và một lượt khôi phục. Tất cả đều được dispatch từ `main` và được reviewer `khanhtung2410` duyệt qua `production-drill`. Giờ bắt đầu và kết thúc của bốn run lấy từ `created_at` / `updated_at` của GitHub Actions, đổi sang +07; `updatedAt` trong mỗi response GET là giá trị Vercel trả về. Dấu `***` trong response là che lại lúc dán tài liệu, không phải giá trị thật.
+
+| Mục đích | Run | Giờ bắt đầu - kết thúc | Kết quả |
+|---|---|---|---|
+| Discovery, đọc alias hiện tại (không đổi alias) | [45584811243](https://github.com/khanhtung2410/ant-jewelry/actions/runs/45584811243) | 16:22:39 - 16:24:06 | success |
+| Drill 1: `simulate_failure=true` về chính deployment hiện tại | [45585112647](https://github.com/khanhtung2410/ant-jewelry/actions/runs/45585112647) | 16:24:33 - 16:26:03 | `rollback` success; smoke đỏ giả; run đỏ đúng thiết kế |
+| Drill 2: `simulate_failure=true` về deployment liền trước | [45585601527](https://github.com/khanhtung2410/ant-jewelry/actions/runs/45585601527) | 16:27:38 - 16:29:46 | `rollback` success; alias đổi thật; run đỏ đúng thiết kế |
+| Khôi phục alias về deployment hiện tại | [45586030821](https://github.com/khanhtung2410/ant-jewelry/actions/runs/45586030821) | 16:30:21 - 16:32:10 | `rollback` success; alias về lại id hiện tại |
+
+Id hiện tại: `dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH` (`ant-jewelry-rf9hlfbwe-hmmm-a5e7.vercel.app`). Id liền trước: `dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3` (`ant-jewelry-ask9gf5i6-hmmm-a5e7.vercel.app`).
+
+Discovery - GET trước khi đổi alias:
+
+```text
+Current production alias (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","url":"ant-jewelry-rf9hlfbwe-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","projectId":"***","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795598404411}
+```
+
+Drill 1 - GET trước rollback, response POST và GET sau rollback (alias không đổi):
+
+```text
+Alias before rollback (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","url":"ant-jewelry-rf9hlfbwe-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","projectId":"***","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795598404411}
+{"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","oldDeploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH"}
+oldDeploymentId dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH
+Alias after rollback (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","url":"ant-jewelry-rf9hlfbwe-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","projectId":"***","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795598754489}
+Confirmed alias deploymentId dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH.
+```
+
+Manual smoke sau drill 1, chạy tại local với origin chuẩn:
+
+```text
+Running 8 tests using 1 worker
+  8 passed (31.5s)
+EXIT=0
+```
+
+Kết luận job của drill 1 lấy từ GitHub API (`gh api repos/khanhtung2410/ant-jewelry/actions/runs/45585112647/jobs`):
+
+```text
+{"completed_at":"2026-11-25T09:25:57Z","conclusion":"success","name":"rollback","started_at":"2026-11-25T09:25:46Z"}
+```
+
+Drill 2 - GET trước, response POST và GET sau (alias đổi thật sang bản liền trước):
+
+```text
+Alias before rollback (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","url":"ant-jewelry-rf9hlfbwe-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","projectId":"***","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795598754489}
+{"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","oldDeploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH"}
+oldDeploymentId dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH
+Alias after rollback (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3","url":"ant-jewelry-ask9gf5i6-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3","projectId":"***","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795598976980}
+Confirmed alias deploymentId dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3.
+```
+
+Khôi phục - GET trước, response POST và GET sau (alias quay về bản hiện tại):
+
+```text
+Alias before rollback (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3","url":"ant-jewelry-ask9gf5i6-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3","projectId":"***","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795598976980}
+{"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","oldDeploymentId":"dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3"}
+oldDeploymentId dpl_HRwW7LA6RqDKRTcwwZGKGrRZB9f3
+Alias after rollback (HTTP 200): {"alias":"ant-jewelry.vercel.app","created":"2026-11-16T07:17:20.249Z","createdAt":1794813440249,"creator":{"uid":"SzgfvW84f98nyDzIoW56Ml9p","email":"khanhtungdaoduy2410@gmail.com","username":"khanhtung2410"},"deletedAt":null,"deployment":{"id":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","url":"ant-jewelry-rf9hlfbwe-hmmm-a5e7.vercel.app"},"deploymentId":"dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH","projectId":"***","redirect":null,"redirectStatusCode":null,"uid":"c4a4f25144a8beedd2a5b6c271142afa8444c4ff1105627e48109f99c9800225497c41e9aa80a72b10c6f0dd269280c28292963d174f98423663efa3d63af0d7","updatedAt":1795599119062}
+Confirmed alias deploymentId dpl_F7LFVs3EbdnsSbQMcaeWMCeJ7PeH.
+```
+
+Cửa sổ production trỏ về bản cũ: `updatedAt` 1795598976980 (16:29:36.980) đến 1795599119062 (16:31:59.062), tổng 142082 ms (~2 phút 22 giây). Trong ba run có `simulate_failure=true` (drill 1, drill 2, khôi phục), smoke đỏ là giả, nên `finalize` đỏ là kết quả mong đợi; riêng job `rollback` xanh trong cả ba lượt có POST alias. Discovery chạy với `simulate_failure=false` nên vẫn xanh.
+
+Manual smoke sau khi khôi phục alias:
+
+```text
+Running 8 tests using 1 worker
+  8 passed (17.5s)
+EXIT=0
+```
 
 ### Bằng chứng upload thật trên production (2026-11-18)
 
@@ -376,7 +447,7 @@ If `next build` fails during page data collection with:
 | Vercel + PostgreSQL provisioned, env vars đúng, không lọt secret | [ ] | Cần ảnh/xuất danh sách biến trong Vercel dashboard (đã che giá trị). Repo chỉ có `.env.example`; production render được dữ liệu → gián tiếp chứng tỏ `DATABASE_URL` hoạt động |
 | `SITE_URL` đúng origin production | [x] | `curl https://ant-jewelry.vercel.app/` có `<link rel="canonical" href="https://ant-jewelry.vercel.app"/>` (6 lần xuất hiện origin trong HTML) |
 | A3 — không còn deploy tự động từ Git, chỉ Actions sau CI | [x] | `vercel.json` đặt `git.deploymentEnabled = false`; `.github/workflows/deploy.yml` chỉ chạy từ `workflow_run` của `ci` trên `main`, có guard SHA. Bằng chứng repo: `src/test/deploy-workflow.test.ts`. Bằng chứng live: [vercel-production-deployments](deploy-screenshots/vercel-production-deployments.png) (dashboard ngày 2026-11-25, deployment gắn commit `649f951`/`d51174b`/`0ae74f6`) và run [45428604255](https://github.com/khanhtung2410/ant-jewelry/actions/runs/45428604255) với chuỗi CI → deploy → smoke xanh |
-| Environment protection được kiểm bằng API, không chỉ đọc tài liệu | [x] | `gh api repos/khanhtung2410/ant-jewelry/environments` ngày 2026-11-25: `production` có `deployment_branch_policy.custom_branch_policies = true` và rule branch `main`, `protection_rules` chỉ có `branch_policy`; `production-drill` có `required_reviewers`. Output đầy đủ ở mục Drill ở trên |
+| Environment protection được kiểm bằng API, không chỉ đọc tài liệu | [x] | `gh api repos/khanhtung2410/ant-jewelry/environments` ngày 2026-11-25: `production` có `deployment_branch_policy.custom_branch_policies = true` và rule branch `main`, `protection_rules` chỉ có `branch_policy`; `production-drill` có `required_reviewers`. Output đầy đủ ở mục `Drill: smoke fail co y` ở trên |
 | Migration đã áp dụng, status sạch | [ ] | Cần output thật của `npm run db:migrate:status:production` (chạy với `DATABASE_URL` direct). Không thể tự lấy từ môi trường agent |
 | Script E1/B6 backfill ảnh legacy đã chạy | [ ] | Bắt buộc nếu DB có blob cũ: chạy `npx tsx scripts/reencode-legacy-uploads.ts --dry-run` rồi lệnh thật với `DATABASE_URL` direct; dán output số blob + ETag mới. Cho đến khi chạy, các blob có `etag = NULL` vẫn phải đọc bytes để trả 304 (đúng nhưng chậm hơn). Không nằm trong `prisma migrate deploy` vì cần sharp + cập nhật URL `?v=2` |
 | ADMIN đầu tiên bằng email thật | [ ] | Cần ảnh trang admin sau khi đăng nhập bằng tài khoản ADMIN vừa tạo (`db:create-admin:production`) |
