@@ -9,6 +9,9 @@ interface BlogDetailProps {
   otherPosts: BlogPost[];
 }
 
+export const BLOG_COVER_WIDTH = 1200;
+export const BLOG_COVER_HEIGHT = 630;
+
 export function BlogDetail({ post, otherPosts }: BlogDetailProps) {
   // The Figma detail layout shows one related post in the OTHER BLOGS block.
   const otherPost = otherPosts[0];
@@ -23,14 +26,14 @@ export function BlogDetail({ post, otherPosts }: BlogDetailProps) {
       </header>
 
       {post.coverImageUrl ? (
-        <div className="mx-auto mt-8 max-w-3xl overflow-hidden rounded-sm">
+        <div className="relative mx-auto mt-8 aspect-[1200/630] max-w-3xl overflow-hidden rounded-sm">
           {/* eslint-disable-next-line @next/next/no-img-element -- blog content image */}
           <img
             src={post.coverImageUrl}
             alt={post.title}
-            width={1200}
-            height={630}
-            className="h-auto w-full object-cover"
+            width={BLOG_COVER_WIDTH}
+            height={BLOG_COVER_HEIGHT}
+            className="absolute inset-0 h-full w-full object-cover"
             loading="eager"
             fetchPriority="high"
           />

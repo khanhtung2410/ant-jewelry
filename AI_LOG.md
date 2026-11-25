@@ -1,3 +1,47 @@
+## 2026-11-25 23:55:00 +07:00 - Sửa CLS ảnh bìa blog do CI ngân sách phát hiện
+
+### Prompt nguyên văn đã dùng
+
+> use current worktree from :D/thuc tap/ant jewlwry
+>
+> K. Task tiếp theo: chất lượng trong pipeline
+> Pipeline deploy đã chạy. Bước tiếp theo là để CI tự chặn các vấn đề chất lượng mà hiện vẫn phải kiểm tay: hiệu năng trang và dependency cũ/có lỗ hổng. Hiện repo chưa đo hiệu năng trong pipeline, chưa có cập nhật dependency tự động. Làm sau C6 và C4b, theo thứ tự K1 → K2, mỗi mục một PR, có spec + plan trong docs/superpowers/.
+>
+> K1 — Ngân sách hiệu năng trong pipeline. Số Lighthouse hiện chỉ đo tay rồi ghi vào PERFORMANCE.md, nên một PR làm chậm trang sẽ không bị phát hiện. Thêm Lighthouse CI (@lhci/cli) vào job e2e của ci.yml: chạy trên production build local cho Home, /c/<slug>, /p/<slug>, /blog/<slug>, 3 lần mỗi trang, mobile. Ngưỡng assert: Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95, CLS ≤ 0,1; dưới ngưỡng thì job đỏ. Upload báo cáo làm artifact, không commit vào repo.
+> Bằng chứng: một PR thử cố ý thêm ảnh lớn không tối ưu vào Home → job đỏ vì Performance; link run.
+> K2 — Cập nhật dependency và quét bảo mật tự động. Thêm .github/dependabot.yml (npm + github-actions, hằng tuần, gom các bản minor/patch vào một PR). Thêm CodeQL cho JavaScript/TypeScript, và bước npm audit --omit=dev --audit-level=high trong job static. Lỗ hổng hiện có nằm trong dependency gián tiếp của Prisma (effect) thì ghi vào docs/SECURITY.md kèm lý do chấp nhận tạm và ngày xem lại, thay vì tắt bước audit.
+> Bằng chứng: PR Dependabot đầu tiên chạy đủ CI và merge được; tab Security có kết quả CodeQL; output npm audit trong log CI.
+>
+> fix num run build have no prisma table if not break
+
+Nguồn: `.superpowers/sdd/2026-11-25-performance-budget/verbatim-prompt.txt`. Entry này ghi đợt CI chạy lại sau khi PR 166 đã mở và đã có bằng chứng đỏ hợp lệ.
+
+### Đã tự kiểm chứng
+
+- Đọc toàn bộ `docs/superpowers/specs/2026-11-25-performance-budget-design.md`, Task 6 của plan, `src/features/blog/components/blog-detail.tsx`, `blog-detail.test.tsx`, `blog-row.tsx`, `docs/PERFORMANCE.md` và artifact Lighthouse của run `45655992481` trước khi sửa.
+- Run `45655992481` đỏ ở assert thật: blog có `expected: <=0.1`, `found: 0.2515188335358445` và `expected: >=0.85`, `found: 0.76`; 12 lần vẫn chạy đủ nên đây không phải lỗi hạ tầng như hai run sandbox trước đó.
+- Giải nén artifact `lighthouse-report` của run đó và run xanh `45651127274` để so sánh từng báo cáo: cùng code ứng dụng, nhưng hai lần blog ở run đỏ ghi `Unsized image element` trên ảnh bìa và dịch footer `0.2515`; run xanh CLS bằng `0` ở cả 12 lần.
+- Dùng skill `systematic-debugging` để truy nguyên nhân rồi `test-driven-development`: thêm test trong `blog-detail.test.tsx` đỏ trước khi sửa (`EXIT=1`, `cls-red-checks.md`), xanh sau khi thêm `width={1200} height={630}` (`EXIT=0`, 3/3 test).
+- Reviewer chỉ ra thuộc tính width/height với `h-auto` vẫn để ảnh tỉ lệ khác đổi chiều cao khung. Đọc lại component, test, schema form và mọi consumer của `1200`/`630` rồi viết guard mới đỏ (`EXIT=1`, `cls-aspect-red-checks.md`) trước khi chuyển sang khung `aspect-[1200/630]` cố định với ảnh `absolute inset-0 h-full w-full object-cover`; guard xanh 4/4.
+- Không đổi ngưỡng, URL hay số lần chạy; `git diff 58ace2f..cfd291f -- lighthouserc.json` rỗng. Run `45658516997` (commit trung gian `cfd291f`) xanh cả bốn check, trong đó `e2e` 6m26s; bản khung cố định cần run riêng. Full check set capture lại với 7 dòng `EXIT=0` trong `final-checks.md`.
+
+### AI sai ở đâu
+
+- Tôi ban đầu định coi run `45655992481` là nhiễu runner vì commit mới chỉ đổi docs và test. Đọc artifact mới thấy hai lần CLS `0.2515` do ảnh bìa thiếu kích thước; nếu bỏ qua thì PR sẽ tiếp tục đỏ ngẫu nhiên dù CI đã làm đúng nhiệm vụ.
+- Tôi cũng từng nghĩ chỉ cần retry run; điều đó sẽ che lỗi thật thay vì sửa nguồn phát sinh layout shift. Đã chọn giữ nguyên ngưỡng và sửa component.
+
+### Findings từ review và quyết định
+
+Xem `docs/reviews/2026-11-25-requesting-code-review-cls-fix.md` sau khi vòng review hoàn tất.
+
+### Limitations
+
+- Không có runner GitHub tại local; kết quả assert sau sửa chỉ xác nhận được bằng run hosted mới trên PR 166.
+- Một lần Home trong run đỏ ghi CLS `0,5164` nhưng trung vị vẫn `0`; chưa xác định được phần tử gây dịch chuyển từ artifact nên ghi nhận là rủi ro nhiễu, không sửa trong đợt này.
+- `npm run check:language` exit 0 nhưng không in dòng thành công trên Windows; dùng `EXIT=0` kèm quét chữ cái bổ sung làm bằng chứng.
+
+---
+
 ## 2026-11-25 23:10:00 +07:00 - Sửa lỗi Chrome sandbox trong ngân sách hiệu năng K1
 
 ### Prompt nguyên văn đã dùng

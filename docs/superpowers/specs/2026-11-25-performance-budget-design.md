@@ -84,8 +84,9 @@ The four existing required status checks (`static`, `test`, `build`, `e2e`) keep
   into the workflow: the artifact path in the config must equal the uploaded path in `ci.yml`.
 - If a budget assertion reveals a real layout defect, fix the source rather than widening the
   threshold. The first hosted run after the sandbox fix showed an unsized blog cover causing CLS
-  0.2515; `BlogDetail` now gives the image explicit dimensions and `blog-detail.test.tsx` guards
-  them.
+  0.2515; `BlogDetail` now uses a fixed `1200 / 630` aspect box with a cropped absolute image and
+  explicit dimensions, and `blog-detail.test.tsx` guards the box, the dimensions and the seed asset
+  ratio. Arbitrary admin covers are cropped to that banner ratio rather than changing the box height.
 
 ### Documentation and evidence
 
