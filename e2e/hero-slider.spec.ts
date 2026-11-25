@@ -35,6 +35,11 @@ test(
   async ({ page }) => {
     await page.goto('/');
     await releasePointerAndFocus(page);
+    await expect(currentSlide(page)).toHaveAttribute('aria-label', 'Go to slide 2', {
+      timeout: 12_000,
+    });
+    await carousel(page).getByRole('button', { name: 'Go to slide 1' }).click();
+    await releasePointerAndFocus(page);
     await carousel(page).hover();
     await page.waitForTimeout(5_500);
     await expect(currentSlide(page)).toHaveAttribute('aria-label', 'Go to slide 1', {
@@ -52,6 +57,11 @@ test(
   { tag: '@storefront' },
   async ({ page }) => {
     await page.goto('/');
+    await releasePointerAndFocus(page);
+    await expect(currentSlide(page)).toHaveAttribute('aria-label', 'Go to slide 2', {
+      timeout: 12_000,
+    });
+    await carousel(page).getByRole('button', { name: 'Go to slide 1' }).click();
     await releasePointerAndFocus(page);
     await currentSlide(page).focus();
     await page.waitForTimeout(5_500);
