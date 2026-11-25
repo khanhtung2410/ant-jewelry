@@ -29,7 +29,7 @@ Không có script shell của Superpowers do không có distro WSL; mọi bằng
 ## Declined to judge
 
 - Khoảng trống WCAG 2.2.2 và WAI-ARIA APG carousel pause control: chủ dự án đã chọn "remove visible button only" ở PR 154 và chấp nhận; rule 10 yêu cầu tôn trọng quyết định đã kiểm chứng, không mở lại trong round này.
-- Bốn lần U+0192 trong `docs/reviews/2026-11-23-remove-hero-pause-button-checks.txt`: đây là bản capture thô; `SCAN_EXTENSIONS` của check-language không quét `txt` và rule 9 cấm viết lại nội dung verbatim lịch sử chỉ để ép rule. Giữ nguyên và ghi rõ trong ghi chú của file `.md`.
+- Bản capture thô của hero pause (bốn lần U+0192): bản capture này đã được xóa vào 2026-11-25 vì trùng lặp với khối output nhúng trong `docs/reviews/2026-11-23-requesting-code-review-hero-slider.md`; nội dung của nó vẫn được giữ trong review record đó, với ký tự legend U+0192 đã thay bằng `F` theo rule 12.
 - Thiết kế CI/deploy của PR 155: đã MERGED, nằm ngoài phạm vi sửa PR 154; chỉ được dùng làm bằng chứng xác nhận nguyên nhân conflict.
 
 ## Checklist versus evidence
