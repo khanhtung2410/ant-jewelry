@@ -1,11 +1,18 @@
-import { existsSync } from 'node:fs';
+import { readdirSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-describe('public segment loading boundary', () => {
-  it('has no broad loading fallback that lets streamed content move the footer', () => {
-    const loadingFile = path.resolve(process.cwd(), 'src/app/(public)/loading.tsx');
+const testDir = path.dirname(fileURLToPath(import.meta.url));
+const publicSegmentDir = path.resolve(testDir, '../app/(public)');
+const loadingExtensions = ['js', 'jsx', 'ts', 'tsx'];
 
-    expect(existsSync(loadingFile)).toBe(false);
+describe('public segment loading boundary', () => {
+  it('has no loading file that lets streamed content move the footer', () => {
+    const loadingFiles = readdirSync(publicSegmentDir).filter((file) =>
+      loadingExtensions.some((extension) => file === `loading.${extension}`),
+    );
+
+    expect(loadingFiles).toEqual([]);
   });
 });

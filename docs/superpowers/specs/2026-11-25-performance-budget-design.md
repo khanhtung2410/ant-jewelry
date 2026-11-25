@@ -87,6 +87,20 @@ The four existing required status checks (`static`, `test`, `build`, `e2e`) keep
   0.2515; `BlogDetail` now uses a fixed `1200 / 630` aspect box with a cropped absolute image and
   explicit dimensions, and `blog-detail.test.tsx` guards the box, the dimensions and the seed asset
   ratio. Arbitrary admin covers are cropped to that banner ratio rather than changing the box height.
+- Later runs `45663125186` and `45682997369` both showed Home CLS `0.5164` with a footer shift. The
+  second run already removed Home's `content-visibility: auto` defer, so that hypothesis was rejected
+  and the original styles were restored. The real cause is the broad `src/app/(public)/loading.tsx`
+  fallback: its ~214 px placeholder is replaced by ~3252 px of streamed Home content while the
+  footer stays mounted, moving the footer on mobile. The file is deleted;
+  `src/test/public-loading-boundary.test.ts` fails if any `loading.{js,jsx,ts,tsx}` returns under
+  `src/app/(public)`. The root `src/app/loading.tsx` remains: it wraps the whole route, so the footer
+  is absent during its fallback and the corrected probe recorded zero shifts. The earlier local
+  probe was invalid because its server served a stale CSS bundle without Tailwind utilities; the
+  corrected probe reproduced the shift at CPU throttle 4 and showed none after the deletion. The
+  hosted LHCI CLS assertions on all four URLs are the rendered-behavior flow test. Hosted run
+  `45686913214` at the fix head `fa95cb6` passed all four jobs with 12 Lighthouse runs and no failed
+  assertion, recorded in `.superpowers/sdd/2026-11-25-performance-budget/final-hosted-green.md`.
+  Thresholds stay 85/90/95/0.1.
 
 ### Documentation and evidence
 
@@ -107,3 +121,6 @@ The four existing required status checks (`static`, `test`, `build`, `e2e`) keep
 - `startServerCommand` must match the real `next start` banner; Task 1 verified the Next.js 16
   `Local:` line locally, and a future banner change must update both the config and its guard test.
 - Rebuilding after E2E adds time to the job but keeps the measured dataset deterministic.
+- Removing the public segment's loading fallback means a request can wait for cached page content
+  before showing it; all public data queries are cached and build output stays prerendered. A hosted
+  run must still clear the unchanged Performance budget before this change is accepted.

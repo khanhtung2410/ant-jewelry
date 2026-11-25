@@ -1,3 +1,53 @@
+## 2026-11-26 02:42:44 +07:00 - Sửa CLS Home do fallback loading của segment public
+
+### Prompt nguyên văn đã dùng
+
+> use current worktree from :D/thuc tap/ant jewlwry
+>
+> K. Task tiếp theo: chất lượng trong pipeline
+> Pipeline deploy đã chạy. Bước tiếp theo là để CI tự chặn các vấn đề chất lượng mà hiện vẫn phải kiểm tay: hiệu năng trang và dependency cũ/có lỗ hổng. Hiện repo chưa đo hiệu năng trong pipeline, chưa có cập nhật dependency tự động. Làm sau C6 và C4b, theo thứ tự K1 → K2, mỗi mục một PR, có spec + plan trong docs/superpowers/.
+>
+> K1 — Ngân sách hiệu năng trong pipeline. Số Lighthouse hiện chỉ đo tay rồi ghi vào PERFORMANCE.md, nên một PR làm chậm trang sẽ không bị phát hiện. Thêm Lighthouse CI (@lhci/cli) vào job e2e của ci.yml: chạy trên production build local cho Home, /c/<slug>, /p/<slug>, /blog/<slug>, 3 lần mỗi trang, mobile. Ngưỡng assert: Performance ≥ 85, Accessibility ≥ 90, SEO ≥ 95, CLS ≤ 0,1; dưới ngưỡng thì job đỏ. Upload báo cáo làm artifact, không commit vào repo.
+> Bằng chứng: một PR thử cố ý thêm ảnh lớn không tối ưu vào Home → job đỏ vì Performance; link run.
+> K2 — Cập nhật dependency và quét bảo mật tự động. Thêm .github/dependabot.yml (npm + github-actions, hằng tuần, gom các bản minor/patch vào một PR). Thêm CodeQL cho JavaScript/TypeScript, và bước npm audit --omit=dev --audit-level=high trong job static. Lỗ hổng hiện có nằm trong dependency gián tiếp của Prisma (effect) thì ghi vào docs/SECURITY.md kèm lý do chấp nhận tạm và ngày xem lại, thay vì tắt bước audit.
+> Bằng chứng: PR Dependabot đầu tiên chạy đủ CI và merge được; tab Security có kết quả CodeQL; output npm audit trong log CI.
+>
+> fix num run build have no prisma table if not break
+
+Nguồn: `.superpowers/sdd/2026-11-25-performance-budget/verbatim-prompt.txt`. Entry này ghi vòng sửa CLS Home sau hai run đỏ `45663125186` và `45682997369`.
+
+### Đã tự kiểm chứng
+
+- Đọc toàn bộ `src/app/(public)/page.tsx`, `src/app/(public)/layout.tsx`, `src/app/layout.tsx`, `src/app/loading.tsx`, `src/test/public-loading-boundary.test.ts`, `docs/PERFORMANCE.md`, spec và plan K1, `docs/reviews/TEMPLATE.md`, `docs/reviews/2026-11-25-requesting-code-review-cls-fix.md` và tài liệu `loading.md` của Next.js bản cài đặt trước khi sửa.
+- Run `45663125186` đỏ ở Home: Performance `0,68`, CLS `0,5164034021871203` ở cả ba lần; artifact ghi một lần dịch chuyển của footer. Run `45682997369` sau khi bỏ `content-visibility` trên Home vẫn CLS `0,5164034021871203` ở hai lần và Performance `0,67`, nên giả thuyết đó bị loại.
+- `git diff 36e53bf..HEAD -- src/app/(public)/page.tsx` rỗng: source Home được khôi phục đúng bản trước thử nghiệm, kể cả inline `contentVisibility` và `containIntrinsicSize` theo quyết định cũ của chủ dự án.
+- Probe local ban đầu dùng server đang serve CSS stale, thiếu utilities Tailwind nên footer cao ~1818 px; sau rebuild và restart từ build hiện tại, footer cao 425 px, khớp artifact hosted. Ở `412x823` với CPU throttle 4, HTML ban đầu chứa fallback `Loading page...` của `(public)/loading.tsx` (main ~214 px, footer `top=398`); nội dung stream về cao ~3252 px đẩy footer tới `top=3351`, observer ghi dịch chuyển `0,52`.
+- Xóa fallback public khỏi build local thì observer ghi **0** dịch chuyển dù `src/app/loading.tsx` vẫn hiện trong HTML. Fallback gốc bao toàn route nên footer không tồn tại trong lúc stream; không xóa nó vì nằm ngoài cơ chế đã đo.
+- Guard mới `src/test/public-loading-boundary.test.ts` resolve đường dẫn từ `import.meta.url` và quét mọi `loading.{js,jsx,ts,tsx}` trong `src/app/(public)`. Capture RED với file tạm thời phục hồi: `AssertionError: expected [ 'loading.tsx' ] to deeply equal []`, `EXIT=1` trong `public-loading-red-checks.md`; sau khi xóa file, guard xanh.
+- Grep repo xác nhận không còn import hay consumer của `PublicLoading`; chỉ còn tham chiếu lịch sử trong docs và guard mới. `git diff 36e53bf..HEAD -- .github/workflows/ci.yml lighthouserc.json src/test/lighthouse-config.test.ts src/test/ci-workflow.test.ts` rỗng, nên ngưỡng, URL và tên check không đổi.
+- Reviewer độc lập với skill `requesting-code-review` xác nhận cơ chế fix, RED→GREEN, build/prerender không đổi và các query public đều dùng `'use cache'`. Các finding được đối chiếu trực tiếp với source thật trước khi quyết định.
+- Run hosted `45686913214` tại head fix `fa95cb6` có `conclusion=success` và bốn job `test`, `e2e`, `build`, `static` đều `success`; log `e2e` ghi 4 URL, 12 lần Lighthouse và không có assertion fail. Output JSON và log được capture bằng `spawnSync` trong `final-hosted-green.md` (`META_EXIT=0`, `LOG_EXIT=0`). Run tại head cuối sau khi siết guard được ghi trong mô tả PR 166.
+
+### AI sai ở đâu
+
+- Tôi ban đầu coi CLS `0,5164` là nhiễu runner vì trung vị của run `45655992481` vẫn bằng `0`. Đến run `45663125186` cùng giá trị lặp ở cả ba lần thì đó là tín hiệu thật, không phải nhiễu.
+- Tôi chọn bỏ `content-visibility` trên Home làm fix đầu tiên. Run `45682997369` vẫn đỏ cùng CLS, chứng minh giả thuyết sai; tôi đã khôi phục source và xóa guard dựa trên giả thuyết đó.
+- Tôi dùng probe trên server local đang serve CSS stale nên đo footer ~1818 px, không đại diện CI. Phải rebuild, restart và đối chiếu footer 425 px trước khi kết luận.
+- Tôi viết guard chỉ kiểm đúng `loading.tsx` qua `process.cwd()`. Reviewer chỉ ra false-green với `loading.js/jsx` và khi chạy Vitest từ thư mục con; đã đổi sang quét phần mở rộng và resolve từ `import.meta.url`.
+
+### Findings từ review và quyết định
+
+Xem `docs/reviews/2026-11-26-requesting-code-review-home-cls.md`. Chấp nhận LR-1 phần guard mở rộng, LR-2, LR-3 và LR-4 trên branch `k1-performance-budget` / PR 166. Từ chối LR-1-alt (xóa `src/app/loading.tsx`) vì fallback gốc bao toàn route, probe CPU throttle 4 ghi 0 dịch chuyển sau khi xóa fallback public, và thay đổi đó nằm ngoài bốn URL của K1.
+
+### Limitations
+
+- Không có runner GitHub tại local; assert thật chỉ kiểm chứng qua run hosted. Link run xanh cuối được ghi trong mô tả PR 166 sau khi head cuối pass cả bốn check.
+- Không thêm Playwright layout-shift test vào CI; kiểm chứng hành vi hiển thị là assert CLS của LHCI trên bốn URL, còn guard filesystem chỉ chặn tái phạm cục bộ.
+- `npm run check:language` exit `0` nhưng không in dòng thành công trên Windows; dùng `EXIT=0` kèm quét chữ cái bổ sung làm bằng chứng.
+- K2 nằm trong PR riêng 168; entry này chỉ xử lý K1.
+
+---
+
 ## 2026-11-25 23:55:00 +07:00 - Sửa CLS ảnh bìa blog do CI ngân sách phát hiện
 
 ### Prompt nguyên văn đã dùng

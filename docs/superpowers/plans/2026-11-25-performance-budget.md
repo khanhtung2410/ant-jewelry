@@ -215,3 +215,36 @@ Add `width={1200}` and `height={630}` to the cover image in `src/features/blog/c
 - [x] **Step 3: Verify and record**
 
 Run the focused guard and the full check set, push the fix, confirm a green CI run on PR 166, and save a review record plus an AI_LOG entry that states the artifact evidence and the rejected option of widening thresholds. Run `45658516997` was green for the intermediate attributes-only commit `cfd291f`; the final fixed-box head `f0fe22a` passed all four checks in run `45660888483` (`e2e` in 6m27s). The review record and AI_LOG link both runs and reject widening the thresholds.
+
+---
+
+### Task 7: Fix the Home layout shift caused by the public loading fallback (2026-11-26)
+
+**Files:**
+- Delete: `src/app/(public)/loading.tsx`, `src/test/home-layout-shift.test.tsx`
+- Modify: `src/app/(public)/page.tsx` (restore the original `content-visibility` styles), `docs/PERFORMANCE.md`, this plan and its spec, `AI_LOG.md`
+- Create: `src/test/public-loading-boundary.test.ts`, `docs/reviews/2026-11-26-requesting-code-review-home-cls.md`
+
+**Interfaces:**
+- Consumes: red runs `45663125186` (docs-only head, Home Performance `0,68`, CLS `0,5164` in all three runs) and `45682997369` (first attempted fix, CLS `0,5164` in two runs), plus their `lighthouse-report` artifacts.
+- Produces: a public segment with no broad loading fallback, so streamed Home content cannot push the footer down after first paint; thresholds and URLs stay unchanged.
+
+- [x] **Step 1: Reject the first hypothesis with hosted evidence**
+
+  Compare the Home reports of `45663125186` and `45682997369`. Both show the same footer shift and the same CLS `0.5164034021871203`, even though `d3f5797` removed `content-visibility` from Home. Performance did not improve (`0,67` median). Removing that defer is therefore not the fix; restore `src/app/(public)/page.tsx` to `36e53bf` and delete the guard that encoded the wrong hypothesis.
+
+- [x] **Step 2: Reproduce the real mechanism with a correct local build**
+
+  The earlier probe server was serving a stale CSS file without Tailwind utilities (footer height ~1818 px), unlike the hosted footer height of 425 px. Restart `next start` from the current build, then rerun the Playwright `layout-shift` observer at `412x823` with CPU throttling rate 4. The initial HTML contains the `(public)/loading.tsx` fallback (`Loading page...`, main ~214 px, footer `top=398`); the streamed Home content (~3252 px) replaces it and moves the footer to `top=3351`, producing a shift of `0,52`. Removing the `loading.tsx` file from a local build removes every observed shift while keeping all four pages cached and prerendered. Save the diagnosis outside git.
+
+- [x] **Step 3: Write the failing guard and apply the fix**
+
+  Create `src/test/public-loading-boundary.test.ts` resolving its directory from `import.meta.url` and scanning for any `loading.{js,jsx,ts,tsx}` under `src/app/(public)`. Capture `EXIT=1` while `src/app/(public)/loading.tsx` exists in `.superpowers/sdd/2026-11-25-performance-budget/public-loading-red-checks.md`. Delete the file; the guard passes and the full check set in `loading-boundary-green-checks.md` is all `EXIT=0`. The root `src/app/loading.tsx` stays because its fallback replaces the whole route and produced zero observed shifts. No threshold, URL or check name is changed.
+
+- [x] **Step 4: Confirm on the hosted runner and reconcile records**
+
+  Push the fix, require a fresh run with all four checks green, then update `docs/PERFORMANCE.md`, this plan, the spec, `AI_LOG.md`, the review record and the PR body with both red runs and the green run. Run `45686913214` at `fa95cb6` passed `static`, `test`, `build` and `e2e` (`conclusion=success`, `e2e` in 7m10s, 12 Lighthouse runs, no failed assertion); JSON and log are in `final-hosted-green.md`. The PR body also links the rerun at the final hardened head.
+
+- [x] **Step 5: Apply the review round**
+
+  Load the exact skill id `requesting-code-review`, save `docs/reviews/2026-11-26-requesting-code-review-home-cls.md`, and record accepted and rejected findings in `AI_LOG.md`. Accept the broader public-segment guard and the missing-record finding; reject removing the root fallback because it replaces the whole route and the corrected probe recorded zero shifts.
