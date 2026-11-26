@@ -20,6 +20,16 @@ describe('renderMarkdown', () => {
     expect(html).toContain('alt="Nhẫn cưới"');
   });
 
+  it('reserves space for markdown images so late loading cannot shift the footer', () => {
+    const html = renderToStaticMarkup(
+      <div>{renderMarkdown('![Nhẫn cưới](/mock/blog/cover-wedding-band.svg)')}</div>,
+    );
+
+    expect(html).toMatch(
+      /<img[^>]+src="\/mock\/blog\/cover-wedding-band\.svg"[^>]+width="1200"[^>]+height="630"/,
+    );
+  });
+
   it('keeps raw HTML inert so scripts do not execute', () => {
     const html = renderToStaticMarkup(
       <div>{renderMarkdown('Xin chào <script>alert("xss")</script> **an toàn**')}</div>,

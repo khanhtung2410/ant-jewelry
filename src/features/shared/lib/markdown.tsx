@@ -3,6 +3,10 @@ import { isSafeImageSrc, isSafeLinkHref } from './safe-url';
 
 export { isSafeImageSrc, isSafeLinkHref };
 
+// Seeded blog assets use a 1200x630 ratio; declaring it reserves space before lazy images load.
+export const BLOG_IMAGE_WIDTH = 1200;
+export const BLOG_IMAGE_HEIGHT = 630;
+
 function renderInline(text: string, keyPrefix: string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const pattern =
@@ -27,6 +31,8 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
             key={`${keyPrefix}-img-${index}`}
             src={src}
             alt={alt}
+            width={BLOG_IMAGE_WIDTH}
+            height={BLOG_IMAGE_HEIGHT}
             className="my-6 h-auto w-full rounded-sm object-cover"
             loading="lazy"
           />,

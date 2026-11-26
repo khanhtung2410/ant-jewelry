@@ -1,5 +1,9 @@
 import { BlogRow } from './blog-row';
-import { renderMarkdown } from '@/features/shared/lib/markdown';
+import {
+  BLOG_IMAGE_HEIGHT,
+  BLOG_IMAGE_WIDTH,
+  renderMarkdown,
+} from '@/features/shared/lib/markdown';
 import { formatPublishedDate } from '@/features/shared/lib/format-date';
 import type { BlogPost } from '@/features/shared/domain/domain';
 import { ActionButton } from '@/features/layout/components/action-button';
@@ -9,8 +13,8 @@ interface BlogDetailProps {
   otherPosts: BlogPost[];
 }
 
-export const BLOG_COVER_WIDTH = 1200;
-export const BLOG_COVER_HEIGHT = 630;
+export const BLOG_COVER_WIDTH = BLOG_IMAGE_WIDTH;
+export const BLOG_COVER_HEIGHT = BLOG_IMAGE_HEIGHT;
 
 export function BlogDetail({ post, otherPosts }: BlogDetailProps) {
   // The Figma detail layout shows one related post in the OTHER BLOGS block.
