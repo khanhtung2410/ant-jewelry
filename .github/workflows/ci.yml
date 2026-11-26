@@ -91,7 +91,7 @@ jobs:
       - name: Generate Next.js route types (needed by tsc on a clean checkout)
         run: npx --no-install next typegen
       - name: Cache Playwright browsers
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
