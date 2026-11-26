@@ -1,4 +1,5 @@
 ## 2026-11-26 02:42:44 +07:00 - Sửa CLS Home do fallback loading của segment public
+## 2026-11-26 01:01:52 +07:00 - K2 cập nhật dependency và quét bảo mật tự động
 
 ### Prompt nguyên văn đã dùng
 
@@ -400,6 +401,40 @@ EXIT=0
   trong round này.
 - Ba review record là self-review/transcribe từ các round đã hoàn tất, không có reviewer subagent
   thứ hai trong round này.
+Nguồn: `.superpowers/sdd/2026-11-25-performance-budget/verbatim-prompt.txt`. Entry này ghi riêng phần K2; K1 được ghi trong các entry trước đó.
+
+### Đã tự kiểm chứng
+
+- Kéo `origin/main`, tạo branch `chore/security-automation` từ `b91f7a9`; đọc trọn spec, plan, `docs/CONTRIBUTING.md`, `docs/reviews/TEMPLATE.md` và toàn bộ source của từng file bị chạm trước khi nhận kết quả implementer.
+- Task 1 commit `4e4bbc9`: implementer mới viết guard trước, chạy 15 test tập trung, 469 test đầy đủ và `npm run audit:production` thật, exit 0 với thông báo `GHSA-7589-6fvf-x4pw`. Reviewer mới chạy lại các lệnh đó, lint và typecheck; controller chạy lại `npm run format:check` sau khi định dạng helper SDD bị bỏ qua, kết quả `All matched files use Prettier code style!`, `EXIT=0`.
+- Task 2 commit `ae39d6e`: implementer báo 14 test guard, 483 test đầy đủ, lint, typecheck, format, language và audit đều `EXIT=0`. Reviewer mới chạy lại gói diff `4e4bbc9..ae39d6e` theo skill `requesting-code-review` và trả SPEC PASS, QUALITY PASS, READY_FOR_TASK_3 YES, không có finding; tôi đọc lại toàn bộ năm file và đối chiếu từng dòng trích dẫn trước khi ghi [review Task 2](docs/reviews/2026-11-26-requesting-code-review-security-task-2.md).
+- Task 3: chạy `.superpowers/sdd/2026-11-25-security-automation/capture-checks.mjs` bằng Node `spawnSync` với `encoding: 'utf8'`, `NO_COLOR: '1'` và `DATABASE_URL=file:./prisma/e2e.db` cho `npm run build`. Capture đủ tám lệnh, mọi dòng `EXIT=0`: lint, typecheck, test (91 file, 483 test), format:check, build, check:language, audit:production và hai file guard tập trung (2 file, 29 test). Output nằm ở `.superpowers/sdd/2026-11-25-security-automation/final-checks.md`; tôi tự chạy lại cùng lệnh ra `.superpowers/sdd/2026-11-25-security-automation/controller-final-checks.md`, cũng tám dòng `EXIT=0`, không có U+0192 hay CR, và dán bản do tôi capture vào [review cuối](docs/reviews/2026-11-25-requesting-code-review-security-automation.md).
+- Quét trực tiếp `findDisallowedLetters` export từ `scripts/check-language.mjs` trên các file K2 đã đổi cùng hai review record và chính entry này: không có chữ cái ngoài tiếng Việt và tiếng Anh.
+- Không đổi bốn tên check bắt buộc `static`, `test`, `build`, `e2e`. Lệnh audit vẫn là `npm audit --omit=dev --audit-level=high`, không có `continue-on-error`, `|| true` hay advisory nào ngoài `GHSA-7589-6fvf-x4pw`.
+
+### Findings được nhận / bác
+
+- **Accepted (sửa trong nhánh `chore/security-automation`):** T1-3 định dạng lại helper `.superpowers/sdd/2026-11-25-security-automation/capture-checks.mjs` để toàn bộ `npm run format:check` xanh thay vì chỉ các file trong diff. Xem [review Task 1](docs/reviews/2026-11-26-requesting-code-review-security-task-1.md).
+- **Rejected:** T1-1 lỗi có sẵn của `scripts/check-language.mjs` trên Windows, vì nằm ngoài Task 1 và không do diff này gây ra; ghi thành limitation và quét trực tiếp các file đã đổi. **Rejected:** T1-2 test chu trình `via`, vì hàm đã có `seen` và báo cáo npm thật không có chu trình.
+- Task 2 không có finding nào: reviewer mới trả SPEC PASS, QUALITY PASS, READY_FOR_TASK_3 YES. Tôi không thêm finding để lấp bảng; ba điểm còn nghi ngờ được ghi thành limitation kèm lý do trong [review Task 2](docs/reviews/2026-11-26-requesting-code-review-security-task-2.md).
+- **Accepted (ghi trong `chore/security-automation`):** reviewer toàn nhánh mới trả `Ready to merge? Yes`, không có finding Critical hay Important; tôi đọc lại toàn bộ 14 file tại head, đối chiếu consumer và chấp nhận verdict đó trong [review cuối](docs/reviews/2026-11-25-requesting-code-review-security-automation.md). **Rejected:** nhận định Minor về một câu tùy chọn trong `docs/SECURITY.md` về dependency development, vì mục `Why this exception exists` đã giải thích rủi ro; reviewer cũng xác nhận đây không phải lỗi.
+
+### AI sai ở đâu
+
+- Tôi tạo helper capture trong SDD rồi quên chạy Prettier, làm `npm run format:check` đỏ dù ba file Task 1 đều sạch; đã định dạng helper và capture lại `EXIT=0`.
+- Ban đầu tôi coi `npm run check:language` `EXIT=0` là bằng chứng đủ trên Windows; reviewer chỉ ra predicate so sánh đường dẫn có lỗi có sẵn, nên phải quét trực tiếp từng file đã đổi và ghi rõ limitation.
+- Tôi cũng suýt gọi trạng thái K1 là xanh dựa trên run `45660888483`, trong khi run mới `45663125186` tại cùng source runtime đã đỏ; đã sửa thân PR 166 để nêu rõ đang điều tra nguyên nhân gốc.
+- Lần chạy capture đầu tiên (chạy nền) thoát với mã 1 và không tạo `final-checks.md`; chạy lại đúng lệnh đó ở foreground thì cả tám lệnh đều `EXIT=0`. Tôi không dùng lần chạy hỏng làm bằng chứng và cũng không che nó.
+
+### Limitations
+
+- `npm run check:language` exit 0 nhưng không quét trên Windows do lỗi đường dẫn có sẵn; đã quét trực tiếp các file K2 và không thấy chữ cái ngoài tiếng Việt và tiếng Anh.
+- Dependabot và CodeQL chỉ có tác dụng trên GitHub sau khi push; chưa có PR Dependabot hay kết quả Security tab để trích dẫn, không được coi là bằng chứng hoàn tất.
+- Capture cuối được chạy trên Windows local, không phải runner `ubuntu-latest`; `check:language` trên Windows vẫn là no-op có sẵn nên kết quả quét trực tiếp bằng `findDisallowedLetters` là bằng chứng thay thế.
+- Kết quả `Ready to merge? Yes` của reviewer toàn nhánh là đánh giá tĩnh trên Windows local; nó không thay thế kết quả CI trên `ubuntu-latest` hay bằng chứng live của Dependabot và CodeQL.
+- Một lần capture lại có `npm run build` thoát với mã 1 mà không in lỗi, cùng lúc một session khác đang chạy tiến trình Node trong workspace; nguyên nhân chưa được xác định chắc chắn. Chạy lại toàn bộ capture thì cả tám lệnh `EXIT=0`; lần hỏng đó không được dùng làm bằng chứng.
+- PR K2 chưa được mở tại thời điểm ghi entry này; controller sở hữu bước commit, push và mở PR.
+- PR 166 của K1 đang đỏ ở run `45663125186` với footer layout shift `0,5164` trên Home; việc điều tra nguyên nhân vẫn đang chạy và không được thay thế bằng retry hay nới ngưỡng.
 
 ---
 
