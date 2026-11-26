@@ -16,6 +16,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:language": "node scripts/check-language.mjs",
+    "audit:production": "node scripts/audit-dependencies.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:smoke:production": "playwright test --config playwright.production.config.ts",

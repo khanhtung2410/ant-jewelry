@@ -37,6 +37,8 @@ jobs:
         run: npm run format:check
       - name: Check language rule
         run: npm run check:language
+      - name: Audit production dependencies
+        run: npm run audit:production
 
   test:
     runs-on: ubuntu-latest
