@@ -107,6 +107,29 @@ describe('CI workflow guard', () => {
     expect(e2eJob).toContain('test-results/');
   });
 
+  it('gates storefront pages with Lighthouse CI in the e2e job', () => {
+    const e2eJob = block(block(readWorkflow(), 'jobs'), 'e2e', 2);
+
+    expect(e2eJob, 'Chromium must come from the installed Playwright browser').toContain(
+      "require('playwright').chromium.executablePath()",
+    );
+    expect(e2eJob).toContain('CHROME_PATH');
+    expect(e2eJob).toContain('$GITHUB_ENV');
+    expect(e2eJob).toContain('run: npx tsx e2e/reset-database.ts && npm run build');
+    expect(e2eJob).toContain('run: npx lhci autorun');
+    expect(e2eJob).toContain('DATABASE_URL: file:./prisma/e2e.db');
+    expect(e2eJob).toContain('AUTH_SECRET: e2e-only-auth-secret-not-for-production');
+    expect(e2eJob).toContain("NEXT_TELEMETRY_DISABLED: '1'");
+    expect(e2eJob, 'the report must upload even when Lighthouse assertions fail').toContain(
+      'if: always()',
+    );
+    expect(e2eJob).toContain('actions/upload-artifact@v4');
+    expect(e2eJob).toContain('name: lighthouse-report');
+    expect(e2eJob).toContain('path: lhci-report/');
+    expect(e2eJob).toContain('retention-days: 7');
+    expect(e2eJob).not.toContain('continue-on-error');
+  });
+
   it('never runs the production build command that applies migrations', () => {
     expect(readWorkflow()).not.toContain('npm run build:production');
   });

@@ -1,5 +1,9 @@
 import { BlogRow } from './blog-row';
-import { renderMarkdown } from '@/features/shared/lib/markdown';
+import {
+  BLOG_IMAGE_HEIGHT,
+  BLOG_IMAGE_WIDTH,
+  renderMarkdown,
+} from '@/features/shared/lib/markdown';
 import { formatPublishedDate } from '@/features/shared/lib/format-date';
 import type { BlogPost } from '@/features/shared/domain/domain';
 import { ActionButton } from '@/features/layout/components/action-button';
@@ -8,6 +12,9 @@ interface BlogDetailProps {
   post: BlogPost;
   otherPosts: BlogPost[];
 }
+
+export const BLOG_COVER_WIDTH = BLOG_IMAGE_WIDTH;
+export const BLOG_COVER_HEIGHT = BLOG_IMAGE_HEIGHT;
 
 export function BlogDetail({ post, otherPosts }: BlogDetailProps) {
   // The Figma detail layout shows one related post in the OTHER BLOGS block.
@@ -23,12 +30,14 @@ export function BlogDetail({ post, otherPosts }: BlogDetailProps) {
       </header>
 
       {post.coverImageUrl ? (
-        <div className="mx-auto mt-8 max-w-3xl overflow-hidden rounded-sm">
+        <div className="relative mx-auto mt-8 aspect-[1200/630] max-w-3xl overflow-hidden rounded-sm">
           {/* eslint-disable-next-line @next/next/no-img-element -- blog content image */}
           <img
             src={post.coverImageUrl}
             alt={post.title}
-            className="h-auto w-full object-cover"
+            width={BLOG_COVER_WIDTH}
+            height={BLOG_COVER_HEIGHT}
+            className="absolute inset-0 h-full w-full object-cover"
             loading="eager"
             fetchPriority="high"
           />

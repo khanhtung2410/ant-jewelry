@@ -1,7 +1,10 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { BlogPost } from '@/features/shared/domain/domain';
-import { BlogDetail } from './blog-detail';
+import { blogPosts } from '@/features/blog/mocks/blog-posts';
+import { BLOG_COVER_HEIGHT, BLOG_COVER_WIDTH, BlogDetail } from './blog-detail';
 
 vi.mock('next/image', () => ({
   default: ({ src, alt }: { src: string; alt: string }) => (
@@ -38,6 +41,41 @@ describe('BlogDetail', () => {
 
     expect(html.match(/<h1/g)).toHaveLength(1);
     expect(html).toContain('Bài chính');
+  });
+
+  it('renders a fixed cover box with explicit image dimensions', () => {
+    const html = renderToStaticMarkup(
+      <BlogDetail post={makePost('bai-chinh', 'Bài chính')} otherPosts={[]} />,
+    );
+
+    expect(html).toContain('aspect-[1200/630]');
+    expect(html).toMatch(/<img[^>]+width="1200"[^>]+height="630"/);
+    expect(html).toMatch(/<img[^>]+class="absolute inset-0 h-full w-full object-cover"/);
+  });
+
+  it('keeps the declared cover ratio in step with the seeded cover asset', () => {
+    const svg = readFileSync(
+      path.join(process.cwd(), 'public/mock/blog/cover-wedding-band.svg'),
+      'utf8',
+    );
+
+    expect(svg).toContain(`viewBox="0 0 ${BLOG_COVER_WIDTH} ${BLOG_COVER_HEIGHT}"`);
+  });
+
+  it('keeps every seeded body image at the declared inline ratio', () => {
+    const imagePaths = blogPosts.flatMap((post) =>
+      Array.from(post.body.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g), (match) => match[1]),
+    );
+
+    expect(imagePaths.length).toBeGreaterThan(0);
+
+    for (const imagePath of imagePaths) {
+      expect(imagePath).toMatch(/^\/mock\/blog\//);
+
+      const svg = readFileSync(path.join(process.cwd(), 'public', imagePath.slice(1)), 'utf8');
+
+      expect(svg).toContain(`viewBox="0 0 ${BLOG_COVER_WIDTH} ${BLOG_COVER_HEIGHT}"`);
+    }
   });
 
   it('shows only one related post in OTHER BLOGS', () => {
