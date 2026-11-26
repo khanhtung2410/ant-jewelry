@@ -101,6 +101,26 @@ The four existing required status checks (`static`, `test`, `build`, `e2e`) keep
   `45686913214` at the fix head `fa95cb6` passed all four jobs with 12 Lighthouse runs and no failed
   assertion, recorded in `.superpowers/sdd/2026-11-25-performance-budget/final-hosted-green.md`.
   Thresholds stay 85/90/95/0.1.
+- Hosted run `45734845362` at merged head `d6c23dc` exposed a second image source: the blog **body** is
+  Markdown, and `renderMarkdown` emitted a lazy `<img>` without reserved height. Two of three blog runs
+  shifted the footer with CLS `0.2515188335358445`; Performance fell to median `0.75`. The blog cover
+  component was unchanged from the previous green head, so widening thresholds or retrying the run
+  would hide a real defect. The fix adds explicit `1200x630` dimensions to every inline Markdown image
+  via shared `BLOG_IMAGE_WIDTH`/`BLOG_IMAGE_HEIGHT` constants, keeps the four URLs and all thresholds,
+  and guards the emitted markup with a RED→GREEN case in `markdown.test.tsx`. The seeded inline assets
+  use the same `1200 630` viewBox as the cover, so the declared ratio matches the real images; a
+  production build and a blog-only local LHCI run with three mobile passes recorded CLS `0` and
+  `unsized-images.score = 1` in every pass. The hosted rerun at the final head is the rendered-behavior
+  flow test. A reviewer then showed that `h-auto` still lets an arbitrary admin image change height after
+  load, so the renderer now uses a fixed `aspect-[1200/630]` box with `object-cover`; the RED→GREEN guard
+  was rewritten and a second guard checks every seeded Markdown image. With the image fixed, local LHCI
+  still recorded the same footer shift twice and attributed it to a late Montserrat Latin-ext font. The
+  generated CSS puts the broad Latin-ext face after the narrow Vietnamese face, so Vietnamese text
+  selects it even when it is not preloaded. Preloading it removed the shift but dropped local Performance
+  median to `0.82`; the final decision keeps the original subsets and sets `display: 'optional'` on both
+  fonts, which removes the late swap without the extra payload. The final local blog-only run recorded CLS
+  `0` in all three passes but Performance median `0.75`, so the hosted rerun at the final head remains the
+  deciding evidence and no threshold is changed.
 
 ### Documentation and evidence
 

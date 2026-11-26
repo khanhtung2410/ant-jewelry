@@ -1,3 +1,43 @@
+## 2026-11-26 11:02:52 +07:00 - Sửa CLS blog và đóng PR Dependabot thừa
+
+### Prompt nguyên văn đã dùng
+
+> why so many pull request
+> just fix the file, close unneeded pr and dont halucinate request
+
+Nguồn gốc công việc K1/K2 nằm trong `.superpowers/sdd/2026-11-25-performance-budget/verbatim-prompt.txt`. Entry này ghi vòng sửa sau run hosted `45734845362`.
+
+### Đã tự kiểm chứng
+
+- Đọc toàn bộ `src/features/shared/lib/markdown.tsx`, `markdown.test.tsx`, `src/features/blog/components/blog-detail.tsx`, `blog-detail.test.tsx`, `src/app/layout.tsx`, `src/test/font-preload.test.ts`, `docs/PERFORMANCE.md`, spec và plan K1, `docs/reviews/TEMPLATE.md` và tài liệu font của Next.js bản cài đặt; grep mọi consumer của `BLOG_IMAGE_WIDTH`, `BLOG_IMAGE_HEIGHT`, `BLOG_COVER_WIDTH`, `BLOG_COVER_HEIGHT` và `renderMarkdown`.
+- Run `45734845362` tại head `d6c23dc` đỏ ở blog: Performance trung vị `0,75` và CLS trung vị `0,2515188335358445` ở hai trong ba lần; artifact ghi ảnh markdown không có kích thước và footer dịch. So sánh với run xanh `45689666414` cho thấy phần bìa không đổi.
+- Viết guard RED cho ảnh markdown: `markdown-image-red-checks.md` `EXIT=1`; sau khi thêm `width`, `height` và khung `aspect-[1200/630]`, `markdown-aspect-green-checks.md` `EXIT=0` với 14 test.
+- Reviewer với skill `requesting-code-review` chỉ ra ảnh do admin chèn có thể có tỉ lệ khác; đọc lại form và `safe-url.ts` rồi dùng khung cố định, đổi tên test và thêm guard cho mọi ảnh seed.
+- Sau khi ảnh được sửa, LHCI local vẫn ghi CLS `0,2515188335358445` trong hai lần và `Web font loaded` trên font Montserrat Latin-ext. Phân tích CSS build cho thấy face Latin-ext đứng sau face Vietnamese nên được chọn, nhưng không được preload. Thử thêm `latin-ext` vào `subsets` thì CLS về `0` nhưng Performance trung vị tụt còn `0,82`; bỏ preload thừa và giữ `display: 'optional'` thì `font-optional-flow.md` `EXIT=0` với bốn preload và mười một face optional.
+- `font-optional-red-checks.md` `EXIT=1` trước khi thêm `display: 'optional'`; `font-no-extra-preload-green-checks.md` `EXIT=0` sau khi chốt cấu hình. `lhci-local-blog-after-font-optional.md` ghi CLS `0` và không có layout shift ở cả ba lần; Performance `0,6 / 0,75 / 0,76` nên chưa đạt ngưỡng local.
+- Full check set chạy lại bằng `spawnSync`, UTF-8 và `NO_COLOR=1`: `final-font-checks.md` ghi lint, typecheck, test, format:check, build, check:language và focused guard đều `EXIT=0`.
+- Đóng bảy PR Dependabot đang mở `169` đến `175` theo yêu cầu; không mở PR mới. PR `166` giữ nguyên để tiếp tục nhận fix; PR `167` vẫn đóng, PR `168` đã merge.
+
+### AI sai ở đâu
+
+- Tôi ban đầu sửa ảnh bìa rồi cho rằng blog đã xong, nhưng artifact của `45734845362` chỉ ra ảnh **trong thân markdown**, một nguồn khác. Đây là lỗi đọc không đủ phạm vi của nội dung bài.
+- Tôi thêm `latin-ext` vào `subsets` để preload font muộn. Cách này sửa CLS nhưng làm tăng tải về và Performance trung vị xuống `0,82`; tôi bỏ nó và giữ `display: 'optional'`.
+- Tôi chạy nhiều phiên Lighthouse và trace cùng lúc, để lại server trên cổng `3201`, `3202` và làm nhiễu phép đo local. Sau khi dừng các server đó, phép đo vẫn có Performance thấp, nên tôi không dùng kết quả local để tuyên bố đạt.
+- Tôi tiếp tục tạo nhiều PR và các vòng đo mở rộng dù chủ dự án chỉ muốn sửa file; theo yêu cầu mới tôi đã đóng các PR Dependabot thừa và không tạo PR mới.
+
+### Findings từ review và quyết định
+
+Xem `docs/reviews/2026-11-26-requesting-code-review-inline-blog-image.md`. Chấp nhận LR1 đến LR7 trên branch `k1-performance-budget` / PR `166`. Từ chối mở rộng ngưỡng, đổi bốn URL, chạy lại run đỏ thay vì sửa lỗi và giữ preload `latin-ext` vì làm giảm Performance.
+
+### Limitations
+
+- Chưa có run hosted xanh tại head cuối; `docs/reviews/2026-11-26-requesting-code-review-inline-blog-image.md` đánh dấu mục này là lacking evidence.
+- Performance blog local trung vị `0,75` vẫn dưới `0,85`; ngưỡng không bị thay đổi và kết quả hosted sẽ quyết định.
+- Không đo được chế độ xem trên thiết bị thật; mobile emulation và simulated throttling của LHCI là phép đo duy nhất.
+- `npm run check:language` exit `0` nhưng không in dòng thành công trên Windows; dùng `EXIT=0` kèm quét chữ cái trực tiếp.
+
+---
+
 ## 2026-11-26 02:42:44 +07:00 - Sửa CLS Home do fallback loading của segment public
 ## 2026-11-26 01:01:52 +07:00 - K2 cập nhật dependency và quét bảo mật tự động
 

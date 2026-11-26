@@ -14,11 +14,13 @@ const defaultSocialImage = {
 const montserrat = Montserrat({
   variable: '--font-montserrat',
   subsets: ['latin', 'vietnamese'],
+  display: 'optional',
 });
 
 const robotoMono = Roboto_Mono({
   variable: '--font-roboto-mono',
   subsets: ['latin', 'vietnamese'],
+  display: 'optional',
 });
 
 export const metadata: Metadata = {

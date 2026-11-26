@@ -3,6 +3,7 @@ import path from 'node:path';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import type { BlogPost } from '@/features/shared/domain/domain';
+import { blogPosts } from '@/features/blog/mocks/blog-posts';
 import { BLOG_COVER_HEIGHT, BLOG_COVER_WIDTH, BlogDetail } from './blog-detail';
 
 vi.mock('next/image', () => ({
@@ -59,6 +60,22 @@ describe('BlogDetail', () => {
     );
 
     expect(svg).toContain(`viewBox="0 0 ${BLOG_COVER_WIDTH} ${BLOG_COVER_HEIGHT}"`);
+  });
+
+  it('keeps every seeded body image at the declared inline ratio', () => {
+    const imagePaths = blogPosts.flatMap((post) =>
+      Array.from(post.body.matchAll(/!\[[^\]]*\]\(([^)]+)\)/g), (match) => match[1]),
+    );
+
+    expect(imagePaths.length).toBeGreaterThan(0);
+
+    for (const imagePath of imagePaths) {
+      expect(imagePath).toMatch(/^\/mock\/blog\//);
+
+      const svg = readFileSync(path.join(process.cwd(), 'public', imagePath.slice(1)), 'utf8');
+
+      expect(svg).toContain(`viewBox="0 0 ${BLOG_COVER_WIDTH} ${BLOG_COVER_HEIGHT}"`);
+    }
   });
 
   it('shows only one related post in OTHER BLOGS', () => {

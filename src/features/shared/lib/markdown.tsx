@@ -3,7 +3,7 @@ import { isSafeImageSrc, isSafeLinkHref } from './safe-url';
 
 export { isSafeImageSrc, isSafeLinkHref };
 
-// Seeded blog assets use a 1200x630 ratio; declaring it reserves space before lazy images load.
+// Inline blog images use a fixed 1200x630 box so a lazy image with any natural ratio cannot change page height.
 export const BLOG_IMAGE_WIDTH = 1200;
 export const BLOG_IMAGE_HEIGHT = 630;
 
@@ -33,7 +33,7 @@ function renderInline(text: string, keyPrefix: string): ReactNode[] {
             alt={alt}
             width={BLOG_IMAGE_WIDTH}
             height={BLOG_IMAGE_HEIGHT}
-            className="my-6 h-auto w-full rounded-sm object-cover"
+            className="my-6 aspect-[1200/630] w-full rounded-sm object-cover"
             loading="lazy"
           />,
         );

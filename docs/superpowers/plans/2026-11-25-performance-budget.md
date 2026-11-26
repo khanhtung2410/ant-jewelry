@@ -248,3 +248,37 @@ Run the focused guard and the full check set, push the fix, confirm a green CI r
 - [x] **Step 5: Apply the review round**
 
   Load the exact skill id `requesting-code-review`, save `docs/reviews/2026-11-26-requesting-code-review-home-cls.md`, and record accepted and rejected findings in `AI_LOG.md`. Accept the broader public-segment guard and the missing-record finding; reject removing the root fallback because it replaces the whole route and the corrected probe recorded zero shifts.
+
+---
+
+### Task 8: Fix the blog body layout shift after the merge with main (2026-11-26)
+
+**Files:**
+- Modify: `src/features/shared/lib/markdown.tsx`, `src/features/shared/lib/markdown.test.tsx`, `src/features/blog/components/blog-detail.tsx`, `src/features/blog/components/blog-detail.test.tsx`
+- Modify: `src/app/layout.tsx`, create `src/test/font-preload.test.ts`
+- Modify: `docs/PERFORMANCE.md`, this plan and its spec, `AI_LOG.md`
+- Create: `docs/reviews/2026-11-26-requesting-code-review-inline-blog-image.md`
+
+**Interfaces:**
+- Consumes: red run `45734845362` at head `d6c23dc` and its `lighthouse-report` artifact, where the blog detail page had Performance median `0.75` and CLS median `0.2515188335358445` in two of three runs.
+- Produces: reserved dimensions for inline Markdown images so a late load cannot shift the footer; thresholds, URLs and required check names stay unchanged.
+
+- [x] **Step 1: Find the root cause before editing**
+
+  Load `systematic-debugging`. Read the failed `e2e` log and compare the artifact of `45734845362` with green run `45689666414`. The failures name the blog URL, not Home; the shift subitem points to `/mock/blog/cover-wedding-band.svg` with `cause = Media element lacking an explicit size`. The changed source between the green head and the failed head is only the PR 168 merge into `main`; the blog cover component is unchanged. Grep the image class and find `renderMarkdown` in `src/features/shared/lib/markdown.tsx`, which emits inline `<img>` with no width/height. Reject "retry the run" and "widen the threshold" because the artifact proves a real layout defect.
+
+- [x] **Step 2: Write the RED test and apply the minimal fix**
+
+  Load `test-driven-development`. Add a case to `markdown.test.tsx` asserting the emitted image carries `width="1200"` and `height="630"`; capture RED (`markdown-image-red-checks.md`, `EXIT=1`) before touching source. Export `BLOG_IMAGE_WIDTH`/`BLOG_IMAGE_HEIGHT` from `markdown.tsx`, use them on the inline image, and make `blog-detail.tsx` re-export them as its cover constants to remove duplicated literals. Re-run the focused tests for Markdown and `BlogDetail` (`markdown-image-green-checks.md`, `EXIT=0`). Read every touched file in full and grep every consumer of the constants before accepting the result.
+
+- [x] **Step 3: Verify the rendered behavior locally**
+
+  Run `npm run build` (`build-after-markdown-fix.md`, `EXIT=0`). Run Lighthouse locally against only the blog URL with the same mobile/simulate settings, three passes, and the committed thresholds (`lhci-local-blog-after-markdown-fix.md`, `EXIT=0`). Inspect the raw reports: CLS `0` in all three passes, `unsized-images.score = 1`, Performance `0.92 / 0.86 / 0.83` (median `0.86`). Keep the reports outside git. This evidence was later superseded: the review found the arbitrary-ratio path and a separate font-swap shift.
+
+- [x] **Step 3b: Fix the remaining font swap**
+
+  Load `test-driven-development` again. Trace the second local CLS cause to a late Montserrat Latin-ext font; inspect the generated CSS and the Next.js font guide. Write `src/test/font-preload.test.ts` RED (`font-optional-red-checks.md`, `EXIT=1`), set `display: 'optional'` on both fonts in `src/app/layout.tsx`, and keep the original subsets after the extra `latin-ext` preload lowered Performance (`font-no-extra-preload-green-checks.md`, `EXIT=0`, `font-optional-flow.md`, `EXIT=0`). Rebuild (`build-after-font-optional.md`, `EXIT=0`) and rerun the blog-only LHCI (`lhci-local-blog-after-font-optional.md`): CLS `0` in all three passes, Performance `0.6 / 0.75 / 0.76`. Do not claim the budget is met from this local result.
+
+- [ ] **Step 4: Review, record and get a fresh hosted green run**
+
+  Load `requesting-code-review` and save a review record using `docs/reviews/TEMPLATE.md` with every finding, severity, reproduction and decision; load `verification-before-completion` before claiming a pass. Run the full check set and capture all output with `EXIT=` lines. Prepend the new `AI_LOG.md` entry with the verbatim prompt, self-verification, concrete AI mistakes, limitations and accepted/rejected findings. Push the final head, wait for a hosted run where `static`, `test`, `build` and `e2e` all pass, then replace the PR body with the full captured output, the red and green run links, and report both PR links.
